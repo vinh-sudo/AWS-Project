@@ -1,0 +1,54 @@
+name: Backend CI
+
+on:
+  push:
+    branches: [ "main", "dev" ]
+  pull_request:
+    branches: [ "main", "dev" ]
+
+jobs:
+  backend:
+    runs-on: ubuntu-latest
+
+    services:
+      postgres:
+        image: postgres:17
+        env:
+          POSTGRES_DB: production_manager
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: 12345
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd="pg_isready -U postgres"
+          --health-interval=10s
+          --health-timeout=5s
+          --health-retries=5
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup JDK 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 17
+
+      - name: Wait for PostgreSQL
+        run: |
+          until pg_isready -h localhost -p 5432 -U postgres; do
+            sleep 2
+          done
+
+      - name: Run tests & Flyway
+        working-directory: backend
+        run: mvn clean test
+        env:
+          SPRING_DATASOURCE_URL: jdbc:postgresql://localhost:5432/production_manager
+          SPRING_DATASOURCE_USERNAME: postgres
+          SPRING_DATASOURCE_PASSWORD: 12345
+
+      - name: Build jar
+        working-directory: backend
+        run: mvn clean package -DskipTests
