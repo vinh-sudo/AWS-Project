@@ -1,4 +1,8 @@
--- 1. users
+---------------------------------------------
+-- SCHEMA TỔNG HỢP (FULL & FINAL VERSION)
+-- Phù hợp với proposal + yêu cầu của bạn
+---------------------------------------------
+
 CREATE TABLE users (
                        user_id SERIAL PRIMARY KEY,
                        first_name VARCHAR(50) NOT NULL,
@@ -10,11 +14,19 @@ CREATE TABLE users (
                        status VARCHAR(20) DEFAULT 'active'
 );
 
--- 2. accounts
+CREATE TABLE employee (
+                          employee_id SERIAL PRIMARY KEY,
+                          user_id INT REFERENCES users(user_id) ON DELETE CASCADE,
+                          employee_code VARCHAR(20) UNIQUE NOT NULL,
+                          department VARCHAR(50),
+                          position VARCHAR(50),
+                          skill_level INT,
+                          status VARCHAR(20) DEFAULT 'active'
+);
+
 CREATE TABLE accounts (
                           account_id SERIAL PRIMARY KEY,
-                          user_id INT REFERENCES users(user_id) ON DELETE CASCADE,
-                          username VARCHAR(100) UNIQUE NOT NULL,
+                          employee_id INT REFERENCES employee(employee_id) ON DELETE CASCADE,
                           password_hash VARCHAR(255) NOT NULL,
                           role VARCHAR(50) NOT NULL,
                           last_login TIMESTAMPTZ,
@@ -23,7 +35,6 @@ CREATE TABLE accounts (
                           updated_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP
 );
 
--- 3. production_line
 CREATE TABLE production_line (
                                  line_id SERIAL PRIMARY KEY,
                                  line_name VARCHAR(100) NOT NULL,
@@ -33,7 +44,6 @@ CREATE TABLE production_line (
                                  status VARCHAR(20) DEFAULT 'active'
 );
 
--- 4. machine
 CREATE TABLE machine (
                          machine_id SERIAL PRIMARY KEY,
                          line_id INT REFERENCES production_line(line_id) ON DELETE CASCADE,
@@ -46,7 +56,6 @@ CREATE TABLE machine (
                          updated_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP
 );
 
--- 5. orders
 CREATE TABLE orders (
                         order_id SERIAL PRIMARY KEY,
                         customer_name VARCHAR(100) NOT NULL,
@@ -59,7 +68,6 @@ CREATE TABLE orders (
                         updated_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP
 );
 
--- 6. order_items
 CREATE TABLE order_items (
                              item_id SERIAL PRIMARY KEY,
                              order_id INT REFERENCES orders(order_id) ON DELETE CASCADE,
@@ -68,7 +76,6 @@ CREATE TABLE order_items (
                              price DECIMAL(10, 2)
 );
 
--- 7. production_schedule
 CREATE TABLE production_schedule (
                                      schedule_id SERIAL PRIMARY KEY,
                                      order_id INT REFERENCES orders(order_id) ON DELETE CASCADE,
@@ -78,7 +85,6 @@ CREATE TABLE production_schedule (
                                      status VARCHAR(20) DEFAULT 'Scheduled'
 );
 
--- 8. production_progress
 CREATE TABLE production_progress (
                                      progress_id SERIAL PRIMARY KEY,
                                      schedule_id INT REFERENCES production_schedule(schedule_id) ON DELETE CASCADE,
@@ -86,7 +92,16 @@ CREATE TABLE production_progress (
                                      status VARCHAR(20) DEFAULT 'In Progress'
 );
 
--- 9. audit_log
+CREATE TABLE task (
+                      task_id SERIAL PRIMARY KEY,
+                      schedule_id INT REFERENCES production_schedule(schedule_id),
+                      employee_id INT REFERENCES employee(employee_id),
+                      task_name VARCHAR(100),
+                      start_time TIMESTAMPTZ,
+                      end_time TIMESTAMPTZ,
+                      status VARCHAR(20) DEFAULT 'Assigned'
+);
+
 CREATE TABLE audit_log (
                            log_id SERIAL PRIMARY KEY,
                            user_id INT REFERENCES users(user_id) ON DELETE CASCADE,
@@ -96,7 +111,6 @@ CREATE TABLE audit_log (
                            details TEXT
 );
 
--- 10. incident_log
 CREATE TABLE incident_log (
                               incident_id SERIAL PRIMARY KEY,
                               line_id INT REFERENCES production_line(line_id) ON DELETE CASCADE,
@@ -104,7 +118,6 @@ CREATE TABLE incident_log (
                               timestamp TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP
 );
 
--- 11. notification
 CREATE TABLE notification (
                               notification_id SERIAL PRIMARY KEY,
                               user_id INT REFERENCES users(user_id) ON DELETE CASCADE,
@@ -113,7 +126,6 @@ CREATE TABLE notification (
                               timestamp TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP
 );
 
--- 12. statistic
 CREATE TABLE statistic (
                            statistic_id SERIAL PRIMARY KEY,
                            line_id INT REFERENCES production_line(line_id) ON DELETE CASCADE,
@@ -121,12 +133,4 @@ CREATE TABLE statistic (
                            output INT,
                            downtime INT,
                            efficiency DECIMAL(5, 2)
-);
-
--- 13. report
-CREATE TABLE report (
-                        report_id SERIAL PRIMARY KEY,
-                        report_type VARCHAR(50),
-                        generated_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
-                        data TEXT
 );

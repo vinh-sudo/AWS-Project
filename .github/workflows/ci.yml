@@ -42,7 +42,7 @@ jobs:
           done
 
       - name: Run tests & Flyway
-        working-directory: backend
+        working-directory: backend/backend
         run: mvn clean test
         env:
           SPRING_DATASOURCE_URL: jdbc:postgresql://localhost:5432/production_manager
@@ -50,5 +50,5 @@ jobs:
           SPRING_DATASOURCE_PASSWORD: 12345
 
       - name: Build jar
-        working-directory: backend
+        working-directory: backend/backend
         run: mvn clean package -DskipTests
