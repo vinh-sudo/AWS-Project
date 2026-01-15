@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { useFormik } from "formik";
 import * as Yup from "yup";
 import "./ForgotPasswordPage.css";
@@ -7,6 +7,7 @@ import imsLogo from "../../assets/ims2.jpg";
 
 const ForgotPasswordPage = () => {
   const [isSubmitted, setIsSubmitted] = useState(false);
+  const navigate = useNavigate();
 
   const validationSchema = Yup.object({
     email: Yup.string()
@@ -23,6 +24,11 @@ const ForgotPasswordPage = () => {
       // TODO: replace with real submit logic
       console.log("Forgot password submit", values);
       setIsSubmitted(true);
+
+      // Navigate to OTP verification after 1 second
+      setTimeout(() => {
+        navigate("/otp-verification", { state: { email: values.email } });
+      }, 1000);
     },
   });
 

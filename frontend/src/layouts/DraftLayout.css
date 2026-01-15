@@ -1,0 +1,84 @@
+.draft-layout {
+    display: flex;
+    flex-direction: column;
+    min-height: 100vh;
+}
+
+.draft-content {
+    flex: 1;
+}
+
+/* Footer */
+.draft-footer {
+    background: linear-gradient(135deg, #232f3e 0%, #131921 100%);
+    padding: 0;
+    overflow: hidden;
+}
+
+/* AWS Banner Animation */
+.aws-banner {
+    background: linear-gradient(90deg, #ff9900 0%, #ffb84d 50%, #ff9900 100%);
+    padding: 12px 0;
+    overflow: hidden;
+    position: relative;
+}
+
+.aws-banner-content {
+    display: flex;
+    gap: 60px;
+    animation: scroll-left 30s linear infinite;
+    white-space: nowrap;
+}
+
+.aws-ad-item {
+    font-size: 14px;
+    font-weight: 600;
+    color: #232f3e;
+    padding: 0 20px;
+}
+
+@keyframes scroll-left {
+    0% {
+        transform: translateX(0);
+    }
+
+    100% {
+        transform: translateX(-50%);
+    }
+}
+
+.aws-banner:hover .aws-banner-content {
+    animation-play-state: paused;
+}
+
+/* Footer Info */
+.footer-info {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 8px;
+    padding: 15px;
+    color: #a0a0a0;
+    font-size: 13px;
+}
+
+.aws-logo {
+    background: linear-gradient(90deg, #ff9900 0%, #ffcc80 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    font-weight: 700;
+    font-size: 14px;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+    .aws-ad-item {
+        font-size: 12px;
+        padding: 0 15px;
+    }
+
+    .aws-banner-content {
+        gap: 40px;
+    }
+}
