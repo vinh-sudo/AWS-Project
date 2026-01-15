@@ -29,3 +29,12 @@ spring:
     enabled: true
     locations: classpath:db/migration
     baseline-on-migrate: true
+jwt:
+  secret: myVeryVeryVeryVeryVeryVerySecretKey1234567890
+  expiration: 900000
+  refresh-expiration: 900000
+
+logging:
+  level:
+    org.springframework.security: DEBUG
+    org.springframework.web: INFO
