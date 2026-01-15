@@ -84,6 +84,11 @@
     font-size: 11px;
     color: #e07399;
     text-decoration: none;
+    transition: color 0.2s ease-in-out;
+}
+
+.login-form .forgot-password a:hover {
+    color: #5ec8c4;
 }
 
 .login-form .login-button {

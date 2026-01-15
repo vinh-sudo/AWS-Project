@@ -1,4 +1,5 @@
 import React from "react";
+import { Link } from "react-router-dom";
 import { useFormik } from "formik";
 import * as Yup from "yup";
 import "./LoginPage.css";
@@ -64,7 +65,7 @@ const LoginPage = () => {
             <div className="input-error-text">{formik.errors.password}</div>
           )}
           <span className="forgot-password">
-            <a href="#">Forgot Password ?</a>
+            <Link to="/forgot-password">Forgot Password ?</Link>
           </span>
           <input
             className="login-button"
