@@ -5,6 +5,8 @@ import jakarta.validation.constraints.Size;
 import lombok.Getter;
 import lombok.Setter;
 import org.hibernate.annotations.ColumnDefault;
+import org.hibernate.annotations.OnDelete;
+import org.hibernate.annotations.OnDeleteAction;
 
 import java.math.BigDecimal;
 
@@ -17,6 +19,11 @@ public class ProductionProgress {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "progress_id", nullable = false)
     private Integer id;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @OnDelete(action = OnDeleteAction.CASCADE)
+    @JoinColumn(name = "schedule_id")
+    private ProductionSchedule schedule;
 
     @Column(name = "percentage", precision = 5, scale = 2)
     private BigDecimal percentage;

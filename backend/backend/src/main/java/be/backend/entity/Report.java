@@ -1,11 +1,15 @@
 package be.backend.entity;
 
 import jakarta.persistence.*;
+import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
 import lombok.Getter;
 import lombok.Setter;
 import org.hibernate.annotations.ColumnDefault;
+import org.hibernate.annotations.OnDelete;
+import org.hibernate.annotations.OnDeleteAction;
 
+import java.time.LocalDate;
 import java.time.OffsetDateTime;
 
 @Getter
@@ -18,15 +22,35 @@ public class Report {
     @Column(name = "report_id", nullable = false)
     private Integer id;
 
-    @Size(max = 50)
-    @Column(name = "report_type", length = 50)
-    private String reportType;
+    @ManyToOne(fetch = FetchType.LAZY)
+    @OnDelete(action = OnDeleteAction.CASCADE)
+    @JoinColumn(name = "employee_id")
+    private Employee employee;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @OnDelete(action = OnDeleteAction.CASCADE)
+    @JoinColumn(name = "line_id")
+    private ProductionLine line;
+
+    @NotNull
+    @Column(name = "work_date", nullable = false)
+    private LocalDate workDate;
+
+    @Size(max = 20)
+    @Column(name = "shift", length = 20)
+    private String shift;
+
+    @Column(name = "produced_quantity")
+    private Integer producedQuantity;
+
+    @Column(name = "downtime_minutes")
+    private Integer downtimeMinutes;
+
+    @Column(name = "notes", length = Integer.MAX_VALUE)
+    private String notes;
 
     @ColumnDefault("CURRENT_TIMESTAMP")
-    @Column(name = "generated_at")
-    private OffsetDateTime generatedAt;
-
-    @Column(name = "data", length = Integer.MAX_VALUE)
-    private String data;
+    @Column(name = "created_at")
+    private OffsetDateTime createdAt;
 
 }

@@ -18,7 +18,7 @@ public class SecurityConfig {
     private JwtAuthentificationFilter jwtAuthenticationFilter;
 
     @Autowired
-    private WebConfig  webConfig;
+    private WebConfig webConfig;
     public SecurityConfig(JwtAuthentificationFilter jwtAuthenticationFilter) {
         this.jwtAuthenticationFilter = jwtAuthenticationFilter;
     }
@@ -35,7 +35,7 @@ public class SecurityConfig {
                 .cors(cors -> cors.configurationSource(webConfig.corsConfigurationSource())) // Spring tự lấy bean CorsConfigurationSource
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers(
-                                ""
+                                "/auth/"
                         ).permitAll()
                         .anyRequest().authenticated()
                 )

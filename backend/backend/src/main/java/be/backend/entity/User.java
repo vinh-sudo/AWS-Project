@@ -40,6 +40,11 @@ public class User {
     @Column(name = "phone_number", length = 15)
     private String phoneNumber;
 
+    @Size(max = 20)
+    @ColumnDefault("'active'")
+    @Column(name = "status", length = 20)
+    private String status;
+
     @ColumnDefault("CURRENT_TIMESTAMP")
     @Column(name = "created_at")
     private OffsetDateTime createdAt;
@@ -48,18 +53,14 @@ public class User {
     @Column(name = "updated_at")
     private OffsetDateTime updatedAt;
 
-    @Size(max = 20)
-    @ColumnDefault("'active'")
-    @Column(name = "status", length = 20)
-    private String status;
-
-    @OneToMany
-    @JoinColumn(name = "user_id")
+    @OneToMany(mappedBy = "user")
     private Set<Account> accounts = new LinkedHashSet<>();
 
-    @OneToMany
-    @JoinColumn(name = "user_id")
+    @OneToMany(mappedBy = "user")
     private Set<AuditLog> auditLogs = new LinkedHashSet<>();
+
+    @OneToMany(mappedBy = "user")
+    private Set<Employee> employees = new LinkedHashSet<>();
 
     @OneToMany
     @JoinColumn(name = "user_id")

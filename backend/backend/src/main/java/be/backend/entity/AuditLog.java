@@ -23,7 +23,7 @@ public class AuditLog {
     @ManyToOne(fetch = FetchType.LAZY)
     @OnDelete(action = OnDeleteAction.CASCADE)
     @JoinColumn(name = "user_id")
-    private User user;
+    private be.backend.entity.User user;
 
     @Size(max = 50)
     @Column(name = "action_type", length = 50)
@@ -33,11 +33,11 @@ public class AuditLog {
     @Column(name = "entity", length = 100)
     private String entity;
 
+    @Column(name = "details", length = Integer.MAX_VALUE)
+    private String details;
+
     @ColumnDefault("CURRENT_TIMESTAMP")
     @Column(name = "\"timestamp\"")
     private OffsetDateTime timestamp;
-
-    @Column(name = "details", length = Integer.MAX_VALUE)
-    private String details;
 
 }

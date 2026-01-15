@@ -5,6 +5,8 @@ import jakarta.validation.constraints.NotNull;
 import lombok.Getter;
 import lombok.Setter;
 import org.hibernate.annotations.ColumnDefault;
+import org.hibernate.annotations.OnDelete;
+import org.hibernate.annotations.OnDeleteAction;
 
 import java.time.OffsetDateTime;
 
@@ -17,6 +19,11 @@ public class IncidentLog {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "incident_id", nullable = false)
     private Integer id;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @OnDelete(action = OnDeleteAction.CASCADE)
+    @JoinColumn(name = "line_id")
+    private ProductionLine line;
 
     @NotNull
     @Column(name = "description", nullable = false, length = Integer.MAX_VALUE)

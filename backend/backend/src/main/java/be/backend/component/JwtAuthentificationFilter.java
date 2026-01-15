@@ -1,5 +1,6 @@
 package be.backend.component;
 
+import be.backend.service.JwtService;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
@@ -17,8 +18,8 @@ import java.io.IOException;
 
 @Component
 public class JwtAuthentificationFilter extends OncePerRequestFilter {
-//    @Autowired
-//    private JwtService jwtService;
+    @Autowired
+    private JwtService jwtService;
 
     @Autowired
     private UserDetailsService userDetailsService;
@@ -42,20 +43,20 @@ public class JwtAuthentificationFilter extends OncePerRequestFilter {
 
 
         final String authHeader = request.getHeader("Authorization");
-//        if (authHeader != null && authHeader.startsWith("Bearer ")) {
-//            String jwt = authHeader.substring(7);
-//            String username = jwtService.extractUsername(jwt);
-//
-//            if (username != null && SecurityContextHolder.getContext().getAuthentication() == null) {
-//                UserDetails user = userDetailsService.loadUserByUsername(username);
-//                if (jwtService.isTokenValid(jwt, user)) {
-//                    UsernamePasswordAuthenticationToken authToken =
-//                            new UsernamePasswordAuthenticationToken(user, null, user.getAuthorities());
-//                    authToken.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
-//                    SecurityContextHolder.getContext().setAuthentication(authToken);
-//                }
-//            }
-//        }
+        if (authHeader != null && authHeader.startsWith("Bearer ")) {
+            String jwt = authHeader.substring(7);
+            String username = jwtService.extractUsername(jwt);
+
+            if (username != null && SecurityContextHolder.getContext().getAuthentication() == null) {
+                UserDetails user = userDetailsService.loadUserByUsername(username);
+                if (jwtService.isTokenValid(jwt, user)) {
+                    UsernamePasswordAuthenticationToken authToken =
+                            new UsernamePasswordAuthenticationToken(user, null, user.getAuthorities());
+                    authToken.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
+                    SecurityContextHolder.getContext().setAuthentication(authToken);
+                }
+            }
+        }
 
         filterChain.doFilter(request, response);
     }

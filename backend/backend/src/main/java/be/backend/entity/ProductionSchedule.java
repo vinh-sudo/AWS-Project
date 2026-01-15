@@ -9,6 +9,8 @@ import org.hibernate.annotations.OnDelete;
 import org.hibernate.annotations.OnDeleteAction;
 
 import java.time.OffsetDateTime;
+import java.util.LinkedHashSet;
+import java.util.Set;
 
 @Getter
 @Setter
@@ -40,5 +42,9 @@ public class ProductionSchedule {
     @ColumnDefault("'Scheduled'")
     @Column(name = "status", length = 20)
     private String status;
+
+    @OneToMany
+    @JoinColumn(name = "schedule_id")
+    private Set<ProductionProgress> productionProgresses = new LinkedHashSet<>();
 
 }
