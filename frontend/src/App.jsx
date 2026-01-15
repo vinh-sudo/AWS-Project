@@ -4,6 +4,7 @@ import ForgotPasswordPage from "./pages/forgotPasswordPage/ForgotPasswordPage";
 import OtpVerificationPage from "./pages/otpVerificationPage/OtpVerificationPage";
 import ResetPasswordPage from "./pages/resetPasswordPage/ResetPasswordPage";
 import DraftLayout from "./layouts/DraftLayout";
+import AdminPage from "./pages/adminPage/adminUser";
 import "./App.css";
 
 function App() {
@@ -16,6 +17,7 @@ function App() {
           <Route path="/forgot-password" element={<ForgotPasswordPage />} />
           <Route path="/otp-verification" element={<OtpVerificationPage />} />
           <Route path="/reset-password" element={<ResetPasswordPage />} />
+          <Route path="/admin" element={<AdminPage />} />
         </Route>
       </Routes>
     </BrowserRouter>
