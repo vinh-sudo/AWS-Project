@@ -33,4 +33,8 @@ public class Task {
     @Column(name = "status", length = 20)
     private String status;
 
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "employee_id")
+    private Employee employee;
+
 }
