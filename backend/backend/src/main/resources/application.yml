@@ -7,9 +7,9 @@
 
 spring:
   datasource:
-    url: jdbc:postgresql://${PGHOST}:${PGPORT}/${PGDATABASE}
-    username: ${PGUSER}
-    password: ${PGPASSWORD}
+    url: jdbc:postgresql://caboose.proxy.rlwy.net:16949/railway
+    username: postgres
+    password: yuNprLoYqGAMNGDqpVNuMKDIOjSLTCKc
     driver-class-name: org.postgresql.Driver
 
   jpa:
