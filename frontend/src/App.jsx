@@ -5,6 +5,11 @@ import OtpVerificationPage from "./pages/otpVerificationPage/OtpVerificationPage
 import ResetPasswordPage from "./pages/resetPasswordPage/ResetPasswordPage";
 import DraftLayout from "./layouts/DraftLayout";
 import AdminPage from "./pages/adminPage/adminUser";
+import AdminDashboard from "./pages/adminPage/AdminDashboard";
+import AuditLog from "./pages/adminPage/AuditLog";
+import ManagerDashboard from "./pages/managerPage/ManagerDashboard";
+import ManagerOrders from "./pages/managerPage/ManagerOrders";
+import ManagerScheduling from "./pages/managerPage/ManagerScheduling";
 import "./App.css";
 
 function App() {
@@ -18,6 +23,12 @@ function App() {
           <Route path="/otp-verification" element={<OtpVerificationPage />} />
           <Route path="/reset-password" element={<ResetPasswordPage />} />
           <Route path="/admin" element={<AdminPage />} />
+          <Route path="/admin/dashboard" element={<AdminDashboard />} />
+          <Route path="/admin/audit-log" element={<AuditLog />} />
+          <Route path="/manager" element={<ManagerDashboard />} />
+          <Route path="/manager/dashboard" element={<ManagerDashboard />} />
+          <Route path="/manager/orders" element={<ManagerOrders />} />
+          <Route path="/manager/scheduling" element={<ManagerScheduling />} />
         </Route>
       </Routes>
     </BrowserRouter>

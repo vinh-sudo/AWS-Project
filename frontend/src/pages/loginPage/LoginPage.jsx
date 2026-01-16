@@ -1,11 +1,16 @@
-import React from "react";
-import { Link } from "react-router-dom";
+import React, { useState } from "react";
+import { Link, useNavigate } from "react-router-dom";
 import { useFormik } from "formik";
 import * as Yup from "yup";
 import "./LoginPage.css";
 import imsLogo from "../../assets/ims2.jpg";
+import authService from "../../services/authService";
 
 const LoginPage = () => {
+  const navigate = useNavigate();
+  const [error, setError] = useState("");
+  const [loading, setLoading] = useState(false);
+
   const validationSchema = Yup.object({
     email: Yup.string().email("Invalid email").required("Email is required"),
     password: Yup.string()
@@ -19,9 +24,26 @@ const LoginPage = () => {
       password: "",
     },
     validationSchema,
-    onSubmit: (values) => {
-      // TODO: replace with real submit logic
-      console.log("Login submit", values);
+    onSubmit: async (values) => {
+      setError("");
+      setLoading(true);
+      try {
+        const user = await authService.login(values.email, values.password);
+        console.log("Login successful", user);
+
+        // Redirect based on role
+        if (user.role === "Admin") {
+          navigate("/admin");
+        } else if (user.role === "Manager") {
+          navigate("/manager/dashboard");
+        } else {
+          navigate("/dashboard");
+        }
+      } catch (err) {
+        setError(err.message);
+      } finally {
+        setLoading(false);
+      }
     },
   });
 
@@ -29,6 +51,7 @@ const LoginPage = () => {
     <div className="login-wrapper">
       <div className="login-container">
         <div className="login-heading">Sign In</div>
+        {error && <div className="login-error">{error}</div>}
         <form className="login-form" onSubmit={formik.handleSubmit} noValidate>
           <input
             required
@@ -67,12 +90,20 @@ const LoginPage = () => {
           <span className="forgot-password">
             <Link to="/forgot-password">Forgot Password ?</Link>
           </span>
-          <input
-            className="login-button"
-            type="submit"
-            defaultValue="Sign In"
-          />
+          <button className="login-button" type="submit" disabled={loading}>
+            {loading ? "Signing In..." : "Sign In"}
+          </button>
         </form>
+
+        {/* Mock credentials info for testing */}
+        <div className="mock-credentials">
+          <p>
+            <strong>Test Admin Account:</strong>
+          </p>
+          <p>Email: admin@ims.com</p>
+          <p>Password: admin123</p>
+        </div>
+
         <div className="logo-row">
           <img src={imsLogo} alt="IMS Logo" className="logo-item" />
         </div>
