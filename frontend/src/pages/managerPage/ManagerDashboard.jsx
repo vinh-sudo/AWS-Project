@@ -127,7 +127,10 @@ const ManagerDashboard = () => {
             <span className="nav-icon">📦</span>
             <span>Orders</span>
           </div>
-          <div className="nav-item" onClick={() => navigate("/manager/scheduling")}>
+          <div
+            className="nav-item"
+            onClick={() => navigate("/manager/scheduling")}
+          >
             <span className="nav-icon">📅</span>
             <span>Scheduling</span>
           </div>
@@ -272,7 +275,9 @@ const ManagerDashboard = () => {
                       <td>{order.deadline}</td>
                       <td>
                         <span
-                          className={`order-status ${getStatusClass(order.status)}`}
+                          className={`order-status ${getStatusClass(
+                            order.status
+                          )}`}
                         >
                           {order.status}
                         </span>

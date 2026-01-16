@@ -133,7 +133,10 @@ const ManagerOrders = () => {
         </div>
 
         <nav className="sidebar-nav">
-          <div className="nav-item" onClick={() => navigate("/manager/dashboard")}>
+          <div
+            className="nav-item"
+            onClick={() => navigate("/manager/dashboard")}
+          >
             <span className="nav-icon">📊</span>
             <span>Dashboard</span>
           </div>
@@ -141,7 +144,10 @@ const ManagerOrders = () => {
             <span className="nav-icon">📦</span>
             <span>Orders</span>
           </div>
-          <div className="nav-item" onClick={() => navigate("/manager/scheduling")}>
+          <div
+            className="nav-item"
+            onClick={() => navigate("/manager/scheduling")}
+          >
             <span className="nav-icon">📅</span>
             <span>Scheduling</span>
           </div>
@@ -190,7 +196,7 @@ const ManagerOrders = () => {
         <div className="manager-content">
           {/* Create Order Button */}
           <div className="action-bar">
-            <button 
+            <button
               className="create-order-btn"
               onClick={() => setShowCreateModal(true)}
             >
@@ -261,7 +267,11 @@ const ManagerOrders = () => {
                     <td>{order.product}</td>
                     <td>{order.deadline}</td>
                     <td>
-                      <span className={`order-status-badge ${getStatusClass(order.status)}`}>
+                      <span
+                        className={`order-status-badge ${getStatusClass(
+                          order.status
+                        )}`}
+                      >
                         {order.status}
                       </span>
                     </td>
@@ -275,11 +285,17 @@ const ManagerOrders = () => {
 
       {/* Create Order Modal */}
       {showCreateModal && (
-        <div className="modal-overlay" onClick={() => setShowCreateModal(false)}>
+        <div
+          className="modal-overlay"
+          onClick={() => setShowCreateModal(false)}
+        >
           <div className="modal-content" onClick={(e) => e.stopPropagation()}>
             <div className="modal-header">
               <h2>Create New Order</h2>
-              <button className="modal-close" onClick={() => setShowCreateModal(false)}>
+              <button
+                className="modal-close"
+                onClick={() => setShowCreateModal(false)}
+              >
                 ×
               </button>
             </div>
@@ -290,7 +306,9 @@ const ManagerOrders = () => {
                   <input
                     type="text"
                     value={newOrder.customer}
-                    onChange={(e) => setNewOrder({...newOrder, customer: e.target.value})}
+                    onChange={(e) =>
+                      setNewOrder({ ...newOrder, customer: e.target.value })
+                    }
                     placeholder="Enter customer name"
                     required
                   />
@@ -300,7 +318,9 @@ const ManagerOrders = () => {
                   <input
                     type="text"
                     value={newOrder.product}
-                    onChange={(e) => setNewOrder({...newOrder, product: e.target.value})}
+                    onChange={(e) =>
+                      setNewOrder({ ...newOrder, product: e.target.value })
+                    }
                     placeholder="Enter product name"
                     required
                   />
@@ -310,7 +330,9 @@ const ManagerOrders = () => {
                   <input
                     type="date"
                     value={newOrder.deadline}
-                    onChange={(e) => setNewOrder({...newOrder, deadline: e.target.value})}
+                    onChange={(e) =>
+                      setNewOrder({ ...newOrder, deadline: e.target.value })
+                    }
                     required
                   />
                 </div>
@@ -318,7 +340,12 @@ const ManagerOrders = () => {
                   <label>Production Line</label>
                   <select
                     value={newOrder.productionLine}
-                    onChange={(e) => setNewOrder({...newOrder, productionLine: e.target.value})}
+                    onChange={(e) =>
+                      setNewOrder({
+                        ...newOrder,
+                        productionLine: e.target.value,
+                      })
+                    }
                     required
                   >
                     <option value="">Select Line</option>
@@ -331,7 +358,11 @@ const ManagerOrders = () => {
                 </div>
               </div>
               <div className="modal-footer">
-                <button type="button" className="btn-cancel" onClick={() => setShowCreateModal(false)}>
+                <button
+                  type="button"
+                  className="btn-cancel"
+                  onClick={() => setShowCreateModal(false)}
+                >
                   Cancel
                 </button>
                 <button type="submit" className="btn-create">

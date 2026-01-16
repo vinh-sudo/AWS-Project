@@ -47,23 +47,23 @@ const ManagerScheduling = () => {
   // Check for schedule conflicts
   const checkConflict = (line, start, end) => {
     if (!line) return false;
-    
+
     const startMinutes = timeToMinutes(start);
     const endMinutes = timeToMinutes(end);
-    
-    return existingSchedules.some(schedule => {
+
+    return existingSchedules.some((schedule) => {
       if (schedule.line !== line) return false;
-      
+
       const scheduleStart = timeToMinutes(schedule.start);
       const scheduleEnd = timeToMinutes(schedule.end);
-      
+
       // Check for overlap
-      return (startMinutes < scheduleEnd && endMinutes > scheduleStart);
+      return startMinutes < scheduleEnd && endMinutes > scheduleStart;
     });
   };
 
   const timeToMinutes = (time) => {
-    const [hours, minutes] = time.split(':').map(Number);
+    const [hours, minutes] = time.split(":").map(Number);
     return hours * 60 + minutes;
   };
 
@@ -74,7 +74,7 @@ const ManagerScheduling = () => {
   };
 
   const handleTimeChange = (type, value) => {
-    if (type === 'start') {
+    if (type === "start") {
       setStartTime(value);
       setShowConflictWarning(checkConflict(selectedLine, value, endTime));
     } else {
@@ -89,14 +89,19 @@ const ManagerScheduling = () => {
       alert("Cannot schedule - time conflict exists!");
       return;
     }
-    console.log("Scheduling:", { selectedOrder, selectedLine, startTime, endTime });
+    console.log("Scheduling:", {
+      selectedOrder,
+      selectedLine,
+      startTime,
+      endTime,
+    });
     // Add scheduling logic here
   };
 
   const formatTimeDisplay = (time) => {
-    const [hours, minutes] = time.split(':');
+    const [hours, minutes] = time.split(":");
     const hour = parseInt(hours);
-    const ampm = hour >= 12 ? 'PM' : 'AM';
+    const ampm = hour >= 12 ? "PM" : "AM";
     const hour12 = hour % 12 || 12;
     return `${hour12}:${minutes} ${ampm}`;
   };
@@ -111,7 +116,10 @@ const ManagerScheduling = () => {
         </div>
 
         <nav className="sidebar-nav">
-          <div className="nav-item" onClick={() => navigate("/manager/dashboard")}>
+          <div
+            className="nav-item"
+            onClick={() => navigate("/manager/dashboard")}
+          >
             <span className="nav-icon">📊</span>
             <span>Dashboard</span>
           </div>
@@ -190,7 +198,9 @@ const ManagerScheduling = () => {
 
               {/* Select Production Line */}
               <div className="scheduling-form-group">
-                <label className="scheduling-label">Select Production Line</label>
+                <label className="scheduling-label">
+                  Select Production Line
+                </label>
                 <div className="scheduling-select-wrapper">
                   <select
                     className="scheduling-select"
@@ -218,10 +228,14 @@ const ManagerScheduling = () => {
                       type="time"
                       className="time-input"
                       value={startTime}
-                      onChange={(e) => handleTimeChange('start', e.target.value)}
+                      onChange={(e) =>
+                        handleTimeChange("start", e.target.value)
+                      }
                       required
                     />
-                    <span className="time-display">{formatTimeDisplay(startTime)}</span>
+                    <span className="time-display">
+                      {formatTimeDisplay(startTime)}
+                    </span>
                     <span className="time-icon">📅</span>
                   </div>
                   <span className="time-separator">~</span>
@@ -230,10 +244,12 @@ const ManagerScheduling = () => {
                       type="time"
                       className="time-input"
                       value={endTime}
-                      onChange={(e) => handleTimeChange('end', e.target.value)}
+                      onChange={(e) => handleTimeChange("end", e.target.value)}
                       required
                     />
-                    <span className="time-display">{formatTimeDisplay(endTime)}</span>
+                    <span className="time-display">
+                      {formatTimeDisplay(endTime)}
+                    </span>
                     <span className="time-icon">⏰</span>
                   </div>
                 </div>
@@ -251,8 +267,8 @@ const ManagerScheduling = () => {
 
               {/* Submit Button */}
               <div className="scheduling-actions">
-                <button 
-                  type="submit" 
+                <button
+                  type="submit"
                   className="btn-schedule"
                   disabled={showConflictWarning}
                 >

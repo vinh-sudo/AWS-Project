@@ -5,188 +5,188 @@
 
 /* Scheduling Card */
 .scheduling-card {
-  background: rgba(255, 255, 255, 0.95);
-  backdrop-filter: blur(10px);
-  border-radius: 20px;
-  padding: 35px 40px;
-  max-width: 600px;
-  margin: 0 auto;
-  box-shadow: 0 8px 30px rgba(0, 0, 0, 0.1);
+    background: rgba(255, 255, 255, 0.95);
+    backdrop-filter: blur(10px);
+    border-radius: 20px;
+    padding: 35px 40px;
+    max-width: 600px;
+    margin: 0 auto;
+    box-shadow: 0 8px 30px rgba(0, 0, 0, 0.1);
 }
 
 /* Form Group */
 .scheduling-form-group {
-  margin-bottom: 28px;
+    margin-bottom: 28px;
 }
 
 .scheduling-label {
-  display: block;
-  font-size: 1rem;
-  font-weight: 600;
-  color: #333;
-  margin-bottom: 12px;
+    display: block;
+    font-size: 1rem;
+    font-weight: 600;
+    color: #333;
+    margin-bottom: 12px;
 }
 
 /* Select Wrapper */
 .scheduling-select-wrapper {
-  position: relative;
+    position: relative;
 }
 
 .scheduling-select {
-  width: 100%;
-  padding: 16px 45px 16px 20px;
-  border: 1px solid rgba(0, 0, 0, 0.1);
-  border-radius: 12px;
-  font-size: 1rem;
-  background: white;
-  cursor: pointer;
-  transition: all 0.3s ease;
-  appearance: none;
-  color: #333;
+    width: 100%;
+    padding: 16px 45px 16px 20px;
+    border: 1px solid rgba(0, 0, 0, 0.1);
+    border-radius: 12px;
+    font-size: 1rem;
+    background: white;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    appearance: none;
+    color: #333;
 }
 
 .scheduling-select:focus {
-  outline: none;
-  border-color: #5ec8c4;
-  box-shadow: 0 0 0 3px rgba(94, 200, 196, 0.2);
+    outline: none;
+    border-color: #5ec8c4;
+    box-shadow: 0 0 0 3px rgba(94, 200, 196, 0.2);
 }
 
 .scheduling-select:hover {
-  border-color: #5ec8c4;
+    border-color: #5ec8c4;
 }
 
 .select-arrow {
-  position: absolute;
-  right: 18px;
-  top: 50%;
-  transform: translateY(-50%);
-  font-size: 0.8rem;
-  color: #666;
-  pointer-events: none;
+    position: absolute;
+    right: 18px;
+    top: 50%;
+    transform: translateY(-50%);
+    font-size: 0.8rem;
+    color: #666;
+    pointer-events: none;
 }
 
 /* Time Range */
 .time-range-container {
-  display: flex;
-  align-items: center;
-  gap: 15px;
+    display: flex;
+    align-items: center;
+    gap: 15px;
 }
 
 .time-input-wrapper {
-  flex: 1;
-  position: relative;
-  display: flex;
-  align-items: center;
-  background: white;
-  border: 1px solid rgba(0, 0, 0, 0.1);
-  border-radius: 12px;
-  padding: 12px 18px;
-  transition: all 0.3s ease;
+    flex: 1;
+    position: relative;
+    display: flex;
+    align-items: center;
+    background: white;
+    border: 1px solid rgba(0, 0, 0, 0.1);
+    border-radius: 12px;
+    padding: 12px 18px;
+    transition: all 0.3s ease;
 }
 
 .time-input-wrapper:focus-within {
-  border-color: #5ec8c4;
-  box-shadow: 0 0 0 3px rgba(94, 200, 196, 0.2);
+    border-color: #5ec8c4;
+    box-shadow: 0 0 0 3px rgba(94, 200, 196, 0.2);
 }
 
 .time-input {
-  position: absolute;
-  opacity: 0;
-  width: 100%;
-  height: 100%;
-  top: 0;
-  left: 0;
-  cursor: pointer;
+    position: absolute;
+    opacity: 0;
+    width: 100%;
+    height: 100%;
+    top: 0;
+    left: 0;
+    cursor: pointer;
 }
 
 .time-display {
-  flex: 1;
-  font-size: 1rem;
-  color: #333;
+    flex: 1;
+    font-size: 1rem;
+    color: #333;
 }
 
 .time-icon {
-  font-size: 1.2rem;
-  color: #666;
+    font-size: 1.2rem;
+    color: #666;
 }
 
 .time-separator {
-  font-size: 1.2rem;
-  color: #999;
-  font-weight: 300;
+    font-size: 1.2rem;
+    color: #999;
+    font-weight: 300;
 }
 
 /* Conflict Warning */
 .conflict-warning {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  background: rgba(255, 255, 255, 0.95);
-  border-radius: 12px;
-  padding: 18px 22px;
-  margin-bottom: 25px;
-  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.08);
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    background: rgba(255, 255, 255, 0.95);
+    border-radius: 12px;
+    padding: 18px 22px;
+    margin-bottom: 25px;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.08);
 }
 
 .warning-icon {
-  font-size: 1.8rem;
-  color: #FF9800;
+    font-size: 1.8rem;
+    color: #FF9800;
 }
 
 .warning-text {
-  font-size: 0.95rem;
-  color: #333;
-  flex: 1;
+    font-size: 0.95rem;
+    color: #333;
+    flex: 1;
 }
 
 /* Schedule Button */
 .scheduling-actions {
-  display: flex;
-  justify-content: center;
-  margin-top: 30px;
+    display: flex;
+    justify-content: center;
+    margin-top: 30px;
 }
 
 .btn-schedule {
-  background: linear-gradient(135deg, #5ec8c4 0%, #4a9d9a 100%);
-  color: white;
-  border: none;
-  padding: 14px 50px;
-  border-radius: 10px;
-  font-size: 1rem;
-  font-weight: 600;
-  cursor: pointer;
-  transition: all 0.3s ease;
-  box-shadow: 0 4px 15px rgba(94, 200, 196, 0.4);
+    background: linear-gradient(135deg, #5ec8c4 0%, #4a9d9a 100%);
+    color: white;
+    border: none;
+    padding: 14px 50px;
+    border-radius: 10px;
+    font-size: 1rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    box-shadow: 0 4px 15px rgba(94, 200, 196, 0.4);
 }
 
 .btn-schedule:hover:not(:disabled) {
-  transform: translateY(-2px);
-  box-shadow: 0 6px 20px rgba(94, 200, 196, 0.5);
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(94, 200, 196, 0.5);
 }
 
 .btn-schedule:disabled {
-  background: #ccc;
-  cursor: not-allowed;
-  box-shadow: none;
+    background: #ccc;
+    cursor: not-allowed;
+    box-shadow: none;
 }
 
 /* Responsive */
 @media (max-width: 768px) {
-  .scheduling-card {
-    padding: 25px;
-    margin: 0 15px;
-  }
-  
-  .time-range-container {
-    flex-direction: column;
-    gap: 10px;
-  }
-  
-  .time-separator {
-    display: none;
-  }
-  
-  .time-input-wrapper {
-    width: 100%;
-  }
+    .scheduling-card {
+        padding: 25px;
+        margin: 0 15px;
+    }
+
+    .time-range-container {
+        flex-direction: column;
+        gap: 10px;
+    }
+
+    .time-separator {
+        display: none;
+    }
+
+    .time-input-wrapper {
+        width: 100%;
+    }
 }
