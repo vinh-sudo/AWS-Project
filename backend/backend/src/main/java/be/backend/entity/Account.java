@@ -27,15 +27,16 @@ public class Account implements UserDetails {
     private Integer id;
 
     @NotNull
-    @ManyToOne(fetch = FetchType.LAZY, optional = false)
+    @OneToOne(fetch = FetchType.LAZY, optional = false)
     @OnDelete(action = OnDeleteAction.CASCADE)
     @JoinColumn(name = "user_id", nullable = false)
-    private be.backend.entity.User user;
+    private User user;
 
-    @Size(max = 20)
     @NotNull
-    @Column(name = "employee_code", nullable = false, length = 20)
-    private String employeeCode;
+    @OneToOne(fetch = FetchType.LAZY, optional = false)
+    @OnDelete(action = OnDeleteAction.CASCADE)
+    @JoinColumn(name = "employee_code", nullable = false, referencedColumnName = "employee_code")
+    private Employee employeeCode;
 
     @Size(max = 100)
     @NotNull
