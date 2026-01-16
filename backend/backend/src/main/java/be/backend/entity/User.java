@@ -57,7 +57,8 @@ public class User {
     @JoinColumn(name = "user_id")
     private Account account;
 
-    @OneToMany(mappedBy = "user")
+    @OneToMany
+    @JoinColumn(name = "user_id")
     private Set<AuditLog> auditLogs = new LinkedHashSet<>();
 
     @OneToOne(fetch = FetchType.LAZY)

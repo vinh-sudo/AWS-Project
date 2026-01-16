@@ -32,11 +32,10 @@ public class Account implements UserDetails {
     @JoinColumn(name = "user_id", nullable = false)
     private User user;
 
-    @NotNull
-    @OneToOne(fetch = FetchType.LAZY, optional = false)
+    @OneToOne(fetch = FetchType.LAZY)
     @OnDelete(action = OnDeleteAction.CASCADE)
-    @JoinColumn(name = "employee_code", nullable = false, referencedColumnName = "employee_code")
-    private Employee employeeCode;
+    @JoinColumn(name = "employee_id")
+    private Employee employee;
 
     @Size(max = 100)
     @NotNull

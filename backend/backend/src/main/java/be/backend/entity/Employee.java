@@ -43,7 +43,7 @@ public class Employee {
     private String status;
 
     @OneToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "employee_code")
+    @JoinColumn(name = "employee_id")
     private Account account;
 
     @OneToMany
