@@ -18,7 +18,7 @@ spring:
 jwt:
   secret: myVeryVeryVeryVeryVeryVerySecretKey1234567890
   expiration: 900000
-  refresh-expiration: 900000
+  refresh-expiration: 14400000
 
 logging:
   level:
