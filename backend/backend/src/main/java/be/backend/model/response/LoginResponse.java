@@ -13,7 +13,7 @@ public class LoginResponse{
 
     //info user
     private Long id;
-    private String emplyeeCode;
+    private String employeeCode;
     private String username;
     private String fullName;
     private String role;
