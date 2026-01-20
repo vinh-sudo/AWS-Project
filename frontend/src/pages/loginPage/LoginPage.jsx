@@ -41,16 +41,21 @@ const LoginPage = () => {
         console.log("Login successful", user);
 
         // Redirect based on role
-        if (user.role === "Admin") {
-          navigate("/admin");
-        } else if (user.role === "Manager") {
-          navigate("/manager/dashboard");
-        } else if (user.role === "Leader") {
-          navigate("/leader/tasks");
-        } else if (user.role === "Worker") {
-          navigate("/worker/tasks");
-        } else {
-          navigate("/dashboard");
+        switch (user.role) {
+          case "Admin":
+            navigate("/admin/approval");
+            break;
+          case "Manager":
+            navigate("/manager/tasks");
+            break;
+          case "Planner":
+            navigate("/planner/assignment");
+            break;
+          case "Leader":
+            navigate("/leader/progress");
+            break;
+          default:
+            navigate("/dashboard");
         }
       }
     },
@@ -111,8 +116,8 @@ const LoginPage = () => {
           </p>
           <p>Admin: admin@ims.com / admin123</p>
           <p>Manager: manager@ims.com / manager123</p>
+          <p>Planner: planner@ims.com / planner123</p>
           <p>Leader: leader@ims.com / leader123</p>
-          <p>Worker: worker@ims.com / worker123</p>
         </div>
 
         <div className="logo-row">

@@ -1,14 +1,14 @@
-/* Leader Task Assignment - New Workflow Styles */
+/* Planner Assignment Styles */
 
 /* Container */
-.leader-assignment-container {
+.planner-container {
     display: flex;
     min-height: 100vh;
     background: linear-gradient(135deg, #5ec8c4 0%, #f195b3 100%);
 }
 
 /* Sidebar */
-.leader-sidebar {
+.planner-sidebar {
     width: 260px;
     background: #fff;
     box-shadow: 2px 0 10px rgba(0, 0, 0, 0.1);
@@ -85,7 +85,7 @@
 }
 
 /* Main Content */
-.leader-main-content {
+.planner-main {
     flex: 1;
     margin-left: 260px;
     padding: 25px;
@@ -93,7 +93,7 @@
 }
 
 /* Header */
-.leader-page-header {
+.planner-header {
     display: flex;
     justify-content: space-between;
     align-items: flex-start;
@@ -104,18 +104,18 @@
     box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
 }
 
-.leader-page-header .header-left h1 {
+.planner-header .header-left h1 {
     font-size: 1.75rem;
     color: #333;
     margin-bottom: 5px;
 }
 
-.leader-page-header .header-left p {
+.planner-header .header-left p {
     color: #777;
     font-size: 0.9rem;
 }
 
-.leader-page-header .header-right {
+.planner-header .header-right {
     display: flex;
     align-items: center;
     gap: 20px;
@@ -232,7 +232,7 @@
     border-top-color: #4caf50;
 }
 
-.stat-card.assigned {
+.stat-card.scheduled {
     border-top-color: #2196f3;
 }
 
@@ -363,7 +363,7 @@
     color: #4caf50;
 }
 
-.status-badge.status-assigned {
+.status-badge.status-scheduled {
     background: rgba(33, 150, 243, 0.15);
     color: #2196f3;
 }
@@ -441,7 +441,7 @@
     margin-bottom: 10px;
 }
 
-.assignment-info {
+.schedule-info {
     display: flex;
     gap: 15px;
     padding: 12px 15px;
@@ -452,6 +452,34 @@
     margin-bottom: 10px;
 }
 
+/* Progress Section */
+.progress-section {
+    margin-bottom: 15px;
+}
+
+.progress-header {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 8px;
+    font-size: 0.9rem;
+    font-weight: 600;
+    color: #333;
+}
+
+.progress-bar {
+    height: 10px;
+    background: #e0e0e0;
+    border-radius: 5px;
+    overflow: hidden;
+}
+
+.progress-fill {
+    height: 100%;
+    background: linear-gradient(135deg, #5ec8c4 0%, #f195b3 100%);
+    border-radius: 5px;
+    transition: width 0.3s ease;
+}
+
 .task-actions {
     display: flex;
     gap: 12px;
@@ -460,7 +488,7 @@
     border-top: 1px solid #eee;
 }
 
-.btn-assign {
+.btn-schedule {
     padding: 10px 25px;
     background: linear-gradient(135deg, #5ec8c4 0%, #f195b3 100%);
     color: white;
@@ -471,7 +499,7 @@
     transition: all 0.3s;
 }
 
-.btn-assign:hover {
+.btn-schedule:hover {
     transform: translateY(-2px);
     box-shadow: 0 4px 12px rgba(94, 200, 196, 0.4);
 }
@@ -509,7 +537,9 @@
     background: #fff;
     border-radius: 15px;
     width: 90%;
-    max-width: 500px;
+    max-width: 550px;
+    max-height: 90vh;
+    overflow-y: auto;
     animation: modalSlideIn 0.3s ease;
 }
 
@@ -580,6 +610,12 @@
     font-size: 1.1rem;
 }
 
+.form-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 15px;
+}
+
 .form-group {
     margin-bottom: 15px;
 }
@@ -592,34 +628,43 @@
     font-size: 0.9rem;
 }
 
-.form-select {
+.form-input,
+.form-select,
+.form-textarea {
     width: 100%;
     padding: 12px 15px;
     border: 1px solid #ddd;
     border-radius: 8px;
     font-size: 0.95rem;
     font-family: inherit;
+    box-sizing: border-box;
 }
 
-.form-select:focus {
+.form-input:focus,
+.form-select:focus,
+.form-textarea:focus {
     border-color: #5ec8c4;
     box-shadow: 0 0 0 3px rgba(94, 200, 196, 0.15);
     outline: none;
 }
 
-.selected-worker-info {
+.form-textarea {
+    resize: vertical;
+}
+
+.selected-leader-info {
     padding: 15px;
     background: rgba(94, 200, 196, 0.1);
     border-radius: 10px;
-    margin-top: 15px;
+    margin-bottom: 15px;
 }
 
-.selected-worker-info h4 {
+.selected-leader-info h4 {
     margin-bottom: 10px;
     color: #5ec8c4;
 }
 
-.selected-worker-info p {
+.selected-leader-info p {
     margin-bottom: 5px;
     color: #555;
 }
@@ -647,7 +692,7 @@
     background: #e0e0e0;
 }
 
-.btn-assign-confirm {
+.btn-schedule-confirm {
     padding: 10px 25px;
     background: linear-gradient(135deg, #5ec8c4 0%, #f195b3 100%);
     color: white;
@@ -658,12 +703,12 @@
     transition: all 0.3s;
 }
 
-.btn-assign-confirm:hover:not(:disabled) {
+.btn-schedule-confirm:hover:not(:disabled) {
     transform: translateY(-2px);
     box-shadow: 0 4px 12px rgba(94, 200, 196, 0.4);
 }
 
-.btn-assign-confirm:disabled {
+.btn-schedule-confirm:disabled {
     opacity: 0.5;
     cursor: not-allowed;
 }
@@ -680,7 +725,7 @@
 }
 
 @media (max-width: 900px) {
-    .leader-sidebar {
+    .planner-sidebar {
         width: 70px;
     }
 
@@ -694,7 +739,7 @@
         padding: 14px;
     }
 
-    .leader-main-content {
+    .planner-main {
         margin-left: 70px;
     }
 
@@ -712,12 +757,16 @@
         grid-template-columns: 1fr;
     }
 
-    .leader-page-header {
+    .form-row {
+        grid-template-columns: 1fr;
+    }
+
+    .planner-header {
         flex-direction: column;
         gap: 15px;
     }
 
-    .leader-page-header .header-right {
+    .planner-header .header-right {
         width: 100%;
         flex-direction: column;
     }
@@ -735,13 +784,13 @@
         flex-direction: column;
     }
 
-    .btn-assign {
+    .btn-schedule {
         width: 100%;
         justify-content: center;
     }
 
     .approval-info,
-    .assignment-info {
+    .schedule-info {
         flex-direction: column;
         gap: 5px;
     }

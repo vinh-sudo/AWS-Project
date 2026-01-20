@@ -1,14 +1,12 @@
-/* Leader Task Assignment - New Workflow Styles */
-
-/* Container */
-.leader-assignment-container {
+/* Admin Approval Styles */
+.admin-approval-container {
     display: flex;
     min-height: 100vh;
     background: linear-gradient(135deg, #5ec8c4 0%, #f195b3 100%);
 }
 
 /* Sidebar */
-.leader-sidebar {
+.admin-sidebar {
     width: 260px;
     background: #fff;
     box-shadow: 2px 0 10px rgba(0, 0, 0, 0.1);
@@ -85,7 +83,7 @@
 }
 
 /* Main Content */
-.leader-main-content {
+.admin-main {
     flex: 1;
     margin-left: 260px;
     padding: 25px;
@@ -93,7 +91,7 @@
 }
 
 /* Header */
-.leader-page-header {
+.admin-header {
     display: flex;
     justify-content: space-between;
     align-items: flex-start;
@@ -104,42 +102,42 @@
     box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
 }
 
-.leader-page-header .header-left h1 {
+.header-left h1 {
     font-size: 1.75rem;
     color: #333;
     margin-bottom: 5px;
 }
 
-.leader-page-header .header-left p {
+.header-left p {
     color: #777;
     font-size: 0.9rem;
 }
 
-.leader-page-header .header-right {
+.header-right {
     display: flex;
     align-items: center;
     gap: 20px;
 }
 
-.approved-badge {
+.pending-badge {
     display: flex;
     align-items: center;
     gap: 10px;
     padding: 10px 20px;
-    background: rgba(76, 175, 80, 0.1);
+    background: rgba(255, 152, 0, 0.1);
     border-radius: 10px;
-    border: 1px solid rgba(76, 175, 80, 0.3);
+    border: 1px solid rgba(255, 152, 0, 0.3);
 }
 
-.approved-count {
+.pending-count {
     font-size: 1.5rem;
     font-weight: 700;
-    color: #4caf50;
+    color: #ff9800;
 }
 
-.approved-badge span:last-child {
+.pending-badge span:last-child {
     font-size: 0.85rem;
-    color: #4caf50;
+    color: #ff9800;
 }
 
 .user-info {
@@ -228,20 +226,20 @@
     border-top: 4px solid #e0e0e0;
 }
 
+.stat-card.pending {
+    border-top-color: #ff9800;
+}
+
 .stat-card.approved {
     border-top-color: #4caf50;
 }
 
-.stat-card.assigned {
+.stat-card.rejected {
+    border-top-color: #f44336;
+}
+
+.stat-card.total {
     border-top-color: #2196f3;
-}
-
-.stat-card.progress {
-    border-top-color: #9c27b0;
-}
-
-.stat-card.completed {
-    border-top-color: #009688;
 }
 
 .stat-number {
@@ -302,8 +300,8 @@
     transition: all 0.3s;
 }
 
-.task-card.approved {
-    border-left-color: #4caf50;
+.task-card.pending {
+    border-left-color: #ff9800;
 }
 
 .task-card:hover {
@@ -358,9 +356,19 @@
     font-weight: 600;
 }
 
+.status-badge.status-pending {
+    background: rgba(255, 152, 0, 0.15);
+    color: #ff9800;
+}
+
 .status-badge.status-approved {
     background: rgba(76, 175, 80, 0.15);
     color: #4caf50;
+}
+
+.status-badge.status-rejected {
+    background: rgba(244, 67, 54, 0.15);
+    color: #f44336;
 }
 
 .status-badge.status-assigned {
@@ -430,6 +438,19 @@
     margin-bottom: 15px;
 }
 
+.rejection-reason {
+    padding: 12px 15px;
+    background: rgba(244, 67, 54, 0.1);
+    border-radius: 8px;
+    font-size: 0.85rem;
+    color: #f44336;
+    margin-bottom: 15px;
+}
+
+.rejection-reason span {
+    font-weight: 600;
+}
+
 .approval-info {
     display: flex;
     gap: 15px;
@@ -438,18 +459,6 @@
     border-radius: 8px;
     font-size: 0.85rem;
     color: #4caf50;
-    margin-bottom: 10px;
-}
-
-.assignment-info {
-    display: flex;
-    gap: 15px;
-    padding: 12px 15px;
-    background: rgba(33, 150, 243, 0.1);
-    border-radius: 8px;
-    font-size: 0.85rem;
-    color: #2196f3;
-    margin-bottom: 10px;
 }
 
 .task-actions {
@@ -460,9 +469,9 @@
     border-top: 1px solid #eee;
 }
 
-.btn-assign {
+.btn-approve {
     padding: 10px 25px;
-    background: linear-gradient(135deg, #5ec8c4 0%, #f195b3 100%);
+    background: #4caf50;
     color: white;
     border: none;
     border-radius: 8px;
@@ -471,9 +480,26 @@
     transition: all 0.3s;
 }
 
-.btn-assign:hover {
+.btn-approve:hover {
+    background: #43a047;
     transform: translateY(-2px);
-    box-shadow: 0 4px 12px rgba(94, 200, 196, 0.4);
+    box-shadow: 0 4px 12px rgba(76, 175, 80, 0.4);
+}
+
+.btn-reject {
+    padding: 10px 25px;
+    background: transparent;
+    color: #f44336;
+    border: 1px solid #f44336;
+    border-radius: 8px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s;
+}
+
+.btn-reject:hover {
+    background: #f44336;
+    color: white;
 }
 
 .empty-state {
@@ -535,7 +561,7 @@
 
 .modal-header h2 {
     font-size: 1.25rem;
-    color: #5ec8c4;
+    color: #f44336;
 }
 
 .modal-close {
@@ -562,22 +588,15 @@
     padding: 20px;
 }
 
-.modal-task-info {
-    padding: 15px;
-    background: #f8f9fa;
-    border-radius: 10px;
-    margin-bottom: 20px;
-}
-
-.modal-task-info p {
-    margin-bottom: 8px;
+.modal-body p {
+    margin-bottom: 10px;
     color: #555;
 }
 
 .task-title-modal {
     font-weight: 600;
     color: #333;
-    font-size: 1.1rem;
+    margin-bottom: 20px !important;
 }
 
 .form-group {
@@ -592,36 +611,20 @@
     font-size: 0.9rem;
 }
 
-.form-select {
+.form-group textarea {
     width: 100%;
     padding: 12px 15px;
     border: 1px solid #ddd;
     border-radius: 8px;
     font-size: 0.95rem;
     font-family: inherit;
+    resize: vertical;
 }
 
-.form-select:focus {
-    border-color: #5ec8c4;
-    box-shadow: 0 0 0 3px rgba(94, 200, 196, 0.15);
+.form-group textarea:focus {
+    border-color: #f44336;
+    box-shadow: 0 0 0 3px rgba(244, 67, 54, 0.15);
     outline: none;
-}
-
-.selected-worker-info {
-    padding: 15px;
-    background: rgba(94, 200, 196, 0.1);
-    border-radius: 10px;
-    margin-top: 15px;
-}
-
-.selected-worker-info h4 {
-    margin-bottom: 10px;
-    color: #5ec8c4;
-}
-
-.selected-worker-info p {
-    margin-bottom: 5px;
-    color: #555;
 }
 
 .modal-actions {
@@ -647,9 +650,9 @@
     background: #e0e0e0;
 }
 
-.btn-assign-confirm {
+.btn-reject-confirm {
     padding: 10px 25px;
-    background: linear-gradient(135deg, #5ec8c4 0%, #f195b3 100%);
+    background: #f44336;
     color: white;
     border: none;
     border-radius: 8px;
@@ -658,12 +661,11 @@
     transition: all 0.3s;
 }
 
-.btn-assign-confirm:hover:not(:disabled) {
-    transform: translateY(-2px);
-    box-shadow: 0 4px 12px rgba(94, 200, 196, 0.4);
+.btn-reject-confirm:hover:not(:disabled) {
+    background: #d32f2f;
 }
 
-.btn-assign-confirm:disabled {
+.btn-reject-confirm:disabled {
     opacity: 0.5;
     cursor: not-allowed;
 }
@@ -680,7 +682,7 @@
 }
 
 @media (max-width: 900px) {
-    .leader-sidebar {
+    .admin-sidebar {
         width: 70px;
     }
 
@@ -694,7 +696,7 @@
         padding: 14px;
     }
 
-    .leader-main-content {
+    .admin-main {
         margin-left: 70px;
     }
 
@@ -712,17 +714,17 @@
         grid-template-columns: 1fr;
     }
 
-    .leader-page-header {
+    .admin-header {
         flex-direction: column;
         gap: 15px;
     }
 
-    .leader-page-header .header-right {
+    .header-right {
         width: 100%;
         flex-direction: column;
     }
 
-    .approved-badge {
+    .pending-badge {
         width: 100%;
         justify-content: center;
     }
@@ -735,14 +737,9 @@
         flex-direction: column;
     }
 
-    .btn-assign {
+    .btn-approve,
+    .btn-reject {
         width: 100%;
         justify-content: center;
-    }
-
-    .approval-info,
-    .assignment-info {
-        flex-direction: column;
-        gap: 5px;
     }
 }

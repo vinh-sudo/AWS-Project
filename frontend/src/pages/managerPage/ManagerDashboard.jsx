@@ -134,11 +134,14 @@ const ManagerDashboard = () => {
             <span className="nav-icon">📅</span>
             <span>Scheduling</span>
           </div>
-          <div className="nav-item">
+          <div className="nav-item" onClick={() => navigate("/manager/lines")}>
             <span className="nav-icon">🏭</span>
             <span>Production Lines</span>
           </div>
-          <div className="nav-item">
+          <div
+            className="nav-item"
+            onClick={() => navigate("/manager/reports")}
+          >
             <span className="nav-icon">📈</span>
             <span>Reports</span>
           </div>
