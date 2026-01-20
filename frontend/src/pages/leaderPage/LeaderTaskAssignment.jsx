@@ -1,66 +1,36 @@
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import authService from "../../services/authService";
+import { useDispatch, useSelector } from "react-redux";
+import {
+  logout,
+  selectUser,
+  selectAllTasks,
+  selectAllSchedules,
+  selectAllEmployees,
+  addTask,
+  updateTaskStatus,
+  deleteTask,
+} from "../../redux";
 import imsLogo from "../../assets/ims2.jpg";
 import "./LeaderTaskAssignment.css";
 
 const LeaderTaskAssignment = () => {
   const navigate = useNavigate();
-  const currentUser = authService.getCurrentUser();
+  const dispatch = useDispatch();
+  const currentUser = useSelector(selectUser);
 
   // Form states
   const [selectedSchedule, setSelectedSchedule] = useState("");
   const [selectedEmployee, setSelectedEmployee] = useState("");
   const [taskName, setTaskName] = useState("");
 
-  // Mock data for schedules
-  const schedules = [
-    { id: "SCH-001", name: "SCH-001 - Line A - 08:00-12:00", line: "Line A" },
-    { id: "SCH-002", name: "SCH-002 - Line B - 13:00-17:00", line: "Line B" },
-    { id: "SCH-003", name: "SCH-003 - Line C - 08:00-12:00", line: "Line C" },
-    { id: "SCH-004", name: "SCH-004 - Line A - 13:00-17:00", line: "Line A" },
-    { id: "SCH-005", name: "SCH-005 - Line D - 08:00-17:00", line: "Line D" },
-  ];
-
-  // Mock data for employees
-  const employees = [
-    { id: "EMP001", name: "John Smith" },
-    { id: "EMP002", name: "Jane Doe" },
-    { id: "EMP003", name: "Mike Johnson" },
-    { id: "EMP004", name: "Sarah Williams" },
-    { id: "EMP005", name: "David Brown" },
-  ];
-
-  // Task list state
-  const [tasks, setTasks] = useState([
-    {
-      id: 1,
-      taskName: "Machine Operation",
-      employeeId: "EMP001",
-      employeeName: "John Smith",
-      line: "Line A",
-      status: "Doing",
-    },
-    {
-      id: 2,
-      taskName: "Quality Inspection",
-      employeeId: "EMP002",
-      employeeName: "Jane Doe",
-      line: "Line B",
-      status: "Pending",
-    },
-    {
-      id: 3,
-      taskName: "Product Packaging",
-      employeeId: "EMP003",
-      employeeName: "Mike Johnson",
-      line: "Line A",
-      status: "Done",
-    },
-  ]);
+  // Get data from Redux store
+  const schedules = useSelector(selectAllSchedules);
+  const employees = useSelector(selectAllEmployees);
+  const tasks = useSelector(selectAllTasks);
 
   const handleLogout = () => {
-    authService.logout();
+    dispatch(logout());
     navigate("/login");
   };
 
@@ -82,16 +52,21 @@ const LeaderTaskAssignment = () => {
       return;
     }
 
+    const selectedScheduleData = schedules.find(
+      (s) => s.id === selectedSchedule
+    );
+
     const newTask = {
-      id: tasks.length + 1,
       taskName: taskName.trim(),
       employeeId: selectedEmployee,
       employeeName: getEmployeeName(selectedEmployee),
       line: getLineName(selectedSchedule),
+      startTime: selectedScheduleData?.startTime || "08:00",
+      endTime: selectedScheduleData?.endTime || "17:00",
       status: "Pending",
     };
 
-    setTasks([...tasks, newTask]);
+    dispatch(addTask(newTask));
 
     // Reset form
     setSelectedSchedule("");
@@ -115,16 +90,12 @@ const LeaderTaskAssignment = () => {
   };
 
   const handleUpdateStatus = (taskId, newStatus) => {
-    setTasks(
-      tasks.map((task) =>
-        task.id === taskId ? { ...task, status: newStatus } : task
-      )
-    );
+    dispatch(updateTaskStatus({ taskId, status: newStatus }));
   };
 
   const handleDeleteTask = (taskId) => {
     if (window.confirm("Are you sure you want to delete this task?")) {
-      setTasks(tasks.filter((task) => task.id !== taskId));
+      dispatch(deleteTask(taskId));
     }
   };
 

@@ -1,15 +1,17 @@
-import React, { useState } from "react";
+import React, { useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
+import { useDispatch, useSelector } from "react-redux";
 import { useFormik } from "formik";
 import * as Yup from "yup";
 import "./LoginPage.css";
 import imsLogo from "../../assets/ims2.jpg";
-import authService from "../../services/authService";
+import { login, clearError, selectIsLoading, selectError } from "../../redux";
 
 const LoginPage = () => {
   const navigate = useNavigate();
-  const [error, setError] = useState("");
-  const [loading, setLoading] = useState(false);
+  const dispatch = useDispatch();
+  const isLoading = useSelector(selectIsLoading);
+  const error = useSelector(selectError);
 
   const validationSchema = Yup.object({
     email: Yup.string().email("Invalid email").required("Email is required"),
@@ -18,6 +20,11 @@ const LoginPage = () => {
       .required("Password is required"),
   });
 
+  // Clear error on component mount
+  useEffect(() => {
+    dispatch(clearError());
+  }, [dispatch]);
+
   const formik = useFormik({
     initialValues: {
       email: "",
@@ -25,10 +32,12 @@ const LoginPage = () => {
     },
     validationSchema,
     onSubmit: async (values) => {
-      setError("");
-      setLoading(true);
-      try {
-        const user = await authService.login(values.email, values.password);
+      const result = await dispatch(
+        login({ email: values.email, password: values.password })
+      );
+
+      if (login.fulfilled.match(result)) {
+        const user = result.payload;
         console.log("Login successful", user);
 
         // Redirect based on role
@@ -43,10 +52,6 @@ const LoginPage = () => {
         } else {
           navigate("/dashboard");
         }
-      } catch (err) {
-        setError(err.message);
-      } finally {
-        setLoading(false);
       }
     },
   });
@@ -94,8 +99,8 @@ const LoginPage = () => {
           <span className="forgot-password">
             <Link to="/forgot-password">Forgot Password ?</Link>
           </span>
-          <button className="login-button" type="submit" disabled={loading}>
-            {loading ? "Signing In..." : "Sign In"}
+          <button className="login-button" type="submit" disabled={isLoading}>
+            {isLoading ? "Signing In..." : "Sign In"}
           </button>
         </form>
 
