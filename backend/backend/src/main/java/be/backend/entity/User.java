@@ -69,4 +69,8 @@ public class User {
     @JoinColumn(name = "user_id")
     private Set<Notification> notifications = new LinkedHashSet<>();
 
+    @OneToMany
+    @JoinColumn(name = "created_by")
+    private Set<Order> orders = new LinkedHashSet<>();
+
 }

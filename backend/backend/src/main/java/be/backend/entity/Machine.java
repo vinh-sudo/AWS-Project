@@ -58,6 +58,6 @@ public class Machine {
 
     @OneToMany
     @JoinColumn(name = "machine_id")
-    private Set<ProductionScheduleDetail> productionScheduleDetails = new LinkedHashSet<>();
+    private Set<IncidentLog> incidentLogs = new LinkedHashSet<>();
 
 }

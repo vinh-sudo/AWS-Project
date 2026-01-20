@@ -69,39 +69,32 @@ public class Account implements UserDetails {
     private OffsetDateTime updatedAt;
 
     @Override
-public Collection<? extends GrantedAuthority> getAuthorities() {
-    // Trả về danh sách quyền của user
-    // Chuyển role thành GrantedAuthority
-    return List.of(() -> role);  // SỬA: Trả về role thật, không phải List.of()
-    // Lambda () -> role tạo GrantedAuthority với getAuthority() return role
-}
+    public Collection<? extends GrantedAuthority> getAuthorities() {
+        return List.of();
+    }
 
-@Override
-public String getPassword() {
-    // QUAN TRỌNG: Phải return passwordHash để Spring Security verify
-    return passwordHash;  // SỬA: Return passwordHash, không phải ""
-}
+    @Override
+    public @Nullable String getPassword() {
+        return "";
+    }
 
-@Override
-public boolean isAccountNonExpired() {
-    return true;  // Account không bao giờ hết hạn
-}
+    @Override
+    public boolean isAccountNonExpired() {
+        return UserDetails.super.isAccountNonExpired();
+    }
 
-@Override
-public boolean isAccountNonLocked() {
-    // Chỉ active mới không bị lock
-    return "active".equals(status);  // SỬA: Check status
-}
+    @Override
+    public boolean isAccountNonLocked() {
+        return UserDetails.super.isAccountNonLocked();
+    }
 
-@Override
-public boolean isCredentialsNonExpired() {
-    return true;  // Credentials không hết hạn
-}
+    @Override
+    public boolean isCredentialsNonExpired() {
+        return UserDetails.super.isCredentialsNonExpired();
+    }
 
-@Override
-public boolean isEnabled() {
-    // Chỉ active mới enable
-    return "active".equals(status);  // SỬA: Check status
-}
-
+    @Override
+    public boolean isEnabled() {
+        return UserDetails.super.isEnabled();
+    }
 }

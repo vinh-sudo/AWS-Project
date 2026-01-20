@@ -18,6 +18,7 @@ CREATE TABLE employee (
                           user_id INT NOT NULL,
                           employee_code VARCHAR(20) UNIQUE NOT NULL,
                           position VARCHAR(50),
+                          employee_type VARCHAR(30) NOT NULL DEFAULT 'WORKER',
                           status VARCHAR(20) DEFAULT 'active',
 
                           CONSTRAINT fk_employee_user
@@ -27,6 +28,9 @@ CREATE TABLE employee (
 
                           CONSTRAINT uq_employee_user UNIQUE (user_id)
 );
+
+COMMENT ON COLUMN employee.employee_type IS
+'WORKER | LINE_LEADER | PLANNER | MANAGER';
 
 CREATE TABLE accounts (
                           account_id SERIAL PRIMARY KEY,
@@ -97,8 +101,13 @@ CREATE TABLE orders (
                         deadline TIMESTAMPTZ,
                         priority VARCHAR(20),
                         status VARCHAR(20) DEFAULT 'Draft',
+                        created_by INT NOT NULL,
                         created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
-                        updated_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP
+                        updated_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
+
+                        CONSTRAINT fk_order_created_by
+                            FOREIGN KEY (created_by)
+                                REFERENCES users(user_id)
 );
 
 CREATE TABLE order_items (
@@ -122,6 +131,7 @@ CREATE TABLE production_schedule (
                                      schedule_id SERIAL PRIMARY KEY,
                                      order_id INT NOT NULL,
                                      line_id INT NOT NULL,
+                                     leader_id INT NOT NULL,
                                      start_time TIMESTAMPTZ,
                                      end_time TIMESTAMPTZ,
                                      status VARCHAR(20) DEFAULT 'Scheduled',
@@ -134,34 +144,13 @@ CREATE TABLE production_schedule (
                                      CONSTRAINT fk_schedule_line
                                          FOREIGN KEY (line_id)
                                              REFERENCES production_line(line_id)
-                                             ON DELETE CASCADE
+                                             ON DELETE CASCADE,
+
+                                     CONSTRAINT fk_schedule_leader
+                                         FOREIGN KEY (leader_id)
+                                             REFERENCES employee(employee_id)
 );
 
-CREATE TABLE production_schedule_detail (
-                                            detail_id SERIAL PRIMARY KEY,
-                                            schedule_id INT NOT NULL,
-                                            machine_id INT NOT NULL,
-                                            employee_id INT NOT NULL,
-                                            work_date DATE NOT NULL,
-                                            shift VARCHAR(20),
-                                            start_time TIME,
-                                            end_time TIME,
-
-                                            CONSTRAINT fk_psd_schedule
-                                                FOREIGN KEY (schedule_id)
-                                                    REFERENCES production_schedule(schedule_id)
-                                                    ON DELETE CASCADE,
-
-                                            CONSTRAINT fk_psd_machine
-                                                FOREIGN KEY (machine_id)
-                                                    REFERENCES machine(machine_id)
-                                                    ON DELETE CASCADE,
-
-                                            CONSTRAINT fk_psd_employee
-                                                FOREIGN KEY (employee_id)
-                                                    REFERENCES employee(employee_id)
-                                                    ON DELETE CASCADE
-);
 
 CREATE TABLE production_progress (
                                      progress_id SERIAL PRIMARY KEY,
@@ -198,6 +187,7 @@ CREATE TABLE report (
                         report_id SERIAL PRIMARY KEY,
                         employee_id INT NOT NULL,
                         line_id INT NOT NULL,
+                        schedule_id INT NOT NULL,
                         work_date DATE NOT NULL,
                         shift VARCHAR(20),
                         produced_quantity INT,
@@ -213,6 +203,11 @@ CREATE TABLE report (
                         CONSTRAINT fk_report_line
                             FOREIGN KEY (line_id)
                                 REFERENCES production_line(line_id)
+                                ON DELETE CASCADE,
+
+                        CONSTRAINT fk_report_schedule
+                            FOREIGN KEY (schedule_id)
+                                REFERENCES production_schedule(schedule_id)
                                 ON DELETE CASCADE
 );
 
@@ -237,13 +232,31 @@ CREATE TABLE audit_log (
 CREATE TABLE incident_log (
                               incident_id SERIAL PRIMARY KEY,
                               line_id INT NOT NULL,
+                              schedule_id INT NOT NULL,
+                              machine_id INT,
+                              reported_by INT,
+                              incident_type VARCHAR(50),
+                              severity VARCHAR(10),
                               description TEXT NOT NULL,
                               timestamp TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
 
                               CONSTRAINT fk_incident_line
                                   FOREIGN KEY (line_id)
                                       REFERENCES production_line(line_id)
-                                      ON DELETE CASCADE
+                                      ON DELETE CASCADE,
+
+                              CONSTRAINT fk_incident_schedule
+                                  FOREIGN KEY (schedule_id)
+                                      REFERENCES production_schedule(schedule_id)
+                                      ON DELETE CASCADE,
+
+                              CONSTRAINT fk_incident_machine
+                                  FOREIGN KEY (machine_id)
+                                      REFERENCES machine(machine_id),
+
+                              CONSTRAINT fk_incident_reporter
+                                  FOREIGN KEY (reported_by)
+                                      REFERENCES employee(employee_id)
 );
 
 CREATE TABLE notification (
