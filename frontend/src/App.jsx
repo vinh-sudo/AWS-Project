@@ -10,6 +10,8 @@ import AuditLog from "./pages/adminPage/AuditLog";
 import ManagerDashboard from "./pages/managerPage/ManagerDashboard";
 import ManagerOrders from "./pages/managerPage/ManagerOrders";
 import ManagerScheduling from "./pages/managerPage/ManagerScheduling";
+import LeaderTaskAssignment from "./pages/leaderPage/LeaderTaskAssignment";
+import WorkerTasks from "./pages/workerPage/WorkerTasks";
 import "./App.css";
 
 function App() {
@@ -29,6 +31,10 @@ function App() {
           <Route path="/manager/dashboard" element={<ManagerDashboard />} />
           <Route path="/manager/orders" element={<ManagerOrders />} />
           <Route path="/manager/scheduling" element={<ManagerScheduling />} />
+          <Route path="/leader" element={<LeaderTaskAssignment />} />
+          <Route path="/leader/tasks" element={<LeaderTaskAssignment />} />
+          <Route path="/worker" element={<WorkerTasks />} />
+          <Route path="/worker/tasks" element={<WorkerTasks />} />
         </Route>
       </Routes>
     </BrowserRouter>

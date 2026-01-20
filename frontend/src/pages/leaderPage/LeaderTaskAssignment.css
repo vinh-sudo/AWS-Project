@@ -1,0 +1,470 @@
+/* Leader Task Assignment CSS */
+
+/* Container */
+.leader-container {
+    min-height: 100vh;
+    background: linear-gradient(135deg, #a8edea 0%, #fed6e3 100%);
+    font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+}
+
+/* Header */
+.leader-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 15px 40px;
+    background: rgba(255, 255, 255, 0.85);
+    backdrop-filter: blur(10px);
+    box-shadow: 0 2px 20px rgba(0, 0, 0, 0.1);
+}
+
+.header-left {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+}
+
+.header-logo {
+    width: 50px;
+    height: 50px;
+    border-radius: 12px;
+    object-fit: cover;
+}
+
+.header-title h1 {
+    margin: 0;
+    font-size: 1.8rem;
+    font-weight: 700;
+    background: linear-gradient(135deg, #5ec8c4 0%, #f195b3 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+}
+
+.header-subtitle {
+    font-size: 0.85rem;
+    color: #666;
+    font-weight: 500;
+}
+
+.header-right {
+    display: flex;
+    align-items: center;
+    gap: 20px;
+}
+
+.user-info {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+}
+
+.user-name {
+    font-weight: 600;
+    color: #333;
+}
+
+.user-role {
+    font-size: 0.8rem;
+    color: #5ec8c4;
+    font-weight: 500;
+}
+
+.btn-logout {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 10px 20px;
+    background: linear-gradient(135deg, #ff6b6b 0%, #ee5a5a 100%);
+    color: white;
+    border: none;
+    border-radius: 10px;
+    font-size: 0.9rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.btn-logout:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 5px 20px rgba(255, 107, 107, 0.4);
+}
+
+/* Main Content */
+.leader-main {
+    padding: 30px 40px;
+}
+
+.page-header {
+    margin-bottom: 30px;
+}
+
+.page-header h2 {
+    margin: 0 0 8px 0;
+    font-size: 2rem;
+    color: #333;
+    font-weight: 700;
+}
+
+.page-header p {
+    margin: 0;
+    color: #666;
+    font-size: 1rem;
+}
+
+/* Task Content Layout */
+.task-content {
+    display: grid;
+    grid-template-columns: 400px 1fr;
+    gap: 30px;
+}
+
+/* Assignment Card */
+.assignment-card {
+    background: rgba(255, 255, 255, 0.95);
+    backdrop-filter: blur(10px);
+    border-radius: 20px;
+    padding: 30px;
+    box-shadow: 0 8px 30px rgba(0, 0, 0, 0.1);
+    height: fit-content;
+}
+
+.card-title {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin: 0 0 25px 0;
+    font-size: 1.3rem;
+    color: #333;
+    font-weight: 700;
+}
+
+/* Form Styles */
+.assignment-form {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+}
+
+.form-group {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.form-label {
+    font-size: 0.95rem;
+    font-weight: 600;
+    color: #444;
+}
+
+.select-wrapper {
+    position: relative;
+}
+
+.form-select {
+    width: 100%;
+    padding: 14px 40px 14px 16px;
+    border: 2px solid #e0e0e0;
+    border-radius: 12px;
+    font-size: 0.95rem;
+    background: white;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    appearance: none;
+    color: #333;
+}
+
+.form-select:focus {
+    outline: none;
+    border-color: #5ec8c4;
+    box-shadow: 0 0 0 3px rgba(94, 200, 196, 0.2);
+}
+
+.form-select:hover {
+    border-color: #5ec8c4;
+}
+
+.select-arrow {
+    position: absolute;
+    right: 16px;
+    top: 50%;
+    transform: translateY(-50%);
+    font-size: 0.75rem;
+    color: #666;
+    pointer-events: none;
+}
+
+.form-input {
+    width: 100%;
+    padding: 14px 16px;
+    border: 2px solid #e0e0e0;
+    border-radius: 12px;
+    font-size: 0.95rem;
+    transition: all 0.3s ease;
+    box-sizing: border-box;
+}
+
+.form-input:focus {
+    outline: none;
+    border-color: #5ec8c4;
+    box-shadow: 0 0 0 3px rgba(94, 200, 196, 0.2);
+}
+
+.form-input::placeholder {
+    color: #999;
+}
+
+.form-actions {
+    margin-top: 10px;
+}
+
+.btn-assign {
+    width: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    padding: 16px 24px;
+    background: linear-gradient(135deg, #5ec8c4 0%, #f195b3 100%);
+    color: white;
+    border: none;
+    border-radius: 12px;
+    font-size: 1.1rem;
+    font-weight: 700;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.btn-assign:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 25px rgba(94, 200, 196, 0.4);
+}
+
+.btn-assign:active {
+    transform: translateY(0);
+}
+
+/* Task List Card */
+.task-list-card {
+    background: rgba(255, 255, 255, 0.95);
+    backdrop-filter: blur(10px);
+    border-radius: 20px;
+    padding: 30px;
+    box-shadow: 0 8px 30px rgba(0, 0, 0, 0.1);
+}
+
+.table-container {
+    overflow-x: auto;
+    margin-bottom: 20px;
+}
+
+/* Table Styles */
+.task-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.95rem;
+}
+
+.task-table th {
+    background: linear-gradient(135deg, #5ec8c4 0%, #f195b3 100%);
+    color: white;
+    padding: 16px 20px;
+    text-align: left;
+    font-weight: 600;
+    font-size: 0.9rem;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.task-table th:first-child {
+    border-radius: 12px 0 0 0;
+}
+
+.task-table th:last-child {
+    border-radius: 0 12px 0 0;
+}
+
+.task-table td {
+    padding: 16px 20px;
+    border-bottom: 1px solid #eee;
+    vertical-align: middle;
+}
+
+.task-table tbody tr {
+    transition: all 0.3s ease;
+}
+
+.task-table tbody tr:hover {
+    background: rgba(94, 200, 196, 0.05);
+}
+
+.task-table tbody tr:last-child td {
+    border-bottom: none;
+}
+
+.task-name-cell {
+    font-weight: 600;
+    color: #333;
+}
+
+.employee-cell {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.employee-id {
+    font-weight: 700;
+    color: #5ec8c4;
+    font-size: 0.9rem;
+}
+
+.employee-name {
+    font-size: 0.85rem;
+    color: #666;
+}
+
+.line-badge {
+    display: inline-block;
+    padding: 6px 14px;
+    background: linear-gradient(135deg, #5ec8c4 0%, #4db6b2 100%);
+    color: white;
+    border-radius: 20px;
+    font-size: 0.85rem;
+    font-weight: 600;
+}
+
+/* Status Select */
+.status-select {
+    padding: 8px 16px;
+    border: none;
+    border-radius: 20px;
+    font-size: 0.85rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.status-select.status-doing {
+    background: linear-gradient(135deg, #f195b3 0%, #e8879f 100%);
+    color: white;
+}
+
+.status-select.status-pending {
+    background: linear-gradient(135deg, #ffecd2 0%, #fcb69f 100%);
+    color: #8b5a2b;
+}
+
+.status-select.status-done {
+    background: linear-gradient(135deg, #5ec8c4 0%, #4db6b2 100%);
+    color: white;
+}
+
+.status-select:focus {
+    outline: none;
+    box-shadow: 0 0 0 3px rgba(94, 200, 196, 0.3);
+}
+
+/* Delete Button */
+.btn-delete {
+    padding: 8px 12px;
+    background: transparent;
+    border: none;
+    font-size: 1.1rem;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    border-radius: 8px;
+}
+
+.btn-delete:hover {
+    background: rgba(255, 107, 107, 0.1);
+    transform: scale(1.1);
+}
+
+/* Empty Message */
+.empty-message {
+    text-align: center;
+    color: #999;
+    font-style: italic;
+    padding: 40px !important;
+}
+
+/* Task Summary */
+.task-summary {
+    display: flex;
+    gap: 30px;
+    padding: 20px;
+    background: linear-gradient(135deg, rgba(94, 200, 196, 0.1) 0%, rgba(241, 149, 179, 0.1) 100%);
+    border-radius: 12px;
+    flex-wrap: wrap;
+}
+
+.summary-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.summary-label {
+    font-size: 0.9rem;
+    color: #666;
+}
+
+.summary-value {
+    font-size: 1rem;
+    font-weight: 700;
+    color: #333;
+}
+
+.summary-dot {
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+}
+
+.summary-dot.doing {
+    background: linear-gradient(135deg, #f195b3 0%, #e8879f 100%);
+}
+
+.summary-dot.pending {
+    background: linear-gradient(135deg, #ffecd2 0%, #fcb69f 100%);
+}
+
+.summary-dot.done {
+    background: linear-gradient(135deg, #5ec8c4 0%, #4db6b2 100%);
+}
+
+/* Responsive */
+@media (max-width: 1024px) {
+    .task-content {
+        grid-template-columns: 1fr;
+    }
+
+    .assignment-card {
+        max-width: 100%;
+    }
+}
+
+@media (max-width: 768px) {
+    .leader-header {
+        flex-direction: column;
+        gap: 15px;
+        padding: 15px 20px;
+    }
+
+    .leader-main {
+        padding: 20px;
+    }
+
+    .task-summary {
+        flex-direction: column;
+        gap: 15px;
+    }
+
+    .task-table th,
+    .task-table td {
+        padding: 12px 10px;
+        font-size: 0.85rem;
+    }
+}

@@ -40,12 +40,34 @@ export const mockUsers = [
     fullName: "Manager User",
     createdAt: "2025-01-15",
   },
+  {
+    id: 5,
+    username: "leader.user",
+    email: "leader@ims.com",
+    password: "leader123",
+    role: "Leader",
+    status: "Active",
+    fullName: "Team Leader",
+    createdAt: "2025-01-18",
+  },
+  {
+    id: 6,
+    username: "worker.user",
+    email: "worker@ims.com",
+    password: "worker123",
+    role: "Worker",
+    status: "Active",
+    fullName: "John Worker",
+    createdAt: "2025-01-20",
+  },
 ];
 
 // Role permissions
 export const rolePermissions = {
   Admin: ["dashboard", "users", "settings", "reports", "inventory", "orders"],
-  Manager: ["dashboard", "reports", "inventory", "orders"],
+  Manager: ["dashboard", "reports", "inventory", "orders", "scheduling"],
+  Leader: ["dashboard", "tasks", "employees"],
+  Worker: ["my-tasks"],
   Sales: ["dashboard", "orders", "inventory"],
   Planner: ["dashboard", "inventory", "reports"],
 };

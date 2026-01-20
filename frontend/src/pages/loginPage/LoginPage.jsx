@@ -36,6 +36,10 @@ const LoginPage = () => {
           navigate("/admin");
         } else if (user.role === "Manager") {
           navigate("/manager/dashboard");
+        } else if (user.role === "Leader") {
+          navigate("/leader/tasks");
+        } else if (user.role === "Worker") {
+          navigate("/worker/tasks");
         } else {
           navigate("/dashboard");
         }
@@ -98,10 +102,12 @@ const LoginPage = () => {
         {/* Mock credentials info for testing */}
         <div className="mock-credentials">
           <p>
-            <strong>Test Admin Account:</strong>
+            <strong>Test Accounts:</strong>
           </p>
-          <p>Email: admin@ims.com</p>
-          <p>Password: admin123</p>
+          <p>Admin: admin@ims.com / admin123</p>
+          <p>Manager: manager@ims.com / manager123</p>
+          <p>Leader: leader@ims.com / leader123</p>
+          <p>Worker: worker@ims.com / worker123</p>
         </div>
 
         <div className="logo-row">
