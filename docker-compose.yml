@@ -27,13 +27,6 @@ services:
       SPRING_DATASOURCE_PASSWORD: 12345
       SPRING_JPA_HIBERNATE_DDL_AUTO: validate
 
-  frontend:
-    build: ./frontend
-    container_name: react-frontend
-    depends_on:
-      - backend
-    ports:
-      - "3000:80"
 
 volumes:
   pgdata:
