@@ -22,9 +22,10 @@ public class Statistic {
     @Column(name = "statistic_id", nullable = false)
     private Integer id;
 
-    @ManyToOne(fetch = FetchType.LAZY)
+    @NotNull
+    @ManyToOne(fetch = FetchType.LAZY, optional = false)
     @OnDelete(action = OnDeleteAction.CASCADE)
-    @JoinColumn(name = "line_id")
+    @JoinColumn(name = "line_id", nullable = false)
     private ProductionLine line;
 
     @NotNull

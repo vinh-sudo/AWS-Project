@@ -53,14 +53,17 @@ public class User {
     @Column(name = "updated_at")
     private OffsetDateTime updatedAt;
 
-    @OneToMany(mappedBy = "user")
-    private Set<Account> accounts = new LinkedHashSet<>();
+    @OneToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "user_id")
+    private Account account;
 
-    @OneToMany(mappedBy = "user")
+    @OneToMany
+    @JoinColumn(name = "user_id")
     private Set<AuditLog> auditLogs = new LinkedHashSet<>();
 
-    @OneToMany(mappedBy = "user")
-    private Set<Employee> employees = new LinkedHashSet<>();
+    @OneToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "user_id")
+    private Employee employee;
 
     @OneToMany
     @JoinColumn(name = "user_id")

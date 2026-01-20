@@ -23,10 +23,10 @@ public class Employee {
     private Integer id;
 
     @NotNull
-    @ManyToOne(fetch = FetchType.LAZY, optional = false)
+    @OneToOne(fetch = FetchType.LAZY, optional = false)
     @OnDelete(action = OnDeleteAction.CASCADE)
     @JoinColumn(name = "user_id", nullable = false)
-    private be.backend.entity.User user;
+    private User user;
 
     @Size(max = 20)
     @NotNull
@@ -42,8 +42,16 @@ public class Employee {
     @Column(name = "status", length = 20)
     private String status;
 
+    @OneToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "employee_id")
+    private Account account;
+
     @OneToMany
     @JoinColumn(name = "employee_id")
-    private Set<be.backend.entity.Report> reports = new LinkedHashSet<>();
+    private Set<ProductionScheduleDetail> productionScheduleDetails = new LinkedHashSet<>();
+
+    @OneToMany
+    @JoinColumn(name = "employee_id")
+    private Set<Report> reports = new LinkedHashSet<>();
 
 }

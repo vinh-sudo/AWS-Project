@@ -1,6 +1,7 @@
 package be.backend.entity;
 
 import jakarta.persistence.*;
+import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
 import lombok.Getter;
 import lombok.Setter;
@@ -20,10 +21,11 @@ public class AuditLog {
     @Column(name = "log_id", nullable = false)
     private Integer id;
 
-    @ManyToOne(fetch = FetchType.LAZY)
+    @NotNull
+    @ManyToOne(fetch = FetchType.LAZY, optional = false)
     @OnDelete(action = OnDeleteAction.CASCADE)
-    @JoinColumn(name = "user_id")
-    private be.backend.entity.User user;
+    @JoinColumn(name = "user_id", nullable = false)
+    private User user;
 
     @Size(max = 50)
     @Column(name = "action_type", length = 50)
