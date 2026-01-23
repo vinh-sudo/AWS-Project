@@ -46,11 +46,20 @@ public class JwtService {
         return claims.getSubject();
     }
 
+    public Long getExpirationInSeconds(String token){
+        Date expiration = extractExpiration(token);
+        long diff = expiration.getTime() - System.currentTimeMillis();
+        return Math.max(diff / 1000, 0);// phai /1000 tai ms
+    }
     public Date extractExpiration(String token) {
         Claims claims = extractClaims(token);
         return claims.getExpiration();
     }
-
+    
+    public String extractTokenId(String token) {
+    Claims claims = extractClaims(token);
+    return claims.getId();  // jti claim
+}
     public boolean isTokenValid(String token, UserDetails userDetails) {
         String username = extractUsername(token);
         return username.equals(userDetails.getUsername()) && !extractExpiration(token).before(new Date());
@@ -66,4 +75,6 @@ public class JwtService {
     public boolean isTokenExpired(String token) {
         return extractExpiration(token).before(new Date());
     }
+
+    
 }
