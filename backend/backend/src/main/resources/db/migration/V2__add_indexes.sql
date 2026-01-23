@@ -1,68 +1,155 @@
--- =========================
--- V2: ADD INDEXES
--- =========================
+-- =====================================================
+-- V2: ADD INDEXES (PHÙ HỢP HOÀN TOÀN VỚI V1 CUỐI CÙNG)
+-- =====================================================
 
--- Users
-CREATE INDEX idx_users_email ON users(email);
-CREATE INDEX idx_users_status ON users(status);
+----------------------
+-- USERS & AUTH
+----------------------
 
--- Employee
-CREATE INDEX idx_employee_user_id ON employee(user_id);
-CREATE INDEX idx_employee_code ON employee(employee_code);
-CREATE INDEX idx_employee_status ON employee(status);
+CREATE INDEX idx_users_email
+    ON users(email);
 
--- Accounts
-CREATE INDEX idx_accounts_user_id ON accounts(user_id);
-CREATE INDEX idx_accounts_employee_id ON accounts(employee_id);
-CREATE INDEX idx_accounts_username ON accounts(username);
-CREATE INDEX idx_accounts_role ON accounts(role);
-CREATE INDEX idx_accounts_status ON accounts(status);
+CREATE INDEX idx_users_status
+    ON users(status);
 
--- Production Line
-CREATE INDEX idx_production_line_status ON production_line(status);
+CREATE INDEX idx_employee_user_id
+    ON employee(user_id);
 
--- Machine
-CREATE INDEX idx_machine_line_id ON machine(line_id);
-CREATE INDEX idx_machine_status ON machine(status);
+CREATE INDEX idx_employee_code
+    ON employee(employee_code);
 
--- Orders
-CREATE INDEX idx_orders_deadline ON orders(deadline);
-CREATE INDEX idx_orders_status ON orders(status);
-CREATE INDEX idx_orders_priority ON orders(priority);
+CREATE INDEX idx_employee_status
+    ON employee(status);
 
--- Order Items
-CREATE INDEX idx_order_items_order_id ON order_items(order_id);
+CREATE INDEX idx_accounts_user_id
+    ON accounts(user_id);
 
--- Production Schedule
-CREATE INDEX idx_schedule_order_id ON production_schedule(order_id);
-CREATE INDEX idx_schedule_line_id ON production_schedule(line_id);
-CREATE INDEX idx_schedule_status ON production_schedule(status);
+CREATE INDEX idx_accounts_employee_id
+    ON accounts(employee_id);
 
--- Production Schedule Detail (BỔ SUNG INDEX - bản của bạn thiếu)
-CREATE INDEX idx_psd_schedule_id ON production_schedule_detail(schedule_id);
-CREATE INDEX idx_psd_machine_id ON production_schedule_detail(machine_id);
-CREATE INDEX idx_psd_employee_id ON production_schedule_detail(employee_id);
-CREATE INDEX idx_psd_work_date ON production_schedule_detail(work_date);
+CREATE INDEX idx_accounts_username
+    ON accounts(username);
 
--- Production Progress
-CREATE INDEX idx_progress_schedule_id ON production_progress(schedule_id);
+CREATE INDEX idx_accounts_role
+    ON accounts(role);
 
--- Statistic
-CREATE INDEX idx_statistic_line_id ON statistic(line_id);
-CREATE INDEX idx_statistic_work_date ON statistic(work_date);
+CREATE INDEX idx_accounts_status
+    ON accounts(status);
 
--- Report
-CREATE INDEX idx_report_employee_id ON report(employee_id);
-CREATE INDEX idx_report_line_id ON report(line_id);
-CREATE INDEX idx_report_work_date ON report(work_date);
+----------------------
+-- PRODUCTION DOMAIN
+----------------------
 
--- Audit Log
-CREATE INDEX idx_audit_log_user_id ON audit_log(user_id);
-CREATE INDEX idx_audit_log_entity ON audit_log(entity);
+CREATE INDEX idx_production_line_status
+    ON production_line(status);
 
--- Incident Log
-CREATE INDEX idx_incident_line_id ON incident_log(line_id);
+CREATE INDEX idx_machine_line_id
+    ON machine(line_id);
 
--- Notification
-CREATE INDEX idx_notification_user_id ON notification(user_id);
-CREATE INDEX idx_notification_status ON notification(status);
+CREATE INDEX idx_machine_status
+    ON machine(status);
+
+----------------------
+-- ORDER DOMAIN
+----------------------
+
+CREATE INDEX idx_orders_deadline
+    ON orders(deadline);
+
+CREATE INDEX idx_orders_status
+    ON orders(status);
+
+CREATE INDEX idx_orders_priority
+    ON orders(priority);
+
+CREATE INDEX idx_orders_created_by
+    ON orders(created_by);
+
+CREATE INDEX idx_order_items_order_id
+    ON order_items(order_id);
+
+----------------------
+-- SCHEDULING DOMAIN
+----------------------
+
+CREATE INDEX idx_schedule_order_id
+    ON production_schedule(order_id);
+
+CREATE INDEX idx_schedule_line_id
+    ON production_schedule(line_id);
+
+CREATE INDEX idx_schedule_leader_id
+    ON production_schedule(leader_id);
+
+CREATE INDEX idx_schedule_status
+    ON production_schedule(status);
+
+CREATE INDEX idx_schedule_start_time
+    ON production_schedule(start_time);
+
+CREATE INDEX idx_progress_schedule_id
+    ON production_progress(schedule_id);
+
+CREATE INDEX idx_progress_status
+    ON production_progress(status);
+
+----------------------
+-- REPORT & STATISTIC
+----------------------
+
+CREATE INDEX idx_statistic_line_id
+    ON statistic(line_id);
+
+CREATE INDEX idx_statistic_work_date
+    ON statistic(work_date);
+
+-- Composite index cho dashboard (quan trọng)
+CREATE INDEX idx_statistic_line_date
+    ON statistic(line_id, work_date);
+
+CREATE INDEX idx_report_employee_id
+    ON report(employee_id);
+
+CREATE INDEX idx_report_line_id
+    ON report(line_id);
+
+CREATE INDEX idx_report_schedule_id
+    ON report(schedule_id);
+
+CREATE INDEX idx_report_work_date
+    ON report(work_date);
+
+-- Composite index cho báo cáo
+CREATE INDEX idx_report_line_date
+    ON report(line_id, work_date);
+
+----------------------
+-- LOG & NOTIFICATION
+----------------------
+
+CREATE INDEX idx_audit_log_user_id
+    ON audit_log(user_id);
+
+CREATE INDEX idx_audit_log_entity
+    ON audit_log(entity);
+
+CREATE INDEX idx_audit_log_timestamp
+    ON audit_log(timestamp);
+
+CREATE INDEX idx_incident_line_id
+    ON incident_log(line_id);
+
+CREATE INDEX idx_incident_schedule_id
+    ON incident_log(schedule_id);
+
+CREATE INDEX idx_incident_machine_id
+    ON incident_log(machine_id);
+
+CREATE INDEX idx_incident_reported_by
+    ON incident_log(reported_by);
+
+CREATE INDEX idx_notification_user_id
+    ON notification(user_id);
+
+CREATE INDEX idx_notification_status
+    ON notification(status);

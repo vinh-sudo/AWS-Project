@@ -7,11 +7,11 @@ import be.backend.entity.Account;
 import be.backend.model.response.LoginResponse;
 
 @Mapper(componentModel = "spring")
-public interface AccountMapper {  
-    @Mapping(target = "id", source = "id") 
+public interface AccountMapper {
+    @Mapping(target = "id", source = "id")
     @Mapping(target = "employeeCode", source = "employee.employeeCode")
     @Mapping(target = "fullName", source = "account", qualifiedByName = "getFullName")
-    @Mapping(target = "email", source = "user.email")  
+    @Mapping(target = "email", source = "user.email")
     @Mapping(target = "accessToken", ignore = true)      // Set sau trong Service
     @Mapping(target = "refreshToken", ignore = true)     // Set sau trong Service
     @Mapping(target = "tokenType", constant = "Bearer")  // Giá trị cố định

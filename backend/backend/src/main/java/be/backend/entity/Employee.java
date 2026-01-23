@@ -37,6 +37,12 @@ public class Employee {
     @Column(name = "\"position\"", length = 50)
     private String position;
 
+    @Size(max = 30)
+    @NotNull
+    @ColumnDefault("'WORKER'")
+    @Column(name = "employee_type", nullable = false, length = 30)
+    private String employeeType;
+
     @Size(max = 20)
     @ColumnDefault("'active'")
     @Column(name = "status", length = 20)
@@ -47,8 +53,12 @@ public class Employee {
     private Account account;
 
     @OneToMany
-    @JoinColumn(name = "employee_id")
-    private Set<ProductionScheduleDetail> productionScheduleDetails = new LinkedHashSet<>();
+    @JoinColumn(name = "reported_by")
+    private Set<IncidentLog> incidentLogs = new LinkedHashSet<>();
+
+    @OneToMany
+    @JoinColumn(name = "leader_id")
+    private Set<ProductionSchedule> productionSchedules = new LinkedHashSet<>();
 
     @OneToMany
     @JoinColumn(name = "employee_id")

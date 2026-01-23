@@ -35,6 +35,11 @@ public class ProductionSchedule {
     @JoinColumn(name = "line_id", nullable = false)
     private ProductionLine line;
 
+    @NotNull
+    @ManyToOne(fetch = FetchType.LAZY, optional = false)
+    @JoinColumn(name = "leader_id", nullable = false)
+    private Employee leader;
+
     @Column(name = "start_time")
     private OffsetDateTime startTime;
 
@@ -48,10 +53,14 @@ public class ProductionSchedule {
 
     @OneToMany
     @JoinColumn(name = "schedule_id")
+    private Set<IncidentLog> incidentLogs = new LinkedHashSet<>();
+
+    @OneToMany
+    @JoinColumn(name = "schedule_id")
     private Set<ProductionProgress> productionProgresses = new LinkedHashSet<>();
 
     @OneToMany
     @JoinColumn(name = "schedule_id")
-    private Set<ProductionScheduleDetail> productionScheduleDetails = new LinkedHashSet<>();
+    private Set<Report> reports = new LinkedHashSet<>();
 
 }
