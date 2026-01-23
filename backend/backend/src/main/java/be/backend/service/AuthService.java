@@ -93,8 +93,7 @@ public class AuthService {
         // 3. TẠO EMPLOYEE (nếu cần)
         Employee employee = null;
         String employeeCode = request.getEmployeeCode();
-        
-        if (requiresEmployeeRecord(request.getRole())) {
+       if (requiresEmployeeRecord(request.getRole())) {
             if (employeeCode == null || employeeCode.isBlank()) {
                 employeeCode = employeeCodeGenerator.generateEmployeeCode();
             } else {
@@ -105,6 +104,7 @@ public class AuthService {
             employee.setUser(savedUser);
             employee.setEmployeeCode(employeeCode);
             employee.setPosition(request.getPosition());
+            employee.setEmployeeType(mapRoleToEmployeeType(request.getRole()));  // THÊM DÒNG NÀY
             employee.setStatus("active");
             
             employee = employeeRepository.save(employee);
@@ -195,5 +195,12 @@ public class AuthService {
             .success(true)
             .build();
 }
+  private String mapRoleToEmployeeType(String role) {
+        return switch (role.toLowerCase()) {
+            case "manager" -> "MANAGER";
+            case "admin" -> "ADMIN";
+            default -> "WORKER";
+        };
+    }
 }
 
