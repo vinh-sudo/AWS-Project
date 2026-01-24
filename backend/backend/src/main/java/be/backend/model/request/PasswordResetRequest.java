@@ -4,7 +4,7 @@ import lombok.Data;
 
 @Data
 public class PasswordResetRequest {
-    private String email;
+    private String employeeCode;
     private String otp;
     private String newPassword;
 }

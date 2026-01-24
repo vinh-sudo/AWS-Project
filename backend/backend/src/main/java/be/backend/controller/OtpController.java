@@ -8,25 +8,26 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
-@RequestMapping("/otp/")
+@RequestMapping("/otp")
 @RequiredArgsConstructor
 public class OtpController {
-    private final OtpService otpService;
 
+    private final OtpService otpService;
     private final UserService userService;
 
+    // 1. Nhập employeeCode → gửi OTP về email
     @PostMapping("/forgot/request")
-    public ResponseEntity<?> requestPasswordOtp(@RequestParam String email) {
-        userService.checkEmailExists(email);
-        otpService.generateOtp(email);
-        return ResponseEntity.ok("OTP for password reset sent to " + email);
+    public ResponseEntity<?> requestPasswordOtp(@RequestParam String employeeCode) {
+        otpService.generateOtpByEmployeeCode(employeeCode);
+        return ResponseEntity.ok("OTP sent to employee email");
     }
 
+    // 2. Nhập OTP + mật khẩu mới
     @PostMapping("/forgot/verify")
     public ResponseEntity<?> verifyPasswordOtp(@RequestBody PasswordResetRequest request) {
 
         boolean valid = otpService.verifyOtp(
-                request.getEmail(),
+                request.getEmployeeCode(),
                 request.getOtp()
         );
 
@@ -35,7 +36,7 @@ public class OtpController {
         }
 
         userService.updatePassword(
-                request.getEmail(),
+                request.getEmployeeCode(),
                 request.getNewPassword()
         );
 
@@ -43,8 +44,9 @@ public class OtpController {
     }
 
     @PostMapping("/resend")
-    public ResponseEntity<?> resendOtp(@RequestParam String email) {
-        otpService.resendOtp(email);
-        return ResponseEntity.ok("OTP resent to " + email);
+    public ResponseEntity<?> resendOtp(@RequestParam String employeeCode) {
+        otpService.resendOtp(employeeCode);
+        return ResponseEntity.ok("OTP resent");
     }
 }
+

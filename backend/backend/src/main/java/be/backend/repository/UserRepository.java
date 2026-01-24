@@ -1,11 +1,13 @@
 package be.backend.repository;
 
 import be.backend.entity.User;
-import org.springframework.data.jpa.repository.JpaRepository;
 
 import java.util.Optional;
 
+import org.springframework.data.jpa.repository.JpaRepository;
+
+
 public interface UserRepository extends JpaRepository<User,Integer> {
     boolean existsByEmail(String email);
-    Optional<User> findUserByEmail(String email);
+
 }

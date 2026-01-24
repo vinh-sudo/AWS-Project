@@ -69,14 +69,17 @@ public class Account implements UserDetails {
     private OffsetDateTime updatedAt;
 
     @Override
-    public Collection<? extends GrantedAuthority> getAuthorities() {
+public Collection<? extends GrantedAuthority> getAuthorities() {
+    if (role == null || role.isBlank()) {
         return List.of();
     }
+    return List.of(() -> role);
+}
 
-    @Override
-    public @Nullable String getPassword() {
-        return "";
-    }
+@Override
+public String getPassword() {
+    return passwordHash;
+}
 
     @Override
     public boolean isAccountNonExpired() {

@@ -1,6 +1,7 @@
 package be.backend.component;
 
 import be.backend.service.JwtService;
+import be.backend.service.TokenBlacklistService;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
@@ -24,6 +25,9 @@ public class JwtAuthentificationFilter extends OncePerRequestFilter {
     @Autowired
     private UserDetailsService userDetailsService;
 
+    @Autowired
+    private TokenBlacklistService tokenBlacklistService;
+
     @Override
     protected void doFilterInternal(HttpServletRequest request,
                                     HttpServletResponse response,
@@ -32,7 +36,7 @@ public class JwtAuthentificationFilter extends OncePerRequestFilter {
         String path = request.getServletPath();
 
 
-        if (path.startsWith("/api/v1/auth/") ||
+        if (path.startsWith("/api/auth/") ||
                 path.startsWith("/otp") ||
                 path.startsWith("/api/vnpay/") ||
                 path.contains("/public")) {
@@ -45,6 +49,13 @@ public class JwtAuthentificationFilter extends OncePerRequestFilter {
         final String authHeader = request.getHeader("Authorization");
         if (authHeader != null && authHeader.startsWith("Bearer ")) {
             String jwt = authHeader.substring(7);
+
+             //  Check blacklist TRƯỚC khi xử lý
+        if (tokenBlacklistService.isBlacklisted(jwt)) {           
+            response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
+            response.getWriter().write("{\"error\": \"Token has been invalidated\"}");
+            return;  // Stop processing
+        }
             String username = jwtService.extractUsername(jwt);
 
             if (username != null && SecurityContextHolder.getContext().getAuthentication() == null) {

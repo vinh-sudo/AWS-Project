@@ -21,11 +21,8 @@ public class UserService {
         }
     }
 
-    public void updatePassword(String email, String newPassword) {
-        User user = userRepository.findUserByEmail(email)
-                .orElseThrow(() -> new BusinessException("User not found"));
-
-        Account account = accountRepository.findByUser(user)
+    public void updatePassword(String employeeCode, String newPassword) {
+        Account account = accountRepository.findByEmployeeCode(employeeCode)
                 .orElseThrow(() -> new BusinessException("Account not found"));
 
         account.setPasswordHash(passwordEncoder.encode(newPassword));
