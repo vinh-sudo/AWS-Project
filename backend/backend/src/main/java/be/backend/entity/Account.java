@@ -68,18 +68,30 @@ public class Account implements UserDetails {
     @Column(name = "updated_at")
     private OffsetDateTime updatedAt;
 
+    @Size(max = 255)
+    @Column(name = "refresh_token_hash")
+    private String refreshTokenHash;
+
+    @Column(name = "refresh_token_expired_at")
+    private OffsetDateTime refreshTokenExpiredAt;
+
+    @ColumnDefault("false")
+    @Column(name = "refresh_token_revoked")
+    private Boolean refreshTokenRevoked;
+
+    @ColumnDefault("CURRENT_TIMESTAMP")
+    @Column(name = "refresh_token_created_at")
+    private OffsetDateTime refreshTokenCreatedAt;
+
     @Override
-public Collection<? extends GrantedAuthority> getAuthorities() {
-    if (role == null || role.isBlank()) {
+    public Collection<? extends GrantedAuthority> getAuthorities() {
         return List.of();
     }
-    return List.of(() -> role);
-}
 
-@Override
-public String getPassword() {
-    return passwordHash;
-}
+    @Override
+    public @Nullable String getPassword() {
+        return "";
+    }
 
     @Override
     public boolean isAccountNonExpired() {

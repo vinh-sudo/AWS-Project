@@ -15,6 +15,13 @@ spring:
     locations: classpath:db/migration
     baseline-on-migrate: true
 
+  aws:
+    access-key:
+    secret-key:
+    region: ap-southeast-1
+    s3:
+      bucket: ten-bucket-cua-ban
+
   data:
     redis:
       host: evolving-muskox-40304.upstash.io
