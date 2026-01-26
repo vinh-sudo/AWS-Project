@@ -1,7 +1,7 @@
 package be.backend.service;
 
 
-import jakarta.mail.MessagingException;
+
 import jakarta.mail.internet.MimeMessage;
 import lombok.RequiredArgsConstructor;
 

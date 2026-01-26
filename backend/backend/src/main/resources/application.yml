@@ -15,13 +15,6 @@ spring:
     locations: classpath:db/migration
     baseline-on-migrate: true
 
-  aws:
-    access-key:
-    secret-key:
-    region: ap-southeast-1
-    s3:
-      bucket: ten-bucket-cua-ban
-
   data:
     redis:
       host: evolving-muskox-40304.upstash.io
@@ -41,6 +34,13 @@ spring:
           auth: true
           starttls:
             enable: true
+
+aws:
+  access-key: AKIAZJIX3IDXPSHJWQ3B
+  secret-key: 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
+  region: ap-southeast-1
+  bucket-name: ims-stores
+
 jwt:
   secret: myVeryVeryVeryVeryVeryVerySecretKey1234567890
   expiration: 900000
