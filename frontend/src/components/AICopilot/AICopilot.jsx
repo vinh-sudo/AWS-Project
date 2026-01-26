@@ -7,12 +7,13 @@ const AICopilot = ({ isOpen, onClose }) => {
       id: 1,
       type: "bot",
       content:
-        "Hello! I'm your AI Production Assistant. I can help you with:\n\n• Production scheduling optimization\n• Capacity analysis and recommendations\n• Order prioritization suggestions\n• Bottleneck identification\n• Performance insights\n\nHow can I assist you today?",
+        "Xin chào! Tôi là AI Production Assistant. Tôi có thể giúp bạn với:\n\n• Tối ưu hóa lịch sản xuất\n• Phân tích năng suất và đề xuất\n• Gợi ý ưu tiên đơn hàng\n• Xác định điểm nghẽn\n• Thông tin hiệu suất\n\nTôi có thể giúp gì cho bạn hôm nay?",
       timestamp: new Date(),
     },
   ]);
   const [inputValue, setInputValue] = useState("");
   const [isTyping, setIsTyping] = useState(false);
+  const [conversationHistory, setConversationHistory] = useState([]);
   const messagesEndRef = useRef(null);
 
   const scrollToBottom = () => {
@@ -23,60 +24,77 @@ const AICopilot = ({ isOpen, onClose }) => {
     scrollToBottom();
   }, [messages]);
 
-  // Simulated AI responses based on keywords
-  const getAIResponse = (userMessage) => {
-    const lowerMsg = userMessage.toLowerCase();
+  // Gọi API OpenRouter
+  const callOpenRouterAPI = async (userMessage) => {
+    const API_URL = "https://openrouter.ai/api/v1/chat/completions";
+    const API_KEY = "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";
 
-    if (lowerMsg.includes("schedule") || lowerMsg.includes("scheduling")) {
-      return "Based on current orders and line capacity, I recommend the following scheduling adjustments:\n\n📅 **Priority Orders:**\n1. ORD-001 (PCB-A100) - Deadline in 2 days, suggest allocating SMT Line 1\n2. ORD-003 (PCB-C300) - High priority, can run parallel on SMT Line 2\n\n⚠️ **Alert:** SMT Line 2 is at 72% OEE. Consider maintenance window before critical deadline.\n\n💡 **Optimization:** Shifting Test Line 1 schedule by 2 hours could reduce overall lead time by 15%.";
+    // Cập nhật conversation history
+    const updatedHistory = [
+      ...conversationHistory,
+      { role: "user", content: userMessage }
+    ];
+
+    const payload = {
+      model: "mistralai/devstral-2512:free",
+      messages: [
+        {
+          role: "system",
+          content: `Bạn là một AI Production Assistant chuyên nghiệp trong lĩnh vực quản lý sản xuất công nghiệp. 
+          
+Nhiệm vụ của bạn:
+- Hỗ trợ tối ưu hóa lịch sản xuất
+- Phân tích năng suất dây chuyền sản xuất
+- Đề xuất ưu tiên đơn hàng
+- Xác định và giải quyết điểm nghẽn (bottleneck)
+- Cung cấp thông tin KPI và hiệu suất
+- Dự đoán thời gian hoàn thành đơn hàng
+
+Trả lời bằng tiếng Việt, rõ ràng, chuyên nghiệp. Sử dụng emoji phù hợp để làm nổi bật thông tin quan trọng.`
+        },
+        ...updatedHistory
+      ]
+    };
+
+    try {
+      const response = await fetch(API_URL, {
+        method: "POST",
+        headers: {
+          "Authorization": `Bearer ${API_KEY}`,
+          "Content-Type": "application/json",
+          "HTTP-Referer": window.location.origin,
+          "X-Title": "IMS Production Copilot"
+        },
+        body: JSON.stringify(payload)
+      });
+
+      if (!response.ok) {
+        throw new Error(`HTTP Error: ${response.status}`);
+      }
+
+      const data = await response.json();
+
+      if (!data.choices || data.choices.length === 0) {
+        throw new Error("No response from API");
+      }
+
+      const assistantMessage = data.choices[0].message.content;
+
+      // Cập nhật conversation history với response
+      setConversationHistory([
+        ...updatedHistory,
+        { role: "assistant", content: assistantMessage }
+      ]);
+
+      return assistantMessage;
+    } catch (error) {
+      console.error("API Error:", error);
+      return `❌ Xin lỗi, đã xảy ra lỗi khi kết nối với AI. Vui lòng thử lại sau.\n\nChi tiết lỗi: ${error.message}`;
     }
-
-    if (lowerMsg.includes("capacity") || lowerMsg.includes("line")) {
-      return "📊 **Current Capacity Analysis:**\n\n• SMT Line 1: 85% utilized (500 boards/hr)\n• SMT Line 2: 72% utilized (Warning: Reflow Oven efficiency low)\n• Assembly Line 1: Idle - Available for scheduling\n• Test Line 1: 60% utilized (Burn-in Chamber in maintenance)\n\n**Total Available Capacity:** 1,450 units/hour\n**Current Demand:** 1,200 units/hour\n**Buffer:** 17% (Healthy)\n\n💡 **Recommendation:** Assembly Line 1 can be activated to handle overflow from high-priority orders.";
-    }
-
-    if (lowerMsg.includes("order") || lowerMsg.includes("priority")) {
-      return "📋 **Order Priority Analysis:**\n\n🔴 **Critical (Next 48 hours):**\n• ORD-001: 5000 units, 60% complete, Deadline: Tomorrow\n• ORD-005: 2000 units, Not started, Customer: VIP\n\n🟡 **High (3-5 days):**\n• ORD-003: 8000 units, 35% complete\n• ORD-007: 3500 units, In progress\n\n🟢 **Normal:**\n• ORD-002, ORD-004, ORD-006\n\n💡 **Suggestion:** Reassign 2 workers from Assembly to SMT Line 1 to accelerate ORD-001 completion.";
-    }
-
-    if (
-      lowerMsg.includes("bottleneck") ||
-      lowerMsg.includes("issue") ||
-      lowerMsg.includes("problem")
-    ) {
-      return "🔍 **Bottleneck Analysis:**\n\n**Identified Issues:**\n\n1. ⚠️ **Reflow Oven R2 (SMT Line 2)**\n   - Efficiency: 70% (Below threshold)\n   - Impact: 15% throughput reduction\n   - Recommendation: Schedule preventive maintenance\n\n2. ⚠️ **Test Line 1 Burn-in Chamber**\n   - Status: Under maintenance\n   - Expected resolution: 4 hours\n   - Workaround: Route urgent tests to Chamber B\n\n3. 📉 **Material Shortage**\n   - Component IC-2045: Low stock (200 units)\n   - Affected orders: ORD-003, ORD-007\n   - Action: Expedite procurement\n\n💡 Overall system efficiency can improve by 12% by addressing these issues.";
-    }
-
-    if (
-      lowerMsg.includes("performance") ||
-      lowerMsg.includes("kpi") ||
-      lowerMsg.includes("oee")
-    ) {
-      return "📈 **Performance Dashboard:**\n\n**Today's KPIs:**\n• Overall OEE: 72.3% (Target: 80%)\n• On-Time Delivery: 94.5%\n• Quality Rate: 99.2%\n• Availability: 87%\n\n**Trends (Last 7 days):**\n• OEE trending up (+3.5%)\n• Defect rate reduced by 0.8%\n\n**Areas for Improvement:**\n1. SMT Line 2 availability (78% → target 90%)\n2. Test cycle time optimization potential: 8%\n\n🏆 **Highlight:** Assembly Line achieved 100% quality for 15 consecutive days!";
-    }
-
-    if (lowerMsg.includes("help") || lowerMsg.includes("what can you do")) {
-      return 'I\'m your AI Production Assistant! Here\'s what I can help you with:\n\n📅 **Scheduling** - "Help me optimize the production schedule"\n\n📊 **Capacity** - "What\'s our current line capacity?"\n\n📋 **Orders** - "Show me order priorities"\n\n🔍 **Bottlenecks** - "Identify production bottlenecks"\n\n📈 **Performance** - "Show me today\'s KPIs"\n\n🔮 **Predictions** - "Predict completion time for ORD-001"\n\nJust ask naturally and I\'ll provide insights and recommendations!';
-    }
-
-    if (
-      lowerMsg.includes("predict") ||
-      lowerMsg.includes("forecast") ||
-      lowerMsg.includes("when")
-    ) {
-      return "🔮 **Predictive Analysis:**\n\n**Completion Time Estimates:**\n• ORD-001: ~14 hours (85% confidence)\n• ORD-003: ~36 hours (78% confidence)\n• ORD-005: ~8 hours if started now\n\n**Risk Assessment:**\n• 15% chance of delay on ORD-001 if Reflow Oven issue persists\n• 92% probability of meeting all deadlines this week\n\n**Recommended Actions:**\n1. Prioritize Reflow Oven maintenance (reduces delay risk by 40%)\n2. Pre-stage materials for ORD-005\n\n📊 These predictions are based on historical performance data and current conditions.";
-    }
-
-    // Default response
-    return (
-      "I understand you're asking about \"" +
-      userMessage +
-      "\". Let me help you with that.\n\nTo provide the most relevant insights, could you specify:\n\n• Are you looking at scheduling optimization?\n• Capacity and resource analysis?\n• Order management and priorities?\n• Performance metrics and KPIs?\n\nI'm here to help optimize your production operations!"
-    );
   };
 
-  const handleSendMessage = () => {
-    if (!inputValue.trim()) return;
+  const handleSendMessage = async () => {
+    if (!inputValue.trim() || isTyping) return;
 
     const userMessage = {
       id: messages.length + 1,
@@ -86,23 +104,31 @@ const AICopilot = ({ isOpen, onClose }) => {
     };
 
     setMessages((prev) => [...prev, userMessage]);
+    const currentInput = inputValue;
     setInputValue("");
     setIsTyping(true);
 
-    // Simulate AI thinking time
-    setTimeout(
-      () => {
-        const botResponse = {
-          id: messages.length + 2,
-          type: "bot",
-          content: getAIResponse(inputValue),
-          timestamp: new Date(),
-        };
-        setMessages((prev) => [...prev, botResponse]);
-        setIsTyping(false);
-      },
-      1000 + Math.random() * 1000
-    );
+    try {
+      const aiResponse = await callOpenRouterAPI(currentInput);
+      
+      const botResponse = {
+        id: messages.length + 2,
+        type: "bot",
+        content: aiResponse,
+        timestamp: new Date(),
+      };
+      setMessages((prev) => [...prev, botResponse]);
+    } catch (error) {
+      const errorResponse = {
+        id: messages.length + 2,
+        type: "bot",
+        content: "❌ Đã xảy ra lỗi. Vui lòng thử lại.",
+        timestamp: new Date(),
+      };
+      setMessages((prev) => [...prev, errorResponse]);
+    } finally {
+      setIsTyping(false);
+    }
   };
 
   const handleKeyPress = (e) => {
@@ -114,17 +140,39 @@ const AICopilot = ({ isOpen, onClose }) => {
 
   const quickActions = [
     {
-      label: "📅 Optimize Schedule",
-      query: "Help me optimize the production schedule",
+      label: "📅 Tối ưu lịch",
+      query: "Giúp tôi tối ưu hóa lịch sản xuất hôm nay",
     },
-    { label: "📊 Check Capacity", query: "What's our current line capacity?" },
-    { label: "🔍 Find Bottlenecks", query: "Identify production bottlenecks" },
-    { label: "📈 Show KPIs", query: "Show me today's performance KPIs" },
+    { 
+      label: "📊 Kiểm tra năng suất", 
+      query: "Phân tích năng suất các dây chuyền sản xuất hiện tại" 
+    },
+    { 
+      label: "🔍 Tìm điểm nghẽn", 
+      query: "Xác định các điểm nghẽn trong quy trình sản xuất" 
+    },
+    { 
+      label: "📈 Xem KPI", 
+      query: "Hiển thị các chỉ số KPI hiệu suất hôm nay" 
+    },
   ];
 
   const handleQuickAction = (query) => {
     setInputValue(query);
-    setTimeout(() => handleSendMessage(), 100);
+  };
+
+  // Xóa lịch sử hội thoại
+  const handleClearChat = () => {
+    setMessages([
+      {
+        id: 1,
+        type: "bot",
+        content:
+          "Xin chào! Tôi là AI Production Assistant. Tôi có thể giúp gì cho bạn?",
+        timestamp: new Date(),
+      },
+    ]);
+    setConversationHistory([]);
   };
 
   if (!isOpen) return null;
@@ -146,9 +194,19 @@ const AICopilot = ({ isOpen, onClose }) => {
               </span>
             </div>
           </div>
-          <button className="copilot-close" onClick={onClose}>
-            ×
-          </button>
+          <div style={{ display: "flex", gap: "8px" }}>
+            <button 
+              className="copilot-close" 
+              onClick={handleClearChat}
+              title="Xóa lịch sử chat"
+              style={{ fontSize: "1rem" }}
+            >
+              🗑️
+            </button>
+            <button className="copilot-close" onClick={onClose}>
+              ×
+            </button>
+          </div>
         </div>
 
         {/* Quick Actions */}
@@ -199,7 +257,7 @@ const AICopilot = ({ isOpen, onClose }) => {
         <div className="copilot-input-container">
           <textarea
             className="copilot-input"
-            placeholder="Ask me about production scheduling, capacity, orders..."
+            placeholder="Hỏi về lịch sản xuất, năng suất, đơn hàng..."
             value={inputValue}
             onChange={(e) => setInputValue(e.target.value)}
             onKeyPress={handleKeyPress}
@@ -216,7 +274,7 @@ const AICopilot = ({ isOpen, onClose }) => {
 
         {/* Footer */}
         <div className="copilot-footer">
-          <span>Powered by AI Production Intelligence</span>
+          <span>Powered by Mistral AI via OpenRouter</span>
         </div>
       </div>
     </div>
