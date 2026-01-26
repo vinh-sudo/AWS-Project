@@ -1,7 +1,6 @@
 import React from "react";
 import { NavLink, useNavigate } from "react-router-dom";
 import authService from "../../services/authService";
-import imsLogo from "../../assets/ims2.jpg";
 import "./ManagerSidebar.css";
 
 const ManagerSidebar = () => {
