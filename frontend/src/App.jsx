@@ -18,6 +18,8 @@ import ManagerDashboard from "./pages/managerPage/ManagerDashboard";
 import ManagerOrders from "./pages/managerPage/ManagerOrders";
 import ManagerScheduling from "./pages/managerPage/ManagerScheduling";
 import ManagerTasks from "./pages/managerPage/ManagerTasks";
+import ManagerProgress from "./pages/managerPage/ManagerProgress";
+import LineManagement from "./pages/managerPage/LineManagement";
 import PlannerAssignment from "./pages/plannerPage/PlannerAssignment";
 import PlannerScheduling from "./pages/plannerPage/PlannerScheduling";
 import PlannerReports from "./pages/plannerPage/PlannerReports";
@@ -57,20 +59,18 @@ function App() {
 
           {/* Manager Routes - Gộp chung tất cả chức năng quản lý */}
           <Route path="/manager" element={<ManagerDashboard />} />
+          <Route path="/manager/dashboard" element={<ManagerDashboard />} />
           <Route path="/manager/tasks" element={<ManagerTasks />} />
           <Route path="/manager/orders" element={<ManagerOrders />} />
           <Route path="/manager/scheduling" element={<ManagerScheduling />} />
+          <Route path="/manager/production-lines" element={<LineManagement />} />
+          <Route path="/manager/progress" element={<ManagerProgress />} />
+          <Route path="/manager/task-assignment" element={<ManagerTasks />} />
           <Route
             path="/manager/planner-scheduling"
             element={<PlannerScheduling />}
           />
           <Route path="/manager/assignment" element={<PlannerAssignment />} />
-          
-          <Route path="/manager/progress" element={<LeaderProgress />} />
-          <Route
-            path="/manager/task-assignment"
-            element={<LeaderTaskAssignment />}
-          />
           <Route path="/manager/reports" element={<Reports />} />
 
           {/* Planner Routes */}
