@@ -38,36 +38,21 @@ public class AuthController {
         return ResponseEntity.status(HttpStatus.CREATED).body(response);
     }
 
-    @PostMapping("/logout")
-    public ResponseEntity<LogoutResponse> logout(HttpServletRequest request) {
-        // Lấy token từ Header
-        String authHeader = request.getHeader("Authorization");
-        if (authHeader == null || !authHeader.startsWith("Bearer ")) {
-            throw new BusinessException("No token provided");
-        }
-
-        String token = authHeader.substring(7); // Remove "Bearer "
-        LogoutResponse response = authService.logout(token);
-        return ResponseEntity.ok(response);
+   @PostMapping("/logout")
+public ResponseEntity<LogoutResponse> logout(
+        HttpServletRequest request,
+        @RequestBody(required = false) LogoutRequest logoutRequest) {
+    
+    String authHeader = request.getHeader("Authorization");
+    if (authHeader == null || !authHeader.startsWith("Bearer ")) {
+        throw new BusinessException("No token provided");
     }
+    String accessToken = authHeader.substring(7);
+    String refreshToken = logoutRequest != null ? logoutRequest.getRefreshToken() : null;
 
-    // Optional: Logout all devices
-    @PostMapping("/logout-all")
-    public ResponseEntity<LogoutResponse> logoutAll(
-            HttpServletRequest request,
-            @RequestBody(required = false) LogoutRequest logoutRequest) {
+    LogoutResponse response = authService.logout(accessToken, refreshToken);
+    return ResponseEntity.ok(response);
+}
 
-        // Lấy access token từ Header
-        String authHeader = request.getHeader("Authorization");
-        if (authHeader == null || !authHeader.startsWith("Bearer ")) {
-            throw new BusinessException("No token provided");
-        }
-        String accessToken = authHeader.substring(7);
-
-        // Lấy refresh token từ body (nếu có)
-        String refreshToken = logoutRequest != null ? logoutRequest.getRefreshToken() : null;
-
-        LogoutResponse response = authService.logoutAll(accessToken, refreshToken);
-        return ResponseEntity.ok(response);
-    }
+   
 }
