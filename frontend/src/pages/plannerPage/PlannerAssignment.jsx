@@ -73,7 +73,7 @@ const PlannerAssignment = () => {
             t.status === "approved" ||
             t.status === "scheduled" ||
             t.status === "in-progress" ||
-            t.status === "completed"
+            t.status === "completed",
         );
     }
   };
@@ -109,7 +109,7 @@ const PlannerAssignment = () => {
             plannerNotes: notes,
             progress: 0,
           }
-        : t
+        : t,
     );
 
     saveTasks(updatedTasks);
@@ -165,7 +165,7 @@ const PlannerAssignment = () => {
   const approvedCount = tasks.filter((t) => t.status === "approved").length;
   const scheduledCount = tasks.filter((t) => t.status === "scheduled").length;
   const inProgressCount = tasks.filter(
-    (t) => t.status === "in-progress"
+    (t) => t.status === "in-progress",
   ).length;
   const completedCount = tasks.filter((t) => t.status === "completed").length;
 
@@ -175,13 +175,27 @@ const PlannerAssignment = () => {
       <aside className="planner-sidebar">
         <div className="sidebar-header">
           <img src={imsLogo} alt="IMS Logo" className="sidebar-logo" />
-          <span className="sidebar-title">IMS</span>
+          <span className="sidebar-title">IMS Planner</span>
         </div>
 
         <nav className="sidebar-nav">
           <div className="nav-item active">
             <span className="nav-icon">📅</span>
-            <span>Production Scheduling</span>
+            <span>Assignment</span>
+          </div>
+          <div
+            className="nav-item"
+            onClick={() => navigate("/planner/scheduling")}
+          >
+            <span className="nav-icon">🗓️</span>
+            <span>Scheduling</span>
+          </div>
+          <div
+            className="nav-item"
+            onClick={() => navigate("/planner/reports")}
+          >
+            <span className="nav-icon">📈</span>
+            <span>Reports</span>
           </div>
         </nav>
 

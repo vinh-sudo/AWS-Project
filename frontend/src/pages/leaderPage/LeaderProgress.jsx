@@ -93,7 +93,7 @@ const LeaderProgress = () => {
             lastUpdatedBy: currentLeaderName,
             completedAt: newProgress === 100 ? now : t.completedAt,
           }
-        : t
+        : t,
     );
 
     saveTasks(updatedTasks);
@@ -157,7 +157,7 @@ const LeaderProgress = () => {
   const filteredTasks = getFilteredTasks();
   const scheduledCount = myTasks.filter((t) => t.status === "scheduled").length;
   const inProgressCount = myTasks.filter(
-    (t) => t.status === "in-progress"
+    (t) => t.status === "in-progress",
   ).length;
   const completedCount = myTasks.filter((t) => t.status === "completed").length;
 
@@ -167,13 +167,20 @@ const LeaderProgress = () => {
       <aside className="leader-sidebar">
         <div className="sidebar-header">
           <img src={imsLogo} alt="IMS Logo" className="sidebar-logo" />
-          <span className="sidebar-title">IMS</span>
+          <span className="sidebar-title">IMS Leader</span>
         </div>
 
         <nav className="sidebar-nav">
           <div className="nav-item active">
             <span className="nav-icon">📊</span>
             <span>Progress Update</span>
+          </div>
+          <div
+            className="nav-item"
+            onClick={() => navigate("/leader/task-assignment")}
+          >
+            <span className="nav-icon">📋</span>
+            <span>Task Assignment</span>
           </div>
         </nav>
 
@@ -378,7 +385,7 @@ const LeaderProgress = () => {
                             </span>
                             <span className="history-time">
                               {new Date(entry.updatedAt).toLocaleString(
-                                "en-US"
+                                "en-US",
                               )}
                             </span>
                           </div>
@@ -472,8 +479,8 @@ const LeaderProgress = () => {
                       setNewProgress(
                         Math.min(
                           100,
-                          Math.max(0, parseInt(e.target.value) || 0)
-                        )
+                          Math.max(0, parseInt(e.target.value) || 0),
+                        ),
                       )
                     }
                     className="progress-number"
@@ -515,7 +522,7 @@ const LeaderProgress = () => {
                   <button
                     onClick={() =>
                       setProgressNote(
-                        "Encountering minor issues, working to resolve"
+                        "Encountering minor issues, working to resolve",
                       )
                     }
                   >

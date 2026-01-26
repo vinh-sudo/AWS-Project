@@ -233,20 +233,16 @@ const PlannerScheduling = () => {
           <span className="sidebar-title">IMS Planner</span>
         </div>
         <nav className="sidebar-nav">
+          <div
+            className="nav-item"
+            onClick={() => navigate("/planner/assignment")}
+          >
+            <span className="nav-icon">📋</span>
+            <span>Assignment</span>
+          </div>
           <div className="nav-item active">
             <span className="nav-icon">📅</span>
             <span>Scheduling</span>
-          </div>
-          <div className="nav-item" onClick={() => navigate("/planner/lines")}>
-            <span className="nav-icon">🏭</span>
-            <span>Lines</span>
-          </div>
-          <div
-            className="nav-item"
-            onClick={() => navigate("/planner/capacity")}
-          >
-            <span className="nav-icon">📊</span>
-            <span>Capacity</span>
           </div>
           <div
             className="nav-item"
@@ -373,14 +369,15 @@ const PlannerScheduling = () => {
                       {schedules
                         .filter(
                           (s) =>
-                            s.lineId === line.id && s.startDate === selectedDate
+                            s.lineId === line.id &&
+                            s.startDate === selectedDate,
                         )
                         .map((schedule) => {
                           const startHour = parseInt(
-                            schedule.startTime.split(":")[0]
+                            schedule.startTime.split(":")[0],
                           );
                           const endHour = parseInt(
-                            schedule.endTime.split(":")[0]
+                            schedule.endTime.split(":")[0],
                           );
                           const left = (startHour - 8) * 10;
                           const width = (endHour - startHour) * 10;
@@ -559,7 +556,7 @@ const PlannerScheduling = () => {
                   <option value="">-- Select Line --</option>
                   {productionLines
                     .filter((line) =>
-                      selectedOrder.requiredLines.includes(line.type)
+                      selectedOrder.requiredLines.includes(line.type),
                     )
                     .map((line) => (
                       <option key={line.id} value={line.id}>

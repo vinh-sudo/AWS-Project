@@ -56,7 +56,7 @@ const LeaderTaskAssignment = () => {
             t.status === "approved" ||
             t.status === "assigned" ||
             t.status === "in-progress" ||
-            t.status === "completed"
+            t.status === "completed",
         );
     }
   };
@@ -84,7 +84,7 @@ const LeaderTaskAssignment = () => {
             assignedBy: "Leader Tom Smith",
             assignedAt: new Date().toISOString(),
           }
-        : t
+        : t,
     );
 
     saveTasks(updatedTasks);
@@ -141,7 +141,7 @@ const LeaderTaskAssignment = () => {
   const approvedCount = tasks.filter((t) => t.status === "approved").length;
   const assignedCount = tasks.filter((t) => t.status === "assigned").length;
   const inProgressCount = tasks.filter(
-    (t) => t.status === "in-progress"
+    (t) => t.status === "in-progress",
   ).length;
   const completedCount = tasks.filter((t) => t.status === "completed").length;
 
@@ -151,10 +151,17 @@ const LeaderTaskAssignment = () => {
       <aside className="leader-sidebar">
         <div className="sidebar-header">
           <img src={imsLogo} alt="IMS Logo" className="sidebar-logo" />
-          <span className="sidebar-title">IMS</span>
+          <span className="sidebar-title">IMS Leader</span>
         </div>
 
         <nav className="sidebar-nav">
+          <div
+            className="nav-item"
+            onClick={() => navigate("/leader/progress")}
+          >
+            <span className="nav-icon">📊</span>
+            <span>Progress Update</span>
+          </div>
           <div className="nav-item active">
             <span className="nav-icon">📋</span>
             <span>Task Assignment</span>
