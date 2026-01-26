@@ -2,6 +2,9 @@ import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import authService from "../../services/authService";
 import imsLogo from "../../assets/ims2.jpg";
+import dashboardIcon from "../../assets/dashboard.jpg";
+import userIcon from "../../assets/user.jpg";
+import auditIcon from "../../assets/auditlog.jpg";
 import "./AdminApproval.css";
 
 const AdminApproval = () => {
@@ -137,26 +140,26 @@ const AdminApproval = () => {
             className="nav-item"
             onClick={() => navigate("/admin/dashboard")}
           >
-            <span className="nav-icon">📊</span>
+            <img src={dashboardIcon} alt="Dashboard" className="nav-icon-img" />
             <span>Dashboard</span>
           </div>
           <div className="nav-item active">
             <span className="nav-icon">✅</span>
             <span>Task Approval</span>
           </div>
-          <div className="nav-item" onClick={() => navigate("/admin")}>
-            <span className="nav-icon">👥</span>
-            <span>User Management</span>
+          <div className="nav-item" onClick={() => navigate("/admin/orders")}>
+            <span className="nav-icon">📦</span>
+            <span>Order Management</span>
           </div>
-          <div className="nav-item" onClick={() => navigate("/admin/lines")}>
-            <span className="nav-icon">🏭</span>
-            <span>Line Management</span>
+          <div className="nav-item" onClick={() => navigate("/admin")}>
+            <img src={userIcon} alt="Users" className="nav-icon-img" />
+            <span>User Management</span>
           </div>
           <div
             className="nav-item"
             onClick={() => navigate("/admin/audit-log")}
           >
-            <span className="nav-icon">📝</span>
+            <img src={auditIcon} alt="Audit Log" className="nav-icon-img" />
             <span>Audit Log</span>
           </div>
         </nav>

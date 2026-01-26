@@ -1,0 +1,85 @@
+.manager-sidebar {
+  width: 260px;
+  min-height: 100vh;
+  background: linear-gradient(180deg, #ffffff 0%, #f8f9fa 100%);
+  border-right: 1px solid #e0e0e0;
+  display: flex;
+  flex-direction: column;
+  position: sticky;
+  top: 0;
+}
+
+.manager-sidebar .sidebar-header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 20px;
+  border-bottom: 1px solid #e0e0e0;
+}
+
+.manager-sidebar .sidebar-logo {
+  width: 45px;
+  height: 45px;
+  border-radius: 12px;
+  object-fit: cover;
+}
+
+.manager-sidebar .sidebar-title {
+  font-size: 20px;
+  font-weight: 600;
+  color: #2196F3;
+}
+
+.manager-sidebar .sidebar-nav {
+  flex: 1;
+  padding: 15px 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  overflow-y: auto;
+}
+
+.manager-sidebar .nav-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 14px 18px;
+  border-radius: 12px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  color: #666;
+  font-size: 15px;
+  font-weight: 500;
+}
+
+.manager-sidebar .nav-item:hover {
+  background: rgba(33, 150, 243, 0.1);
+  color: #2196F3;
+}
+
+.manager-sidebar .nav-item.active {
+  background: linear-gradient(135deg, rgba(33, 150, 243, 0.15) 0%, rgba(76, 175, 80, 0.15) 100%);
+  color: #2196F3;
+  font-weight: 600;
+}
+
+.manager-sidebar .nav-icon {
+  font-size: 20px;
+  width: 24px;
+  text-align: center;
+}
+
+.manager-sidebar .sidebar-footer {
+  padding: 15px 10px;
+  border-top: 1px solid #e0e0e0;
+  margin-top: auto;
+}
+
+.manager-sidebar .nav-item.logout {
+  color: #f44336;
+}
+
+.manager-sidebar .nav-item.logout:hover {
+  background: rgba(244, 67, 54, 0.15);
+  color: #d32f2f;
+}

@@ -1,11 +1,9 @@
 import React, { useState } from "react";
-import { useNavigate } from "react-router-dom";
 import authService from "../../services/authService";
-import imsLogo from "../../assets/ims2.jpg";
+import ManagerSidebar from "../../components/ManagerSidebar/ManagerSidebar";
 import "./Reports.css";
 
 const Reports = () => {
-  const navigate = useNavigate();
   const currentUser = authService.getCurrentUser();
 
   const [activeTab, setActiveTab] = useState("overview");
@@ -117,11 +115,6 @@ const Reports = () => {
     },
   ];
 
-  const handleLogout = () => {
-    authService.logout();
-    navigate("/login");
-  };
-
   const getStatusClass = (status) => {
     switch (status) {
       case "Excellent":
@@ -157,34 +150,14 @@ const Reports = () => {
 
   return (
     <div className="reports-container">
-      {/* Sidebar - Simplified */}
-      <aside className="reports-sidebar">
-        <div className="sidebar-header">
-          <img src={imsLogo} alt="IMS Logo" className="sidebar-logo" />
-          <span className="sidebar-title">IMS Reports</span>
-        </div>
-        <nav className="sidebar-nav">
-          <div className="nav-item active">
-            <span className="nav-icon">📊</span>
-            <span>Reports & Analytics</span>
-          </div>
-        </nav>
-        <div className="sidebar-footer">
-          <div className="nav-item logout" onClick={handleLogout}>
-            <span className="nav-icon">🚪</span>
-            <span>Logout</span>
-          </div>
-        </div>
-      </aside>
+      {/* Sidebar */}
+      <ManagerSidebar />
 
       {/* Main Content */}
       <main className="reports-main">
         {/* Header */}
         <header className="reports-header">
           <div className="header-left">
-            <button className="btn-back" onClick={() => navigate(-1)}>
-              ← Back
-            </button>
             <div className="header-title">
               <h1>Reports & Analytics</h1>
               <p>Comprehensive production insights and KPIs</p>
@@ -213,11 +186,9 @@ const Reports = () => {
             </div>
             <div className="user-info">
               <span className="user-name">
-                {currentUser?.fullName || "User"}
+                {currentUser?.fullName || "Manager"}
               </span>
-              <span className="user-role">
-                {currentUser?.role || "Manager"}
-              </span>
+              <span className="user-role">Manager</span>
             </div>
           </div>
         </header>

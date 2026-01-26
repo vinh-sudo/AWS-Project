@@ -1,5 +1,4 @@
 import React, { useState } from "react";
-import { useNavigate } from "react-router-dom";
 import {
   LineChart,
   Line,
@@ -11,11 +10,10 @@ import {
   ResponsiveContainer,
 } from "recharts";
 import authService from "../../services/authService";
-import imsLogo from "../../assets/ims2.jpg";
+import ManagerSidebar from "../../components/ManagerSidebar/ManagerSidebar";
 import "./ManagerDashboard.css";
 
 const ManagerDashboard = () => {
-  const navigate = useNavigate();
   const currentUser = authService.getCurrentUser();
 
   // Mock data for stats
@@ -83,11 +81,6 @@ const ManagerDashboard = () => {
     },
   ]);
 
-  const handleLogout = () => {
-    authService.logout();
-    navigate("/login");
-  };
-
   const getStatusClass = (status) => {
     switch (status) {
       case "On Track":
@@ -112,48 +105,7 @@ const ManagerDashboard = () => {
   return (
     <div className="manager-container">
       {/* Sidebar */}
-      <div className="manager-sidebar">
-        <div className="sidebar-header">
-          <img src={imsLogo} alt="Logo" className="sidebar-logo" />
-          <div className="sidebar-title">IMS Manager</div>
-        </div>
-
-        <nav className="sidebar-nav">
-          <div className="nav-item active">
-            <span className="nav-icon">📊</span>
-            <span>Dashboard</span>
-          </div>
-          <div className="nav-item" onClick={() => navigate("/manager/orders")}>
-            <span className="nav-icon">📦</span>
-            <span>Orders</span>
-          </div>
-          <div
-            className="nav-item"
-            onClick={() => navigate("/manager/scheduling")}
-          >
-            <span className="nav-icon">📅</span>
-            <span>Scheduling</span>
-          </div>
-          <div className="nav-item" onClick={() => navigate("/manager/lines")}>
-            <span className="nav-icon">🏭</span>
-            <span>Production Lines</span>
-          </div>
-          <div
-            className="nav-item"
-            onClick={() => navigate("/manager/reports")}
-          >
-            <span className="nav-icon">📈</span>
-            <span>Reports</span>
-          </div>
-        </nav>
-
-        <div className="logout-item">
-          <div className="nav-item logout" onClick={handleLogout}>
-            <span className="nav-icon">🚪</span>
-            <span>Logout</span>
-          </div>
-        </div>
-      </div>
+      <ManagerSidebar />
 
       {/* Main Content */}
       <div className="manager-main">

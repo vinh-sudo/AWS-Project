@@ -1265,3 +1265,59 @@
     color: #6e6e73;
     font-size: 14px;
 }
+
+/* Action Button Styles */
+.action-button {
+    background: none;
+    border: none;
+    font-size: 16px;
+    cursor: pointer;
+    padding: 6px 8px;
+    border-radius: 8px;
+    transition: all 0.3s ease;
+    margin-right: 5px;
+}
+
+.action-button:hover {
+    background: rgba(94, 200, 196, 0.2);
+    transform: scale(1.1);
+}
+
+.action-button.delete:hover {
+    background: rgba(255, 77, 79, 0.2);
+}
+
+/* Delete Modal Styles */
+.delete-modal {
+    max-width: 400px;
+}
+
+.delete-message {
+    font-size: 16px;
+    color: #1d1d1f;
+    margin-bottom: 10px;
+}
+
+.delete-warning {
+    font-size: 14px;
+    color: #ff4d4f;
+    font-weight: 500;
+}
+
+.btn-delete {
+    background: linear-gradient(135deg, #ff4d4f 0%, #ff7875 100%);
+    color: white;
+    border: none;
+    padding: 12px 30px;
+    border-radius: 15px;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    box-shadow: rgba(255, 77, 79, 0.4) 0px 8px 15px -5px;
+}
+
+.btn-delete:hover {
+    transform: translateY(-2px);
+    box-shadow: rgba(255, 77, 79, 0.5) 0px 12px 20px -5px;
+}

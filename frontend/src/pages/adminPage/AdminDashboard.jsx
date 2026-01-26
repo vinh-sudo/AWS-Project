@@ -178,9 +178,17 @@ const AdminDashboard = () => {
             <img src={dashboardIcon} alt="Dashboard" className="nav-icon-img" />
             <span>Dashboard</span>
           </div>
+          <div className="nav-item" onClick={() => navigate("/admin/approval")}>
+            <span className="nav-icon">✅</span>
+            <span>Task Approval</span>
+          </div>
+          <div className="nav-item" onClick={() => navigate("/admin/orders")}>
+            <span className="nav-icon">📦</span>
+            <span>Order Management</span>
+          </div>
           <div className="nav-item" onClick={() => navigate("/admin")}>
             <img src={userIcon} alt="Users" className="nav-icon-img" />
-            <span>Users</span>
+            <span>User Management</span>
           </div>
           <div
             className="nav-item"

@@ -1,11 +1,9 @@
 import React, { useState } from "react";
-import { useNavigate } from "react-router-dom";
 import authService from "../../services/authService";
-import imsLogo from "../../assets/ims2.jpg";
+import ManagerSidebar from "../../components/ManagerSidebar/ManagerSidebar";
 import "./ManagerTasks.css";
 
 const ManagerTasks = () => {
-  const navigate = useNavigate();
   const currentUser = authService.getCurrentUser();
 
   const [showCreateModal, setShowCreateModal] = useState(false);
@@ -106,11 +104,6 @@ const ManagerTasks = () => {
     setTasks(updatedTasks);
   };
 
-  const handleLogout = () => {
-    authService.logout();
-    navigate("/login");
-  };
-
   const handleCreateTask = (e) => {
     e.preventDefault();
     const task = {
@@ -186,46 +179,7 @@ const ManagerTasks = () => {
   return (
     <div className="manager-tasks-container">
       {/* Sidebar */}
-      <aside className="manager-sidebar">
-        <div className="sidebar-header">
-          <img src={imsLogo} alt="IMS Logo" className="sidebar-logo" />
-          <span className="sidebar-title">IMS Manager</span>
-        </div>
-        <nav className="sidebar-nav">
-          <div
-            className="nav-item"
-            onClick={() => navigate("/manager/dashboard")}
-          >
-            <span className="nav-icon">📊</span>
-            <span>Dashboard</span>
-          </div>
-          <div className="nav-item active">
-            <span className="nav-icon">📋</span>
-            <span>Task Management</span>
-          </div>
-          <div className="nav-item" onClick={() => navigate("/manager/orders")}>
-            <span className="nav-icon">📦</span>
-            <span>Orders</span>
-          </div>
-          <div
-            className="nav-item"
-            onClick={() => navigate("/manager/scheduling")}
-          >
-            <span className="nav-icon">📅</span>
-            <span>Scheduling</span>
-          </div>
-          <div className="nav-item" onClick={() => navigate("/reports")}>
-            <span className="nav-icon">📈</span>
-            <span>Reports</span>
-          </div>
-        </nav>
-        <div className="sidebar-footer">
-          <div className="nav-item logout" onClick={handleLogout}>
-            <span className="nav-icon">🚪</span>
-            <span>Logout</span>
-          </div>
-        </div>
-      </aside>
+      <ManagerSidebar />
 
       {/* Main Content */}
       <main className="manager-main">

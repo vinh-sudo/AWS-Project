@@ -4,81 +4,19 @@
 .manager-container {
     display: flex;
     min-height: 100vh;
-    background: linear-gradient(135deg, #a8edea 0%, #fed6e3 100%);
+    background: linear-gradient(135deg, #f5f7fa 0%, #e4e9f2 100%);
 }
 
-/* Sidebar */
-.manager-sidebar {
-    width: 260px;
-    background: linear-gradient(135deg, #5ec8c4 0%, #f195b3 100%);
-    color: white;
+/* Main Content - adjusted for sidebar */
+.manager-main {
+    flex: 1;
+    margin-left: 0;
     display: flex;
     flex-direction: column;
-    box-shadow: 4px 0 15px rgba(0, 0, 0, 0.1);
+    min-height: 100vh;
 }
 
-.sidebar-header {
-    padding: 25px 20px;
-    display: flex;
-    align-items: center;
-    gap: 15px;
-    border-bottom: 1px solid rgba(255, 255, 255, 0.2);
-}
-
-.sidebar-logo {
-    width: 50px;
-    height: 50px;
-    border-radius: 10px;
-    object-fit: cover;
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
-}
-
-.sidebar-title {
-    font-size: 1.4rem;
-    font-weight: bold;
-    text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.1);
-}
-
-.sidebar-nav {
-    flex: 1;
-    padding: 20px 0;
-}
-
-.nav-item {
-    display: flex;
-    align-items: center;
-    gap: 15px;
-    padding: 15px 25px;
-    cursor: pointer;
-    transition: all 0.3s ease;
-    font-size: 1rem;
-    border-left: 4px solid transparent;
-}
-
-.nav-item:hover {
-    background: rgba(255, 255, 255, 0.15);
-    border-left-color: white;
-}
-
-.nav-item.active {
-    background: rgba(255, 255, 255, 0.25);
-    border-left-color: white;
-    font-weight: 600;
-}
-
-.nav-icon {
-    font-size: 1.3rem;
-}
-
-.logout-item {
-    margin-top: auto;
-    padding: 20px 0;
-    border-top: 1px solid rgba(255, 255, 255, 0.2);
-}
-
-.nav-item.logout:hover {
-    background: rgba(255, 100, 100, 0.3);
-}
+/* Remove old sidebar styles - now using ManagerSidebar component */
 
 /* Main Content */
 .manager-main {
