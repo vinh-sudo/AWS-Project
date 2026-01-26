@@ -167,7 +167,7 @@ const AdminDashboard = () => {
       <div className="admin-sidebar">
         <div className="sidebar-header">
           <img src={imsLogo} alt="Logo" className="sidebar-logo" />
-          <div className="sidebar-title">IMS Admin</div>
+          <div className="sidebar-title">IMS ADMIN</div>
         </div>
 
         <nav className="sidebar-nav">
@@ -445,7 +445,7 @@ const AdminDashboard = () => {
                 <div className="filter-info">
                   <span
                     className={`status-filter-badge ${getStatusClass(
-                      selectedStatus
+                      selectedStatus,
                     )}`}
                   >
                     Showing: {selectedStatus}
@@ -475,7 +475,7 @@ const AdminDashboard = () => {
                         <td>
                           <span
                             className={`line-status ${getStatusClass(
-                              line.status
+                              line.status,
                             )}`}
                           >
                             {line.status}
