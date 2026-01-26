@@ -84,32 +84,37 @@ public class Account implements UserDetails {
     private OffsetDateTime refreshTokenCreatedAt;
 
     @Override
-    public Collection<? extends GrantedAuthority> getAuthorities() {
-        return List.of();
+public Collection<? extends GrantedAuthority> getAuthorities() {
+    // Trả về role của account thay vì empty list
+    if (role == null || role.isBlank()) {
+        return List.of(() -> "ROLE_USER");  // Default role nếu null
     }
+    return List.of(() -> role);
+}
 
-    @Override
-    public @Nullable String getPassword() {
-        return "";
-    }
+@Override
+public String getPassword() {
+    return passwordHash;  // Trả về password hash, KHÔNG phải empty string
+}
 
-    @Override
-    public boolean isAccountNonExpired() {
-        return UserDetails.super.isAccountNonExpired();
-    }
+@Override
+public boolean isAccountNonExpired() {
+    return true;
+}
 
-    @Override
-    public boolean isAccountNonLocked() {
-        return UserDetails.super.isAccountNonLocked();
-    }
+@Override
+public boolean isAccountNonLocked() {
+    return true;
+}
 
-    @Override
-    public boolean isCredentialsNonExpired() {
-        return UserDetails.super.isCredentialsNonExpired();
-    }
+@Override
+public boolean isCredentialsNonExpired() {
+    return true;
+}
 
-    @Override
-    public boolean isEnabled() {
-        return UserDetails.super.isEnabled();
-    }
+@Override
+public boolean isEnabled() {
+    return "active".equalsIgnoreCase(status);
+}
+
 }

@@ -17,13 +17,11 @@ public class EmployeeCodeGeneratorService {
 
     public String generateEmployeeCode(){
         String prefix = "EMP";
-        String date = LocalDate.now().format(DateTimeFormatter.ofPattern("yyMMdd"));
         String code;
          do {
             String randomNum = String.format("%04d", new Random().nextInt(10000));
-            code = prefix + date + randomNum;
-        } while (accountRepository.existsByEmployeeCode(code));
-        
+            code = prefix + randomNum;
+        } while (accountRepository.existsByEmployeeCode(code));       
         return code;
     }
     

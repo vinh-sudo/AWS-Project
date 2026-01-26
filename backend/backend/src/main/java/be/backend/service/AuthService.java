@@ -153,48 +153,35 @@ public class AuthService {
  * @param token - JWT token từ request header
  * @return LogoutResponse
  */
-    public LogoutResponse logout(String token){
-        if (token == null || token.isBlank()) {
-        throw new BusinessException("Token is required");
+   public LogoutResponse logout(String accessToken, String refreshToken) {
+    if (accessToken == null || accessToken.isBlank()) {
+        throw new BusinessException("Access token is required");
     }
-    long expirationInSeconds = jwtService.getExpirationInSeconds(token);
-    if(expirationInSeconds <=0){
-         log.info("Token already expired, no need to blacklist");
-        return LogoutResponse.builder()
-                .message("Token already expired")
-                .logoutAt(OffsetDateTime.now())
-                .success(true)
-                .build();
+    
+    // Blacklist access token
+    long accessExpiration = jwtService.getExpirationInSeconds(accessToken);
+    if (accessExpiration > 0) {
+        tokenBlacklistService.blacklistToken(accessToken, accessExpiration);
+    }
+    
+    // Blacklist refresh token
+    if (refreshToken != null && !refreshToken.isBlank()) {
+        long refreshExpiration = jwtService.getExpirationInSeconds(refreshToken);
+        if (refreshExpiration > 0) {
+            tokenBlacklistService.blacklistToken(refreshToken, refreshExpiration);
         }
-    tokenBlacklistService.blacklistToken(token, expirationInSeconds);
-    String username = jwtService.extractUsername(token);
+    }
+    
+    String username = jwtService.extractUsername(accessToken);
     log.info("User {} logged out successfully", username);
+    
     return LogoutResponse.builder()
             .message("Logout successful")
             .logoutAt(OffsetDateTime.now())
             .success(true)
             .build();
-    }
-
-    public LogoutResponse logoutAll(String accessToken, String refreshToken) {
-    // Blacklist access token
-    logout(accessToken);
-    
-    // Blacklist refresh token nếu có
-    if (refreshToken != null && !refreshToken.isBlank()) {
-        long refreshExpiration = jwtService.getExpirationInSeconds(refreshToken);
-        if (refreshExpiration > 0) {
-            tokenBlacklistService.blacklistToken(refreshToken, refreshExpiration);
-            log.info("Refresh token blacklisted");
-        }
-    }
-    
-    return LogoutResponse.builder()
-            .message("Logged out from all devices")
-            .logoutAt(OffsetDateTime.now())
-            .success(true)
-            .build();
 }
+    
   private String mapRoleToEmployeeType(String role) {
         return switch (role.toLowerCase()) {
             case "manager" -> "MANAGER";
