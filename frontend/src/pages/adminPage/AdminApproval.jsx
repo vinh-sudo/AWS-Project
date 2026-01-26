@@ -11,28 +11,94 @@ const AdminApproval = () => {
   const navigate = useNavigate();
   const currentUser = authService.getCurrentUser();
 
-  const [activeTab, setActiveTab] = useState("pending");
+  const [activeTab, setActiveTab] = useState("draft");
   const [showRejectModal, setShowRejectModal] = useState(false);
-  const [selectedTask, setSelectedTask] = useState(null);
+  const [selectedOrder, setSelectedOrder] = useState(null);
   const [rejectReason, setRejectReason] = useState("");
 
-  // Load tasks from localStorage
-  const [tasks, setTasks] = useState(() => {
-    const saved = localStorage.getItem("ims_tasks");
-    return saved ? JSON.parse(saved) : [];
+  // Load orders from localStorage
+  const [orders, setOrders] = useState(() => {
+    const saved = localStorage.getItem("ims_orders");
+    return saved
+      ? JSON.parse(saved)
+      : [
+          {
+            id: "ORD-001",
+            customerName: "TechCorp Inc.",
+            productName: "PCB-A100",
+            quantity: 5000,
+            deadline: "2026-02-15",
+            priority: "High",
+            status: "Draft",
+            createdAt: "2026-01-20",
+            createdBy: "Sales User",
+            notes: "Đơn hàng quan trọng, cần ưu tiên xử lý",
+          },
+          {
+            id: "ORD-002",
+            customerName: "ElectroParts Ltd.",
+            productName: "PCB-B200",
+            quantity: 3000,
+            deadline: "2026-01-28",
+            priority: "Medium",
+            status: "Draft",
+            createdAt: "2026-01-22",
+            createdBy: "Sales User",
+            notes: "",
+          },
+          {
+            id: "ORD-003",
+            customerName: "MicroTech Co.",
+            productName: "PCB-C300",
+            quantity: 8000,
+            deadline: "2026-02-25",
+            priority: "Critical",
+            status: "Confirmed",
+            createdAt: "2026-01-15",
+            createdBy: "Admin",
+            confirmedAt: "2026-01-16",
+            confirmedBy: "System Administrator",
+          },
+          {
+            id: "ORD-004",
+            customerName: "DigiSys Corp.",
+            productName: "PCB-D400",
+            quantity: 2500,
+            deadline: "2026-02-20",
+            priority: "Low",
+            status: "Rejected",
+            createdAt: "2026-01-18",
+            createdBy: "Sales User",
+            rejectedAt: "2026-01-19",
+            rejectedBy: "System Administrator",
+            rejectedReason: "Không đủ nguyên liệu trong kho",
+          },
+          {
+            id: "ORD-005",
+            customerName: "GlobalTech",
+            productName: "PCB-E500",
+            quantity: 4000,
+            deadline: "2026-02-10",
+            priority: "High",
+            status: "Draft",
+            createdAt: "2026-01-24",
+            createdBy: "Sales User",
+            notes: "Khách hàng VIP",
+          },
+        ];
   });
 
-  // Reload tasks when component mounts or tab changes
+  // Reload orders when component mounts
   useEffect(() => {
-    const saved = localStorage.getItem("ims_tasks");
+    const saved = localStorage.getItem("ims_orders");
     if (saved) {
-      setTasks(JSON.parse(saved));
+      setOrders(JSON.parse(saved));
     }
   }, [activeTab]);
 
-  const saveTasks = (updatedTasks) => {
-    localStorage.setItem("ims_tasks", JSON.stringify(updatedTasks));
-    setTasks(updatedTasks);
+  const saveOrders = (updatedOrders) => {
+    localStorage.setItem("ims_orders", JSON.stringify(updatedOrders));
+    setOrders(updatedOrders);
   };
 
   const handleLogout = () => {
@@ -40,60 +106,65 @@ const AdminApproval = () => {
     navigate("/login");
   };
 
-  const handleApprove = (taskId) => {
-    const updatedTasks = tasks.map((task) => {
-      if (task.id === taskId) {
+  // Confirm order (Draft → Confirmed)
+  const handleConfirmOrder = (orderId) => {
+    const updatedOrders = orders.map((order) => {
+      if (order.id === orderId) {
         return {
-          ...task,
-          status: "approved",
-          approvedBy: currentUser?.fullName || "System Administrator",
-          approvedAt: new Date().toISOString().split("T")[0],
+          ...order,
+          status: "Confirmed",
+          confirmedBy: currentUser?.fullName || "System Administrator",
+          confirmedAt: new Date().toISOString().split("T")[0],
         };
       }
-      return task;
+      return order;
     });
-    saveTasks(updatedTasks);
+    saveOrders(updatedOrders);
+    alert(
+      "Đơn hàng đã được xác nhận và chuyển sang Planner/Manager để lập lịch!",
+    );
   };
 
-  const handleRejectClick = (task) => {
-    setSelectedTask(task);
+  const handleRejectClick = (order) => {
+    setSelectedOrder(order);
     setShowRejectModal(true);
   };
 
   const handleRejectConfirm = () => {
-    if (!selectedTask) return;
+    if (!selectedOrder) return;
 
-    const updatedTasks = tasks.map((task) => {
-      if (task.id === selectedTask.id) {
+    const updatedOrders = orders.map((order) => {
+      if (order.id === selectedOrder.id) {
         return {
-          ...task,
-          status: "rejected",
+          ...order,
+          status: "Rejected",
           rejectedBy: currentUser?.fullName || "System Administrator",
           rejectedAt: new Date().toISOString().split("T")[0],
           rejectedReason: rejectReason,
         };
       }
-      return task;
+      return order;
     });
-    saveTasks(updatedTasks);
+    saveOrders(updatedOrders);
     setShowRejectModal(false);
-    setSelectedTask(null);
+    setSelectedOrder(null);
     setRejectReason("");
+    alert("Đơn hàng đã bị từ chối!");
   };
 
   const getStatusClass = (status) => {
     switch (status) {
-      case "pending":
-        return "status-pending";
-      case "approved":
-        return "status-approved";
-      case "rejected":
+      case "Draft":
+        return "status-draft";
+      case "Confirmed":
+        return "status-confirmed";
+      case "Rejected":
         return "status-rejected";
-      case "assigned":
-        return "status-assigned";
-      case "in-progress":
-        return "status-progress";
-      case "completed":
+      case "Scheduled":
+        return "status-scheduled";
+      case "In Production":
+        return "status-production";
+      case "Completed":
         return "status-completed";
       default:
         return "";
@@ -102,6 +173,8 @@ const AdminApproval = () => {
 
   const getPriorityClass = (priority) => {
     switch (priority) {
+      case "Critical":
+        return "priority-critical";
       case "High":
         return "priority-high";
       case "Medium":
@@ -113,19 +186,19 @@ const AdminApproval = () => {
     }
   };
 
-  const pendingTasks = tasks.filter((t) => t.status === "pending");
-  const approvedTasks = tasks.filter((t) => t.status === "approved");
-  const rejectedTasks = tasks.filter((t) => t.status === "rejected");
-  const allProcessedTasks = tasks.filter((t) => t.status !== "pending");
+  const draftOrders = orders.filter((o) => o.status === "Draft");
+  const confirmedOrders = orders.filter((o) => o.status === "Confirmed");
+  const rejectedOrders = orders.filter((o) => o.status === "Rejected");
+  const allProcessedOrders = orders.filter((o) => o.status !== "Draft");
 
-  const filteredTasks =
-    activeTab === "pending"
-      ? pendingTasks
-      : activeTab === "approved"
-        ? approvedTasks
+  const filteredOrders =
+    activeTab === "draft"
+      ? draftOrders
+      : activeTab === "confirmed"
+        ? confirmedOrders
         : activeTab === "rejected"
-          ? rejectedTasks
-          : allProcessedTasks;
+          ? rejectedOrders
+          : allProcessedOrders;
 
   return (
     <div className="admin-approval-container">
@@ -133,7 +206,7 @@ const AdminApproval = () => {
       <aside className="admin-sidebar">
         <div className="sidebar-header">
           <img src={imsLogo} alt="IMS Logo" className="sidebar-logo" />
-          <span className="sidebar-title">IMS Admin</span>
+          <span className="sidebar-title">IMS ADMIN</span>
         </div>
         <nav className="sidebar-nav">
           <div
@@ -145,7 +218,7 @@ const AdminApproval = () => {
           </div>
           <div className="nav-item active">
             <span className="nav-icon">✅</span>
-            <span>Task Approval</span>
+            <span>Order Approval</span>
           </div>
           <div className="nav-item" onClick={() => navigate("/admin/orders")}>
             <span className="nav-icon">📦</span>
@@ -176,13 +249,15 @@ const AdminApproval = () => {
         {/* Header */}
         <header className="admin-header">
           <div className="header-left">
-            <h1>Task Approval</h1>
-            <p>Review and approve tasks created by managers</p>
+            <h1>📋 Order Approval</h1>
+            <p>
+              Xác nhận đơn hàng mới từ Sales để chuyển sang lập lịch sản xuất
+            </p>
           </div>
           <div className="header-right">
             <div className="pending-badge">
-              <span className="pending-count">{pendingTasks.length}</span>
-              <span>Pending Review</span>
+              <span className="pending-count">{draftOrders.length}</span>
+              <span>Chờ xác nhận</span>
             </div>
             <div className="user-info">
               <span className="user-name">
@@ -197,167 +272,172 @@ const AdminApproval = () => {
         <div className="workflow-info">
           <div className="workflow-step">
             <span className="step-icon done">✓</span>
-            <span className="step-label">Manager Creates</span>
+            <span className="step-label">Sales tạo đơn</span>
           </div>
           <div className="workflow-arrow">→</div>
           <div className="workflow-step">
             <span className="step-icon active">2</span>
-            <span className="step-label">Admin Approves</span>
+            <span className="step-label">Admin xác nhận</span>
           </div>
           <div className="workflow-arrow">→</div>
           <div className="workflow-step">
             <span className="step-icon">3</span>
-            <span className="step-label">Planner Schedules</span>
+            <span className="step-label">Planner lập lịch</span>
           </div>
           <div className="workflow-arrow">→</div>
           <div className="workflow-step">
             <span className="step-icon">4</span>
-            <span className="step-label">Leader Updates</span>
+            <span className="step-label">Leader sản xuất</span>
           </div>
         </div>
 
         {/* Stats */}
         <div className="stats-row">
           <div className="stat-card pending">
-            <span className="stat-number">{pendingTasks.length}</span>
-            <span className="stat-label">Pending Review</span>
+            <span className="stat-number">{draftOrders.length}</span>
+            <span className="stat-label">Chờ xác nhận</span>
           </div>
           <div className="stat-card approved">
-            <span className="stat-number">{approvedTasks.length}</span>
-            <span className="stat-label">Approved Today</span>
+            <span className="stat-number">{confirmedOrders.length}</span>
+            <span className="stat-label">Đã xác nhận</span>
           </div>
           <div className="stat-card rejected">
-            <span className="stat-number">{rejectedTasks.length}</span>
-            <span className="stat-label">Rejected</span>
+            <span className="stat-number">{rejectedOrders.length}</span>
+            <span className="stat-label">Đã từ chối</span>
           </div>
           <div className="stat-card total">
-            <span className="stat-number">{tasks.length}</span>
-            <span className="stat-label">Total Tasks</span>
+            <span className="stat-number">{orders.length}</span>
+            <span className="stat-label">Tổng đơn hàng</span>
           </div>
         </div>
 
         {/* Tabs */}
         <div className="tabs-container">
           <button
-            className={`tab-btn ${activeTab === "pending" ? "active" : ""}`}
-            onClick={() => setActiveTab("pending")}
+            className={`tab-btn ${activeTab === "draft" ? "active" : ""}`}
+            onClick={() => setActiveTab("draft")}
           >
-            🕐 Pending ({pendingTasks.length})
+            🕐 Chờ xác nhận ({draftOrders.length})
           </button>
           <button
-            className={`tab-btn ${activeTab === "approved" ? "active" : ""}`}
-            onClick={() => setActiveTab("approved")}
+            className={`tab-btn ${activeTab === "confirmed" ? "active" : ""}`}
+            onClick={() => setActiveTab("confirmed")}
           >
-            ✅ Approved ({approvedTasks.length})
+            ✅ Đã xác nhận ({confirmedOrders.length})
           </button>
           <button
             className={`tab-btn ${activeTab === "rejected" ? "active" : ""}`}
             onClick={() => setActiveTab("rejected")}
           >
-            ❌ Rejected ({rejectedTasks.length})
+            ❌ Đã từ chối ({rejectedOrders.length})
           </button>
           <button
             className={`tab-btn ${activeTab === "history" ? "active" : ""}`}
             onClick={() => setActiveTab("history")}
           >
-            📋 History ({allProcessedTasks.length})
+            📋 Lịch sử ({allProcessedOrders.length})
           </button>
         </div>
 
-        {/* Tasks List */}
+        {/* Orders List */}
         <div className="tasks-list">
-          {filteredTasks.length === 0 ? (
+          {filteredOrders.length === 0 ? (
             <div className="empty-state">
-              <span>{activeTab === "pending" ? "✅" : "📋"}</span>
+              <span>{activeTab === "draft" ? "✅" : "📋"}</span>
               <p>
-                {activeTab === "pending"
-                  ? "No tasks pending approval"
-                  : "No tasks found"}
+                {activeTab === "draft"
+                  ? "Không có đơn hàng nào chờ xác nhận"
+                  : "Không tìm thấy đơn hàng"}
               </p>
             </div>
           ) : (
-            filteredTasks.map((task) => (
+            filteredOrders.map((order) => (
               <div
-                key={task.id}
-                className={`task-card ${activeTab === "pending" ? "pending" : ""}`}
+                key={order.id}
+                className={`task-card ${activeTab === "draft" ? "pending" : ""}`}
               >
                 <div className="task-header">
                   <div className="task-id-priority">
-                    <span className="task-id">{task.id}</span>
+                    <span className="task-id">{order.id}</span>
                     <span
-                      className={`priority-badge ${getPriorityClass(task.priority)}`}
+                      className={`priority-badge ${getPriorityClass(order.priority)}`}
                     >
-                      {task.priority}
+                      {order.priority}
                     </span>
                   </div>
                   <span
-                    className={`status-badge ${getStatusClass(task.status)}`}
+                    className={`status-badge ${getStatusClass(order.status)}`}
                   >
-                    {task.status.charAt(0).toUpperCase() + task.status.slice(1)}
+                    {order.status}
                   </span>
                 </div>
 
-                <h3 className="task-title">{task.title}</h3>
-                <p className="task-description">{task.description}</p>
+                <h3 className="task-title">{order.customerName}</h3>
+                <p className="task-description">
+                  Sản phẩm: {order.productName}
+                </p>
 
                 <div className="task-details">
                   <div className="detail-item">
-                    <span className="detail-label">Order Ref:</span>
-                    <span className="detail-value">{task.orderRef || "-"}</span>
-                  </div>
-                  <div className="detail-item">
-                    <span className="detail-label">Production Line:</span>
-                    <span className="detail-value">{task.productLine}</span>
-                  </div>
-                  <div className="detail-item">
-                    <span className="detail-label">Quantity:</span>
+                    <span className="detail-label">Số lượng:</span>
                     <span className="detail-value">
-                      {task.quantity?.toLocaleString()}
+                      {order.quantity?.toLocaleString()} units
                     </span>
                   </div>
                   <div className="detail-item">
                     <span className="detail-label">Deadline:</span>
                     <span className="detail-value deadline">
-                      {task.deadline}
+                      {order.deadline}
                     </span>
+                  </div>
+                  <div className="detail-item">
+                    <span className="detail-label">Ngày tạo:</span>
+                    <span className="detail-value">{order.createdAt}</span>
+                  </div>
+                  <div className="detail-item">
+                    <span className="detail-label">Người tạo:</span>
+                    <span className="detail-value">{order.createdBy}</span>
                   </div>
                 </div>
 
-                <div className="task-meta">
-                  <span>
-                    Created by: <strong>{task.createdBy}</strong>
-                  </span>
-                  <span>Created at: {task.createdAt}</span>
-                </div>
-
-                {task.status === "rejected" && task.rejectedReason && (
-                  <div className="rejection-reason">
-                    <span>❌ Rejection Reason:</span> {task.rejectedReason}
+                {order.notes && (
+                  <div className="order-notes">
+                    <span>📝 Ghi chú:</span> {order.notes}
                   </div>
                 )}
 
-                {task.status === "approved" && (
+                {order.status === "Rejected" && order.rejectedReason && (
+                  <div className="rejection-reason">
+                    <span>❌ Lý do từ chối:</span> {order.rejectedReason}
+                    <div className="rejection-meta">
+                      Từ chối bởi: <strong>{order.rejectedBy}</strong> vào{" "}
+                      {order.rejectedAt}
+                    </div>
+                  </div>
+                )}
+
+                {order.status === "Confirmed" && (
                   <div className="approval-info">
                     <span>
-                      ✅ Approved by: <strong>{task.approvedBy}</strong>
+                      ✅ Xác nhận bởi: <strong>{order.confirmedBy}</strong>
                     </span>
-                    <span>on {task.approvedAt}</span>
+                    <span>vào {order.confirmedAt}</span>
                   </div>
                 )}
 
-                {activeTab === "pending" && (
+                {activeTab === "draft" && (
                   <div className="task-actions">
                     <button
                       className="btn-approve"
-                      onClick={() => handleApprove(task.id)}
+                      onClick={() => handleConfirmOrder(order.id)}
                     >
-                      ✅ Approve
+                      ✅ Xác nhận đơn hàng
                     </button>
                     <button
                       className="btn-reject"
-                      onClick={() => handleRejectClick(task)}
+                      onClick={() => handleRejectClick(order)}
                     >
-                      ❌ Reject
+                      ❌ Từ chối
                     </button>
                   </div>
                 )}
@@ -372,7 +452,7 @@ const AdminApproval = () => {
         <div className="modal-overlay">
           <div className="modal-content">
             <div className="modal-header">
-              <h2>Reject Task</h2>
+              <h2>Từ chối đơn hàng</h2>
               <button
                 className="modal-close"
                 onClick={() => setShowRejectModal(false)}
@@ -382,17 +462,22 @@ const AdminApproval = () => {
             </div>
             <div className="modal-body">
               <p>
-                You are about to reject task:{" "}
-                <strong>{selectedTask?.id}</strong>
+                Bạn đang từ chối đơn hàng: <strong>{selectedOrder?.id}</strong>
               </p>
-              <p className="task-title-modal">{selectedTask?.title}</p>
+              <p className="task-title-modal">
+                Khách hàng: {selectedOrder?.customerName}
+                <br />
+                Sản phẩm: {selectedOrder?.productName}
+                <br />
+                Số lượng: {selectedOrder?.quantity?.toLocaleString()} units
+              </p>
               <div className="form-group">
-                <label>Rejection Reason *</label>
+                <label>Lý do từ chối *</label>
                 <textarea
                   required
                   value={rejectReason}
                   onChange={(e) => setRejectReason(e.target.value)}
-                  placeholder="Please provide a reason for rejection..."
+                  placeholder="Vui lòng nhập lý do từ chối đơn hàng..."
                   rows={4}
                 />
               </div>
@@ -402,14 +487,14 @@ const AdminApproval = () => {
                 className="btn-cancel"
                 onClick={() => setShowRejectModal(false)}
               >
-                Cancel
+                Hủy
               </button>
               <button
                 className="btn-reject-confirm"
                 onClick={handleRejectConfirm}
                 disabled={!rejectReason.trim()}
               >
-                Confirm Rejection
+                Xác nhận từ chối
               </button>
             </div>
           </div>
