@@ -31,7 +31,7 @@ public class EmailService {
             helper.setTo(to);
             helper.setSubject("Your OTP Code");
             helper.setText(html, true);
-            helper.setFrom("voltera.global@gmail.com");
+            helper.setFrom("ims.internal.system@gmail.com");
 
             mailSender.send(message);
         } catch (Exception e) {

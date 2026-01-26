@@ -12,7 +12,7 @@ import lombok.RequiredArgsConstructor;
 @Service
 @RequiredArgsConstructor
 public class EmployeeCodeGeneratorService {
-//MinhCoffee
+
     private final AccountRepository accountRepository;
 
     public String generateEmployeeCode(){

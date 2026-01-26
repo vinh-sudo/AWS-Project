@@ -17,11 +17,10 @@ public class OtpController {
 
     // 1. Nhập employeeCode → gửi OTP về email
     @PostMapping("/forgot/request")
-    public ResponseEntity<?> requestPasswordOtp(@RequestParam String employeeCode) {
-        otpService.generateOtpByEmployeeCode(employeeCode);
+    public ResponseEntity<?> requestPasswordOtp(@RequestBody PasswordResetRequest request) {
+        otpService.generateOtpByEmployeeCode(request.getEmployeeCode());
         return ResponseEntity.ok("OTP sent to employee email");
     }
-
     // 2. Nhập OTP + mật khẩu mới
     @PostMapping("/forgot/verify")
     public ResponseEntity<?> verifyPasswordOtp(@RequestBody PasswordResetRequest request) {
@@ -43,9 +42,10 @@ public class OtpController {
         return ResponseEntity.ok("Password reset successfully");
     }
 
+
     @PostMapping("/resend")
-    public ResponseEntity<?> resendOtp(@RequestParam String employeeCode) {
-        otpService.resendOtp(employeeCode);
+    public ResponseEntity<?> resendOtp(@RequestBody PasswordResetRequest request) {
+        otpService.resendOtp(request.getEmployeeCode());
         return ResponseEntity.ok("OTP resent");
     }
 }

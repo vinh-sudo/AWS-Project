@@ -77,7 +77,7 @@ public class AuthService {
         validationService.validateEmailNotExists(request.getEmail());
         validationService.validateUsernameNotExists(request.getUsername());
         
-        // 2. TẠO USER ENTITY
+
         User user = new User();
         user.setFirstName(request.getFirstName());
         user.setLastName(request.getLastName());

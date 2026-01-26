@@ -41,7 +41,8 @@ public class SecurityConfig {
                 .cors(cors -> cors.configurationSource(webConfig.corsConfigurationSource())) // Spring tự lấy bean CorsConfigurationSource
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers(
-                                "/api/auth/**"
+                                "/api/auth/**",
+                                "/otp/**"
                         ).permitAll()
                         .anyRequest().authenticated()
                 )

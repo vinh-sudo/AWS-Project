@@ -2,7 +2,6 @@ package be.backend.repository;
 
 import be.backend.entity.User;
 
-import java.util.Optional;
 
 import org.springframework.data.jpa.repository.JpaRepository;
 
