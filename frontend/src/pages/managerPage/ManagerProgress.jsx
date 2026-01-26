@@ -123,11 +123,18 @@ const ManagerProgress = () => {
 
   // Summary stats
   const totalOrders = progressData.length;
-  const onTrackOrders = progressData.filter((p) => p.status === "on-track").length;
-  const delayedOrders = progressData.filter((p) => p.status === "delayed").length;
-  const atRiskOrders = progressData.filter((p) => p.status === "at-risk").length;
+  const onTrackOrders = progressData.filter(
+    (p) => p.status === "on-track",
+  ).length;
+  const delayedOrders = progressData.filter(
+    (p) => p.status === "delayed",
+  ).length;
+  const atRiskOrders = progressData.filter(
+    (p) => p.status === "at-risk",
+  ).length;
   const avgEfficiency = Math.round(
-    progressData.reduce((acc, p) => acc + p.efficiency, 0) / progressData.length
+    progressData.reduce((acc, p) => acc + p.efficiency, 0) /
+      progressData.length,
   );
 
   return (
@@ -145,7 +152,9 @@ const ManagerProgress = () => {
           </div>
           <div className="header-right">
             <div className="user-info">
-              <span className="user-name">{currentUser?.fullName || "Manager"}</span>
+              <span className="user-name">
+                {currentUser?.fullName || "Manager"}
+              </span>
               <span className="user-role">Manager</span>
             </div>
           </div>
@@ -196,7 +205,10 @@ const ManagerProgress = () => {
         <div className="filters-section">
           <div className="filter-group">
             <label>Filter by Line:</label>
-            <select value={filterLine} onChange={(e) => setFilterLine(e.target.value)}>
+            <select
+              value={filterLine}
+              onChange={(e) => setFilterLine(e.target.value)}
+            >
               <option value="all">All Lines</option>
               <option value="LINE-SMT-01">SMT Line 1</option>
               <option value="LINE-SMT-02">SMT Line 2</option>
@@ -206,7 +218,10 @@ const ManagerProgress = () => {
           </div>
           <div className="filter-group">
             <label>Filter by Status:</label>
-            <select value={filterStatus} onChange={(e) => setFilterStatus(e.target.value)}>
+            <select
+              value={filterStatus}
+              onChange={(e) => setFilterStatus(e.target.value)}
+            >
               <option value="all">All Status</option>
               <option value="on-track">On Track</option>
               <option value="delayed">Delayed</option>
@@ -226,7 +241,9 @@ const ManagerProgress = () => {
                     <h3 className="order-id">{item.orderId}</h3>
                     <span className="product-name">{item.productName}</span>
                   </div>
-                  <span className={`progress-status ${getStatusClass(item.status)}`}>
+                  <span
+                    className={`progress-status ${getStatusClass(item.status)}`}
+                  >
                     {getStatusLabel(item.status)}
                   </span>
                 </div>
@@ -234,9 +251,15 @@ const ManagerProgress = () => {
                 <div className="progress-card-body">
                   <div className="progress-bar-section">
                     <div className="progress-header-row">
-                      <span className="progress-label">Production Progress</span>
+                      <span className="progress-label">
+                        Production Progress
+                      </span>
                       <span className="progress-percentage">
-                        {getProgressPercentage(item.completedQuantity, item.targetQuantity)}%
+                        {getProgressPercentage(
+                          item.completedQuantity,
+                          item.targetQuantity,
+                        )}
+                        %
                       </span>
                     </div>
                     <div className="progress-bar">
@@ -248,7 +271,10 @@ const ManagerProgress = () => {
                       ></div>
                     </div>
                     <div className="progress-details">
-                      <span>{item.completedQuantity.toLocaleString()} / {item.targetQuantity.toLocaleString()} units</span>
+                      <span>
+                        {item.completedQuantity.toLocaleString()} /{" "}
+                        {item.targetQuantity.toLocaleString()} units
+                      </span>
                     </div>
                   </div>
 
@@ -274,13 +300,17 @@ const ManagerProgress = () => {
                   <div className="metrics-section">
                     <div className="metric">
                       <span className="metric-label">Efficiency</span>
-                      <span className={`metric-value ${item.efficiency >= 85 ? "good" : item.efficiency >= 70 ? "medium" : "low"}`}>
+                      <span
+                        className={`metric-value ${item.efficiency >= 85 ? "good" : item.efficiency >= 70 ? "medium" : "low"}`}
+                      >
                         {item.efficiency}%
                       </span>
                     </div>
                     <div className="metric">
                       <span className="metric-label">Defect Rate</span>
-                      <span className={`metric-value ${item.defectRate <= 1 ? "good" : item.defectRate <= 2 ? "medium" : "low"}`}>
+                      <span
+                        className={`metric-value ${item.defectRate <= 1 ? "good" : item.defectRate <= 2 ? "medium" : "low"}`}
+                      >
                         {item.defectRate}%
                       </span>
                     </div>

@@ -112,9 +112,11 @@ const LineManagement = () => {
 
   const filteredLines = () => {
     if (activeTab === "all") return lines;
-    if (activeTab === "running") return lines.filter((l) => l.status === "Running");
+    if (activeTab === "running")
+      return lines.filter((l) => l.status === "Running");
     if (activeTab === "idle") return lines.filter((l) => l.status === "Idle");
-    if (activeTab === "maintenance") return lines.filter((l) => l.status === "Maintenance");
+    if (activeTab === "maintenance")
+      return lines.filter((l) => l.status === "Maintenance");
     return lines;
   };
 
@@ -127,9 +129,13 @@ const LineManagement = () => {
   const totalLines = lines.length;
   const runningLines = lines.filter((l) => l.status === "Running").length;
   const idleLines = lines.filter((l) => l.status === "Idle").length;
-  const maintenanceLines = lines.filter((l) => l.status === "Maintenance").length;
+  const maintenanceLines = lines.filter(
+    (l) => l.status === "Maintenance",
+  ).length;
   const avgEfficiency = Math.round(
-    lines.filter((l) => l.status === "Running").reduce((acc, l) => acc + l.efficiency, 0) / runningLines || 0
+    lines
+      .filter((l) => l.status === "Running")
+      .reduce((acc, l) => acc + l.efficiency, 0) / runningLines || 0,
   );
 
   return (
@@ -147,7 +153,9 @@ const LineManagement = () => {
           </div>
           <div className="header-right">
             <div className="user-info">
-              <span className="user-name">{currentUser?.fullName || "Manager"}</span>
+              <span className="user-name">
+                {currentUser?.fullName || "Manager"}
+              </span>
               <span className="user-role">Manager</span>
             </div>
           </div>
@@ -232,7 +240,9 @@ const LineManagement = () => {
                     <h3 className="line-name">{line.name}</h3>
                     <span className="line-type">{line.type}</span>
                   </div>
-                  <span className={`line-status ${getStatusClass(line.status)}`}>
+                  <span
+                    className={`line-status ${getStatusClass(line.status)}`}
+                  >
                     {line.status}
                   </span>
                 </div>
@@ -246,7 +256,9 @@ const LineManagement = () => {
                       </div>
                       <div className="line-stat">
                         <span className="stat-label">Product</span>
-                        <span className="stat-value">{line.currentProduct}</span>
+                        <span className="stat-value">
+                          {line.currentProduct}
+                        </span>
                       </div>
                     </>
                   )}
@@ -278,7 +290,8 @@ const LineManagement = () => {
                         ></div>
                       </div>
                       <div className="capacity-info">
-                        {line.currentLoad.toLocaleString()} / {line.capacity.toLocaleString()} units
+                        {line.currentLoad.toLocaleString()} /{" "}
+                        {line.capacity.toLocaleString()} units
                       </div>
                     </div>
                   )}
@@ -287,7 +300,9 @@ const LineManagement = () => {
                     <div className="efficiency-section">
                       <span className="stat-label">Efficiency</span>
                       <div className="efficiency-badge">
-                        <span className={`efficiency-value ${line.efficiency >= 90 ? "high" : line.efficiency >= 70 ? "medium" : "low"}`}>
+                        <span
+                          className={`efficiency-value ${line.efficiency >= 90 ? "high" : line.efficiency >= 70 ? "medium" : "low"}`}
+                        >
                           {line.efficiency}%
                         </span>
                       </div>
@@ -303,7 +318,10 @@ const LineManagement = () => {
                 </div>
 
                 <div className="line-card-footer">
-                  <button className="btn-detail" onClick={() => openDetailModal(line)}>
+                  <button
+                    className="btn-detail"
+                    onClick={() => openDetailModal(line)}
+                  >
                     View Details
                   </button>
                 </div>
@@ -314,11 +332,17 @@ const LineManagement = () => {
 
         {/* Detail Modal */}
         {showDetailModal && selectedLine && (
-          <div className="modal-overlay" onClick={() => setShowDetailModal(false)}>
+          <div
+            className="modal-overlay"
+            onClick={() => setShowDetailModal(false)}
+          >
             <div className="modal-content" onClick={(e) => e.stopPropagation()}>
               <div className="modal-header">
                 <h2>{selectedLine.name} - Details</h2>
-                <button className="modal-close" onClick={() => setShowDetailModal(false)}>
+                <button
+                  className="modal-close"
+                  onClick={() => setShowDetailModal(false)}
+                >
                   ×
                 </button>
               </div>
@@ -334,21 +358,29 @@ const LineManagement = () => {
                   </div>
                   <div className="detail-item">
                     <span className="detail-label">Status</span>
-                    <span className={`detail-value status-badge ${getStatusClass(selectedLine.status)}`}>
+                    <span
+                      className={`detail-value status-badge ${getStatusClass(selectedLine.status)}`}
+                    >
                       {selectedLine.status}
                     </span>
                   </div>
                   <div className="detail-item">
                     <span className="detail-label">Capacity</span>
-                    <span className="detail-value">{selectedLine.capacity.toLocaleString()} units/day</span>
+                    <span className="detail-value">
+                      {selectedLine.capacity.toLocaleString()} units/day
+                    </span>
                   </div>
                   <div className="detail-item">
                     <span className="detail-label">Current Load</span>
-                    <span className="detail-value">{selectedLine.currentLoad.toLocaleString()} units</span>
+                    <span className="detail-value">
+                      {selectedLine.currentLoad.toLocaleString()} units
+                    </span>
                   </div>
                   <div className="detail-item">
                     <span className="detail-label">Efficiency</span>
-                    <span className="detail-value">{selectedLine.efficiency}%</span>
+                    <span className="detail-value">
+                      {selectedLine.efficiency}%
+                    </span>
                   </div>
                   <div className="detail-item">
                     <span className="detail-label">Line Leader</span>
@@ -360,19 +392,27 @@ const LineManagement = () => {
                   </div>
                   <div className="detail-item">
                     <span className="detail-label">Current Order</span>
-                    <span className="detail-value">{selectedLine.currentOrder || "N/A"}</span>
+                    <span className="detail-value">
+                      {selectedLine.currentOrder || "N/A"}
+                    </span>
                   </div>
                   <div className="detail-item">
                     <span className="detail-label">Current Product</span>
-                    <span className="detail-value">{selectedLine.currentProduct || "N/A"}</span>
+                    <span className="detail-value">
+                      {selectedLine.currentProduct || "N/A"}
+                    </span>
                   </div>
                   <div className="detail-item">
                     <span className="detail-label">Last Maintenance</span>
-                    <span className="detail-value">{selectedLine.lastMaintenance}</span>
+                    <span className="detail-value">
+                      {selectedLine.lastMaintenance}
+                    </span>
                   </div>
                   <div className="detail-item">
                     <span className="detail-label">Next Maintenance</span>
-                    <span className="detail-value">{selectedLine.nextMaintenance}</span>
+                    <span className="detail-value">
+                      {selectedLine.nextMaintenance}
+                    </span>
                   </div>
                 </div>
               </div>

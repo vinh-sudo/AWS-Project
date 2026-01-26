@@ -26,7 +26,6 @@ import PlannerReports from "./pages/plannerPage/PlannerReports";
 import LeaderProgress from "./pages/leaderPage/LeaderProgress";
 import LeaderTaskAssignment from "./pages/leaderPage/LeaderTaskAssignment";
 
-
 // Shared imports
 import Reports from "./pages/managerPage/Reports";
 import Dashboard from "./pages/dashboardPage/Dashboard";
@@ -63,7 +62,10 @@ function App() {
           <Route path="/manager/tasks" element={<ManagerTasks />} />
           <Route path="/manager/orders" element={<ManagerOrders />} />
           <Route path="/manager/scheduling" element={<ManagerScheduling />} />
-          <Route path="/manager/production-lines" element={<LineManagement />} />
+          <Route
+            path="/manager/production-lines"
+            element={<LineManagement />}
+          />
           <Route path="/manager/progress" element={<ManagerProgress />} />
           <Route path="/manager/task-assignment" element={<ManagerTasks />} />
           <Route

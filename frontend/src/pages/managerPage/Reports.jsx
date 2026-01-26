@@ -235,8 +235,10 @@ const Reports = () => {
                     {kpiData.oee.trend}
                   </span>
                 </div>
-                <div className="kpi-value">{kpiData.oee.current}%</div>
-                <div className="kpi-label">Overall OEE</div>
+                <div className="kpi-info">
+                  <div className="kpi-value">{kpiData.oee.current}%</div>
+                  <div className="kpi-label">Overall OEE</div>
+                </div>
                 <div className="kpi-progress">
                   <div className="progress-bar">
                     <div
@@ -261,10 +263,12 @@ const Reports = () => {
                     {kpiData.onTimeDelivery.trend}
                   </span>
                 </div>
-                <div className="kpi-value">
-                  {kpiData.onTimeDelivery.current}%
+                <div className="kpi-info">
+                  <div className="kpi-value">
+                    {kpiData.onTimeDelivery.current}%
+                  </div>
+                  <div className="kpi-label">On-Time Delivery</div>
                 </div>
-                <div className="kpi-label">On-Time Delivery</div>
                 <div className="kpi-progress">
                   <div className="progress-bar">
                     <div
@@ -289,8 +293,12 @@ const Reports = () => {
                     {kpiData.qualityRate.trend}
                   </span>
                 </div>
-                <div className="kpi-value">{kpiData.qualityRate.current}%</div>
-                <div className="kpi-label">Quality Rate</div>
+                <div className="kpi-info">
+                  <div className="kpi-value">
+                    {kpiData.qualityRate.current}%
+                  </div>
+                  <div className="kpi-label">Quality Rate</div>
+                </div>
                 <div className="kpi-progress">
                   <div className="progress-bar">
                     <div
@@ -315,10 +323,12 @@ const Reports = () => {
                     {kpiData.productivity.trend}
                   </span>
                 </div>
-                <div className="kpi-value">
-                  {kpiData.productivity.current.toLocaleString()}
+                <div className="kpi-info">
+                  <div className="kpi-value">
+                    {kpiData.productivity.current.toLocaleString()}
+                  </div>
+                  <div className="kpi-label">Units Produced</div>
                 </div>
-                <div className="kpi-label">Units Produced</div>
                 <div className="kpi-progress">
                   <div className="progress-bar">
                     <div
@@ -343,8 +353,10 @@ const Reports = () => {
                     {kpiData.defectRate.trend}
                   </span>
                 </div>
-                <div className="kpi-value">{kpiData.defectRate.current}%</div>
-                <div className="kpi-label">Defect Rate</div>
+                <div className="kpi-info">
+                  <div className="kpi-value">{kpiData.defectRate.current}%</div>
+                  <div className="kpi-label">Defect Rate</div>
+                </div>
                 <div className="kpi-progress">
                   <div className="progress-bar inverse">
                     <div
@@ -369,8 +381,10 @@ const Reports = () => {
                     {kpiData.efficiency.trend}
                   </span>
                 </div>
-                <div className="kpi-value">{kpiData.efficiency.current}%</div>
-                <div className="kpi-label">Efficiency</div>
+                <div className="kpi-info">
+                  <div className="kpi-value">{kpiData.efficiency.current}%</div>
+                  <div className="kpi-label">Efficiency</div>
+                </div>
                 <div className="kpi-progress">
                   <div className="progress-bar">
                     <div
@@ -525,7 +539,7 @@ const Reports = () => {
                           </div>
                           <span>
                             {Math.round(
-                              (order.completed / order.ordered) * 100
+                              (order.completed / order.ordered) * 100,
                             )}
                             %
                           </span>
@@ -645,7 +659,7 @@ const Reports = () => {
                         </div>
                         <span className="trend-label">Day {index + 1}</span>
                       </div>
-                    )
+                    ),
                   )}
                 </div>
               </div>
