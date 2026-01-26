@@ -1,0 +1,2 @@
+ALTER TABLE machine
+    ADD COLUMN quantity INT DEFAULT 1;

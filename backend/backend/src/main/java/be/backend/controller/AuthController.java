@@ -38,8 +38,8 @@ public class AuthController {
         return ResponseEntity.status(HttpStatus.CREATED).body(response);
     }
 
-   @PostMapping("/logout")
-public ResponseEntity<LogoutResponse> logout(
+    @PostMapping("/logout")
+    public ResponseEntity<LogoutResponse> logout(
         HttpServletRequest request,
         @RequestBody(required = false) LogoutRequest logoutRequest) {
     
