@@ -202,40 +202,37 @@ const ManagerOrders = () => {
           </div>
         </header>
 
-        {/* Orders Content */}
         <div className="manager-content">
-          {/* Stats Cards */}
           <div className="order-stats-row">
             <div className="order-stat-card confirmed">
               <span className="stat-number">{stats.confirmed}</span>
-              <span className="stat-label">Chờ lập lịch</span>
+              <span className="stat-label">Pending Schedule</span>
             </div>
             <div className="order-stat-card scheduled">
               <span className="stat-number">{stats.scheduled}</span>
-              <span className="stat-label">Đã lên lịch</span>
+              <span className="stat-label">Scheduled</span>
             </div>
             <div className="order-stat-card production">
               <span className="stat-number">{stats.inProduction}</span>
-              <span className="stat-label">Đang sản xuất</span>
+              <span className="stat-label">In Production</span>
             </div>
             <div className="order-stat-card hold">
               <span className="stat-number">{stats.onHold}</span>
-              <span className="stat-label">Tạm dừng</span>
+              <span className="stat-label">On Hold</span>
             </div>
             <div className="order-stat-card completed">
               <span className="stat-number">{stats.completed}</span>
-              <span className="stat-label">Hoàn thành</span>
+              <span className="stat-label">Completed</span>
             </div>
           </div>
 
-          {/* Filters */}
           <div className="filter-section">
             <div className="search-box">
               <span className="search-icon">🔍</span>
               <input
                 type="text"
                 className="search-input"
-                placeholder="Tìm kiếm đơn hàng..."
+                placeholder="Search orders..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
               />
@@ -246,12 +243,12 @@ const ManagerOrders = () => {
                 value={statusFilter}
                 onChange={(e) => setStatusFilter(e.target.value)}
               >
-                <option value="">Tất cả trạng thái</option>
-                <option value="Confirmed">Chờ lập lịch</option>
-                <option value="Scheduled">Đã lên lịch</option>
-                <option value="In Production">Đang sản xuất</option>
-                <option value="On Hold">Tạm dừng</option>
-                <option value="Completed">Hoàn thành</option>
+                <option value="">All Status</option>
+                <option value="Confirmed">Pending Schedule</option>
+                <option value="Scheduled">Scheduled</option>
+                <option value="In Production">In Production</option>
+                <option value="On Hold">On Hold</option>
+                <option value="Completed">Completed</option>
               </select>
 
               <select
@@ -259,7 +256,7 @@ const ManagerOrders = () => {
                 value={priorityFilter}
                 onChange={(e) => setPriorityFilter(e.target.value)}
               >
-                <option value="">Tất cả độ ưu tiên</option>
+                <option value="">All Priority</option>
                 <option value="Critical">Critical</option>
                 <option value="High">High</option>
                 <option value="Medium">Medium</option>
@@ -268,21 +265,20 @@ const ManagerOrders = () => {
             </div>
           </div>
 
-          {/* Orders Table */}
           <div className="orders-table-container">
             <table className="orders-table">
               <thead>
                 <tr>
                   <th>Order ID</th>
-                  <th>Khách hàng</th>
-                  <th>Sản phẩm</th>
-                  <th>Số lượng</th>
-                  <th>Tiến độ</th>
+                  <th>Customer</th>
+                  <th>Product</th>
+                  <th>Quantity</th>
+                  <th>Progress</th>
                   <th>Deadline</th>
-                  <th>Độ ưu tiên</th>
-                  <th>Trạng thái</th>
+                  <th>Priority</th>
+                  <th>Status</th>
                   <th>Line</th>
-                  <th>Hành động</th>
+                  <th>Actions</th>
                 </tr>
               </thead>
               <tbody>
@@ -330,7 +326,7 @@ const ManagerOrders = () => {
                         <button
                           className="btn-action btn-view"
                           onClick={() => handleViewDetail(order)}
-                          title="Xem chi tiết"
+                          title="View Details"
                         >
                           👁️
                         </button>
@@ -338,7 +334,7 @@ const ManagerOrders = () => {
                           <button
                             className="btn-action btn-schedule"
                             onClick={() => handleScheduleOrder(order.id)}
-                            title="Lập lịch sản xuất"
+                            title="Schedule Production"
                           >
                             📅
                           </button>
@@ -353,7 +349,7 @@ const ManagerOrders = () => {
         </div>
       </div>
 
-      {/* Order Detail Modal */}
+      {/* Detail Modal */}
       {showDetailModal && selectedOrder && (
         <div
           className="modal-overlay"
@@ -361,7 +357,7 @@ const ManagerOrders = () => {
         >
           <div className="modal-content" onClick={(e) => e.stopPropagation()}>
             <div className="modal-header">
-              <h2>Chi tiết đơn hàng: {selectedOrder.id}</h2>
+              <h2>Order Details: {selectedOrder.id}</h2>
               <button
                 className="modal-close"
                 onClick={() => setShowDetailModal(false)}
@@ -372,19 +368,19 @@ const ManagerOrders = () => {
             <div className="modal-body">
               <div className="detail-grid">
                 <div className="detail-item">
-                  <label>Khách hàng:</label>
+                  <label>Customer:</label>
                   <span>{selectedOrder.customer}</span>
                 </div>
                 <div className="detail-item">
-                  <label>Sản phẩm:</label>
+                  <label>Product:</label>
                   <span>{selectedOrder.product}</span>
                 </div>
                 <div className="detail-item">
-                  <label>Số lượng:</label>
+                  <label>Quantity:</label>
                   <span>{selectedOrder.quantity.toLocaleString()} units</span>
                 </div>
                 <div className="detail-item">
-                  <label>Đã hoàn thành:</label>
+                  <label>Completed:</label>
                   <span>
                     {selectedOrder.completedQty.toLocaleString()} units (
                     {selectedOrder.progress}%)
@@ -395,7 +391,7 @@ const ManagerOrders = () => {
                   <span>{selectedOrder.deadline}</span>
                 </div>
                 <div className="detail-item">
-                  <label>Độ ưu tiên:</label>
+                  <label>Priority:</label>
                   <span
                     className={`priority-badge ${getPriorityClass(selectedOrder.priority)}`}
                   >
@@ -403,7 +399,7 @@ const ManagerOrders = () => {
                   </span>
                 </div>
                 <div className="detail-item">
-                  <label>Trạng thái:</label>
+                  <label>Status:</label>
                   <span
                     className={`order-status-badge ${getStatusClass(selectedOrder.status)}`}
                   >
@@ -411,18 +407,17 @@ const ManagerOrders = () => {
                   </span>
                 </div>
                 <div className="detail-item">
-                  <label>Line sản xuất:</label>
-                  <span>{selectedOrder.assignedLine || "Chưa phân bổ"}</span>
+                  <label>Production Line:</label>
+                  <span>{selectedOrder.assignedLine || "Not Assigned"}</span>
                 </div>
                 <div className="detail-item">
-                  <label>Ngày tạo:</label>
+                  <label>Created Date:</label>
                   <span>{selectedOrder.createdAt}</span>
                 </div>
               </div>
 
-              {/* Progress bar */}
               <div className="detail-progress">
-                <label>Tiến độ tổng thể:</label>
+                <label>Overall Progress:</label>
                 <div className="progress-bar-large">
                   <div
                     className="progress-fill-large"
@@ -442,14 +437,14 @@ const ManagerOrders = () => {
                     handleScheduleOrder(selectedOrder.id);
                   }}
                 >
-                  📅 Lập lịch sản xuất
+                  📅 Schedule Production
                 </button>
               )}
               <button
                 className="btn-cancel"
                 onClick={() => setShowDetailModal(false)}
               >
-                Đóng
+                Close
               </button>
             </div>
           </div>

@@ -7,7 +7,7 @@ const AICopilot = ({ isOpen, onClose }) => {
       id: 1,
       type: "bot",
       content:
-        "Xin chào! Tôi là AI Production Assistant. Tôi có thể giúp bạn với:\n\n• Tối ưu hóa lịch sản xuất\n• Phân tích năng suất và đề xuất\n• Gợi ý ưu tiên đơn hàng\n• Xác định điểm nghẽn\n• Thông tin hiệu suất\n\nTôi có thể giúp gì cho bạn hôm nay?",
+        "Hello! I'm the AI Production Assistant. I can help you with:\n\n• Optimize production schedules\n• Analyze productivity and provide suggestions\n• Prioritize orders\n• Identify bottlenecks\n• Performance information\n\nHow can I assist you today?",
       timestamp: new Date(),
     },
   ]);
@@ -24,12 +24,11 @@ const AICopilot = ({ isOpen, onClose }) => {
     scrollToBottom();
   }, [messages]);
 
-  // Gọi API OpenRouter
+  // Call OpenRouter API
   const callOpenRouterAPI = async (userMessage) => {
     const API_URL = "https://openrouter.ai/api/v1/chat/completions";
     const API_KEY = "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";
 
-    // Cập nhật conversation history
     const updatedHistory = [
       ...conversationHistory,
       { role: "user", content: userMessage }
@@ -40,17 +39,17 @@ const AICopilot = ({ isOpen, onClose }) => {
       messages: [
         {
           role: "system",
-          content: `Bạn là một AI Production Assistant chuyên nghiệp trong lĩnh vực quản lý sản xuất công nghiệp. 
+          content: `You are a professional AI Production Assistant specializing in industrial production management.
           
-Nhiệm vụ của bạn:
-- Hỗ trợ tối ưu hóa lịch sản xuất
-- Phân tích năng suất dây chuyền sản xuất
-- Đề xuất ưu tiên đơn hàng
-- Xác định và giải quyết điểm nghẽn (bottleneck)
-- Cung cấp thông tin KPI và hiệu suất
-- Dự đoán thời gian hoàn thành đơn hàng
+Your responsibilities:
+- Optimize production schedules
+- Analyze production line productivity
+- Recommend order prioritization
+- Identify and resolve bottlenecks
+- Provide KPI and performance information
+- Predict order completion times
 
-Trả lời bằng tiếng Việt, rõ ràng, chuyên nghiệp. Sử dụng emoji phù hợp để làm nổi bật thông tin quan trọng.`
+Respond clearly and professionally in English. Use appropriate emojis to highlight important information.`
         },
         ...updatedHistory
       ]
@@ -80,7 +79,6 @@ Trả lời bằng tiếng Việt, rõ ràng, chuyên nghiệp. Sử dụng emoj
 
       const assistantMessage = data.choices[0].message.content;
 
-      // Cập nhật conversation history với response
       setConversationHistory([
         ...updatedHistory,
         { role: "assistant", content: assistantMessage }
@@ -89,7 +87,7 @@ Trả lời bằng tiếng Việt, rõ ràng, chuyên nghiệp. Sử dụng emoj
       return assistantMessage;
     } catch (error) {
       console.error("API Error:", error);
-      return `❌ Xin lỗi, đã xảy ra lỗi khi kết nối với AI. Vui lòng thử lại sau.\n\nChi tiết lỗi: ${error.message}`;
+      return `❌ Sorry, an error occurred while connecting to AI. Please try again later.\n\nError details: ${error.message}`;
     }
   };
 
@@ -122,7 +120,7 @@ Trả lời bằng tiếng Việt, rõ ràng, chuyên nghiệp. Sử dụng emoj
       const errorResponse = {
         id: messages.length + 2,
         type: "bot",
-        content: "❌ Đã xảy ra lỗi. Vui lòng thử lại.",
+        content: "❌ An error occurred. Please try again.",
         timestamp: new Date(),
       };
       setMessages((prev) => [...prev, errorResponse]);
@@ -140,20 +138,20 @@ Trả lời bằng tiếng Việt, rõ ràng, chuyên nghiệp. Sử dụng emoj
 
   const quickActions = [
     {
-      label: "📅 Tối ưu lịch",
-      query: "Giúp tôi tối ưu hóa lịch sản xuất hôm nay",
+      label: "📅 Optimize Schedule",
+      query: "Help me optimize today's production schedule",
     },
     { 
-      label: "📊 Kiểm tra năng suất", 
-      query: "Phân tích năng suất các dây chuyền sản xuất hiện tại" 
+      label: "📊 Check Productivity", 
+      query: "Analyze current production line productivity" 
     },
     { 
-      label: "🔍 Tìm điểm nghẽn", 
-      query: "Xác định các điểm nghẽn trong quy trình sản xuất" 
+      label: "🔍 Find Bottlenecks", 
+      query: "Identify bottlenecks in the production process" 
     },
     { 
-      label: "📈 Xem KPI", 
-      query: "Hiển thị các chỉ số KPI hiệu suất hôm nay" 
+      label: "📈 View KPIs", 
+      query: "Show today's performance KPI metrics" 
     },
   ];
 
@@ -161,14 +159,12 @@ Trả lời bằng tiếng Việt, rõ ràng, chuyên nghiệp. Sử dụng emoj
     setInputValue(query);
   };
 
-  // Xóa lịch sử hội thoại
   const handleClearChat = () => {
     setMessages([
       {
         id: 1,
         type: "bot",
-        content:
-          "Xin chào! Tôi là AI Production Assistant. Tôi có thể giúp gì cho bạn?",
+        content: "Hello! I'm the AI Production Assistant. How can I help you?",
         timestamp: new Date(),
       },
     ]);
@@ -198,7 +194,7 @@ Trả lời bằng tiếng Việt, rõ ràng, chuyên nghiệp. Sử dụng emoj
             <button 
               className="copilot-close" 
               onClick={handleClearChat}
-              title="Xóa lịch sử chat"
+              title="Clear chat history"
               style={{ fontSize: "1rem" }}
             >
               🗑️
@@ -257,7 +253,7 @@ Trả lời bằng tiếng Việt, rõ ràng, chuyên nghiệp. Sử dụng emoj
         <div className="copilot-input-container">
           <textarea
             className="copilot-input"
-            placeholder="Hỏi về lịch sản xuất, năng suất, đơn hàng..."
+            placeholder="Ask about schedules, productivity, orders..."
             value={inputValue}
             onChange={(e) => setInputValue(e.target.value)}
             onKeyPress={handleKeyPress}
