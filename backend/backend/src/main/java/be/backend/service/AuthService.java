@@ -43,28 +43,49 @@ public class AuthService {
     @param request -Chứa employeeCode và password
     @return LoginResponse - Chứa token và thông tin user
 */
-    @Transactional
-    public LoginResponse login(LoginRequest request) {
-        Account account = accountRepository.findByEmployeeCode(request.getEmployeeCode()).orElseThrow(() -> new BusinessException("Employee code not found"));
-        if(!"active".equals(account.getStatus())){
-            throw new BusinessException("Account is not active");
+   @Transactional
+public LoginResponse login(LoginRequest request) {
+    Account account;
+    String identifier = request.getEmployeeCode();
+    
+    // Thử tìm bằng employeeCode trước (worker/manager)
+    var byEmployeeCode = accountRepository.findByEmployeeCode(identifier);
+    
+    if (byEmployeeCode.isPresent()) {
+        account = byEmployeeCode.get();
+    } else {
+        // Không tìm thấy employeeCode → thử tìm bằng username (admin)
+        account = accountRepository.findByUsername(identifier)
+                .orElseThrow(() -> new BusinessException("Tài khoản không tồn tại"));
+        
+        // Chỉ admin mới được login bằng username
+        if (!"admin".equalsIgnoreCase(account.getRole())) {
+            throw new BusinessException("Mã nhân viên không tồn tại");
         }
-        if (!passwordEncoder.matches(request.getPassword(), account.getPasswordHash())) {
-            log.warn("Failed login attempt for employee code: {}", request.getEmployeeCode());
-            throw new BusinessException("Mã nhân viên hoặc mật khẩu không đúng");
-        }
-        String accessToken = jwtService.generateToken(account);
-        String refreshToken = jwtService.generateRefreshToken(account);
-        account.setLastLogin(OffsetDateTime.now());
-        accountRepository.save(account);
-        LoginResponse response = accountMapper.toLoginResponse(account);
-        response.setAccessToken(accessToken);
-        response.setRefreshToken(refreshToken);
-        response.setExpiresIn(jwtExpiration / 1000);
-
-        log.info("Login successful for employee code: {}", request.getEmployeeCode());
-        return response;
     }
+    
+    if (!"active".equals(account.getStatus())) {
+        throw new BusinessException("Tài khoản chưa được kích hoạt");
+    }
+    
+    if (!passwordEncoder.matches(request.getPassword(), account.getPasswordHash())) {
+        log.warn("Failed login attempt for: {}", identifier);
+        throw new BusinessException("Mã nhân viên hoặc mật khẩu không đúng");
+    }
+    
+    String accessToken = jwtService.generateToken(account);
+    String refreshToken = jwtService.generateRefreshToken(account);
+    account.setLastLogin(OffsetDateTime.now());
+    accountRepository.save(account);
+    
+    LoginResponse response = accountMapper.toLoginResponse(account);
+    response.setAccessToken(accessToken);
+    response.setRefreshToken(refreshToken);
+    response.setExpiresIn(jwtExpiration / 1000);
+
+    log.info("Login successful for: {} (role: {})", identifier, account.getRole());
+    return response;
+}
 
     /**
      * @param request - Thông tin đăng ký
