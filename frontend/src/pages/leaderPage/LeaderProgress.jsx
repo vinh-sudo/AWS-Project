@@ -8,7 +8,7 @@ const LeaderProgress = () => {
   const [activeTab, setActiveTab] = useState("inProgress");
   const [showUpdateModal, setShowUpdateModal] = useState(false);
   const [showIncidentModal, setShowIncidentModal] = useState(false);
-  const [selectedSchedule, setSelectedSchedule] = useState(null);
+  const [saelectedSchedule, setSelectedSchedule] = useState(null);
   const [newOutput, setNewOutput] = useState(0);
   const [progressNote, setProgressNote] = useState("");
 
