@@ -56,6 +56,10 @@ public class Machine {
     @Column(name = "updated_at")
     private OffsetDateTime updatedAt;
 
+    @ColumnDefault("1")
+    @Column(name = "quantity")
+    private Integer quantity;
+
     @OneToMany
     @JoinColumn(name = "machine_id")
     private Set<IncidentLog> incidentLogs = new LinkedHashSet<>();
