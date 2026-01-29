@@ -84,37 +84,40 @@ public class Account implements UserDetails {
     private OffsetDateTime refreshTokenCreatedAt;
 
     @Override
-public Collection<? extends GrantedAuthority> getAuthorities() {
-    // Trả về role của account thay vì empty list
-    if (role == null || role.isBlank()) {
-        return List.of(() -> "ROLE_USER");  // Default role nếu null
+    public Collection<? extends GrantedAuthority> getAuthorities() {
+        if (role == null || role.isBlank()) {
+            return List.of(() -> "ROLE_USER");
+        }
+        // Thêm prefix ROLE_ nếu chưa có
+        String roleWithPrefix = role.toUpperCase().startsWith("ROLE_")
+                ? role.toUpperCase()
+                : "ROLE_" + role.toUpperCase();
+        return List.of(() -> roleWithPrefix);
     }
-    return List.of(() -> role);
-}
 
-@Override
-public String getPassword() {
-    return passwordHash;  // Trả về password hash, KHÔNG phải empty string
-}
+    @Override
+    public String getPassword() {
+        return passwordHash; // Trả về password hash, KHÔNG phải empty string
+    }
 
-@Override
-public boolean isAccountNonExpired() {
-    return true;
-}
+    @Override
+    public boolean isAccountNonExpired() {
+        return true;
+    }
 
-@Override
-public boolean isAccountNonLocked() {
-    return true;
-}
+    @Override
+    public boolean isAccountNonLocked() {
+        return true;
+    }
 
-@Override
-public boolean isCredentialsNonExpired() {
-    return true;
-}
+    @Override
+    public boolean isCredentialsNonExpired() {
+        return true;
+    }
 
-@Override
-public boolean isEnabled() {
-    return "active".equalsIgnoreCase(status);
-}
+    @Override
+    public boolean isEnabled() {
+        return "active".equalsIgnoreCase(status);
+    }
 
 }
