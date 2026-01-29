@@ -10,10 +10,11 @@ import java.util.List;
 @Mapper(componentModel = "spring")
 public interface ProductionPlanMapper {
 
+    @Mapping(source = "id", target = "planId")
     @Mapping(source = "line.lineName", target = "lineName")
-    @Mapping(source = "plannedStartTime", target = "startTime")
-    @Mapping(source = "plannedEndTime", target = "endTime")
+    @Mapping(source = "plannedStartDate", target = "startDate")
+    @Mapping(source = "plannedEndDate", target = "endDate")
+    @Mapping(source = "decision", target = "status")
     ProductionPlanResponse toResponse(ProductionPlan plan);
-
     List<ProductionPlanResponse> toResponseList(List<ProductionPlan> plans);
 }

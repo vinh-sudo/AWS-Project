@@ -10,4 +10,6 @@ import be.backend.entity.Employee;
 @Repository
 public interface EmployeeRepository extends JpaRepository<Employee, Integer> {
     Optional<Employee> findByEmployeeCode(String employeeCode);
+
+    Optional<Employee> findByUserId(Integer userId);
 }
