@@ -60,6 +60,10 @@ public class Machine {
     @Column(name = "quantity")
     private Integer quantity;
 
+    @Size(max = 100)
+    @Column(name = "machine_code", length = 100)
+    private String machineCode;
+
     @OneToMany
     @JoinColumn(name = "machine_id")
     private Set<IncidentLog> incidentLogs = new LinkedHashSet<>();
