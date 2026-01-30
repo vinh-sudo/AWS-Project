@@ -9,12 +9,15 @@ import java.util.List;
 
 @Mapper(componentModel = "spring")
 public interface ProductionPlanMapper {
-
     @Mapping(source = "id", target = "planId")
+    @Mapping(source = "order.id", target = "orderId")
+    @Mapping(source = "line.id", target = "lineId")
     @Mapping(source = "line.lineName", target = "lineName")
+    @Mapping(source = "plannedQuantity", target = "plannedQuantity")
     @Mapping(source = "plannedStartDate", target = "startDate")
     @Mapping(source = "plannedEndDate", target = "endDate")
-    @Mapping(source = "decision", target = "status")
+    @Mapping(source = "decision", target = "decision")
+    @Mapping(source = "note", target = "note")
     ProductionPlanResponse toResponse(ProductionPlan plan);
     List<ProductionPlanResponse> toResponseList(List<ProductionPlan> plans);
 }

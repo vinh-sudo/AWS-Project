@@ -44,13 +44,17 @@ public class ProductionLine {
     @JoinColumn(name = "line_id")
     private Set<IncidentLog> incidentLogs = new LinkedHashSet<>();
 
+    @OneToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "line_id")
+    private LineLeaderAssignment lineLeaderAssignment;
+
     @OneToMany
     @JoinColumn(name = "line_id")
     private Set<Machine> machines = new LinkedHashSet<>();
 
     @OneToMany
     @JoinColumn(name = "line_id")
-    private Set<ProductionSchedule> productionSchedules = new LinkedHashSet<>();
+    private Set<ProductionPlan> productionPlans = new LinkedHashSet<>();
 
     @OneToMany
     @JoinColumn(name = "line_id")

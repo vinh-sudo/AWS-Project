@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project version="4">
   <component name="DataSourceManagerImpl" format="xml" multifile-model="true">
-    <data-source source="LOCAL" name="railway@yamanote.proxy.rlwy.net" uuid="91d4a193-396e-4aca-a468-2da8b759140e">
+    <data-source source="LOCAL" name="railway@yamanote.proxy.rlwy.net" uuid="4036568a-c658-4f99-9e6f-579c5427f203">
       <driver-ref>postgresql</driver-ref>
       <synchronize>true</synchronize>
       <jdbc-driver>org.postgresql.Driver</jdbc-driver>

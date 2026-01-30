@@ -56,9 +56,6 @@ public class Employee {
     @JoinColumn(name = "reported_by")
     private Set<IncidentLog> incidentLogs = new LinkedHashSet<>();
 
-    @OneToMany
-    @JoinColumn(name = "leader_id")
-    private Set<ProductionSchedule> productionSchedules = new LinkedHashSet<>();
 
     @OneToMany
     @JoinColumn(name = "employee_id")

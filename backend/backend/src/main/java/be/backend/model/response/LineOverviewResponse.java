@@ -19,5 +19,5 @@ public class LineOverviewResponse {
 
     private Integer availableMachines;
 
-    private String status; // OK | TIGHT | OVERLOAD
+    private String status;
 }

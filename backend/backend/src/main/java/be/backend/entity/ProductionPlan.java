@@ -9,6 +9,8 @@ import org.hibernate.annotations.ColumnDefault;
 
 import java.time.LocalDate;
 import java.time.OffsetDateTime;
+import java.util.LinkedHashSet;
+import java.util.Set;
 
 @Getter
 @Setter
@@ -49,9 +51,6 @@ public class ProductionPlan {
     @Column(name = "estimated_hours")
     private Double estimatedHours;
 
-    @Column(name = "estimated_machines")
-    private Integer estimatedMachines;
-
     @Size(max = 30)
     @NotNull
     @Column(name = "decision", nullable = false, length = 30)
@@ -63,5 +62,9 @@ public class ProductionPlan {
     @ColumnDefault("CURRENT_TIMESTAMP")
     @Column(name = "created_at")
     private OffsetDateTime createdAt;
+
+    @OneToMany
+    @JoinColumn(name = "plan_id")
+    private Set<ProductionSchedule> productionSchedules = new LinkedHashSet<>();
 
 }

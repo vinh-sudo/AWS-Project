@@ -29,17 +29,6 @@ public class ProductionSchedule {
     @JoinColumn(name = "order_id", nullable = false)
     private Order order;
 
-    @NotNull
-    @ManyToOne(fetch = FetchType.LAZY, optional = false)
-    @OnDelete(action = OnDeleteAction.CASCADE)
-    @JoinColumn(name = "line_id", nullable = false)
-    private ProductionLine line;
-
-    @NotNull
-    @ManyToOne(fetch = FetchType.LAZY, optional = false)
-    @JoinColumn(name = "leader_id", nullable = false)
-    private Employee leader;
-
     @Column(name = "start_time")
     private OffsetDateTime startTime;
 
@@ -50,6 +39,16 @@ public class ProductionSchedule {
     @ColumnDefault("'Scheduled'")
     @Column(name = "status", length = 20)
     private String status;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @OnDelete(action = OnDeleteAction.CASCADE)
+    @JoinColumn(name = "machine_id")
+    private Machine machine;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @OnDelete(action = OnDeleteAction.CASCADE)
+    @JoinColumn(name = "plan_id")
+    private ProductionPlan plan;
 
     @OneToMany
     @JoinColumn(name = "schedule_id")

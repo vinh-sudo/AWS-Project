@@ -5,17 +5,24 @@ import lombok.Data;
 
 import java.time.LocalDate;
 import java.time.OffsetDateTime;
-
 @Data
 @Builder
 public class ProductionPlanResponse {
 
     private Integer planId;
+    private Integer orderId;
+
+    private Integer lineId;
     private String lineName;
+
+    private Integer plannedQuantity;
 
     private LocalDate startDate;
     private LocalDate endDate;
 
     private Double estimatedHours;
-    private String status;
+
+    private String decision;
+    private String note;
 }
+

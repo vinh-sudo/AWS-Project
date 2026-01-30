@@ -8,8 +8,6 @@ import org.springframework.stereotype.Service;
 
 import java.time.OffsetDateTime;
 import java.util.List;
-
-
 @Service
 @RequiredArgsConstructor
 public class ManagerLineOverviewService {
@@ -23,26 +21,27 @@ public class ManagerLineOverviewService {
 
         return lines.stream().map(dto -> {
 
-            double maxHours =
-                    dto.getShiftHours() * dto.getEfficiency();
+            int totalMachines = dto.getTotalMachines().intValue();
+            int busyMachines  = dto.getBusyMachines().intValue();
+
+            double shiftHours = dto.getShiftHours();
+            double efficiency = dto.getEfficiency();
 
             double busyHours = dto.getBusyHours();
+
+            double maxHours =
+                    totalMachines * shiftHours * efficiency;
+
             double availableHours =
                     Math.max(0, maxHours - busyHours);
-
-            int totalMachines =
-                    dto.getTotalMachines().intValue();
-
-            int busyMachines =
-                    dto.getBusyMachines().intValue();
 
             int availableMachines =
                     Math.max(0, totalMachines - busyMachines);
 
             String status;
-            if (availableHours <= 0 || availableMachines <= 0) {
+            if (availableMachines <= 0 || availableHours <= 0) {
                 status = "OVERLOAD";
-            } else if (availableHours <= 2) {
+            } else if (availableHours <= maxHours * 0.15) {
                 status = "TIGHT";
             } else {
                 status = "OK";

@@ -12,19 +12,46 @@ import java.util.List;
 @Repository
 public interface ProductionLineRepository extends JpaRepository<ProductionLine, Long> {
 
-        @Query(value = """
+    @Query(value = """
         SELECT
-            pl.line_id::BIGINT     AS lineId,
-            pl.line_name           AS lineName,
-            pl.shift_hours::INTEGER AS shiftHours,
-            pl.efficiency::DOUBLE PRECISION AS efficiency,
-            COALESCE(SUM(EXTRACT(EPOCH FROM (ps.end_time - ps.start_time)) / 3600), 0)::DOUBLE PRECISION AS busyHours,
+            pl.line_id::BIGINT               AS lineId,
+            pl.line_name                     AS lineName,
+            pl.shift_hours::INTEGER          AS shiftHours,
+            pl.efficiency::DOUBLE PRECISION  AS efficiency,
+
+            COALESCE(
+                SUM(
+                    EXTRACT(EPOCH FROM (ps.end_time - ps.start_time)) / 3600
+                ), 0
+            )::DOUBLE PRECISION AS busyHours,
+
             COUNT(DISTINCT m.machine_id)::BIGINT AS totalMachines,
-            COUNT(DISTINCT CASE WHEN ps.status IN ('Scheduled','In Progress') THEN m.machine_id END)::BIGINT AS busyMachines
+
+            COUNT(DISTINCT
+                CASE
+                    WHEN ps.status IN ('Scheduled','In Progress')
+                    THEN m.machine_id
+                END
+            )::BIGINT AS busyMachines
+
         FROM production_line pl
-        LEFT JOIN machine m ON m.line_id = pl.line_id AND m.status = 'active'
-        LEFT JOIN production_schedule ps ON ps.line_id = pl.line_id AND ps.start_time >= :from AND ps.status IN ('Scheduled','In Progress')
-        GROUP BY pl.line_id, pl.line_name, pl.shift_hours, pl.efficiency
+
+        LEFT JOIN machine m
+               ON m.line_id = pl.line_id
+              AND m.status = 'active'
+
+        LEFT JOIN production_schedule ps
+               ON ps.machine_id = m.machine_id
+              AND ps.start_time <= :now
+              AND ps.end_time   >= :now
+              AND ps.status IN ('Scheduled','In Progress')
+
+        GROUP BY
+            pl.line_id,
+            pl.line_name,
+            pl.shift_hours,
+            pl.efficiency
         """, nativeQuery = true)
-        List<LineCapacityDTO> getLineCapacity(@Param("from") OffsetDateTime from);
-    }
+    List<LineCapacityDTO> getLineCapacity(@Param("now") OffsetDateTime now);
+}
+

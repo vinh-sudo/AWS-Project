@@ -3,8 +3,10 @@ package be.backend.controller.manager;
 import be.backend.entity.Account;
 import be.backend.model.request.ProductionPlanRequest;
 import be.backend.model.response.ProductionPlanResponse;
+import be.backend.model.response.ScheduleValidationResult;
 import be.backend.service.manager.ManagerPlanningService;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
@@ -28,5 +30,29 @@ public class ManagerPlanningController {
         return ResponseEntity.ok(
                 planningService.createPlan(request, account)
         );
+    }
+
+    @PostMapping("/order/{orderId}/confirm")
+    public ResponseEntity<?> confirm(
+            @PathVariable Integer orderId,
+            @AuthenticationPrincipal Account account
+    ) {
+        ScheduleValidationResult result =
+                planningService.confirm(orderId, account);
+
+        if (!result.isOk()) {
+            return ResponseEntity.badRequest().body(result);
+        }
+
+        return ResponseEntity.ok(result);
+    }
+
+    @PostMapping("/order/{orderId}/cancel")
+    public ResponseEntity<String> cancel(
+            @PathVariable Integer orderId,
+            @AuthenticationPrincipal Account account
+    ) {
+        planningService.cancel(orderId, account);
+        return ResponseEntity.ok("Order " + orderId + " plan cancelled");
     }
 }

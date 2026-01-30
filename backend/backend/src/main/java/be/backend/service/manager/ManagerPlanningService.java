@@ -5,7 +5,9 @@ import be.backend.mapper.ProductionPlanMapper;
 import be.backend.model.request.LinePlanRequest;
 import be.backend.model.request.ProductionPlanRequest;
 import be.backend.model.response.ProductionPlanResponse;
+import be.backend.model.response.ScheduleValidationResult;
 import be.backend.repository.*;
+import be.backend.service.SchedulerService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -23,17 +25,22 @@ public class ManagerPlanningService {
     private final ProductionPlanRepository planRepo;
     private final EmployeeRepository employeeRepo;
     private final ProductionPlanMapper mapper;
+    private final AuditLogRepository auditRepo;
+    private final SchedulerService schedulerService;
 
     @Transactional
     public List<ProductionPlanResponse> createPlan(
             ProductionPlanRequest request,
             Account account
     ) {
+
+        planRepo.deleteByOrderIdAndDecision(request.getOrderId(), "DRAFT");
+
         Order order = orderRepo.findById(request.getOrderId())
                 .orElseThrow(() -> new RuntimeException("Order not found"));
 
         Employee manager = employeeRepo.findByUserId(account.getUser().getId())
-                .orElseThrow(() -> new RuntimeException("Employee not found for this account"));
+                .orElseThrow(() -> new RuntimeException("Employee not found"));
 
         List<ProductionPlan> plans = new ArrayList<>();
 
@@ -44,10 +51,9 @@ public class ManagerPlanningService {
 
             int qty = lineReq.getPlannedQty();
 
-            double capacity = line.getCapacity();
-            double efficiency = line.getEfficiency().doubleValue();
-            double hourlyCapacity = capacity * efficiency;
+            double hourlyCapacity = line.getCapacity() * line.getEfficiency().doubleValue();
             double hours = qty / hourlyCapacity;
+            long days = (long) Math.ceil(hours / 8);
 
             ProductionPlan plan = new ProductionPlan();
             plan.setOrder(order);
@@ -55,21 +61,90 @@ public class ManagerPlanningService {
             plan.setCreatedBy(manager);
             plan.setPlannedQuantity(qty);
             plan.setPlannedStartDate(request.getStartDate());
-            plan.setPlannedEndDate(
-                    request.getStartDate().plusDays((long) Math.ceil(hours / 8))
-            );
+            plan.setPlannedEndDate(request.getStartDate().plusDays(days));
             plan.setEstimatedHours(hours);
-            plan.setDecision("CONFIRM");
+            plan.setDecision("DRAFT");
+            plan.setNote(request.getNote());
             plan.setCreatedAt(OffsetDateTime.now());
 
             plans.add(plan);
         }
 
         planRepo.saveAll(plans);
-        order.setStatus("PLANNED");
+
+        order.setStatus("PLANNING");
+        orderRepo.save(order);
 
         return mapper.toResponseList(plans);
     }
+
+    // ================= CONFIRM =================
+    @Transactional
+    public ScheduleValidationResult confirm(Integer orderId, Account account) {
+
+        List<ProductionPlan> plans =
+                planRepo.findByOrderIdAndDecision(orderId, "DRAFT");
+
+        if (plans.isEmpty()) {
+            return ScheduleValidationResult.fail("No DRAFT plan found");
+        }
+
+        ScheduleValidationResult result =
+                schedulerService.validateCapacity(plans);
+
+        if (!result.isOk()) {
+
+            AuditLog log = new AuditLog();
+            log.setUser(account.getUser());
+            log.setActionType("CONFIRM_PLAN_FAILED");
+            log.setEntity("Order");
+            log.setDetails(result.getMessage());
+            auditRepo.save(log);
+
+            return result;
+        }
+
+        for (ProductionPlan plan : plans) {
+            schedulerService.createSchedules(plan);
+            plan.setDecision("CONFIRMED");
+        }
+
+        Order order = plans.get(0).getOrder();
+        order.setStatus("SCHEDULED");
+        orderRepo.save(order);
+
+        AuditLog log = new AuditLog();
+        log.setUser(account.getUser());
+        log.setActionType("CONFIRM_PLAN");
+        log.setEntity("Order");
+        log.setDetails("Order " + orderId + " confirmed and scheduled");
+        auditRepo.save(log);
+
+        return ScheduleValidationResult.success();
+    }
+
+    // ================= CANCEL =================
+    @Transactional
+    public void cancel(Integer orderId, Account account) {
+
+        List<ProductionPlan> plans =
+                planRepo.findByOrderIdAndDecision(orderId, "DRAFT");
+
+        if (plans.isEmpty()) {
+            throw new RuntimeException("No DRAFT plan to cancel");
+        }
+
+        plans.forEach(p -> p.setDecision("CANCELLED"));
+
+        Order order = plans.get(0).getOrder();
+        order.setStatus("NEW");
+        orderRepo.save(order);
+
+        AuditLog log = new AuditLog();
+        log.setUser(account.getUser());
+        log.setActionType("CANCEL_PLAN");
+        log.setEntity("Order");
+        log.setDetails("Cancelled plan for order " + orderId);
+        auditRepo.save(log);
+    }
 }
-
-

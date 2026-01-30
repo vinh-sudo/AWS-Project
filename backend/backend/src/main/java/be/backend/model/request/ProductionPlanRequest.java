@@ -10,6 +10,6 @@ public class ProductionPlanRequest {
 
     private Integer orderId;
     private LocalDate startDate;
-
+    private String note;
     private List<LinePlanRequest> lines;
 }
