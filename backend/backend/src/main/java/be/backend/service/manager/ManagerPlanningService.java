@@ -86,21 +86,19 @@ public class ManagerPlanningService {
                 planRepo.findByOrderIdAndDecision(orderId, "DRAFT");
 
         if (plans.isEmpty()) {
-            return ScheduleValidationResult.fail("No DRAFT plan found");
+            return ScheduleValidationResult.fail("No draft plan");
         }
 
         ScheduleValidationResult result =
                 schedulerService.validateCapacity(plans);
 
         if (!result.isOk()) {
-
             AuditLog log = new AuditLog();
             log.setUser(account.getUser());
-            log.setActionType("CONFIRM_PLAN_FAILED");
+            log.setActionType("CONFIRM_PLAN");
             log.setEntity("Order");
-            log.setDetails(result.getMessage());
+            log.setDetails("FAILED: " + result.getMessage());
             auditRepo.save(log);
-
             return result;
         }
 
@@ -117,11 +115,12 @@ public class ManagerPlanningService {
         log.setUser(account.getUser());
         log.setActionType("CONFIRM_PLAN");
         log.setEntity("Order");
-        log.setDetails("Order " + orderId + " confirmed and scheduled");
+        log.setDetails("Order " + orderId + " scheduled");
         auditRepo.save(log);
 
         return ScheduleValidationResult.success();
     }
+
 
     // ================= CANCEL =================
     @Transactional

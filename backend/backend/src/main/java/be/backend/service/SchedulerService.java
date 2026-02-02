@@ -4,7 +4,7 @@ import be.backend.entity.Machine;
 import be.backend.entity.ProductionPlan;
 import be.backend.entity.ProductionSchedule;
 import be.backend.model.response.ScheduleValidationResult;
-import be.backend.repository.ProductionScheduleRepository;
+import be.backend.repository.*;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
@@ -17,86 +17,98 @@ import java.util.List;
 public class SchedulerService {
 
     private final ProductionScheduleRepository scheduleRepo;
+    private final MachineRepository machineRepo;
+    private final LineLeaderAssignmentRepository leaderRepo;
+    private final IncidentLogRepository incidentRepo;
 
-    // Validate capacity + conflicts
+    // ============== VALIDATE ==============
     public ScheduleValidationResult validateCapacity(List<ProductionPlan> plans) {
 
         for (ProductionPlan plan : plans) {
 
-            var start = plan.getPlannedStartDate()
-                    .atStartOfDay()
-                    .atOffset(ZoneOffset.of("+07:00"));
+            var start = plan.getPlannedStartDate().atStartOfDay().atOffset(ZoneOffset.of("+07"));
+            var end   = plan.getPlannedEndDate().atStartOfDay().atOffset(ZoneOffset.of("+07"));
 
-            var end = plan.getPlannedEndDate()
-                    .atStartOfDay()
-                    .atOffset(ZoneOffset.of("+07:00"));
-
-            double requiredHours = plan.getEstimatedHours();
-            double totalAvailable = 0;
-
-            for (Machine m : plan.getLine().getMachines()) {
-
-                boolean busy = scheduleRepo.existsOverlappingMachine(
-                        m.getId().longValue(), start, end
-                );
-
-                if (!busy) {
-                    double machineCapacity = m.getCapacity();
-                    double shift = plan.getLine().getShiftHours();
-                    double efficiency = plan.getLine().getEfficiency().doubleValue();
-
-                    totalAvailable += machineCapacity * shift * efficiency;
-                }
+            // 1. Leader check
+            if (leaderRepo.findActiveLeader(plan.getLine().getId().longValue(), start, end).isEmpty()) {
+                return ScheduleValidationResult.fail(
+                        "No active line leader for " + plan.getLine().getLineName());
             }
 
-            if (totalAvailable < requiredHours) {
+            // 2. Line incident
+            if (incidentRepo.hasBlockingIncident(
+                    plan.getLine().getId().longValue(), null, start, end)) {
                 return ScheduleValidationResult.fail(
-                        "Line " + plan.getLine().getLineName() +
-                                " does not have enough capacity. Required " +
-                                requiredHours + "h but only " + totalAvailable + "h available"
-                );
+                        "Line " + plan.getLine().getLineName() + " has blocking incident");
+            }
+
+            List<Machine> machines =
+                    machineRepo.findByLineIdAndStatus(plan.getLine().getId(), "ACTIVE");
+
+            double totalHours = 0;
+
+            for (Machine m : machines) {
+
+                // 3. Machine incident
+                if (incidentRepo.hasBlockingIncident(
+                        plan.getLine().getId().longValue(),
+                        m.getId().longValue(),
+                        start, end)) continue;
+
+                // 4. Busy
+                if (scheduleRepo.existsOverlappingMachine(
+                        m.getId().longValue(), start, end)) continue;
+
+                // 5. Capacity in hours
+                double hours =
+                        plan.getLine().getShiftHours()
+                                * plan.getLine().getEfficiency().doubleValue();
+
+                totalHours += hours;
+            }
+
+            if (totalHours < plan.getEstimatedHours()) {
+                return ScheduleValidationResult.fail(
+                        "Not enough machine hours on line " + plan.getLine().getLineName());
             }
         }
-
         return ScheduleValidationResult.success();
     }
 
-    // Auto split plan into machines
+    // ============== CREATE SCHEDULE ==============
     public List<ProductionSchedule> createSchedules(ProductionPlan plan) {
 
-        var start = plan.getPlannedStartDate()
-                .atStartOfDay()
-                .atOffset(ZoneOffset.of("+07:00"));
+        var start = plan.getPlannedStartDate().atStartOfDay().atOffset(ZoneOffset.of("+07"));
+        var end   = plan.getPlannedEndDate().atStartOfDay().atOffset(ZoneOffset.of("+07"));
 
         double remaining = plan.getEstimatedHours();
-        double shift = plan.getLine().getShiftHours();
-        double efficiency = plan.getLine().getEfficiency().doubleValue();
+        double shift = plan.getLine().getShiftHours().doubleValue();
+        double eff   = plan.getLine().getEfficiency().doubleValue();
+
+        List<Machine> machines =
+                machineRepo.findByLineIdAndStatus(plan.getLine().getId(), "ACTIVE");
 
         List<ProductionSchedule> result = new ArrayList<>();
 
-        for (Machine m : plan.getLine().getMachines()) {
-
+        for (Machine m : machines) {
             if (remaining <= 0) break;
 
-            boolean busy = scheduleRepo.existsOverlappingMachine(
-                    m.getId().longValue(), start, start.plusDays(365)
-            );
+            if (scheduleRepo.existsOverlappingMachine(
+                    m.getId().longValue(), start, end)) continue;
 
-            if (busy) continue;
-
-            double machineHours = m.getCapacity() * shift * efficiency;
-            double assigned = Math.min(machineHours, remaining);
+            double available = shift * eff;
+            double assigned = Math.min(available, remaining);
+            double realHours = assigned / eff;
 
             ProductionSchedule s = new ProductionSchedule();
             s.setOrder(plan.getOrder());
             s.setPlan(plan);
             s.setMachine(m);
             s.setStartTime(start);
-            s.setEndTime(start.plusHours((long) Math.ceil(assigned)));
+            s.setEndTime(start.plusHours((long) Math.ceil(realHours)));
             s.setStatus("SCHEDULED");
 
             result.add(scheduleRepo.save(s));
-
             remaining -= assigned;
         }
 
