@@ -35,21 +35,12 @@ public class Report {
     private ProductionLine line;
 
     @NotNull
-    @ManyToOne(fetch = FetchType.LAZY, optional = false)
-    @OnDelete(action = OnDeleteAction.CASCADE)
-    @JoinColumn(name = "schedule_id", nullable = false)
-    private ProductionSchedule schedule;
-
-    @NotNull
     @Column(name = "work_date", nullable = false)
     private LocalDate workDate;
 
     @Size(max = 20)
     @Column(name = "shift", length = 20)
     private String shift;
-
-    @Column(name = "produced_quantity")
-    private Integer producedQuantity;
 
     @Column(name = "downtime_minutes")
     private Integer downtimeMinutes;
@@ -60,5 +51,20 @@ public class Report {
     @ColumnDefault("CURRENT_TIMESTAMP")
     @Column(name = "created_at")
     private OffsetDateTime createdAt;
+
+    @NotNull
+    @ColumnDefault("0")
+    @Column(name = "target_quantity", nullable = false)
+    private Integer targetQuantity;
+
+    @NotNull
+    @ColumnDefault("0")
+    @Column(name = "good_quantity", nullable = false)
+    private Integer goodQuantity;
+
+    @NotNull
+    @ColumnDefault("0")
+    @Column(name = "reject_quantity", nullable = false)
+    private Integer rejectQuantity;
 
 }

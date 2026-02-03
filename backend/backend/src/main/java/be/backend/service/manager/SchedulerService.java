@@ -1,10 +1,11 @@
-package be.backend.service;
+package be.backend.service.manager;
 
 import be.backend.entity.Machine;
 import be.backend.entity.ProductionPlan;
 import be.backend.entity.ProductionSchedule;
 import be.backend.model.response.ScheduleValidationResult;
 import be.backend.repository.*;
+import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
@@ -56,7 +57,7 @@ public class SchedulerService {
                         start, end)) continue;
 
                 // 4. Busy
-                if (scheduleRepo.existsOverlappingMachine(
+                if (scheduleRepo.existsOverlappingMachineForUpdate(
                         m.getId().longValue(), start, end)) continue;
 
                 // 5. Capacity in hours
@@ -76,6 +77,7 @@ public class SchedulerService {
     }
 
     // ============== CREATE SCHEDULE ==============
+    @Transactional
     public List<ProductionSchedule> createSchedules(ProductionPlan plan) {
 
         var start = plan.getPlannedStartDate().atStartOfDay().atOffset(ZoneOffset.of("+07"));
@@ -93,7 +95,7 @@ public class SchedulerService {
         for (Machine m : machines) {
             if (remaining <= 0) break;
 
-            if (scheduleRepo.existsOverlappingMachine(
+            if (scheduleRepo.existsOverlappingMachineForUpdate(
                     m.getId().longValue(), start, end)) continue;
 
             double available = shift * eff;

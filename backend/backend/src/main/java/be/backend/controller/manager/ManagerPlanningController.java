@@ -55,4 +55,11 @@ public class ManagerPlanningController {
         planningService.cancel(orderId, account);
         return ResponseEntity.ok("Order " + orderId + " plan cancelled");
     }
+
+    @GetMapping("/view")
+    public List<ProductionPlanResponse> getAll(
+            @RequestParam(required = false) String status
+    ) {
+        return planningService.getAllPlans(status);
+    }
 }

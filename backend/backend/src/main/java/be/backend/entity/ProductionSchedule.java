@@ -58,8 +58,5 @@ public class ProductionSchedule {
     @JoinColumn(name = "schedule_id")
     private Set<ProductionProgress> productionProgresses = new LinkedHashSet<>();
 
-    @OneToMany
-    @JoinColumn(name = "schedule_id")
-    private Set<Report> reports = new LinkedHashSet<>();
 
 }
