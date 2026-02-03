@@ -1,4 +1,4 @@
-package be.backend.service;
+package be.backend.service.manager;
 
 import be.backend.entity.Machine;
 import be.backend.entity.ProductionPlan;
