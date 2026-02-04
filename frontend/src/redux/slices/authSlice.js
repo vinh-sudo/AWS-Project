@@ -14,19 +14,19 @@ const initialState = {
 // Async thunk for login
 export const login = createAsyncThunk(
   "auth/login",
-  async ({ email, password }, { rejectWithValue }) => {
+  async ({ employeeCode, password }, { rejectWithValue }) => {
     try {
-      const user = await authService.login(email, password);
+      const user = await authService.login(employeeCode, password);
       return user;
     } catch (error) {
       return rejectWithValue(error.message);
     }
-  }
+  },
 );
 
 // Async thunk for logout
 export const logout = createAsyncThunk("auth/logout", async () => {
-  authService.logout();
+  await authService.logout();
 });
 
 const authSlice = createSlice({

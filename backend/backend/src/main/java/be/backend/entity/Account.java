@@ -58,10 +58,14 @@ public class Account implements UserDetails {
     @Column(name = "updated_at")
     private OffsetDateTime updatedAt;
 
-    @Size(max = 20)
-    @NotNull
-    @Column(name = "employee_code", nullable = false, length = 20)
-    private String employeeCode;
+    @Size(max = 50)
+    @Column(name = "username", length = 50)
+    private String username;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @OnDelete(action = OnDeleteAction.CASCADE)
+    @JoinColumn(name = "user_id")
+    private User user;
 
     @Override
     public Collection<? extends GrantedAuthority> getAuthorities() {
@@ -71,12 +75,16 @@ public class Account implements UserDetails {
 
     @Override
     public @Nullable String getPassword() {
-        return "";
+        return passwordHash;
     }
 
     @Override
     public String getUsername() {
-        return "";
+        return username != null ? username : (employee != null ? employee.getEmployeeCode() : String.valueOf(id));
+    }
+    
+    public void setUsername(String username) {
+        this.username = username;
     }
 
     @Override
@@ -96,7 +104,7 @@ public class Account implements UserDetails {
 
     @Override
     public boolean isEnabled() {
-        return true;
+        return "active".equalsIgnoreCase(status);
     }
 
 }

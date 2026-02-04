@@ -63,7 +63,7 @@ const AdminDashboard = () => {
     },
     {
       id: 3,
-      user: "manager@ims.com",
+      user: "planner@ims.com",
       action: "Approved order #1234",
       entity: "orders",
       time: "1 hour ago",

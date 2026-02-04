@@ -1,250 +1,432 @@
-import React, { useState } from "react";
-import {
-  LineChart,
-  Line,
-  XAxis,
-  YAxis,
-  CartesianGrid,
-  Tooltip,
-  Legend,
-  ResponsiveContainer,
-} from "recharts";
-import authService from "../../services/authService";
+import React, { useState, useEffect } from "react";
 import ManagerSidebar from "../../components/ManagerSidebar/ManagerSidebar";
+import managerService from "../../services/managerService";
 import "./ManagerDashboard.css";
 
 const ManagerDashboard = () => {
-  const currentUser = authService.getCurrentUser();
+  const [linesOverview, setLinesOverview] = useState([]);
+  const [oeeData, setOeeData] = useState([]);
+  const [delays, setDelays] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [selectedDate, setSelectedDate] = useState(
+    new Date().toISOString().split("T")[0],
+  );
 
-  // Mock data for stats
-  const [stats] = useState({
-    runningOrders: 12,
-    lineUtilization: 85,
-    atRiskOrders: 3,
-    avgEfficiency: 78,
-  });
+  useEffect(() => {
+    fetchDashboardData();
+  }, [selectedDate]);
 
-  // Mock data for efficiency over time (line chart)
-  const [efficiencyData] = useState([
-    { name: "Jan 1", line1: 65, line2: 45 },
-    { name: "Jan 2", line1: 78, line2: 52 },
-    { name: "Jan 3", line1: 62, line2: 48 },
-    { name: "Jan 4", line1: 85, line2: 58 },
-    { name: "Jan 5", line1: 92, line2: 72 },
-    { name: "Jan 6", line1: 88, line2: 65 },
-    { name: "Jan 7", line1: 75, line2: 62 },
-    { name: "Jan 8", line1: 82, line2: 68 },
-    { name: "Jan 9", line1: 95, line2: 72 },
-  ]);
+  const fetchDashboardData = async () => {
+    setLoading(true);
+    try {
+      // Fetch all data in parallel
+      const [linesRes, oeeRes, delaysRes] = await Promise.all([
+        managerService.getLinesOverview().catch(() => mockLinesOverview),
+        managerService.getOEE(selectedDate).catch(() => mockOeeData),
+        managerService.getDelays().catch(() => mockDelays),
+      ]);
 
-  // Mock data for running orders
-  const [runningOrders] = useState([
+      setLinesOverview(linesRes);
+      setOeeData(oeeRes);
+      setDelays(delaysRes);
+    } catch (error) {
+      console.error("Error fetching dashboard data:", error);
+      // Use mock data as fallback
+      setLinesOverview(mockLinesOverview);
+      setOeeData(mockOeeData);
+      setDelays(mockDelays);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Mock data for development
+  const mockLinesOverview = [
     {
-      id: "ORD-001",
-      customer: "ABC Corp",
-      line: "Line A",
-      progress: 75,
-      deadline: "Jan 30, 2026",
-      status: "On Track",
+      lineId: 1,
+      lineName: "SMT Line 1",
+      busyHours: 6.5,
+      availableHours: 8,
+      availableMachines: 4,
+      status: "Running",
     },
     {
-      id: "ORD-002",
-      customer: "XYZ Ltd",
-      line: "Line B",
-      progress: 60,
-      deadline: "Feb 15, 2026",
-      status: "Delayed",
+      lineId: 2,
+      lineName: "SMT Line 2",
+      busyHours: 7.2,
+      availableHours: 8,
+      availableMachines: 3,
+      status: "Running",
     },
     {
-      id: "ORD-003",
-      customer: "DEF Inc",
-      line: "Line D",
-      progress: 45,
-      deadline: "Feb 20, 2026",
-      status: "Pending",
+      lineId: 3,
+      lineName: "Assembly Line 1",
+      busyHours: 0,
+      availableHours: 8,
+      availableMachines: 5,
+      status: "Idle",
     },
     {
-      id: "ORD-004",
-      customer: "GHI Company",
-      line: "Line A",
-      progress: 90,
-      deadline: "Jan 25, 2026",
-      status: "On Track",
+      lineId: 4,
+      lineName: "Test Line 1",
+      busyHours: 4.5,
+      availableHours: 8,
+      availableMachines: 2,
+      status: "Running",
+    },
+  ];
+
+  const mockOeeData = [
+    {
+      line: "SMT Line 1",
+      availability: 92,
+      performance: 88,
+      quality: 98,
+      oee: 79.5,
     },
     {
-      id: "ORD-005",
-      customer: "JKL Corp",
-      line: "Line E",
-      progress: 30,
-      deadline: "Feb 05, 2026",
-      status: "At Risk",
+      line: "SMT Line 2",
+      availability: 85,
+      performance: 82,
+      quality: 96,
+      oee: 66.9,
     },
-  ]);
+    {
+      line: "Assembly Line 1",
+      availability: 0,
+      performance: 0,
+      quality: 0,
+      oee: 0,
+    },
+    {
+      line: "Test Line 1",
+      availability: 78,
+      performance: 85,
+      quality: 99,
+      oee: 65.6,
+    },
+  ];
+
+  const mockDelays = [
+    {
+      scheduleId: 1,
+      line: "SMT Line 2",
+      machine: "Pick & Place A2",
+      expected: 500,
+      actual: 380,
+      delay: 120,
+      risk: "HIGH",
+    },
+    {
+      scheduleId: 2,
+      line: "Test Line 1",
+      machine: "AOI Inspector",
+      expected: 300,
+      actual: 250,
+      delay: 50,
+      risk: "MEDIUM",
+    },
+  ];
 
   const getStatusClass = (status) => {
-    switch (status) {
-      case "On Track":
-        return "status-ontrack";
-      case "Delayed":
-        return "status-delay";
-      case "At Risk":
-        return "status-atrisk";
-      case "Pending":
-        return "status-pending";
+    switch (status?.toLowerCase()) {
+      case "running":
+        return "status-running";
+      case "idle":
+        return "status-idle";
+      case "maintenance":
+        return "status-maintenance";
       default:
         return "";
     }
   };
 
-  const getProgressColor = (progress) => {
-    if (progress >= 70) return "#4CAF50";
-    if (progress >= 40) return "#2196F3";
-    return "#f44336";
+  const getRiskClass = (risk) => {
+    switch (risk?.toUpperCase()) {
+      case "HIGH":
+        return "risk-high";
+      case "MEDIUM":
+        return "risk-medium";
+      case "LOW":
+        return "risk-low";
+      default:
+        return "";
+    }
   };
+
+  const getOEEClass = (oee) => {
+    if (oee >= 85) return "oee-excellent";
+    if (oee >= 65) return "oee-good";
+    if (oee >= 40) return "oee-fair";
+    return "oee-poor";
+  };
+
+  // Calculate summary stats
+  const totalLines = linesOverview.length;
+  const runningLines = linesOverview.filter(
+    (l) => l.status?.toLowerCase() === "running",
+  ).length;
+  const averageOEE =
+    oeeData.length > 0
+      ? (
+          oeeData.reduce((sum, d) => sum + d.oee, 0) /
+            oeeData.filter((d) => d.oee > 0).length || 0
+        ).toFixed(1)
+      : 0;
+  const criticalDelays = delays.filter(
+    (d) => d.risk?.toUpperCase() === "HIGH",
+  ).length;
 
   return (
     <div className="manager-container">
-      {/* Sidebar */}
       <ManagerSidebar />
 
-      {/* Main Content */}
-      <div className="manager-main">
+      <main className="manager-main">
         {/* Header */}
         <header className="manager-header">
           <div className="header-left">
-            <span className="header-badge">Manager</span>
-            <h1 className="header-title">Production Manager</h1>
+            <h1>📊 Manager Dashboard</h1>
+            <p>Tổng quan hoạt động sản xuất</p>
           </div>
-          <div className="header-actions">
-            <button className="header-icon-btn">🔔</button>
-            <button className="header-icon-btn">⚙️</button>
-            <button className="header-icon-btn notification-badge">💬</button>
-            <div className="user-menu">
-              <div className="user-avatar"></div>
-              <span className="user-name">
-                {currentUser?.fullName || "Manager"}
-              </span>
-            </div>
+          <div className="header-right">
+            <input
+              type="date"
+              value={selectedDate}
+              onChange={(e) => setSelectedDate(e.target.value)}
+              className="date-picker"
+            />
           </div>
         </header>
 
-        {/* Dashboard Content */}
-        <div className="manager-content">
-          {/* Stats Cards */}
-          <div className="manager-stats-grid">
-            <div className="manager-stat-card">
-              <div className="stat-label">Running Orders</div>
-              <div className="stat-value blue">{stats.runningOrders}</div>
+        {/* KPI Cards */}
+        <section className="kpi-section">
+          <div className="kpi-grid">
+            <div className="kpi-card">
+              <div className="kpi-icon">🏭</div>
+              <div className="kpi-content">
+                <span className="kpi-value">
+                  {runningLines}/{totalLines}
+                </span>
+                <span className="kpi-label">Lines đang chạy</span>
+              </div>
             </div>
-            <div className="manager-stat-card">
-              <div className="stat-label">Line Utilization</div>
-              <div className="stat-value blue">{stats.lineUtilization}%</div>
+
+            <div className="kpi-card success">
+              <div className="kpi-icon">📈</div>
+              <div className="kpi-content">
+                <span className="kpi-value">{averageOEE}%</span>
+                <span className="kpi-label">OEE trung bình</span>
+              </div>
             </div>
-            <div className="manager-stat-card">
-              <div className="stat-label">At Risk Orders</div>
-              <div className="stat-value green">{stats.atRiskOrders}</div>
+
+            <div className={`kpi-card ${criticalDelays > 0 ? "warning" : ""}`}>
+              <div className="kpi-icon">⚠️</div>
+              <div className="kpi-content">
+                <span className="kpi-value">{criticalDelays}</span>
+                <span className="kpi-label">Cảnh báo trễ tiến độ</span>
+              </div>
             </div>
-            <div className="manager-stat-card">
-              <div className="stat-label">Average Efficiency</div>
-              <div className="stat-value green">{stats.avgEfficiency}%</div>
+
+            <div className="kpi-card highlight">
+              <div className="kpi-icon">⏰</div>
+              <div className="kpi-content">
+                <span className="kpi-value">
+                  {linesOverview
+                    .reduce((sum, l) => sum + (l.busyHours || 0), 0)
+                    .toFixed(1)}
+                  h
+                </span>
+                <span className="kpi-label">Giờ hoạt động hôm nay</span>
+              </div>
             </div>
           </div>
+        </section>
 
-          {/* Efficiency Chart */}
-          <div className="manager-card">
+        {/* Main Content Grid */}
+        <div className="dashboard-grid">
+          {/* Lines Overview */}
+          <section className="dashboard-card lines-overview">
             <div className="card-header">
-              <h3 className="card-title">Efficiency Over Time</h3>
-              <button className="card-menu-btn">⋯</button>
+              <h2>🏭 Tổng quan Lines</h2>
+              <span className="card-subtitle">
+                Trạng thái hoạt động các dây chuyền
+              </span>
             </div>
-            <div className="card-body">
-              <ResponsiveContainer width="100%" height={300}>
-                <LineChart data={efficiencyData}>
-                  <CartesianGrid
-                    strokeDasharray="3 3"
-                    stroke="rgba(0,0,0,0.1)"
-                  />
-                  <XAxis dataKey="name" tick={{ fontSize: 12 }} />
-                  <YAxis tick={{ fontSize: 12 }} domain={[0, 100]} />
-                  <Tooltip />
-                  <Legend />
-                  <Line
-                    type="monotone"
-                    dataKey="line1"
-                    stroke="#2196F3"
-                    strokeWidth={2}
-                    dot={{ r: 4 }}
-                    name="Line 1"
-                  />
-                  <Line
-                    type="monotone"
-                    dataKey="line2"
-                    stroke="#f44336"
-                    strokeWidth={2}
-                    dot={{ r: 4 }}
-                    name="Line 2"
-                  />
-                </LineChart>
-              </ResponsiveContainer>
-            </div>
-          </div>
-
-          {/* Running Orders Table */}
-          <div className="manager-card">
-            <div className="card-header">
-              <h3 className="card-title">Running Orders</h3>
-              <button className="card-menu-btn">⋯</button>
-            </div>
-            <div className="card-body">
-              <table className="manager-table">
-                <thead>
-                  <tr>
-                    <th>Order ID</th>
-                    <th>Customer</th>
-                    <th>Line</th>
-                    <th>Progress</th>
-                    <th>Deadline</th>
-                    <th>Status</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {runningOrders.map((order) => (
-                    <tr key={order.id}>
-                      <td className="order-id">{order.id}</td>
-                      <td className="customer-cell">{order.customer}</td>
-                      <td>{order.line}</td>
-                      <td>
-                        <div className="progress-cell">
-                          <div className="progress-bar">
-                            <div
-                              className="progress-fill"
-                              style={{
-                                width: `${order.progress}%`,
-                                backgroundColor: getProgressColor(
-                                  order.progress
-                                ),
-                              }}
-                            ></div>
-                          </div>
-                        </div>
-                      </td>
-                      <td>{order.deadline}</td>
-                      <td>
-                        <span
-                          className={`order-status ${getStatusClass(
-                            order.status
-                          )}`}
-                        >
-                          {order.status}
-                        </span>
-                      </td>
+            <div className="card-content">
+              {loading ? (
+                <div className="loading-spinner">Đang tải...</div>
+              ) : (
+                <table className="data-table">
+                  <thead>
+                    <tr>
+                      <th>Line</th>
+                      <th>Trạng thái</th>
+                      <th>Giờ hoạt động</th>
+                      <th>Máy khả dụng</th>
+                      <th>Tải công suất</th>
                     </tr>
-                  ))}
-                </tbody>
-              </table>
+                  </thead>
+                  <tbody>
+                    {linesOverview.map((line) => (
+                      <tr key={line.lineId}>
+                        <td className="line-name">{line.lineName}</td>
+                        <td>
+                          <span
+                            className={`status-badge ${getStatusClass(line.status)}`}
+                          >
+                            {line.status}
+                          </span>
+                        </td>
+                        <td>
+                          {line.busyHours}h / {line.availableHours}h
+                        </td>
+                        <td>{line.availableMachines} máy</td>
+                        <td>
+                          <div className="capacity-bar">
+                            <div
+                              className="capacity-fill"
+                              style={{
+                                width: `${(line.busyHours / line.availableHours) * 100}%`,
+                              }}
+                            />
+                          </div>
+                          <span className="capacity-text">
+                            {(
+                              (line.busyHours / line.availableHours) *
+                              100
+                            ).toFixed(0)}
+                            %
+                          </span>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              )}
             </div>
-          </div>
+          </section>
+
+          {/* OEE Chart */}
+          <section className="dashboard-card oee-section">
+            <div className="card-header">
+              <h2>📈 OEE theo Line</h2>
+              <span className="card-subtitle">
+                Overall Equipment Effectiveness
+              </span>
+            </div>
+            <div className="card-content">
+              {loading ? (
+                <div className="loading-spinner">Đang tải...</div>
+              ) : (
+                <div className="oee-grid">
+                  {oeeData.map((item, index) => (
+                    <div
+                      key={index}
+                      className={`oee-card ${getOEEClass(item.oee)}`}
+                    >
+                      <div className="oee-header">
+                        <span className="oee-line">{item.line}</span>
+                        <span className="oee-value">
+                          {item.oee.toFixed(1)}%
+                        </span>
+                      </div>
+                      <div className="oee-breakdown">
+                        <div className="oee-item">
+                          <span className="oee-item-label">Availability</span>
+                          <div className="oee-item-bar">
+                            <div
+                              className="oee-item-fill availability"
+                              style={{ width: `${item.availability}%` }}
+                            />
+                          </div>
+                          <span className="oee-item-value">
+                            {item.availability}%
+                          </span>
+                        </div>
+                        <div className="oee-item">
+                          <span className="oee-item-label">Performance</span>
+                          <div className="oee-item-bar">
+                            <div
+                              className="oee-item-fill performance"
+                              style={{ width: `${item.performance}%` }}
+                            />
+                          </div>
+                          <span className="oee-item-value">
+                            {item.performance}%
+                          </span>
+                        </div>
+                        <div className="oee-item">
+                          <span className="oee-item-label">Quality</span>
+                          <div className="oee-item-bar">
+                            <div
+                              className="oee-item-fill quality"
+                              style={{ width: `${item.quality}%` }}
+                            />
+                          </div>
+                          <span className="oee-item-value">
+                            {item.quality}%
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          </section>
+
+          {/* Delays Alert */}
+          <section className="dashboard-card delays-section">
+            <div className="card-header">
+              <h2>⚠️ Cảnh báo trễ tiến độ</h2>
+              <span className="card-subtitle">Các schedule có nguy cơ trễ</span>
+            </div>
+            <div className="card-content">
+              {loading ? (
+                <div className="loading-spinner">Đang tải...</div>
+              ) : delays.length === 0 ? (
+                <div className="no-data">
+                  <span className="no-data-icon">✅</span>
+                  <span>Không có cảnh báo trễ tiến độ</span>
+                </div>
+              ) : (
+                <table className="data-table">
+                  <thead>
+                    <tr>
+                      <th>Schedule ID</th>
+                      <th>Line</th>
+                      <th>Machine</th>
+                      <th>Dự kiến</th>
+                      <th>Thực tế</th>
+                      <th>Trễ</th>
+                      <th>Mức độ</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {delays.map((delay) => (
+                      <tr key={delay.scheduleId}>
+                        <td>#{delay.scheduleId}</td>
+                        <td>{delay.line}</td>
+                        <td>{delay.machine}</td>
+                        <td>{delay.expected}</td>
+                        <td>{delay.actual}</td>
+                        <td className="delay-value">-{delay.delay}</td>
+                        <td>
+                          <span
+                            className={`risk-badge ${getRiskClass(delay.risk)}`}
+                          >
+                            {delay.risk}
+                          </span>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              )}
+            </div>
+          </section>
         </div>
-      </div>
+      </main>
     </div>
   );
 };

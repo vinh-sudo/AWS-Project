@@ -54,4 +54,12 @@ public class Machine {
     @Column(name = "updated_at")
     private OffsetDateTime updatedAt;
 
+    @ColumnDefault("1")
+    @Column(name = "quantity")
+    private Integer quantity;
+
+    @Size(max = 100)
+    @Column(name = "machine_code", length = 100)
+    private String machineCode;
+
 }

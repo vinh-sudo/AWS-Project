@@ -177,7 +177,7 @@ const Dashboard = () => {
             <span className="nav-icon">📊</span>
             <span>Dashboard</span>
           </div>
-          <div className="nav-item" onClick={() => navigate("/manager/orders")}>
+          <div className="nav-item" onClick={() => navigate("/planner/assignment")}>
             <span className="nav-icon">📋</span>
             <span>Orders</span>
           </div>
@@ -187,7 +187,7 @@ const Dashboard = () => {
           </div>
           <div
             className="nav-item"
-            onClick={() => navigate("/manager/scheduling")}
+            onClick={() => navigate("/planner/scheduling")}
           >
             <span className="nav-icon">📅</span>
             <span>Scheduling</span>
@@ -227,7 +227,7 @@ const Dashboard = () => {
                 {currentUser?.fullName || "User"}
               </span>
               <span className="user-role">
-                {currentUser?.role || "Manager"}
+                {currentUser?.role || "Admin"}
               </span>
             </div>
           </div>
@@ -360,7 +360,7 @@ const Dashboard = () => {
               <h2 className="card-title">Recent Orders</h2>
               <button
                 className="btn-view-all"
-                onClick={() => navigate("/manager/orders")}
+                onClick={() => navigate("/planner/assignment")}
               >
                 View All
               </button>

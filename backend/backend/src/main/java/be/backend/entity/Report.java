@@ -43,6 +43,15 @@ public class Report {
     @Column(name = "produced_quantity")
     private Integer producedQuantity;
 
+    @Column(name = "good_quantity")
+    private Integer goodQuantity;
+
+    @Column(name = "reject_quantity")
+    private Integer rejectQuantity;
+
+    @Column(name = "target_quantity")
+    private Integer targetQuantity;
+
     @Column(name = "downtime_minutes")
     private Integer downtimeMinutes;
 

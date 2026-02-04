@@ -31,8 +31,10 @@ public class JwtAuthentificationFilter extends OncePerRequestFilter {
 
         String path = request.getServletPath();
 
-
-        if (path.startsWith("/auth/")) {
+        // Skip JWT filter for authentication and OTP endpoints
+        if (path.startsWith("/auth/") || path.startsWith("/api/auth/") || 
+            path.startsWith("/otp/") || path.startsWith("/api/otp/") ||
+            path.startsWith("/swagger") || path.startsWith("/v3/api-docs")) {
             filterChain.doFilter(request, response);
             return;
         }

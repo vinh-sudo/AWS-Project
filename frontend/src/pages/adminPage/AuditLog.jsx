@@ -34,7 +34,7 @@ const AuditLog = () => {
     {
       log_id: 3,
       user_id: 2,
-      user_email: "manager@ims.com",
+      user_email: "planner@ims.com",
       action_type: "UPDATE",
       entity: "orders",
       details: "Updated order #1234 status from Draft to Approved",
@@ -70,7 +70,7 @@ const AuditLog = () => {
     {
       log_id: 7,
       user_id: 2,
-      user_email: "manager@ims.com",
+      user_email: "planner@ims.com",
       action_type: "UPDATE",
       entity: "production_line",
       details: "Updated Line C status to Maintenance",

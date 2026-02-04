@@ -5,6 +5,7 @@ import "./ManagerSidebar.css";
 
 const ManagerSidebar = () => {
   const navigate = useNavigate();
+  const currentUser = authService.getCurrentUser();
 
   const handleLogout = () => {
     authService.logout();
@@ -12,41 +13,74 @@ const ManagerSidebar = () => {
   };
 
   const menuItems = [
-    { path: "/manager/dashboard", icon: "📊", label: "Dashboard" },
-    { path: "/manager/scheduling", icon: "📅", label: "Scheduling" },
-    { path: "/manager/production-lines", icon: "🏭", label: "Production Lines" },
-    { path: "/manager/progress", icon: "📈", label: "Progress Tracking" },
-    { path: "/manager/task-assignment", icon: "✅", label: "Task Assignment" },
-    { path: "/manager/reports", icon: "📋", label: "Reports" },
+    {
+      path: "/manager/dashboard",
+      icon: "📊",
+      label: "Dashboard",
+    },
+    {
+      path: "/manager/planning",
+      icon: "📋",
+      label: "Lập kế hoạch",
+    },
+    {
+      path: "/manager/tracking",
+      icon: "📈",
+      label: "Theo dõi tiến độ",
+    },
+    {
+      path: "/manager/lines",
+      icon: "🏭",
+      label: "Quản lý Line",
+    },
   ];
 
   return (
-    <aside className="manager-sidebar">
-      <div className="sidebar-logo">
-        <div className="logo-icon">IMS</div>
-        <span className="logo-text">IMS Manager</span>
+    <div className="manager-sidebar">
+      <div className="sidebar-header">
+        <div className="logo-container">
+          <span className="logo-icon">🏭</span>
+          <span className="logo-text">IMS Manager</span>
+        </div>
+      </div>
+
+      <div className="sidebar-user">
+        <div className="user-avatar">
+          {currentUser?.fullName?.charAt(0) || "M"}
+        </div>
+        <div className="user-info">
+          <span className="user-name">
+            {currentUser?.fullName || "Manager"}
+          </span>
+          <span className="user-role">Production Manager</span>
+        </div>
       </div>
 
       <nav className="sidebar-nav">
-        {menuItems.map((item) => (
-          <NavLink
-            key={item.path}
-            to={item.path}
-            className={({ isActive }) =>
-              `nav-item ${isActive ? "active" : ""}`
-            }
-          >
-            <span className="nav-icon">{item.icon}</span>
-            <span className="nav-label">{item.label}</span>
-          </NavLink>
-        ))}
+        <div className="nav-section">
+          <span className="nav-section-title">MENU CHÍNH</span>
+          {menuItems.map((item) => (
+            <NavLink
+              key={item.path}
+              to={item.path}
+              className={({ isActive }) =>
+                `nav-item ${isActive ? "active" : ""}`
+              }
+            >
+              <span className="nav-icon">{item.icon}</span>
+              <span className="nav-label">{item.label}</span>
+            </NavLink>
+          ))}
+        </div>
       </nav>
 
-      <button className="logout-btn" onClick={handleLogout}>
-        <span className="nav-icon">🚪</span>
-        <span className="nav-label">Logout</span>
-      </button>
-    </aside>
+      <div className="sidebar-footer">
+        <button className="logout-btn" onClick={handleLogout}>
+          <span className="nav-icon">🚪</span>
+          <span className="nav-label">Đăng xuất</span>
+        </button>
+      </div>
+    </div>
   );
 };
 

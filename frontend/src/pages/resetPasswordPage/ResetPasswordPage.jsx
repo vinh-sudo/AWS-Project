@@ -1,13 +1,28 @@
-import React, { useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import React, { useState, useEffect } from "react";
+import { Link, useNavigate, useLocation } from "react-router-dom";
 import { useFormik } from "formik";
 import * as Yup from "yup";
 import "./ResetPasswordPage.css";
 import imsLogo from "../../assets/ims2.jpg";
+import authService from "../../services/authService";
 
 const ResetPasswordPage = () => {
   const [isSuccess, setIsSuccess] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState("");
   const navigate = useNavigate();
+  const location = useLocation();
+
+  // Get employeeCode and OTP from navigation state
+  const employeeCode = location.state?.employeeCode;
+  const otp = location.state?.otp;
+
+  // Redirect if no employeeCode or OTP
+  useEffect(() => {
+    if (!employeeCode || !otp) {
+      navigate("/forgot-password");
+    }
+  }, [employeeCode, otp, navigate]);
 
   const validationSchema = Yup.object({
     password: Yup.string()
@@ -27,15 +42,27 @@ const ResetPasswordPage = () => {
       confirmPassword: "",
     },
     validationSchema,
-    onSubmit: (values) => {
-      // TODO: Replace with real password reset logic
-      console.log("Reset password submit:", values);
-      setIsSuccess(true);
+    onSubmit: async (values) => {
+      setIsLoading(true);
+      setError("");
 
-      // Navigate to login after success
-      setTimeout(() => {
-        navigate("/login");
-      }, 2000);
+      try {
+        await authService.verifyOtpAndResetPassword(
+          employeeCode,
+          otp,
+          values.password,
+        );
+        setIsSuccess(true);
+
+        // Navigate to login after success
+        setTimeout(() => {
+          navigate("/login");
+        }, 2000);
+      } catch (err) {
+        setError(err.message || "Failed to reset password. Please try again.");
+      } finally {
+        setIsLoading(false);
+      }
     },
   });
 
@@ -49,6 +76,7 @@ const ResetPasswordPage = () => {
             <p className="reset-password-description">
               Create a new password for your account.
             </p>
+            {error && <div className="error-message">{error}</div>}
             <form
               className="reset-password-form"
               onSubmit={formik.handleSubmit}
@@ -68,6 +96,7 @@ const ResetPasswordPage = () => {
                 value={formik.values.password}
                 onChange={formik.handleChange}
                 onBlur={formik.handleBlur}
+                disabled={isLoading}
               />
               {formik.touched.password && formik.errors.password && (
                 <div className="input-error-text">{formik.errors.password}</div>
@@ -88,6 +117,7 @@ const ResetPasswordPage = () => {
                 value={formik.values.confirmPassword}
                 onChange={formik.handleChange}
                 onBlur={formik.handleBlur}
+                disabled={isLoading}
               />
               {formik.touched.confirmPassword &&
                 formik.errors.confirmPassword && (
@@ -130,11 +160,13 @@ const ResetPasswordPage = () => {
                 </ul>
               </div>
 
-              <input
+              <button
                 className="reset-password-button"
                 type="submit"
-                value="Reset Password"
-              />
+                disabled={isLoading}
+              >
+                {isLoading ? "Resetting..." : "Reset Password"}
+              </button>
             </form>
           </>
         ) : (

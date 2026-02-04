@@ -220,7 +220,7 @@ const LeaderProgress = () => {
     saveSchedules(updatedSchedules);
     setShowIncidentModal(false);
     setSelectedSchedule(null);
-    alert("⚠️ Đã báo cáo sự cố. Manager sẽ được thông báo.");
+    alert("⚠️ Đã báo cáo sự cố. Admin sẽ được thông báo.");
   };
 
   const getPriorityClass = (priority) => {

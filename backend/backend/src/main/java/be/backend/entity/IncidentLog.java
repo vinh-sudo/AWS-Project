@@ -2,6 +2,7 @@ package be.backend.entity;
 
 import jakarta.persistence.*;
 import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Size;
 import lombok.Getter;
 import lombok.Setter;
 import org.hibernate.annotations.ColumnDefault;
@@ -20,10 +21,34 @@ public class IncidentLog {
     @Column(name = "incident_id", nullable = false)
     private Integer id;
 
-    @ManyToOne(fetch = FetchType.LAZY)
+
+    @NotNull
+    @ManyToOne(fetch = FetchType.LAZY, optional = false)
     @OnDelete(action = OnDeleteAction.CASCADE)
-    @JoinColumn(name = "line_id")
+    @JoinColumn(name = "line_id", nullable = false)
     private ProductionLine line;
+
+    @NotNull
+    @ManyToOne(fetch = FetchType.LAZY, optional = false)
+    @OnDelete(action = OnDeleteAction.CASCADE)
+    @JoinColumn(name = "schedule_id", nullable = false)
+    private ProductionSchedule schedule;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "machine_id")
+    private Machine machine;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "reported_by")
+    private Employee reportedBy;
+
+    @Size(max = 50)
+    @Column(name = "incident_type", length = 50)
+    private String incidentType;
+
+    @Size(max = 10)
+    @Column(name = "severity", length = 10)
+    private String severity;
 
     @NotNull
     @Column(name = "description", nullable = false, length = Integer.MAX_VALUE)

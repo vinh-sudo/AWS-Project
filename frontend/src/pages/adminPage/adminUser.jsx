@@ -201,7 +201,6 @@ const UsersAdmin = () => {
               >
                 <option>Admin</option>
                 <option>Planner</option>
-                <option>Manager</option>
                 <option>LineLeader</option>
                 
               </select>
@@ -331,7 +330,6 @@ const UsersAdmin = () => {
                 <option>Admin</option>
                 <option>Sales</option>
                 <option>Planner</option>
-                <option>Manager</option>
                 <option>LineLeader</option>
                 <option>Director</option>
               </select>
@@ -436,7 +434,6 @@ const UsersAdmin = () => {
                   <option>Admin</option>
                   <option>Sales</option>
                   <option>Planner</option>
-                  <option>Manager</option>
                   <option>LineLeader</option>
                   <option>Director</option>
                 </select>

@@ -13,21 +13,17 @@ import AdminOrders from "./pages/adminPage/AdminOrders";
 import AuditLog from "./pages/adminPage/AuditLog";
 // Director imports
 import DirectorDashboard from "./pages/directorPage/DirectorDashboard";
-// Manager imports - Gộp chung tất cả chức năng planner, leader, line vào manager
+// Manager imports
 import ManagerDashboard from "./pages/managerPage/ManagerDashboard";
-import ManagerOrders from "./pages/managerPage/ManagerOrders";
-import ManagerScheduling from "./pages/managerPage/ManagerScheduling";
-import ManagerTasks from "./pages/managerPage/ManagerTasks";
-import ManagerProgress from "./pages/managerPage/ManagerProgress";
-import LineManagement from "./pages/managerPage/LineManagement";
+import ManagerPlanning from "./pages/managerPage/ManagerPlanning";
+import ManagerTracking from "./pages/managerPage/ManagerTracking";
+import ManagerLines from "./pages/managerPage/ManagerLines";
+// Planner imports
 import PlannerAssignment from "./pages/plannerPage/PlannerAssignment";
 import PlannerScheduling from "./pages/plannerPage/PlannerScheduling";
 import PlannerReports from "./pages/plannerPage/PlannerReports";
 import LeaderProgress from "./pages/leaderPage/LeaderProgress";
 import LeaderTaskAssignment from "./pages/leaderPage/LeaderTaskAssignment";
-
-// Shared imports
-import Reports from "./pages/managerPage/Reports";
 import Dashboard from "./pages/dashboardPage/Dashboard";
 import AICopilot from "./components/AICopilot/AICopilot";
 import "./App.css";
@@ -49,31 +45,19 @@ function App() {
           <Route path="/director" element={<DirectorDashboard />} />
           <Route path="/director/dashboard" element={<DirectorDashboard />} />
 
+          {/* Manager Routes - Quản lý sản xuất: lập kế hoạch, theo dõi tiến độ */}
+          <Route path="/manager" element={<ManagerDashboard />} />
+          <Route path="/manager/dashboard" element={<ManagerDashboard />} />
+          <Route path="/manager/planning" element={<ManagerPlanning />} />
+          <Route path="/manager/tracking" element={<ManagerTracking />} />
+          <Route path="/manager/lines" element={<ManagerLines />} />
+
           {/* Admin Routes - Quản lý user, đơn hàng, duyệt, audit */}
           <Route path="/admin" element={<AdminPage />} />
           <Route path="/admin/dashboard" element={<AdminDashboard />} />
           <Route path="/admin/approval" element={<AdminApproval />} />
           <Route path="/admin/orders" element={<AdminOrders />} />
           <Route path="/admin/audit-log" element={<AuditLog />} />
-
-          {/* Manager Routes - Gộp chung tất cả chức năng quản lý */}
-          <Route path="/manager" element={<ManagerDashboard />} />
-          <Route path="/manager/dashboard" element={<ManagerDashboard />} />
-          <Route path="/manager/tasks" element={<ManagerTasks />} />
-          <Route path="/manager/orders" element={<ManagerOrders />} />
-          <Route path="/manager/scheduling" element={<ManagerScheduling />} />
-          <Route
-            path="/manager/production-lines"
-            element={<LineManagement />}
-          />
-          <Route path="/manager/progress" element={<ManagerProgress />} />
-          <Route path="/manager/task-assignment" element={<ManagerTasks />} />
-          <Route
-            path="/manager/planner-scheduling"
-            element={<PlannerScheduling />}
-          />
-          <Route path="/manager/assignment" element={<PlannerAssignment />} />
-          <Route path="/manager/reports" element={<Reports />} />
 
           {/* Planner Routes */}
           <Route path="/planner" element={<PlannerAssignment />} />
@@ -90,7 +74,7 @@ function App() {
           />
 
           {/* Reports & Dashboard Routes */}
-          <Route path="/reports" element={<Reports />} />
+          <Route path="/reports" element={<PlannerReports />} />
           <Route path="/dashboard" element={<Dashboard />} />
         </Route>
       </Routes>

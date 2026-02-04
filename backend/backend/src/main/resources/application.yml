@@ -1,15 +1,11 @@
-#spring:
-#  datasource:
-#    url: jdbc:postgresql://postgres:5432/production_manager
-#    username: postgres
-#    password: 12345
-
+﻿server:
+  port: 8082
 
 spring:
   datasource:
-    url: jdbc:postgresql://caboose.proxy.rlwy.net:16949/railway
+    url: jdbc:postgresql://yamanote.proxy.rlwy.net:57879/railway
     username: postgres
-    password: yuNprLoYqGAMNGDqpVNuMKDIOjSLTCKc
+    password: zAghXDygkxzsfGfItOcVCjqkqKrCCGKu
     driver-class-name: org.postgresql.Driver
 
   jpa:
@@ -21,10 +17,39 @@ spring:
     enabled: true
     locations: classpath:db/migration
     baseline-on-migrate: true
+    validate-on-migrate: false
+    repair-on-migrate: true
+
+  data:
+    redis:
+      host: evolving-muskox-40304.upstash.io
+      port: 6379
+      username: default
+      password: AZ1wAAIncDJkNWQ4OGMzODA3ODI0NDQyOGJiZDhjNmY2MzZiNTg4MXAyNDAzMDQ
+      ssl:
+        enabled: true
+  mail:
+    host: smtp.gmail.com
+    port: 587
+    username: ims.internal.system@gmail.com
+    password: dtsg mmii gsrb wcny
+    properties:
+      mail:
+        smtp:
+          auth: true
+          starttls:
+            enable: true
+
+aws:
+  access-key: AKIAZJIX3IDXPSHJWQ3B
+  secret-key: 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
+  region: ap-southeast-1
+  bucket-name: ims-stores
+
 jwt:
   secret: myVeryVeryVeryVeryVeryVerySecretKey1234567890
   expiration: 900000
-  refresh-expiration: 900000
+  refresh-expiration: 14400000
 
 logging:
   level:

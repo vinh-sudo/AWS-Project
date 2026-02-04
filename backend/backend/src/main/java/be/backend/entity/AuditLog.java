@@ -1,6 +1,7 @@
 package be.backend.entity;
 
 import jakarta.persistence.*;
+import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
 import lombok.Getter;
 import lombok.Setter;
@@ -20,9 +21,10 @@ public class AuditLog {
     @Column(name = "log_id", nullable = false)
     private Integer id;
 
-    @ManyToOne(fetch = FetchType.LAZY)
+    @NotNull
+    @ManyToOne(fetch = FetchType.LAZY, optional = false)
     @OnDelete(action = OnDeleteAction.CASCADE)
-    @JoinColumn(name = "user_id")
+    @JoinColumn(name = "user_id", nullable = false)
     private User user;
 
     @Size(max = 50)
@@ -33,11 +35,11 @@ public class AuditLog {
     @Column(name = "entity", length = 100)
     private String entity;
 
+    @Column(name = "details", length = Integer.MAX_VALUE)
+    private String details;
+
     @ColumnDefault("CURRENT_TIMESTAMP")
     @Column(name = "\"timestamp\"")
     private OffsetDateTime timestamp;
-
-    @Column(name = "details", length = Integer.MAX_VALUE)
-    private String details;
 
 }

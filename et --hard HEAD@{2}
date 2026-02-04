@@ -1,0 +1,35 @@
+[33m1e3fe0c[m[33m ([m[1;36mHEAD -> [m[1;32mdev[m[33m, [m[1;31morigin/dev[m[33m)[m HEAD@{0}: checkout: moving from dev to dev
+[33m1e3fe0c[m[33m ([m[1;36mHEAD -> [m[1;32mdev[m[33m, [m[1;31morigin/dev[m[33m)[m HEAD@{1}: branch: Reset to origin/dev
+[33m55e4090[m HEAD@{2}: commit: Plan for orders
+[33mc85b2d0[m HEAD@{3}: checkout: moving from dev to dev
+[33mc85b2d0[m HEAD@{4}: commit: Create plan and overview
+[33mabcd2f2[m HEAD@{5}: checkout: moving from fe-HA to dev
+[33mecc2b4c[m[33m ([m[1;32mfe-HA[m[33m)[m HEAD@{6}: checkout: moving from dev to fe-HA
+[33mabcd2f2[m HEAD@{7}: commit: Insert data and add attribute
+[33mdf673df[m HEAD@{8}: commit: Config S3
+[33mdf0aa88[m HEAD@{9}: pull: Merge made by the 'recursive' strategy.
+[33m78e17f8[m HEAD@{10}: commit: Final email
+[33m045491e[m HEAD@{11}: commit: Add attribute refresh token
+[33mce59cd6[m HEAD@{12}: commit (merge): Change function otp
+[33me0bbd59[m HEAD@{13}: reset: moving to HEAD
+[33me0bbd59[m HEAD@{14}: commit: OTP and email
+[33mba3257a[m HEAD@{15}: commit: Final db
+[33mbd900d4[m HEAD@{16}: checkout: moving from main to dev
+[33m5da27e8[m[33m ([m[1;32mmain[m[33m)[m HEAD@{17}: commit (merge): Change set up
+[33m9bf7e6e[m HEAD@{18}: commit: Change set up docker
+[33m1a555a6[m HEAD@{19}: checkout: moving from dev to main
+[33mbd900d4[m HEAD@{20}: pull: Fast-forward
+[33m780b931[m HEAD@{21}: commit: Fix db
+[33mb42a80d[m HEAD@{22}: commit: index db
+[33m865e739[m HEAD@{23}: commit: Set up Exception
+[33m9b38f2d[m HEAD@{24}: commit: Fix db
+[33ma421a7c[m HEAD@{25}: commit (cherry-pick): Jwt config
+[33m6009d0f[m HEAD@{26}: checkout: moving from main to dev
+[33m1a555a6[m HEAD@{27}: commit: Jwt config
+[33m1ab1396[m HEAD@{28}: commit: add report table
+[33mf0a7229[m HEAD@{29}: commit: Set up db
+[33mab22871[m HEAD@{30}: commit: Init db with railway
+[33m0a78ff2[m HEAD@{31}: commit: CI/CD git
+[33m6009d0f[m HEAD@{32}: commit: Add entity and config web
+[33md5e3dee[m HEAD@{33}: commit: add dependency
+[33m1e61a7e[m HEAD@{34}: clone: from https://github.com/HAIANH29/AWS-Project.git

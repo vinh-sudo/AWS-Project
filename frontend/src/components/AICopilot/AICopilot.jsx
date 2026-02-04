@@ -56,13 +56,13 @@ function AICopilot({ isOpen, onClose }) {
       return "I can help you with production scheduling. Would you like me to show you the current production status or help you create a new schedule?";
     }
     if (lowerInput.includes("order") || lowerInput.includes("orders")) {
-      return "I can assist with order management. You can view pending orders, track order progress, or create new orders through the Manager dashboard.";
+      return "I can assist with order management. You can view pending orders, track order progress, or create new orders through the Planner dashboard.";
     }
     if (lowerInput.includes("report") || lowerInput.includes("analytics")) {
       return "For reports and analytics, you can access the Reports section. I can help you generate production reports, efficiency metrics, or custom analytics.";
     }
     if (lowerInput.includes("task") || lowerInput.includes("assignment")) {
-      return "Task management is available in the Manager Tasks section. You can assign tasks to team members, track progress, and manage deadlines.";
+      return "Task management is available in the Planner Assignment section. You can assign tasks to team members, track progress, and manage deadlines.";
     }
     if (lowerInput.includes("help") || lowerInput.includes("what can you do")) {
       return "I can help you with:\n• Production scheduling and planning\n• Order management and tracking\n• Task assignments and progress\n• Reports and analytics\n• System navigation\n\nJust ask me anything!";

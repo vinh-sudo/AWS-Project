@@ -231,7 +231,7 @@ const PlannerAssignment = () => {
         <div className="workflow-info">
           <div className="workflow-step">
             <span className="step-icon done">1</span>
-            <span className="step-label">Manager Creates</span>
+            <span className="step-label">Planner Creates</span>
           </div>
           <span className="workflow-arrow">→</span>
           <div className="workflow-step">

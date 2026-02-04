@@ -66,4 +66,10 @@ public class JwtService {
     public boolean isTokenExpired(String token) {
         return extractExpiration(token).before(new Date());
     }
+    
+    public long getExpirationInSeconds(String token) {
+        Date expiration = extractExpiration(token);
+        long diff = expiration.getTime() - System.currentTimeMillis();
+        return diff > 0 ? diff / 1000 : 0;
+    }
 }

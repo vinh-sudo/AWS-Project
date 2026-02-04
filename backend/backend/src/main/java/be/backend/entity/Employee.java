@@ -48,6 +48,10 @@ public class Employee {
     @Column(name = "skill_level")
     private Integer skillLevel;
 
+    @Size(max = 20)
+    @Column(name = "employee_type", length = 20)
+    private String employeeType;
+
     @OneToMany
     @JoinColumn(name = "employee_id")
     private Set<Account> accounts = new LinkedHashSet<>();

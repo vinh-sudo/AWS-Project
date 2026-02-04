@@ -14,9 +14,9 @@ const LoginPage = () => {
   const error = useSelector(selectError);
 
   const validationSchema = Yup.object({
-    email: Yup.string().email("Invalid email").required("Email is required"),
+    employeeCode: Yup.string().required("Employee Code is required"),
     password: Yup.string()
-      .min(6, "Password must be at least 6 characters")
+      .min(4, "Password must be at least 4 characters")
       .required("Password is required"),
   });
 
@@ -27,31 +27,35 @@ const LoginPage = () => {
 
   const formik = useFormik({
     initialValues: {
-      email: "",
+      employeeCode: "",
       password: "",
     },
     validationSchema,
     onSubmit: async (values) => {
       const result = await dispatch(
-        login({ email: values.email, password: values.password })
+        login({ employeeCode: values.employeeCode, password: values.password }),
       );
 
       if (login.fulfilled.match(result)) {
         const user = result.payload;
         console.log("Login successful", user);
 
-        // Redirect based on role
-        switch (user.role) {
-          case "Admin":
+        // Redirect based on role (backend returns uppercase roles)
+        const role = user.role?.toUpperCase();
+        switch (role) {
+          case "ADMIN":
             navigate("/admin/approval");
             break;
-          case "Manager":
-            navigate("/manager/tasks");
+          case "DIRECTOR":
+            navigate("/director/dashboard");
             break;
-          case "Planner":
+          case "MANAGER":
+            navigate("/manager/dashboard");
+            break;
+          case "PLANNER":
             navigate("/planner/assignment");
             break;
-          case "Leader":
+          case "LEADER":
             navigate("/leader/progress");
             break;
           default:
@@ -70,18 +74,20 @@ const LoginPage = () => {
           <input
             required
             className={`login-input ${
-              formik.touched.email && formik.errors.email ? "input-error" : ""
+              formik.touched.employeeCode && formik.errors.employeeCode
+                ? "input-error"
+                : ""
             }`}
-            type="email"
-            name="email"
-            id="email"
-            placeholder="E-mail"
-            value={formik.values.email}
+            type="text"
+            name="employeeCode"
+            id="employeeCode"
+            placeholder="Employee Code"
+            value={formik.values.employeeCode}
             onChange={formik.handleChange}
             onBlur={formik.handleBlur}
           />
-          {formik.touched.email && formik.errors.email && (
-            <div className="input-error-text">{formik.errors.email}</div>
+          {formik.touched.employeeCode && formik.errors.employeeCode && (
+            <div className="input-error-text">{formik.errors.employeeCode}</div>
           )}
           <input
             required
@@ -108,17 +114,6 @@ const LoginPage = () => {
             {isLoading ? "Signing In..." : "Sign In"}
           </button>
         </form>
-
-        {/* Mock credentials info for testing */}
-        <div className="mock-credentials">
-          <p>
-            <strong>Test Accounts:</strong>
-          </p>
-          <p>Admin: admin@ims.com / admin123</p>
-          <p>Manager: manager@ims.com / manager123</p>
-          <p>Planner: planner@ims.com / planner123</p>
-          <p>Leader: leader@ims.com / leader123</p>
-        </div>
 
         <div className="logo-row">
           <img src={imsLogo} alt="IMS Logo" className="logo-item" />
