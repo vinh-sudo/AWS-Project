@@ -1,8 +1,6 @@
 package be.backend.service;
 
-import be.backend.entity.Order;
-import be.backend.entity.OrderItem;
-import be.backend.entity.User;
+import be.backend.entity.*;
 import be.backend.exception.BusinessException;
 import be.backend.exception.ResourceNotFoundException;
 import be.backend.mapper.OrderMapper;
@@ -10,8 +8,8 @@ import be.backend.model.request.CreateOrderRequest;
 import be.backend.model.request.OrderItemRequest;
 import be.backend.model.request.UpdateOrderRequest;
 import be.backend.model.response.OrderResponse;
-import be.backend.repository.OrderRepository;
-import be.backend.repository.UserRepository;
+import be.backend.model.response.OrderStopResponse;
+import be.backend.repository.*;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -28,7 +26,10 @@ import java.util.Set;
 public class OrderService {
 
     private final OrderRepository orderRepository;
+    private final ProductionScheduleRepository scheduleRepo;
     private final UserRepository userRepository;
+    private final MachineRepository machineRepo;
+    private final AuditLogRepository auditRepo;
     private final OrderMapper orderMapper;
 
     private static final String STATUS_DRAFT = "Draft";
@@ -215,6 +216,64 @@ public class OrderService {
         Order saved = orderRepository.save(order);
         log.info("Order {} cancelled. Reason: {}", orderId, reason != null ? reason : "No reason provided");
         return buildResponse(saved);
+    }
+    // ==================== StopOrder ====================
+    @Transactional
+    public OrderStopResponse stopOrder(Integer orderId, Account account) {
+
+        Order order = orderRepository.findById(orderId)
+                .orElseThrow(() -> new RuntimeException("Order not found"));
+
+        if (order.getStatus().equals("COMPLETED")) {
+            throw new RuntimeException("Cannot stop completed order");
+        }
+
+        if (order.getStatus().equals("CANCELLED")) {
+            throw new RuntimeException("Order already cancelled");
+        }
+
+        order.setStatus("STOPPED");
+        orderRepository.save(order);
+
+        List<ProductionSchedule> schedules =
+                scheduleRepo.findByOrder(order);
+
+        int stopped = 0;
+
+        for (ProductionSchedule s : schedules) {
+
+            if (s.getStatus().equalsIgnoreCase("SCHEDULED")
+                    || s.getStatus().equalsIgnoreCase("RUNNING")) {
+
+                s.setStatus("STOPPED");
+                stopped++;
+
+                if (s.getMachine() != null) {
+                    Machine m = s.getMachine();
+                    m.setStatus("IDLE");
+                    machineRepo.save(m);
+                }
+            }
+        }
+
+        scheduleRepo.saveAll(schedules);
+
+        // ===== AUDIT LOG =====
+        AuditLog log = new AuditLog();
+        log.setUser(account.getUser());
+        log.setActionType("STOP_ORDER");
+        log.setEntity("Order");
+        log.setDetails("Stopped order " + orderId +
+                " | stopped schedules = " + stopped);
+
+        auditRepo.save(log);
+
+        return OrderStopResponse.builder()
+                .orderId(orderId)
+                .status("STOPPED")
+                .stoppedSchedules(stopped)
+                .build();
+
     }
 
     // ==================== QUERIES (Index-based) ====================
