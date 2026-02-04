@@ -8,6 +8,7 @@ const ManagerDashboard = () => {
   const [oeeData, setOeeData] = useState([]);
   const [delays, setDelays] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
   const [selectedDate, setSelectedDate] = useState(
     new Date().toISOString().split("T")[0],
   );
@@ -18,115 +19,24 @@ const ManagerDashboard = () => {
 
   const fetchDashboardData = async () => {
     setLoading(true);
+    setError(null);
     try {
-      // Fetch all data in parallel
       const [linesRes, oeeRes, delaysRes] = await Promise.all([
-        managerService.getLinesOverview().catch(() => mockLinesOverview),
-        managerService.getOEE(selectedDate).catch(() => mockOeeData),
-        managerService.getDelays().catch(() => mockDelays),
+        managerService.getLinesOverview(),
+        managerService.getOEE(selectedDate),
+        managerService.getDelays(),
       ]);
 
-      setLinesOverview(linesRes);
-      setOeeData(oeeRes);
-      setDelays(delaysRes);
+      setLinesOverview(linesRes || []);
+      setOeeData(oeeRes || []);
+      setDelays(delaysRes || []);
     } catch (error) {
       console.error("Error fetching dashboard data:", error);
-      // Use mock data as fallback
-      setLinesOverview(mockLinesOverview);
-      setOeeData(mockOeeData);
-      setDelays(mockDelays);
+      setError("Không thể tải dữ liệu. Vui lòng thử lại sau.");
     } finally {
       setLoading(false);
     }
   };
-
-  // Mock data for development
-  const mockLinesOverview = [
-    {
-      lineId: 1,
-      lineName: "SMT Line 1",
-      busyHours: 6.5,
-      availableHours: 8,
-      availableMachines: 4,
-      status: "Running",
-    },
-    {
-      lineId: 2,
-      lineName: "SMT Line 2",
-      busyHours: 7.2,
-      availableHours: 8,
-      availableMachines: 3,
-      status: "Running",
-    },
-    {
-      lineId: 3,
-      lineName: "Assembly Line 1",
-      busyHours: 0,
-      availableHours: 8,
-      availableMachines: 5,
-      status: "Idle",
-    },
-    {
-      lineId: 4,
-      lineName: "Test Line 1",
-      busyHours: 4.5,
-      availableHours: 8,
-      availableMachines: 2,
-      status: "Running",
-    },
-  ];
-
-  const mockOeeData = [
-    {
-      line: "SMT Line 1",
-      availability: 92,
-      performance: 88,
-      quality: 98,
-      oee: 79.5,
-    },
-    {
-      line: "SMT Line 2",
-      availability: 85,
-      performance: 82,
-      quality: 96,
-      oee: 66.9,
-    },
-    {
-      line: "Assembly Line 1",
-      availability: 0,
-      performance: 0,
-      quality: 0,
-      oee: 0,
-    },
-    {
-      line: "Test Line 1",
-      availability: 78,
-      performance: 85,
-      quality: 99,
-      oee: 65.6,
-    },
-  ];
-
-  const mockDelays = [
-    {
-      scheduleId: 1,
-      line: "SMT Line 2",
-      machine: "Pick & Place A2",
-      expected: 500,
-      actual: 380,
-      delay: 120,
-      risk: "HIGH",
-    },
-    {
-      scheduleId: 2,
-      line: "Test Line 1",
-      machine: "AOI Inspector",
-      expected: 300,
-      actual: 250,
-      delay: 50,
-      risk: "MEDIUM",
-    },
-  ];
 
   const getStatusClass = (status) => {
     switch (status?.toLowerCase()) {
@@ -169,7 +79,7 @@ const ManagerDashboard = () => {
   const averageOEE =
     oeeData.length > 0
       ? (
-          oeeData.reduce((sum, d) => sum + d.oee, 0) /
+          oeeData.reduce((sum, d) => sum + (d.oee || 0), 0) /
             oeeData.filter((d) => d.oee > 0).length || 0
         ).toFixed(1)
       : 0;
@@ -195,8 +105,20 @@ const ManagerDashboard = () => {
               onChange={(e) => setSelectedDate(e.target.value)}
               className="date-picker"
             />
+            <button className="btn-refresh" onClick={fetchDashboardData}>
+              🔄 Làm mới
+            </button>
           </div>
         </header>
+
+        {/* Error Message */}
+        {error && (
+          <div className="error-banner">
+            <span className="error-icon">⚠️</span>
+            <span>{error}</span>
+            <button onClick={fetchDashboardData}>Thử lại</button>
+          </div>
+        )}
 
         {/* KPI Cards */}
         <section className="kpi-section">
@@ -255,6 +177,11 @@ const ManagerDashboard = () => {
             <div className="card-content">
               {loading ? (
                 <div className="loading-spinner">Đang tải...</div>
+              ) : linesOverview.length === 0 ? (
+                <div className="no-data">
+                  <span className="no-data-icon">📭</span>
+                  <span>Chưa có dữ liệu lines</span>
+                </div>
               ) : (
                 <table className="data-table">
                   <thead>
@@ -286,13 +213,14 @@ const ManagerDashboard = () => {
                             <div
                               className="capacity-fill"
                               style={{
-                                width: `${(line.busyHours / line.availableHours) * 100}%`,
+                                width: `${((line.busyHours || 0) / (line.availableHours || 1)) * 100}%`,
                               }}
                             />
                           </div>
                           <span className="capacity-text">
                             {(
-                              (line.busyHours / line.availableHours) *
+                              ((line.busyHours || 0) /
+                                (line.availableHours || 1)) *
                               100
                             ).toFixed(0)}
                             %
@@ -317,6 +245,11 @@ const ManagerDashboard = () => {
             <div className="card-content">
               {loading ? (
                 <div className="loading-spinner">Đang tải...</div>
+              ) : oeeData.length === 0 ? (
+                <div className="no-data">
+                  <span className="no-data-icon">📭</span>
+                  <span>Chưa có dữ liệu OEE</span>
+                </div>
               ) : (
                 <div className="oee-grid">
                   {oeeData.map((item, index) => (
@@ -327,7 +260,7 @@ const ManagerDashboard = () => {
                       <div className="oee-header">
                         <span className="oee-line">{item.line}</span>
                         <span className="oee-value">
-                          {item.oee.toFixed(1)}%
+                          {(item.oee || 0).toFixed(1)}%
                         </span>
                       </div>
                       <div className="oee-breakdown">
@@ -336,11 +269,11 @@ const ManagerDashboard = () => {
                           <div className="oee-item-bar">
                             <div
                               className="oee-item-fill availability"
-                              style={{ width: `${item.availability}%` }}
+                              style={{ width: `${item.availability || 0}%` }}
                             />
                           </div>
                           <span className="oee-item-value">
-                            {item.availability}%
+                            {item.availability || 0}%
                           </span>
                         </div>
                         <div className="oee-item">
@@ -348,11 +281,11 @@ const ManagerDashboard = () => {
                           <div className="oee-item-bar">
                             <div
                               className="oee-item-fill performance"
-                              style={{ width: `${item.performance}%` }}
+                              style={{ width: `${item.performance || 0}%` }}
                             />
                           </div>
                           <span className="oee-item-value">
-                            {item.performance}%
+                            {item.performance || 0}%
                           </span>
                         </div>
                         <div className="oee-item">
@@ -360,11 +293,11 @@ const ManagerDashboard = () => {
                           <div className="oee-item-bar">
                             <div
                               className="oee-item-fill quality"
-                              style={{ width: `${item.quality}%` }}
+                              style={{ width: `${item.quality || 0}%` }}
                             />
                           </div>
                           <span className="oee-item-value">
-                            {item.quality}%
+                            {item.quality || 0}%
                           </span>
                         </div>
                       </div>

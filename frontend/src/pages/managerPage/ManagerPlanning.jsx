@@ -8,6 +8,7 @@ const ManagerPlanning = () => {
   const [orders, setOrders] = useState([]);
   const [linesOverview, setLinesOverview] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [selectedOrder, setSelectedOrder] = useState(null);
   const [filterStatus, setFilterStatus] = useState("");
@@ -26,122 +27,24 @@ const ManagerPlanning = () => {
 
   const fetchData = async () => {
     setLoading(true);
+    setError(null);
     try {
       const [plansRes, ordersRes, linesRes] = await Promise.all([
-        managerService.getAllPlans(filterStatus || null).catch(() => mockPlans),
-        managerService.getOrders().catch(() => mockOrders),
-        managerService.getLinesOverview().catch(() => mockLines),
+        managerService.getAllPlans(filterStatus || null),
+        managerService.getOrders(),
+        managerService.getLinesOverview(),
       ]);
 
-      setPlans(plansRes);
-      setOrders(ordersRes);
-      setLinesOverview(linesRes);
+      setPlans(plansRes || []);
+      setOrders(ordersRes || []);
+      setLinesOverview(linesRes || []);
     } catch (error) {
       console.error("Error fetching data:", error);
-      setPlans(mockPlans);
-      setOrders(mockOrders);
-      setLinesOverview(mockLines);
+      setError("Không thể tải dữ liệu. Vui lòng thử lại sau.");
     } finally {
       setLoading(false);
     }
   };
-
-  // Mock data
-  const mockPlans = [
-    {
-      planId: 1,
-      orderId: 1,
-      lineId: 1,
-      lineName: "SMT Line 1",
-      plannedQuantity: 3000,
-      startDate: "2026-02-05",
-      endDate: "2026-02-10",
-      estimatedHours: 24,
-      decision: "PENDING",
-      note: "",
-    },
-    {
-      planId: 2,
-      orderId: 1,
-      lineId: 2,
-      lineName: "SMT Line 2",
-      plannedQuantity: 2000,
-      startDate: "2026-02-05",
-      endDate: "2026-02-08",
-      estimatedHours: 16,
-      decision: "CONFIRMED",
-      note: "Ưu tiên cao",
-    },
-    {
-      planId: 3,
-      orderId: 2,
-      lineId: 1,
-      lineName: "SMT Line 1",
-      plannedQuantity: 4000,
-      startDate: "2026-02-12",
-      endDate: "2026-02-18",
-      estimatedHours: 32,
-      decision: "PENDING",
-      note: "",
-    },
-  ];
-
-  const mockOrders = [
-    {
-      id: 1,
-      customerName: "TechCorp Inc.",
-      productType: "PCB-A100",
-      quantity: 5000,
-      deadline: "2026-02-15",
-      priority: "HIGH",
-      status: "APPROVED",
-    },
-    {
-      id: 2,
-      customerName: "ElectroParts Ltd.",
-      productType: "PCB-B200",
-      quantity: 4000,
-      deadline: "2026-02-20",
-      priority: "MEDIUM",
-      status: "APPROVED",
-    },
-    {
-      id: 3,
-      customerName: "MicroTech Co.",
-      productType: "PCB-C300",
-      quantity: 8000,
-      deadline: "2026-02-28",
-      priority: "HIGH",
-      status: "APPROVED",
-    },
-  ];
-
-  const mockLines = [
-    {
-      lineId: 1,
-      lineName: "SMT Line 1",
-      busyHours: 6.5,
-      availableHours: 8,
-      availableMachines: 4,
-      status: "Running",
-    },
-    {
-      lineId: 2,
-      lineName: "SMT Line 2",
-      busyHours: 3.2,
-      availableHours: 8,
-      availableMachines: 3,
-      status: "Running",
-    },
-    {
-      lineId: 3,
-      lineName: "Assembly Line 1",
-      busyHours: 0,
-      availableHours: 8,
-      availableMachines: 5,
-      status: "Idle",
-    },
-  ];
 
   const openCreateModal = (order) => {
     setSelectedOrder(order);
@@ -189,8 +92,10 @@ const ManagerPlanning = () => {
       fetchData();
     } catch (error) {
       console.error("Error creating plan:", error);
-      alert("Tạo kế hoạch thành công! (Mock)");
-      setShowCreateModal(false);
+      alert(
+        "Lỗi khi tạo kế hoạch: " +
+          (error.response?.data?.message || error.message),
+      );
     }
   };
 
@@ -203,12 +108,14 @@ const ManagerPlanning = () => {
         alert("Xác nhận kế hoạch thành công!");
         fetchData();
       } else {
-        alert(`Lỗi: ${result.message}`);
+        alert("Lỗi: " + result.message);
       }
     } catch (error) {
       console.error("Error confirming plan:", error);
-      alert("Xác nhận kế hoạch thành công! (Mock)");
-      fetchData();
+      alert(
+        "Lỗi khi xác nhận kế hoạch: " +
+          (error.response?.data?.message || error.message),
+      );
     }
   };
 
@@ -221,8 +128,10 @@ const ManagerPlanning = () => {
       fetchData();
     } catch (error) {
       console.error("Error cancelling plan:", error);
-      alert("Hủy kế hoạch thành công! (Mock)");
-      fetchData();
+      alert(
+        "Lỗi khi hủy kế hoạch: " +
+          (error.response?.data?.message || error.message),
+      );
     }
   };
 
@@ -231,6 +140,7 @@ const ManagerPlanning = () => {
       case "CONFIRMED":
         return "decision-confirmed";
       case "PENDING":
+      case "DRAFT":
         return "decision-pending";
       case "CANCELLED":
         return "decision-cancelled";
@@ -254,10 +164,11 @@ const ManagerPlanning = () => {
 
   // Group plans by orderId
   const plansByOrder = plans.reduce((acc, plan) => {
-    if (!acc[plan.orderId]) {
-      acc[plan.orderId] = [];
+    const orderId = plan.orderId || plan.order?.id;
+    if (!acc[orderId]) {
+      acc[orderId] = [];
     }
-    acc[plan.orderId].push(plan);
+    acc[orderId].push(plan);
     return acc;
   }, {});
 
@@ -281,12 +192,24 @@ const ManagerPlanning = () => {
               className="filter-select"
             >
               <option value="">Tất cả trạng thái</option>
-              <option value="PENDING">Chờ xác nhận</option>
+              <option value="DRAFT">Nháp</option>
               <option value="CONFIRMED">Đã xác nhận</option>
               <option value="CANCELLED">Đã hủy</option>
             </select>
+            <button className="btn-refresh" onClick={fetchData}>
+              🔄 Làm mới
+            </button>
           </div>
         </header>
+
+        {/* Error Message */}
+        {error && (
+          <div className="error-banner">
+            <span className="error-icon">⚠️</span>
+            <span>{error}</span>
+            <button onClick={fetchData}>Thử lại</button>
+          </div>
+        )}
 
         <div className="planning-grid">
           {/* Orders Awaiting Planning */}
@@ -298,10 +221,17 @@ const ManagerPlanning = () => {
             <div className="card-content">
               {loading ? (
                 <div className="loading-spinner">Đang tải...</div>
+              ) : orders.length === 0 ? (
+                <div className="no-data">
+                  <span className="no-data-icon">📭</span>
+                  <span>Chưa có đơn hàng nào</span>
+                </div>
               ) : (
                 <div className="orders-list">
                   {orders
-                    .filter((o) => o.status === "APPROVED")
+                    .filter(
+                      (o) => o.status === "APPROVED" || o.status === "NEW",
+                    )
                     .map((order) => (
                       <div key={order.id} className="order-card">
                         <div className="order-info">
@@ -321,7 +251,7 @@ const ManagerPlanning = () => {
                           </div>
                           <div className="order-details">
                             <span>
-                              📦 {order.quantity.toLocaleString()} units
+                              📦 {(order.quantity || 0).toLocaleString()} units
                             </span>
                             <span>📅 {order.deadline}</span>
                           </div>
@@ -329,6 +259,7 @@ const ManagerPlanning = () => {
                         <button
                           className="btn-create-plan"
                           onClick={() => openCreateModal(order)}
+                          disabled={linesOverview.length === 0}
                         >
                           Lập kế hoạch
                         </button>
@@ -362,7 +293,11 @@ const ManagerPlanning = () => {
                           Đơn hàng #{orderId}
                         </span>
                         <div className="plan-group-actions">
-                          {orderPlans.some((p) => p.decision === "PENDING") && (
+                          {orderPlans.some(
+                            (p) =>
+                              p.decision === "DRAFT" ||
+                              p.decision === "PENDING",
+                          ) && (
                             <>
                               <button
                                 className="btn-confirm"
@@ -397,11 +332,15 @@ const ManagerPlanning = () => {
                         </thead>
                         <tbody>
                           {orderPlans.map((plan) => (
-                            <tr key={plan.planId}>
-                              <td className="line-name">{plan.lineName}</td>
-                              <td>{plan.plannedQuantity?.toLocaleString()}</td>
-                              <td>{plan.startDate}</td>
-                              <td>{plan.endDate}</td>
+                            <tr key={plan.planId || plan.id}>
+                              <td className="line-name">
+                                {plan.lineName || plan.line?.name}
+                              </td>
+                              <td>
+                                {(plan.plannedQuantity || 0).toLocaleString()}
+                              </td>
+                              <td>{plan.plannedStartDate || plan.startDate}</td>
+                              <td>{plan.plannedEndDate || plan.endDate}</td>
                               <td>{plan.estimatedHours}h</td>
                               <td>
                                 <span
@@ -466,7 +405,7 @@ const ManagerPlanning = () => {
                   <div className="summary-item highlight">
                     <span className="summary-label">Tổng số lượng cần</span>
                     <span className="summary-value">
-                      {selectedOrder.quantity?.toLocaleString()}
+                      {(selectedOrder.quantity || 0).toLocaleString()}
                     </span>
                   </div>
                   <div className="summary-item">
@@ -508,27 +447,33 @@ const ManagerPlanning = () => {
                 {/* Line Allocation */}
                 <div className="line-allocation">
                   <h3>Phân bổ cho các Line</h3>
-                  <div className="allocation-grid">
-                    {planForm.lines.map((line) => (
-                      <div key={line.lineId} className="allocation-item">
-                        <div className="allocation-line-info">
-                          <span className="allocation-line-name">
-                            {line.lineName}
-                          </span>
+                  {planForm.lines.length === 0 ? (
+                    <div className="no-data">
+                      <span>Chưa có line nào để phân bổ</span>
+                    </div>
+                  ) : (
+                    <div className="allocation-grid">
+                      {planForm.lines.map((line) => (
+                        <div key={line.lineId} className="allocation-item">
+                          <div className="allocation-line-info">
+                            <span className="allocation-line-name">
+                              {line.lineName}
+                            </span>
+                          </div>
+                          <input
+                            type="number"
+                            min="0"
+                            value={line.plannedQty}
+                            onChange={(e) =>
+                              handleLineQtyChange(line.lineId, e.target.value)
+                            }
+                            className="allocation-input"
+                            placeholder="0"
+                          />
                         </div>
-                        <input
-                          type="number"
-                          min="0"
-                          value={line.plannedQty}
-                          onChange={(e) =>
-                            handleLineQtyChange(line.lineId, e.target.value)
-                          }
-                          className="allocation-input"
-                          placeholder="0"
-                        />
-                      </div>
-                    ))}
-                  </div>
+                      ))}
+                    </div>
+                  )}
                   <div className="allocation-summary">
                     <span>Tổng đã phân bổ: </span>
                     <span
@@ -539,7 +484,7 @@ const ManagerPlanning = () => {
                       }
                     >
                       {totalPlanned.toLocaleString()} /{" "}
-                      {selectedOrder.quantity?.toLocaleString()}
+                      {(selectedOrder.quantity || 0).toLocaleString()}
                     </span>
                   </div>
                 </div>

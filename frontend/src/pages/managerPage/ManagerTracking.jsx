@@ -8,6 +8,7 @@ const ManagerTracking = () => {
   const [oeeData, setOeeData] = useState([]);
   const [delays, setDelays] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
   const [selectedDate, setSelectedDate] = useState(
     new Date().toISOString().split("T")[0],
   );
@@ -19,144 +20,24 @@ const ManagerTracking = () => {
 
   const fetchTrackingData = async () => {
     setLoading(true);
+    setError(null);
     try {
       const [ganttRes, oeeRes, delaysRes] = await Promise.all([
-        managerService.getGantt(selectedDate).catch(() => mockGanttData),
-        managerService.getOEE(selectedDate).catch(() => mockOeeData),
-        managerService.getDelays().catch(() => mockDelays),
+        managerService.getGantt(selectedDate),
+        managerService.getOEE(selectedDate),
+        managerService.getDelays(),
       ]);
 
-      setGanttData(ganttRes);
-      setOeeData(oeeRes);
-      setDelays(delaysRes);
+      setGanttData(ganttRes || []);
+      setOeeData(oeeRes || []);
+      setDelays(delaysRes || []);
     } catch (error) {
       console.error("Error fetching tracking data:", error);
-      setGanttData(mockGanttData);
-      setOeeData(mockOeeData);
-      setDelays(mockDelays);
+      setError("Không thể tải dữ liệu. Vui lòng thử lại sau.");
     } finally {
       setLoading(false);
     }
   };
-
-  // Mock data
-  const mockGanttData = [
-    {
-      scheduleId: 1,
-      line: "SMT Line 1",
-      machine: "Pick & Place A1",
-      orderId: 1,
-      start: "2026-02-04T08:00:00+07:00",
-      end: "2026-02-04T12:00:00+07:00",
-      status: "COMPLETED",
-    },
-    {
-      scheduleId: 2,
-      line: "SMT Line 1",
-      machine: "Reflow Oven R1",
-      orderId: 1,
-      start: "2026-02-04T12:30:00+07:00",
-      end: "2026-02-04T17:00:00+07:00",
-      status: "IN_PROGRESS",
-    },
-    {
-      scheduleId: 3,
-      line: "SMT Line 2",
-      machine: "Pick & Place A2",
-      orderId: 2,
-      start: "2026-02-04T08:00:00+07:00",
-      end: "2026-02-04T14:00:00+07:00",
-      status: "IN_PROGRESS",
-    },
-    {
-      scheduleId: 4,
-      line: "SMT Line 2",
-      machine: "AOI Inspector",
-      orderId: 2,
-      start: "2026-02-04T14:30:00+07:00",
-      end: "2026-02-04T18:00:00+07:00",
-      status: "PENDING",
-    },
-    {
-      scheduleId: 5,
-      line: "Assembly Line 1",
-      machine: "Assembly Station 1",
-      orderId: 3,
-      start: "2026-02-04T09:00:00+07:00",
-      end: "2026-02-04T16:00:00+07:00",
-      status: "DELAYED",
-    },
-    {
-      scheduleId: 6,
-      line: "Test Line 1",
-      machine: "Test Station 1",
-      orderId: 1,
-      start: "2026-02-04T13:00:00+07:00",
-      end: "2026-02-04T17:30:00+07:00",
-      status: "PENDING",
-    },
-  ];
-
-  const mockOeeData = [
-    {
-      line: "SMT Line 1",
-      availability: 92,
-      performance: 88,
-      quality: 98,
-      oee: 79.5,
-    },
-    {
-      line: "SMT Line 2",
-      availability: 85,
-      performance: 82,
-      quality: 96,
-      oee: 66.9,
-    },
-    {
-      line: "Assembly Line 1",
-      availability: 78,
-      performance: 75,
-      quality: 94,
-      oee: 55.0,
-    },
-    {
-      line: "Test Line 1",
-      availability: 90,
-      performance: 85,
-      quality: 99,
-      oee: 75.7,
-    },
-  ];
-
-  const mockDelays = [
-    {
-      scheduleId: 5,
-      line: "Assembly Line 1",
-      machine: "Assembly Station 1",
-      expected: 500,
-      actual: 350,
-      delay: 150,
-      risk: "HIGH",
-    },
-    {
-      scheduleId: 3,
-      line: "SMT Line 2",
-      machine: "Pick & Place A2",
-      expected: 600,
-      actual: 520,
-      delay: 80,
-      risk: "MEDIUM",
-    },
-    {
-      scheduleId: 6,
-      line: "Test Line 1",
-      machine: "Test Station 1",
-      expected: 400,
-      actual: 380,
-      delay: 20,
-      risk: "LOW",
-    },
-  ];
 
   const getStatusClass = (status) => {
     switch (status?.toUpperCase()) {
@@ -246,8 +127,20 @@ const ManagerTracking = () => {
               onChange={(e) => setSelectedDate(e.target.value)}
               className="date-picker"
             />
+            <button className="btn-refresh" onClick={fetchTrackingData}>
+              🔄 Làm mới
+            </button>
           </div>
         </header>
+
+        {/* Error Message */}
+        {error && (
+          <div className="error-banner">
+            <span className="error-icon">⚠️</span>
+            <span>{error}</span>
+            <button onClick={fetchTrackingData}>Thử lại</button>
+          </div>
+        )}
 
         {/* Tabs */}
         <div className="tracking-tabs">
@@ -285,6 +178,11 @@ const ManagerTracking = () => {
               <div className="card-content">
                 {loading ? (
                   <div className="loading-spinner">Đang tải...</div>
+                ) : ganttData.length === 0 ? (
+                  <div className="no-data">
+                    <span className="no-data-icon">📭</span>
+                    <span>Chưa có lịch sản xuất cho ngày này</span>
+                  </div>
                 ) : (
                   <div className="gantt-container">
                     {/* Time Header */}
@@ -373,6 +271,11 @@ const ManagerTracking = () => {
               <div className="card-content">
                 {loading ? (
                   <div className="loading-spinner">Đang tải...</div>
+                ) : oeeData.length === 0 ? (
+                  <div className="no-data">
+                    <span className="no-data-icon">📭</span>
+                    <span>Chưa có dữ liệu OEE</span>
+                  </div>
                 ) : (
                   <>
                     {/* OEE Summary */}
@@ -380,7 +283,7 @@ const ManagerTracking = () => {
                       <div className="oee-summary-card">
                         <span className="oee-summary-value">
                           {(
-                            oeeData.reduce((sum, d) => sum + d.oee, 0) /
+                            oeeData.reduce((sum, d) => sum + (d.oee || 0), 0) /
                             oeeData.length
                           ).toFixed(1)}
                           %
@@ -393,7 +296,7 @@ const ManagerTracking = () => {
                         <span className="oee-summary-value">
                           {(
                             oeeData.reduce(
-                              (sum, d) => sum + d.availability,
+                              (sum, d) => sum + (d.availability || 0),
                               0,
                             ) / oeeData.length
                           ).toFixed(1)}
@@ -406,8 +309,10 @@ const ManagerTracking = () => {
                       <div className="oee-summary-card">
                         <span className="oee-summary-value">
                           {(
-                            oeeData.reduce((sum, d) => sum + d.performance, 0) /
-                            oeeData.length
+                            oeeData.reduce(
+                              (sum, d) => sum + (d.performance || 0),
+                              0,
+                            ) / oeeData.length
                           ).toFixed(1)}
                           %
                         </span>
@@ -418,8 +323,10 @@ const ManagerTracking = () => {
                       <div className="oee-summary-card">
                         <span className="oee-summary-value">
                           {(
-                            oeeData.reduce((sum, d) => sum + d.quality, 0) /
-                            oeeData.length
+                            oeeData.reduce(
+                              (sum, d) => sum + (d.quality || 0),
+                              0,
+                            ) / oeeData.length
                           ).toFixed(1)}
                           %
                         </span>
@@ -449,7 +356,7 @@ const ManagerTracking = () => {
                                   fill="none"
                                   stroke="url(#oeeGradient)"
                                   strokeWidth="8"
-                                  strokeDasharray={`${item.oee * 1.26} 126`}
+                                  strokeDasharray={`${(item.oee || 0) * 1.26} 126`}
                                 />
                                 <defs>
                                   <linearGradient
@@ -465,7 +372,7 @@ const ManagerTracking = () => {
                                 </defs>
                               </svg>
                               <span className="oee-gauge-value">
-                                {item.oee.toFixed(1)}%
+                                {(item.oee || 0).toFixed(1)}%
                               </span>
                             </div>
                           </div>
@@ -475,11 +382,13 @@ const ManagerTracking = () => {
                               <div className="metric-bar-container">
                                 <div
                                   className="metric-bar availability"
-                                  style={{ width: `${item.availability}%` }}
+                                  style={{
+                                    width: `${item.availability || 0}%`,
+                                  }}
                                 />
                               </div>
                               <span className="metric-value">
-                                {item.availability}%
+                                {item.availability || 0}%
                               </span>
                             </div>
                             <div className="metric-row">
@@ -487,11 +396,11 @@ const ManagerTracking = () => {
                               <div className="metric-bar-container">
                                 <div
                                   className="metric-bar performance"
-                                  style={{ width: `${item.performance}%` }}
+                                  style={{ width: `${item.performance || 0}%` }}
                                 />
                               </div>
                               <span className="metric-value">
-                                {item.performance}%
+                                {item.performance || 0}%
                               </span>
                             </div>
                             <div className="metric-row">
@@ -499,11 +408,11 @@ const ManagerTracking = () => {
                               <div className="metric-bar-container">
                                 <div
                                   className="metric-bar quality"
-                                  style={{ width: `${item.quality}%` }}
+                                  style={{ width: `${item.quality || 0}%` }}
                                 />
                               </div>
                               <span className="metric-value">
-                                {item.quality}%
+                                {item.quality || 0}%
                               </span>
                             </div>
                           </div>
@@ -585,12 +494,15 @@ const ManagerTracking = () => {
                             <div
                               className="delay-progress-fill"
                               style={{
-                                width: `${(delay.actual / delay.expected) * 100}%`,
+                                width: `${((delay.actual || 0) / (delay.expected || 1)) * 100}%`,
                               }}
                             />
                           </div>
                           <span className="delay-progress-text">
-                            {((delay.actual / delay.expected) * 100).toFixed(0)}
+                            {(
+                              ((delay.actual || 0) / (delay.expected || 1)) *
+                              100
+                            ).toFixed(0)}
                             % hoàn thành
                           </span>
                         </div>
