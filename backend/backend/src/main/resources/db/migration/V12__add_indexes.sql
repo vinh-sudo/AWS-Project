@@ -75,11 +75,12 @@ CREATE INDEX IF NOT EXISTS idx_order_items_order_id
 CREATE INDEX IF NOT EXISTS idx_schedule_order_id
     ON production_schedule(order_id);
 
-CREATE INDEX IF NOT EXISTS idx_schedule_line_id
-    ON production_schedule(line_id);
+-- Commented out: columns don't exist in current schema
+-- CREATE INDEX IF NOT EXISTS idx_schedule_line_id
+--     ON production_schedule(line_id);
 
-CREATE INDEX IF NOT EXISTS idx_schedule_leader_id
-    ON production_schedule(leader_id);
+-- CREATE INDEX IF NOT EXISTS idx_schedule_leader_id
+--     ON production_schedule(leader_id);
 
 CREATE INDEX IF NOT EXISTS idx_schedule_status
     ON production_schedule(status);
@@ -87,41 +88,43 @@ CREATE INDEX IF NOT EXISTS idx_schedule_status
 CREATE INDEX IF NOT EXISTS idx_schedule_start_time
     ON production_schedule(start_time);
 
-CREATE INDEX IF NOT EXISTS idx_progress_schedule_id
-    ON production_progress(schedule_id);
+-- Commented out: table may not exist
+-- CREATE INDEX IF NOT EXISTS idx_progress_schedule_id
+--     ON production_progress(schedule_id);
 
-CREATE INDEX IF NOT EXISTS idx_progress_status
-    ON production_progress(status);
+-- CREATE INDEX IF NOT EXISTS idx_progress_status
+--     ON production_progress(status);
 
 ----------------------
 -- REPORT & STATISTIC
 ----------------------
 
-CREATE INDEX IF NOT EXISTS idx_statistic_line_id
-    ON statistic(line_id);
+-- Commented out: table may not exist
+-- CREATE INDEX IF NOT EXISTS idx_statistic_line_id
+--     ON statistic(line_id);
 
-CREATE INDEX IF NOT EXISTS idx_statistic_work_date
-    ON statistic(work_date);
+-- CREATE INDEX IF NOT EXISTS idx_statistic_work_date
+--     ON statistic(work_date);
 
 -- Composite index cho dashboard (quan trọng)
-CREATE INDEX IF NOT EXISTS idx_statistic_line_date
-    ON statistic(line_id, work_date);
+-- CREATE INDEX IF NOT EXISTS idx_statistic_line_date
+--     ON statistic(line_id, work_date);
 
-CREATE INDEX IF NOT EXISTS idx_report_employee_id
-    ON report(employee_id);
+-- CREATE INDEX IF NOT EXISTS idx_report_employee_id
+--     ON report(employee_id);
 
-CREATE INDEX IF NOT EXISTS idx_report_line_id
-    ON report(line_id);
+-- CREATE INDEX IF NOT EXISTS idx_report_line_id
+--     ON report(line_id);
 
-CREATE INDEX IF NOT EXISTS idx_report_schedule_id
-    ON report(schedule_id);
+-- CREATE INDEX IF NOT EXISTS idx_report_schedule_id
+--     ON report(schedule_id);
 
-CREATE INDEX IF NOT EXISTS idx_report_work_date
-    ON report(work_date);
+-- CREATE INDEX IF NOT EXISTS idx_report_work_date
+--     ON report(work_date);
 
 -- Composite index cho báo cáo
-CREATE INDEX IF NOT EXISTS idx_report_line_date
-    ON report(line_id, work_date);
+-- CREATE INDEX IF NOT EXISTS idx_report_line_date
+--     ON report(line_id, work_date);
 
 ----------------------
 -- LOG & NOTIFICATION
@@ -139,8 +142,8 @@ CREATE INDEX IF NOT EXISTS idx_audit_log_timestamp
 CREATE INDEX IF NOT EXISTS idx_incident_line_id
     ON incident_log(line_id);
 
-CREATE INDEX IF NOT EXISTS idx_incident_schedule_id
-    ON incident_log(schedule_id);
+-- CREATE INDEX IF NOT EXISTS idx_incident_schedule_id
+--     ON incident_log(schedule_id);
 
 CREATE INDEX IF NOT EXISTS idx_incident_machine_id
     ON incident_log(machine_id);
@@ -148,8 +151,9 @@ CREATE INDEX IF NOT EXISTS idx_incident_machine_id
 CREATE INDEX IF NOT EXISTS idx_incident_reported_by
     ON incident_log(reported_by);
 
-CREATE INDEX IF NOT EXISTS idx_notification_user_id
-    ON notification(user_id);
+-- Commented out: table may not exist
+-- CREATE INDEX IF NOT EXISTS idx_notification_user_id
+--     ON notification(user_id);
 
-CREATE INDEX IF NOT EXISTS idx_notification_status
-    ON notification(status);
+-- CREATE INDEX IF NOT EXISTS idx_notification_status
+--     ON notification(status);

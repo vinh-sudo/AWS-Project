@@ -2,6 +2,7 @@ package be.backend.controller.manager;
 
 import be.backend.entity.Account;
 import be.backend.model.request.ProductionPlanRequest;
+import be.backend.model.response.OrderResponse;
 import be.backend.model.response.ProductionPlanResponse;
 import be.backend.model.response.ScheduleValidationResult;
 import be.backend.service.manager.ManagerPlanningService;
@@ -15,14 +16,23 @@ import org.springframework.web.bind.annotation.*;
 import java.util.List;
 
 @RestController
-@RequestMapping("/api/manager/plans")
+@RequestMapping("/api/manager")
 @RequiredArgsConstructor
 @PreAuthorize("hasRole('MANAGER')")
 public class ManagerPlanningController {
 
     private final ManagerPlanningService planningService;
 
-    @PostMapping("/create")
+    // ===================== ORDERS (for planning) =====================
+    @GetMapping("/orders")
+    public ResponseEntity<List<OrderResponse>> getOrdersForPlanning(
+            @RequestParam(required = false) String status
+    ) {
+        return ResponseEntity.ok(planningService.getOrdersForPlanning(status));
+    }
+
+    // ===================== PLANS =====================
+    @PostMapping("/plans/create")
     public ResponseEntity<List<ProductionPlanResponse>> createPlan(
             @RequestBody ProductionPlanRequest request,
             @AuthenticationPrincipal Account account
@@ -32,7 +42,7 @@ public class ManagerPlanningController {
         );
     }
 
-    @PostMapping("/order/{orderId}/confirm")
+    @PostMapping("/plans/order/{orderId}/confirm")
     public ResponseEntity<?> confirm(
             @PathVariable Integer orderId,
             @AuthenticationPrincipal Account account
@@ -47,7 +57,7 @@ public class ManagerPlanningController {
         return ResponseEntity.ok(result);
     }
 
-    @PostMapping("/order/{orderId}/cancel")
+    @PostMapping("/plans/order/{orderId}/cancel")
     public ResponseEntity<String> cancel(
             @PathVariable Integer orderId,
             @AuthenticationPrincipal Account account
@@ -56,7 +66,7 @@ public class ManagerPlanningController {
         return ResponseEntity.ok("Order " + orderId + " plan cancelled");
     }
 
-    @GetMapping("/view")
+    @GetMapping("/plans/view")
     public List<ProductionPlanResponse> getAll(
             @RequestParam(required = false) String status
     ) {

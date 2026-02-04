@@ -1,9 +1,11 @@
 package be.backend.service.manager;
 
 import be.backend.entity.*;
+import be.backend.mapper.OrderMapper;
 import be.backend.mapper.ProductionPlanMapper;
 import be.backend.model.request.LinePlanRequest;
 import be.backend.model.request.ProductionPlanRequest;
+import be.backend.model.response.OrderResponse;
 import be.backend.model.response.ProductionPlanResponse;
 import be.backend.model.response.ScheduleValidationResult;
 import be.backend.repository.*;
@@ -24,8 +26,20 @@ public class ManagerPlanningService {
     private final ProductionPlanRepository planRepo;
     private final EmployeeRepository employeeRepo;
     private final ProductionPlanMapper mapper;
+    private final OrderMapper orderMapper;
     private final AuditLogRepository auditRepo;
     private final SchedulerService schedulerService;
+
+    // ================= GET ORDERS FOR PLANNING =================
+    public List<OrderResponse> getOrdersForPlanning(String status) {
+        List<Order> orders;
+        if (status != null && !status.isEmpty()) {
+            orders = orderRepo.findByStatus(status);
+        } else {
+            orders = orderRepo.findAll();
+        }
+        return orders.stream().map(orderMapper::toResponse).toList();
+    }
 
     @Transactional
     public List<ProductionPlanResponse> createPlan(

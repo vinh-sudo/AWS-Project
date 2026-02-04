@@ -64,10 +64,14 @@ export const authService = {
       });
 
       const data = response.data;
+      console.log("Login response data:", data); // Debug log
 
       // Store tokens
       if (data.accessToken) {
         localStorage.setItem("accessToken", data.accessToken);
+        console.log("Token saved:", data.accessToken.substring(0, 50) + "..."); // Debug log
+      } else {
+        console.warn("No accessToken in response!"); // Debug log
       }
       if (data.refreshToken) {
         localStorage.setItem("refreshToken", data.refreshToken);

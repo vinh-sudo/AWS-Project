@@ -3,9 +3,13 @@ import axios from "axios";
 const API_BASE_URL =
   import.meta.env.VITE_API_URL || "http://localhost:8082/api";
 
-// Get token from localStorage
+// Get token from localStorage - must match authService key "accessToken"
 const getAuthHeader = () => {
-  const token = localStorage.getItem("token");
+  const token = localStorage.getItem("accessToken");
+  console.log(
+    "Token being sent:",
+    token ? token.substring(0, 50) + "..." : "NO TOKEN",
+  ); // Debug
   return token ? { Authorization: `Bearer ${token}` } : {};
 };
 
@@ -135,10 +139,12 @@ const managerService = {
   },
 
   // ===================== ORDERS (for planning) =====================
-  getOrders: async () => {
+  getOrders: async (status = null) => {
     try {
-      const response = await axios.get(`${API_BASE_URL}/orders`, {
+      const params = status ? { status } : {};
+      const response = await axios.get(`${API_BASE_URL}/manager/orders`, {
         headers: getAuthHeader(),
+        params,
       });
       return response.data;
     } catch (error) {
