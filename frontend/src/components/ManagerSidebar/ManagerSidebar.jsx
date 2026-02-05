@@ -21,17 +21,17 @@ const ManagerSidebar = () => {
     {
       path: "/manager/planning",
       icon: "📋",
-      label: "Lập kế hoạch",
+      label: "Planning",
     },
     {
       path: "/manager/tracking",
       icon: "📈",
-      label: "Theo dõi tiến độ",
+      label: "Progress Tracking",
     },
     {
       path: "/manager/lines",
       icon: "🏭",
-      label: "Quản lý Line",
+      label: "Line Management",
     },
   ];
 
@@ -58,7 +58,7 @@ const ManagerSidebar = () => {
 
       <nav className="sidebar-nav">
         <div className="nav-section">
-          <span className="nav-section-title">MENU CHÍNH</span>
+          <span className="nav-section-title">MAIN MENU</span>
           {menuItems.map((item) => (
             <NavLink
               key={item.path}
@@ -77,7 +77,7 @@ const ManagerSidebar = () => {
       <div className="sidebar-footer">
         <button className="logout-btn" onClick={handleLogout}>
           <span className="nav-icon">🚪</span>
-          <span className="nav-label">Đăng xuất</span>
+          <span className="nav-label">Logout</span>
         </button>
       </div>
     </div>
