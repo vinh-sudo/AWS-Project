@@ -18,7 +18,7 @@ import java.util.List;
 public class UploadController {
     private final ProductionFileService fileService;
     private final ProductionFileMapper fileMapper;
-    @PreAuthorize("hasRole('admin')")
+    @PreAuthorize("hasRole('ADMIN')")
     @PostMapping("/admin/order/{orderId}/files")
     public ProductionFileResponse upload(
             @PathVariable Integer orderId,
