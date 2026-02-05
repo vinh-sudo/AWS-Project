@@ -2,29 +2,152 @@
 <html xmlns:th="http://www.thymeleaf.org">
 <head>
     <meta charset="UTF-8">
-    <title>OTP Code</title>
+    <title>IMS - Verification Code</title>
+    <style>
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        @keyframes float {
+            0%, 100% {
+                transform: translateY(0px);
+            }
+            50% {
+                transform: translateY(-8px);
+            }
+        }
+
+        .fade-in {
+            animation: fadeInUp 0.6s ease-out;
+        }
+
+        .float {
+            animation: float 3s ease-in-out infinite;
+        }
+    </style>
 </head>
-<body style="font-family: Arial, sans-serif; background:#f4f6f8; padding:20px">
-<table width="100%" cellpadding="0" cellspacing="0">
+<body style="margin:0; padding:0; font-family: 'Segoe UI', system-ui, sans-serif; background: linear-gradient(135deg, #e3f2fd 0%, #f3e5f5 100%);">
+<table width="100%" cellpadding="0" cellspacing="0" border="0">
     <tr>
-        <td align="center">
-            <table width="500" style="background:#ffffff;border-radius:8px;padding:20px">
+        <td align="center" style="padding:40px 15px;">
+
+            <!-- Main Card -->
+            <table width="400" cellpadding="0" cellspacing="0" border="0" style="background:#ffffff; border-radius:24px; box-shadow: 0 10px 40px rgba(103, 126, 234, 0.15); overflow:hidden;" class="fade-in">
+
+                <!-- Cute Header Icon -->
                 <tr>
-                    <td style="text-align:center;">
-                        <h2 style="color:#333;">Voltera</h2>
-                        <p>Hello,</p>
-                        <p>Your One-Time Password is:</p>
-                        <h1 style="letter-spacing:5px;color:#2f80ed;" th:text="${otp}">123456</h1>
-                        <p>This code is valid for <b>5 minutes</b>.</p>
-                        <hr>
-                        <p style="font-size:12px;color:#999;">
-                            If you did not request this, please ignore.
+                    <td align="center" style="padding:35px 20px 20px 20px;">
+                        <div style="width:65px; height:65px; background: linear-gradient(135deg, #7c4dff 0%, #536dfe 100%); border-radius:50%; display:inline-flex; align-items:center; justify-content:center; box-shadow: 0 8px 20px rgba(124, 77, 255, 0.25);" class="float">
+                            <span style="font-size:32px;">🔐</span>
+                        </div>
+                    </td>
+                </tr>
+
+                <!-- Title -->
+                <tr>
+                    <td align="center" style="padding:0 20px 10px 20px;">
+                        <h2 style="margin:0; color:#333; font-size:24px; font-weight:700;">
+                            IMS
+                        </h2>
+                        <p style="margin:8px 0 0 0; color:#999; font-size:13px; font-weight:500;">
+                            Identity Management System
                         </p>
                     </td>
                 </tr>
+
+                <!-- Message -->
+                <tr>
+                    <td align="center" style="padding:15px 30px 25px 30px;">
+                        <p style="margin:0; color:#666; font-size:14px; line-height:22px;">
+                            Enter your One-Time Password to continue
+                        </p>
+                    </td>
+                </tr>
+
+                <!-- OTP Code in Boxes -->
+                <tr>
+                    <td align="center" style="padding:0 30px 30px 30px;">
+                        <table cellpadding="0" cellspacing="0" border="0" style="margin:0 auto;">
+                            <tr>
+                                <td align="center" style="padding:0 4px;">
+                                    <div style="width:45px; height:55px; background:#f5f7fa; border:2px solid #7c4dff; border-radius:12px; display:inline-flex; align-items:center; justify-content:center; box-shadow: 0 4px 12px rgba(124, 77, 255, 0.1);">
+                                        <span style="font-size:28px; font-weight:700; color:#7c4dff;" th:text="${otp.substring(0,1)}">1</span>
+                                    </div>
+                                </td>
+                                <td align="center" style="padding:0 4px;">
+                                    <div style="width:45px; height:55px; background:#f5f7fa; border:2px solid #7c4dff; border-radius:12px; display:inline-flex; align-items:center; justify-content:center; box-shadow: 0 4px 12px rgba(124, 77, 255, 0.1);">
+                                        <span style="font-size:28px; font-weight:700; color:#7c4dff;" th:text="${otp.substring(1,2)}">2</span>
+                                    </div>
+                                </td>
+                                <td align="center" style="padding:0 4px;">
+                                    <div style="width:45px; height:55px; background:#f5f7fa; border:2px solid #7c4dff; border-radius:12px; display:inline-flex; align-items:center; justify-content:center; box-shadow: 0 4px 12px rgba(124, 77, 255, 0.1);">
+                                        <span style="font-size:28px; font-weight:700; color:#7c4dff;" th:text="${otp.substring(2,3)}">3</span>
+                                    </div>
+                                </td>
+                                <td align="center" style="padding:0 12px;">
+                                    <span style="font-size:24px; color:#ccc; font-weight:300;">-</span>
+                                </td>
+                                <td align="center" style="padding:0 4px;">
+                                    <div style="width:45px; height:55px; background:#f5f7fa; border:2px solid #7c4dff; border-radius:12px; display:inline-flex; align-items:center; justify-content:center; box-shadow: 0 4px 12px rgba(124, 77, 255, 0.1);">
+                                        <span style="font-size:28px; font-weight:700; color:#7c4dff;" th:text="${otp.substring(3,4)}">4</span>
+                                    </div>
+                                </td>
+                                <td align="center" style="padding:0 4px;">
+                                    <div style="width:45px; height:55px; background:#f5f7fa; border:2px solid #7c4dff; border-radius:12px; display:inline-flex; align-items:center; justify-content:center; box-shadow: 0 4px 12px rgba(124, 77, 255, 0.1);">
+                                        <span style="font-size:28px; font-weight:700; color:#7c4dff;" th:text="${otp.substring(4,5)}">5</span>
+                                    </div>
+                                </td>
+                                <td align="center" style="padding:0 4px;">
+                                    <div style="width:45px; height:55px; background:#f5f7fa; border:2px solid #7c4dff; border-radius:12px; display:inline-flex; align-items:center; justify-content:center; box-shadow: 0 4px 12px rgba(124, 77, 255, 0.1);">
+                                        <span style="font-size:28px; font-weight:700; color:#7c4dff;" th:text="${otp.substring(5,6)}">6</span>
+                                    </div>
+                                </td>
+                            </tr>
+                        </table>
+                    </td>
+                </tr>
+
+                <!-- Timer -->
+                <tr>
+                    <td align="center" style="padding:0 30px 30px 30px;">
+                        <div style="background:#fff8e1; border-radius:30px; padding:12px 24px; display:inline-block; border:1px solid #ffe082;">
+                            <p style="margin:0; color:#f57f17; font-size:13px; font-weight:600;">
+                                ⏱️ Valid for <b>5 minutes</b>
+                            </p>
+                        </div>
+                    </td>
+                </tr>
+
+                <!-- Security Note -->
+                <tr>
+                    <td align="center" style="padding:0 30px 30px 30px; border-top:1px dashed #e8eaf6;">
+                        <p style="margin:20px 0 0 0; color:#9e9e9e; font-size:12px; line-height:18px;">
+                            🔒 Keep this code private and secure<br>
+                            <span style="font-size:11px;">Didn't request this? You can safely ignore this email</span>
+                        </p>
+                    </td>
+                </tr>
+
+                <!-- Footer -->
+                <tr>
+                    <td align="center" style="padding:20px; background:#fafbfc; border-top:1px solid #f0f0f0;">
+                        <p style="margin:0; color:#bdbdbd; font-size:11px;">
+                            © 2024 IMS • Automated Message
+                        </p>
+                    </td>
+                </tr>
+
             </table>
+
         </td>
     </tr>
 </table>
 </body>
-</html>
+</html>v+
