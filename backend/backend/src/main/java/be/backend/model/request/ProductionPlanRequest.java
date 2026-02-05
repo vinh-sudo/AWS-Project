@@ -14,5 +14,4 @@ public class ProductionPlanRequest {
     private LocalDate startDate;
     private String note;
     private List<LinePlanRequest> lines;
-    private MultipartFile planFile;
 }

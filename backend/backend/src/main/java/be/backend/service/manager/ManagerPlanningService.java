@@ -25,6 +25,8 @@ public class ManagerPlanningService {
     private final EmployeeRepository employeeRepo;
     private final ProductionPlanMapper mapper;
     private final AuditLogRepository auditRepo;
+    private final ProductionFileRepository fileRepo;
+
     private final SchedulerService schedulerService;
 
     @Transactional
@@ -87,6 +89,11 @@ public class ManagerPlanningService {
 
         if (plans.isEmpty()) {
             return ScheduleValidationResult.fail("No draft plan");
+        }
+        if (!fileRepo.existsByOrderId(orderId)) {
+            return ScheduleValidationResult.fail(
+                    "Order " + orderId + " has no SOP / BOM file"
+            );
         }
 
         ScheduleValidationResult result =

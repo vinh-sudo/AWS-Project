@@ -13,6 +13,7 @@ import java.util.Optional;
 @Repository
 public interface OrderRepository extends JpaRepository<Order, Integer> {
 
+
     // ==================== SINGLE ORDER ====================
     
     @Query("SELECT DISTINCT o FROM Order o " +

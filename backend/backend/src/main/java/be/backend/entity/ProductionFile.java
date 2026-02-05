@@ -1,8 +1,5 @@
-package be.backend;
+package be.backend.entity;
 
-import be.backend.entity.Order;
-import be.backend.entity.ProductionPlan;
-import be.backend.entity.ProductionSchedule;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
