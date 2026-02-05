@@ -21,7 +21,6 @@ import java.util.List;
 public class ManagerPlanningController {
 
     private final ManagerPlanningService planningService;
-
     @PostMapping("/create")
     public ResponseEntity<List<ProductionPlanResponse>> createPlan(
             @RequestBody ProductionPlanRequest request,

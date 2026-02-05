@@ -57,6 +57,7 @@ public class ManagerPlanningService {
             ProductionPlan plan = new ProductionPlan();
             plan.setOrder(order);
             plan.setLine(line);
+            plan.setPlanName(request.getPlanName());
             plan.setCreatedBy(manager);
             plan.setPlannedQuantity(qty);
             plan.setPlannedStartDate(request.getStartDate());

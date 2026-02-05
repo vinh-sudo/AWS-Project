@@ -8,6 +8,7 @@ import be.backend.model.request.CreateOrderRequest;
 import be.backend.model.request.OrderItemRequest;
 import be.backend.model.request.UpdateOrderRequest;
 import be.backend.model.response.OrderResponse;
+import be.backend.model.response.OrderResumeResponse;
 import be.backend.model.response.OrderStopResponse;
 import be.backend.repository.*;
 import jakarta.transaction.Transactional;
@@ -275,6 +276,59 @@ public class OrderService {
                 .build();
 
     }
+    @Transactional
+    public OrderResumeResponse resumeOrder(Integer orderId, Account account) {
+
+        Order order = orderRepository.findById(orderId)
+                .orElseThrow(() -> new RuntimeException("Order not found"));
+
+        if (!order.getStatus().equals("STOPPED")) {
+            throw new RuntimeException("Only STOPPED order can be resumed");
+        }
+
+        // Resume Order
+        order.setStatus("RUNNING");
+        orderRepository.save(order);
+
+        // Resume Schedules
+        List<ProductionSchedule> schedules =
+                scheduleRepo.findByOrder(order);
+
+        int resumed = 0;
+
+        for (ProductionSchedule s : schedules) {
+            if (s.getStatus().equals("STOPPED")) {
+
+                s.setStatus("RUNNING");
+                resumed++;
+
+                if (s.getMachine() != null) {
+                    Machine m = s.getMachine();
+                    m.setStatus("BUSY");
+                    machineRepo.save(m);
+                }
+            }
+        }
+
+        scheduleRepo.saveAll(schedules);
+
+        // ===== AUDIT LOG =====
+        AuditLog log = new AuditLog();
+        log.setUser(account.getUser());
+        log.setActionType("RESUME_ORDER");
+        log.setEntity("Order");
+        log.setDetails("Resumed order " + orderId +
+                " | resumed schedules = " + resumed);
+
+        auditRepo.save(log);
+
+        return OrderResumeResponse.builder()
+                .orderId(orderId)
+                .status("RUNNING")
+                .resumedSchedules(resumed)
+                .build();
+    }
+
 
     // ==================== QUERIES (Index-based) ====================
 

@@ -13,6 +13,7 @@ public interface ProductionPlanMapper {
     @Mapping(source = "order.id", target = "orderId")
     @Mapping(source = "line.id", target = "lineId")
     @Mapping(source = "line.lineName", target = "lineName")
+    @Mapping(source = "planName", target = "planName")
     @Mapping(source = "plannedQuantity", target = "plannedQuantity")
     @Mapping(source = "plannedStartDate", target = "startDate")
     @Mapping(source = "plannedEndDate", target = "endDate")
