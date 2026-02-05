@@ -65,9 +65,10 @@ const ManagerDashboard = () => {
   };
 
   const getOEEClass = (oee) => {
-    if (oee >= 85) return "oee-excellent";
-    if (oee >= 65) return "oee-good";
-    if (oee >= 40) return "oee-fair";
+    const oeePercent = (oee || 0) * 100;
+    if (oeePercent >= 85) return "oee-excellent";
+    if (oeePercent >= 65) return "oee-good";
+    if (oeePercent >= 40) return "oee-fair";
     return "oee-poor";
   };
 
@@ -79,8 +80,8 @@ const ManagerDashboard = () => {
   const averageOEE =
     oeeData.length > 0
       ? (
-          oeeData.reduce((sum, d) => sum + (d.oee || 0), 0) /
-            oeeData.filter((d) => d.oee > 0).length || 0
+          (oeeData.reduce((sum, d) => sum + (d.oee || 0), 0) /
+            oeeData.filter((d) => d.oee > 0).length || 0) * 100
         ).toFixed(1)
       : 0;
   const criticalDelays = delays.filter(
@@ -260,7 +261,7 @@ const ManagerDashboard = () => {
                       <div className="oee-header">
                         <span className="oee-line">{item.line}</span>
                         <span className="oee-value">
-                          {(item.oee || 0).toFixed(1)}%
+                          {((item.oee || 0) * 100).toFixed(1)}%
                         </span>
                       </div>
                       <div className="oee-breakdown">
@@ -269,11 +270,13 @@ const ManagerDashboard = () => {
                           <div className="oee-item-bar">
                             <div
                               className="oee-item-fill availability"
-                              style={{ width: `${item.availability || 0}%` }}
+                              style={{
+                                width: `${(item.availability || 0) * 100}%`,
+                              }}
                             />
                           </div>
                           <span className="oee-item-value">
-                            {item.availability || 0}%
+                            {((item.availability || 0) * 100).toFixed(1)}%
                           </span>
                         </div>
                         <div className="oee-item">
@@ -281,11 +284,13 @@ const ManagerDashboard = () => {
                           <div className="oee-item-bar">
                             <div
                               className="oee-item-fill performance"
-                              style={{ width: `${item.performance || 0}%` }}
+                              style={{
+                                width: `${(item.performance || 0) * 100}%`,
+                              }}
                             />
                           </div>
                           <span className="oee-item-value">
-                            {item.performance || 0}%
+                            {((item.performance || 0) * 100).toFixed(1)}%
                           </span>
                         </div>
                         <div className="oee-item">
@@ -293,11 +298,11 @@ const ManagerDashboard = () => {
                           <div className="oee-item-bar">
                             <div
                               className="oee-item-fill quality"
-                              style={{ width: `${item.quality || 0}%` }}
+                              style={{ width: `${(item.quality || 0) * 100}%` }}
                             />
                           </div>
                           <span className="oee-item-value">
-                            {item.quality || 0}%
+                            {((item.quality || 0) * 100).toFixed(1)}%
                           </span>
                         </div>
                       </div>

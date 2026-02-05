@@ -68,9 +68,10 @@ const ManagerTracking = () => {
   };
 
   const getOEEClass = (oee) => {
-    if (oee >= 85) return "oee-excellent";
-    if (oee >= 65) return "oee-good";
-    if (oee >= 40) return "oee-fair";
+    const oeePercent = (oee || 0) * 100;
+    if (oeePercent >= 85) return "oee-excellent";
+    if (oeePercent >= 65) return "oee-good";
+    if (oeePercent >= 40) return "oee-fair";
     return "oee-poor";
   };
 
@@ -283,8 +284,9 @@ const ManagerTracking = () => {
                       <div className="oee-summary-card">
                         <span className="oee-summary-value">
                           {(
-                            oeeData.reduce((sum, d) => sum + (d.oee || 0), 0) /
-                            oeeData.length
+                            (oeeData.reduce((sum, d) => sum + (d.oee || 0), 0) /
+                              oeeData.length) *
+                            100
                           ).toFixed(1)}
                           %
                         </span>
@@ -295,10 +297,12 @@ const ManagerTracking = () => {
                       <div className="oee-summary-card">
                         <span className="oee-summary-value">
                           {(
-                            oeeData.reduce(
+                            (oeeData.reduce(
                               (sum, d) => sum + (d.availability || 0),
                               0,
-                            ) / oeeData.length
+                            ) /
+                              oeeData.length) *
+                            100
                           ).toFixed(1)}
                           %
                         </span>
@@ -309,10 +313,12 @@ const ManagerTracking = () => {
                       <div className="oee-summary-card">
                         <span className="oee-summary-value">
                           {(
-                            oeeData.reduce(
+                            (oeeData.reduce(
                               (sum, d) => sum + (d.performance || 0),
                               0,
-                            ) / oeeData.length
+                            ) /
+                              oeeData.length) *
+                            100
                           ).toFixed(1)}
                           %
                         </span>
@@ -323,10 +329,12 @@ const ManagerTracking = () => {
                       <div className="oee-summary-card">
                         <span className="oee-summary-value">
                           {(
-                            oeeData.reduce(
+                            (oeeData.reduce(
                               (sum, d) => sum + (d.quality || 0),
                               0,
-                            ) / oeeData.length
+                            ) /
+                              oeeData.length) *
+                            100
                           ).toFixed(1)}
                           %
                         </span>
@@ -356,7 +364,7 @@ const ManagerTracking = () => {
                                   fill="none"
                                   stroke="url(#oeeGradient)"
                                   strokeWidth="8"
-                                  strokeDasharray={`${(item.oee || 0) * 1.26} 126`}
+                                  strokeDasharray={`${(item.oee || 0) * 100 * 1.26} 126`}
                                 />
                                 <defs>
                                   <linearGradient
@@ -372,7 +380,7 @@ const ManagerTracking = () => {
                                 </defs>
                               </svg>
                               <span className="oee-gauge-value">
-                                {(item.oee || 0).toFixed(1)}%
+                                {((item.oee || 0) * 100).toFixed(1)}%
                               </span>
                             </div>
                           </div>
@@ -383,12 +391,12 @@ const ManagerTracking = () => {
                                 <div
                                   className="metric-bar availability"
                                   style={{
-                                    width: `${item.availability || 0}%`,
+                                    width: `${(item.availability || 0) * 100}%`,
                                   }}
                                 />
                               </div>
                               <span className="metric-value">
-                                {item.availability || 0}%
+                                {((item.availability || 0) * 100).toFixed(1)}%
                               </span>
                             </div>
                             <div className="metric-row">
@@ -396,11 +404,13 @@ const ManagerTracking = () => {
                               <div className="metric-bar-container">
                                 <div
                                   className="metric-bar performance"
-                                  style={{ width: `${item.performance || 0}%` }}
+                                  style={{
+                                    width: `${(item.performance || 0) * 100}%`,
+                                  }}
                                 />
                               </div>
                               <span className="metric-value">
-                                {item.performance || 0}%
+                                {((item.performance || 0) * 100).toFixed(1)}%
                               </span>
                             </div>
                             <div className="metric-row">
@@ -408,11 +418,13 @@ const ManagerTracking = () => {
                               <div className="metric-bar-container">
                                 <div
                                   className="metric-bar quality"
-                                  style={{ width: `${item.quality || 0}%` }}
+                                  style={{
+                                    width: `${(item.quality || 0) * 100}%`,
+                                  }}
                                 />
                               </div>
                               <span className="metric-value">
-                                {item.quality || 0}%
+                                {((item.quality || 0) * 100).toFixed(1)}%
                               </span>
                             </div>
                           </div>

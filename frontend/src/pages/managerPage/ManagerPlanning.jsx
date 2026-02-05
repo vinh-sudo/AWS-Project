@@ -108,14 +108,20 @@ const ManagerPlanning = () => {
         alert("Xác nhận kế hoạch thành công!");
         fetchData();
       } else {
-        alert("Lỗi: " + result.message);
+        alert("Không thể xác nhận kế hoạch:\n" + result.message);
       }
     } catch (error) {
       console.error("Error confirming plan:", error);
-      alert(
-        "Lỗi khi xác nhận kế hoạch: " +
-          (error.response?.data?.message || error.message),
-      );
+      // Backend trả về ScheduleValidationResult trong response.data khi lỗi 400
+      const errorData = error.response?.data;
+      if (errorData && errorData.message) {
+        alert("Không thể xác nhận kế hoạch:\n" + errorData.message);
+      } else {
+        alert(
+          "Lỗi khi xác nhận kế hoạch: " +
+            (error.response?.data?.message || error.message),
+        );
+      }
     }
   };
 
@@ -341,7 +347,9 @@ const ManagerPlanning = () => {
                               </td>
                               <td>{plan.plannedStartDate || plan.startDate}</td>
                               <td>{plan.plannedEndDate || plan.endDate}</td>
-                              <td>{plan.estimatedHours}h</td>
+                              <td>
+                                {Number(plan.estimatedHours || 0).toFixed(1)}h
+                              </td>
                               <td>
                                 <span
                                   className={`decision-badge ${getDecisionClass(plan.decision)}`}
