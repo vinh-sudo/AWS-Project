@@ -1,6 +1,7 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import authService from "../../services/authService";
+import adminService from "../../services/adminService";
 import imsLogo from "../../assets/ims2.jpg";
 import dashboardIcon from "../../assets/dashboard.jpg";
 import userIcon from "../../assets/user.jpg";
@@ -11,29 +12,11 @@ const UsersAdmin = () => {
   const navigate = useNavigate();
   const currentUser = authService.getCurrentUser();
 
-  const [users, setUsers] = useState([
-    {
-      id: 1,
-      username: "an.ng",
-      email: "an.ng@x.com",
-      role: "Admin",
-      status: "Active",
-    },
-    {
-      id: 2,
-      username: "binh.tt",
-      email: "binh.tt@y.com",
-      role: "Sales",
-      status: "Active",
-    },
-    {
-      id: 3,
-      username: "planner1",
-      email: "planner1@z.com",
-      role: "Planner",
-      status: "Blocked",
-    },
-  ]);
+  const [users, setUsers] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+  const [actionLoading, setActionLoading] = useState(false);
+
   const [searchTerm, setSearchTerm] = useState("");
   const [roleFilter, setRoleFilter] = useState("All roles");
   const [showCreateUser, setShowCreateUser] = useState(false);
@@ -44,84 +27,134 @@ const UsersAdmin = () => {
     username: "",
     email: "",
     password: "",
+    firstName: "",
+    lastName: "",
+    phoneNumber: "",
     role: "Admin",
     status: true,
   });
+
+  // Fetch users on mount
+  useEffect(() => {
+    fetchUsers();
+  }, []);
+
+  const fetchUsers = async () => {
+    try {
+      setLoading(true);
+      setError(null);
+      const data = await adminService.getAllUsers();
+      setUsers(data);
+    } catch (err) {
+      console.error("Error fetching users:", err);
+      setError(err.response?.data?.message || "Failed to load users");
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const handleChange = (field, value) => {
     setFormData((prev) => ({ ...prev, [field]: value }));
   };
 
-  const handleSave = () => {
-    const newUser = {
-      id: users.length + 1,
-      username: formData.username,
-      email: formData.email,
-      role: formData.role,
-      status: formData.status ? "Active" : "Blocked",
-    };
-    setUsers([...users, newUser]);
-    setFormData({
-      username: "",
-      email: "",
-      password: "",
-      role: "Admin",
-      status: true,
-    });
-    setShowCreateUser(false);
-    alert("User created successfully!");
+  const handleSave = async () => {
+    try {
+      setActionLoading(true);
+      const userData = {
+        username: formData.username,
+        password: formData.password,
+        firstName: formData.firstName,
+        lastName: formData.lastName,
+        email: formData.email,
+        phoneNumber: formData.phoneNumber,
+        role: formData.role,
+      };
+      await adminService.createUser(userData);
+      resetForm();
+      setShowCreateUser(false);
+      fetchUsers();
+      alert("User created successfully!");
+    } catch (err) {
+      console.error("Error creating user:", err);
+      alert(err.response?.data?.message || "Failed to create user");
+    } finally {
+      setActionLoading(false);
+    }
   };
+
   const handleCancel = () => {
-    setFormData({
-      username: "",
-      email: "",
-      password: "",
-      role: "Admin",
-      status: true,
-    });
+    resetForm();
     setShowCreateUser(false);
     setShowEditUser(false);
     setSelectedUser(null);
+  };
+
+  const resetForm = () => {
+    setFormData({
+      username: "",
+      email: "",
+      password: "",
+      firstName: "",
+      lastName: "",
+      phoneNumber: "",
+      role: "Admin",
+      status: true,
+    });
   };
 
   // Edit user handlers
   const handleEditClick = (user) => {
     setSelectedUser(user);
     setFormData({
-      username: user.username,
-      email: user.email,
+      username: user.username || "",
+      email: user.email || "",
       password: "",
-      role: user.role,
-      status: user.status === "Active",
+      firstName: user.firstName || "",
+      lastName: user.lastName || "",
+      phoneNumber: user.phoneNumber || "",
+      role: user.role || "Admin",
+      status: user.status === "active",
     });
     setShowEditUser(true);
   };
 
-  const handleEditSave = () => {
+  const handleEditSave = async () => {
     if (!selectedUser) return;
-    
-    setUsers(users.map(user => 
-      user.id === selectedUser.id 
-        ? {
-            ...user,
-            username: formData.username,
-            email: formData.email,
-            role: formData.role,
-            status: formData.status ? "Active" : "Blocked",
-          }
-        : user
-    ));
-    
-    setFormData({
-      username: "",
-      email: "",
-      password: "",
-      role: "Admin",
-      status: true,
-    });
-    setShowEditUser(false);
-    setSelectedUser(null);
-    alert("User updated successfully!");
+
+    try {
+      setActionLoading(true);
+      const userData = {
+        firstName: formData.firstName,
+        lastName: formData.lastName,
+        email: formData.email,
+        phoneNumber: formData.phoneNumber,
+        role: formData.role,
+      };
+
+      // Only include password if it was changed
+      if (formData.password) {
+        userData.password = formData.password;
+      }
+
+      await adminService.updateUser(selectedUser.id, userData);
+
+      // Update status if changed
+      const newStatus = formData.status ? "active" : "blocked";
+      if (newStatus !== selectedUser.status) {
+        await adminService.updateUserStatus(selectedUser.id, newStatus);
+      }
+
+      resetForm();
+      setShowEditUser(false);
+      setSelectedUser(null);
+      fetchUsers();
+      alert("User updated successfully!");
+    } catch (err) {
+      console.error("Error updating user:", err);
+      alert(err.response?.data?.message || "Failed to update user");
+    } finally {
+      setActionLoading(false);
+    }
   };
 
   // Delete user handlers
@@ -130,13 +163,22 @@ const UsersAdmin = () => {
     setShowDeleteConfirm(true);
   };
 
-  const handleDeleteConfirm = () => {
+  const handleDeleteConfirm = async () => {
     if (!selectedUser) return;
-    
-    setUsers(users.filter(user => user.id !== selectedUser.id));
-    setShowDeleteConfirm(false);
-    setSelectedUser(null);
-    alert("User deleted successfully!");
+
+    try {
+      setActionLoading(true);
+      await adminService.deleteUser(selectedUser.id);
+      setShowDeleteConfirm(false);
+      setSelectedUser(null);
+      fetchUsers();
+      alert("User deleted successfully!");
+    } catch (err) {
+      console.error("Error deleting user:", err);
+      alert(err.response?.data?.message || "Failed to delete user");
+    } finally {
+      setActionLoading(false);
+    }
   };
 
   const handleDeleteCancel = () => {
@@ -148,6 +190,46 @@ const UsersAdmin = () => {
     authService.logout();
     navigate("/login");
   };
+
+  // Filter users
+  const filteredUsers = users.filter((user) => {
+    const matchesSearch =
+      (user.username?.toLowerCase() || "").includes(searchTerm.toLowerCase()) ||
+      (user.email?.toLowerCase() || "").includes(searchTerm.toLowerCase()) ||
+      (user.fullName?.toLowerCase() || "").includes(searchTerm.toLowerCase());
+    const matchesRole = roleFilter === "All roles" || user.role === roleFilter;
+    return matchesSearch && matchesRole;
+  });
+
+  if (loading) {
+    return (
+      <div className="admin-container">
+        <div
+          className="loading-container"
+          style={{
+            display: "flex",
+            flexDirection: "column",
+            alignItems: "center",
+            justifyContent: "center",
+            height: "100vh",
+          }}
+        >
+          <div
+            className="loading-spinner"
+            style={{
+              width: "40px",
+              height: "40px",
+              border: "4px solid #f3f3f3",
+              borderTop: "4px solid #3498db",
+              borderRadius: "50%",
+              animation: "spin 1s linear infinite",
+            }}
+          ></div>
+          <p>Loading users...</p>
+        </div>
+      </div>
+    );
+  }
 
   if (showCreateUser) {
     return (
@@ -162,7 +244,7 @@ const UsersAdmin = () => {
 
           <div className="modal-body">
             <div className="form-group">
-              <label className="form-label">Username</label>
+              <label className="form-label">Username *</label>
               <input
                 type="text"
                 placeholder="Enter username"
@@ -172,8 +254,31 @@ const UsersAdmin = () => {
               />
             </div>
 
+            <div className="form-row" style={{ display: "flex", gap: "16px" }}>
+              <div className="form-group" style={{ flex: 1 }}>
+                <label className="form-label">First Name *</label>
+                <input
+                  type="text"
+                  placeholder="Enter first name"
+                  value={formData.firstName}
+                  onChange={(e) => handleChange("firstName", e.target.value)}
+                  className="form-input"
+                />
+              </div>
+              <div className="form-group" style={{ flex: 1 }}>
+                <label className="form-label">Last Name *</label>
+                <input
+                  type="text"
+                  placeholder="Enter last name"
+                  value={formData.lastName}
+                  onChange={(e) => handleChange("lastName", e.target.value)}
+                  className="form-input"
+                />
+              </div>
+            </div>
+
             <div className="form-group">
-              <label className="form-label">Email</label>
+              <label className="form-label">Email *</label>
               <input
                 type="email"
                 placeholder="Enter email"
@@ -184,7 +289,18 @@ const UsersAdmin = () => {
             </div>
 
             <div className="form-group">
-              <label className="form-label">Password</label>
+              <label className="form-label">Phone Number</label>
+              <input
+                type="text"
+                placeholder="Enter phone number"
+                value={formData.phoneNumber}
+                onChange={(e) => handleChange("phoneNumber", e.target.value)}
+                className="form-input"
+              />
+            </div>
+
+            <div className="form-group">
+              <label className="form-label">Password *</label>
               <input
                 type="password"
                 placeholder="Enter password"
@@ -192,47 +308,39 @@ const UsersAdmin = () => {
                 onChange={(e) => handleChange("password", e.target.value)}
                 className="form-input"
               />
-            </div>            <div className="form-group">
-              <label className="form-label">Role</label>
+            </div>
+
+            <div className="form-group">
+              <label className="form-label">Role *</label>
               <select
                 value={formData.role}
                 onChange={(e) => handleChange("role", e.target.value)}
                 className="form-select"
               >
                 <option>Admin</option>
+                <option>Sales</option>
                 <option>Planner</option>
                 <option>LineLeader</option>
-                
+                <option>Director</option>
+                <option>Manager</option>
               </select>
-            </div>
-
-            <div className="form-group">
-              <label className="form-label">Status</label>
-              <div className="toggle-container">
-                <button
-                  className={`toggle-button ${formData.status ? "active" : ""}`}
-                  onClick={() => handleChange("status", true)}
-                >
-                  ON
-                </button>
-                <button
-                  className={`toggle-button ${
-                    !formData.status ? "active" : ""
-                  }`}
-                  onClick={() => handleChange("status", false)}
-                >
-                  OFF
-                </button>
-              </div>
             </div>
           </div>
 
           <div className="modal-footer">
-            <button className="btn-cancel" onClick={handleCancel}>
+            <button
+              className="btn-cancel"
+              onClick={handleCancel}
+              disabled={actionLoading}
+            >
               Cancel
             </button>
-            <button className="btn-save" onClick={handleSave}>
-              Save
+            <button
+              className="btn-save"
+              onClick={handleSave}
+              disabled={actionLoading}
+            >
+              {actionLoading ? "Creating..." : "Save"}
             </button>
           </div>
         </div>
@@ -255,14 +363,16 @@ const UsersAdmin = () => {
           >
             <img src={dashboardIcon} alt="Dashboard" className="nav-icon-img" />
             <span>Dashboard</span>
-          </div>          <div className="nav-item" onClick={() => navigate("/admin/approval")}>
+          </div>{" "}
+          <div className="nav-item" onClick={() => navigate("/admin/approval")}>
             <span className="nav-icon">✅</span>
             <span>Task Approval</span>
           </div>
           <div className="nav-item" onClick={() => navigate("/admin/orders")}>
             <span className="nav-icon">📦</span>
             <span>Order Management</span>
-          </div>          <div className="nav-item active">
+          </div>{" "}
+          <div className="nav-item active">
             <img src={userIcon} alt="Users" className="nav-icon-img" />
             <span>User Management</span>
           </div>
@@ -287,6 +397,13 @@ const UsersAdmin = () => {
         <header className="admin-header">
           <h1 className="header-title">Users Admin</h1>
           <div className="header-actions">
+            <button
+              className="header-icon-btn"
+              onClick={fetchUsers}
+              title="Refresh"
+            >
+              🔄
+            </button>
             <button className="header-icon-btn">🔔</button>
             <div className="user-menu">
               <div className="user-avatar"></div>
@@ -299,6 +416,36 @@ const UsersAdmin = () => {
         </header>
 
         <div className="admin-content">
+          {error && (
+            <div
+              className="error-banner"
+              style={{
+                background: "#ffebee",
+                color: "#c62828",
+                padding: "12px 16px",
+                borderRadius: "8px",
+                marginBottom: "16px",
+                display: "flex",
+                justifyContent: "space-between",
+                alignItems: "center",
+              }}
+            >
+              <span>⚠️ {error}</span>
+              <button
+                onClick={fetchUsers}
+                style={{
+                  background: "#c62828",
+                  color: "white",
+                  border: "none",
+                  padding: "6px 12px",
+                  borderRadius: "4px",
+                  cursor: "pointer",
+                }}
+              >
+                Retry
+              </button>
+            </div>
+          )}
           <div className="content-header">
             <h2 className="content-title">Users Management</h2>
             <button
@@ -308,7 +455,6 @@ const UsersAdmin = () => {
               + Create User
             </button>
           </div>
-
           <div className="filters-container">
             <div className="search-box">
               <span className="search-icon">🔍</span>
@@ -319,7 +465,8 @@ const UsersAdmin = () => {
                 onChange={(e) => setSearchTerm(e.target.value)}
                 className="search-input"
               />
-            </div>            <div className="role-filter">
+            </div>{" "}
+            <div className="role-filter">
               <label className="role-label">Role</label>
               <select
                 value={roleFilter}
@@ -334,10 +481,12 @@ const UsersAdmin = () => {
                 <option>Director</option>
               </select>
             </div>
-          </div>          <table className="users-table">
+          </div>{" "}
+          <table className="users-table">
             <thead>
               <tr>
                 <th className="table-header">Username</th>
+                <th className="table-header">Full Name</th>
                 <th className="table-header">Email</th>
                 <th className="table-header">Role</th>
                 <th className="table-header">Status</th>
@@ -345,35 +494,58 @@ const UsersAdmin = () => {
               </tr>
             </thead>
             <tbody>
-              {users
-                .filter((user) => {
-                  const matchesSearch = 
-                    user.username.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                    user.email.toLowerCase().includes(searchTerm.toLowerCase());
-                  const matchesRole = roleFilter === "All roles" || user.role === roleFilter;
-                  return matchesSearch && matchesRole;
-                })
-                .map((user) => (
-                <tr key={user.id} className="table-row">
-                  <td className="table-cell">{user.username}</td>
-                  <td className="table-cell">{user.email}</td>
-                  <td className="table-cell">{user.role}</td>
-                  <td className="table-cell">
-                    <span
-                      className={
-                        user.status === "Active"
-                          ? "status-active"
-                          : "status-blocked"
-                      }
-                    >
-                      {user.status}
-                    </span>
-                  </td>                  <td className="table-cell">
-                    <button className="action-button" onClick={() => handleEditClick(user)} title="Edit user">✏️</button>
-                    <button className="action-button delete" onClick={() => handleDeleteClick(user)} title="Delete user">🗑️</button>
+              {filteredUsers.length === 0 ? (
+                <tr>
+                  <td
+                    colSpan="6"
+                    style={{
+                      textAlign: "center",
+                      padding: "40px",
+                      color: "#666",
+                    }}
+                  >
+                    No users found
                   </td>
                 </tr>
-              ))}
+              ) : (
+                filteredUsers.map((user) => (
+                  <tr key={user.id} className="table-row">
+                    <td className="table-cell">{user.username}</td>
+                    <td className="table-cell">{user.fullName || "-"}</td>
+                    <td className="table-cell">{user.email || "-"}</td>
+                    <td className="table-cell">{user.role}</td>
+                    <td className="table-cell">
+                      <span
+                        className={
+                          user.status === "active"
+                            ? "status-active"
+                            : "status-blocked"
+                        }
+                      >
+                        {user.status === "active" ? "Active" : "Blocked"}
+                      </span>
+                    </td>
+                    <td className="table-cell">
+                      <button
+                        className="action-button"
+                        onClick={() => handleEditClick(user)}
+                        title="Edit user"
+                        disabled={actionLoading}
+                      >
+                        ✏️
+                      </button>
+                      <button
+                        className="action-button delete"
+                        onClick={() => handleDeleteClick(user)}
+                        title="Delete user"
+                        disabled={actionLoading}
+                      >
+                        🗑️
+                      </button>
+                    </td>
+                  </tr>
+                ))
+              )}
             </tbody>
           </table>
         </div>
@@ -397,9 +569,36 @@ const UsersAdmin = () => {
                   type="text"
                   placeholder="Enter username"
                   value={formData.username}
-                  onChange={(e) => handleChange("username", e.target.value)}
+                  disabled
                   className="form-input"
+                  style={{ background: "#f5f5f5", cursor: "not-allowed" }}
                 />
+              </div>
+
+              <div
+                className="form-row"
+                style={{ display: "flex", gap: "16px" }}
+              >
+                <div className="form-group" style={{ flex: 1 }}>
+                  <label className="form-label">First Name</label>
+                  <input
+                    type="text"
+                    placeholder="Enter first name"
+                    value={formData.firstName}
+                    onChange={(e) => handleChange("firstName", e.target.value)}
+                    className="form-input"
+                  />
+                </div>
+                <div className="form-group" style={{ flex: 1 }}>
+                  <label className="form-label">Last Name</label>
+                  <input
+                    type="text"
+                    placeholder="Enter last name"
+                    value={formData.lastName}
+                    onChange={(e) => handleChange("lastName", e.target.value)}
+                    className="form-input"
+                  />
+                </div>
               </div>
 
               <div className="form-group">
@@ -414,7 +613,20 @@ const UsersAdmin = () => {
               </div>
 
               <div className="form-group">
-                <label className="form-label">New Password (leave blank to keep current)</label>
+                <label className="form-label">Phone Number</label>
+                <input
+                  type="text"
+                  placeholder="Enter phone number"
+                  value={formData.phoneNumber}
+                  onChange={(e) => handleChange("phoneNumber", e.target.value)}
+                  className="form-input"
+                />
+              </div>
+
+              <div className="form-group">
+                <label className="form-label">
+                  New Password (leave blank to keep current)
+                </label>
                 <input
                   type="password"
                   placeholder="Enter new password"
@@ -436,6 +648,7 @@ const UsersAdmin = () => {
                   <option>Planner</option>
                   <option>LineLeader</option>
                   <option>Director</option>
+                  <option>Manager</option>
                 </select>
               </div>
 
@@ -446,24 +659,32 @@ const UsersAdmin = () => {
                     className={`toggle-button ${formData.status ? "active" : ""}`}
                     onClick={() => handleChange("status", true)}
                   >
-                    ON
+                    Active
                   </button>
                   <button
                     className={`toggle-button ${!formData.status ? "active" : ""}`}
                     onClick={() => handleChange("status", false)}
                   >
-                    OFF
+                    Blocked
                   </button>
                 </div>
               </div>
             </div>
 
             <div className="modal-footer">
-              <button className="btn-cancel" onClick={handleCancel}>
+              <button
+                className="btn-cancel"
+                onClick={handleCancel}
+                disabled={actionLoading}
+              >
                 Cancel
               </button>
-              <button className="btn-save" onClick={handleEditSave}>
-                Update
+              <button
+                className="btn-save"
+                onClick={handleEditSave}
+                disabled={actionLoading}
+              >
+                {actionLoading ? "Updating..." : "Update"}
               </button>
             </div>
           </div>
@@ -483,19 +704,26 @@ const UsersAdmin = () => {
 
             <div className="modal-body">
               <p className="delete-message">
-                Are you sure you want to delete user <strong>{selectedUser.username}</strong>?
+                Are you sure you want to delete user{" "}
+                <strong>{selectedUser.username}</strong>?
               </p>
-              <p className="delete-warning">
-                This action cannot be undone.
-              </p>
+              <p className="delete-warning">This action cannot be undone.</p>
             </div>
 
             <div className="modal-footer">
-              <button className="btn-cancel" onClick={handleDeleteCancel}>
+              <button
+                className="btn-cancel"
+                onClick={handleDeleteCancel}
+                disabled={actionLoading}
+              >
                 Cancel
               </button>
-              <button className="btn-delete" onClick={handleDeleteConfirm}>
-                Delete
+              <button
+                className="btn-delete"
+                onClick={handleDeleteConfirm}
+                disabled={actionLoading}
+              >
+                {actionLoading ? "Deleting..." : "Delete"}
               </button>
             </div>
           </div>

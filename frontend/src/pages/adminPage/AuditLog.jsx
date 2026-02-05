@@ -1,6 +1,7 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import authService from "../../services/authService";
+import adminService from "../../services/adminService";
 import imsLogo from "../../assets/ims2.jpg";
 import dashboardIcon from "../../assets/dashboard.jpg";
 import userIcon from "../../assets/user.jpg";
@@ -11,105 +12,35 @@ const AuditLog = () => {
   const navigate = useNavigate();
   const currentUser = authService.getCurrentUser();
 
-  // Mock data for audit logs based on database schema
-  const [auditLogs] = useState([
-    {
-      log_id: 1,
-      user_id: 1,
-      user_email: "admin@ims.com",
-      action_type: "CREATE",
-      entity: "users",
-      details: "Created new user: binh.tt@y.com with role Sales",
-      timestamp: "2026-01-16 10:30:45",
-    },
-    {
-      log_id: 2,
-      user_id: 1,
-      user_email: "admin@ims.com",
-      action_type: "UPDATE",
-      entity: "users",
-      details: "Updated user status: planner1@z.com changed to Blocked",
-      timestamp: "2026-01-16 09:15:22",
-    },
-    {
-      log_id: 3,
-      user_id: 2,
-      user_email: "planner@ims.com",
-      action_type: "UPDATE",
-      entity: "orders",
-      details: "Updated order #1234 status from Draft to Approved",
-      timestamp: "2026-01-16 08:45:10",
-    },
-    {
-      log_id: 4,
-      user_id: 3,
-      user_email: "planner@ims.com",
-      action_type: "CREATE",
-      entity: "production_schedule",
-      details: "Created production schedule for Order #1234 on Line A",
-      timestamp: "2026-01-15 16:20:33",
-    },
-    {
-      log_id: 5,
-      user_id: 4,
-      user_email: "sales@ims.com",
-      action_type: "CREATE",
-      entity: "orders",
-      details: "Created new order #1235 for Customer ABC Corp, 500 units",
-      timestamp: "2026-01-15 14:55:18",
-    },
-    {
-      log_id: 6,
-      user_id: 1,
-      user_email: "admin@ims.com",
-      action_type: "DELETE",
-      entity: "users",
-      details: "Deleted user: test.user@ims.com",
-      timestamp: "2026-01-15 11:30:00",
-    },
-    {
-      log_id: 7,
-      user_id: 2,
-      user_email: "planner@ims.com",
-      action_type: "UPDATE",
-      entity: "production_line",
-      details: "Updated Line C status to Maintenance",
-      timestamp: "2026-01-15 10:00:45",
-    },
-    {
-      log_id: 8,
-      user_id: 1,
-      user_email: "admin@ims.com",
-      action_type: "LOGIN",
-      entity: "accounts",
-      details: "User logged in from IP: 192.168.1.100",
-      timestamp: "2026-01-15 08:00:12",
-    },
-    {
-      log_id: 9,
-      user_id: 3,
-      user_email: "planner@ims.com",
-      action_type: "UPDATE",
-      entity: "machine",
-      details: "Updated Machine M-001 last maintenance date",
-      timestamp: "2026-01-14 17:45:30",
-    },
-    {
-      log_id: 10,
-      user_id: 4,
-      user_email: "sales@ims.com",
-      action_type: "CREATE",
-      entity: "order_items",
-      details: "Added 3 items to Order #1230",
-      timestamp: "2026-01-14 15:20:00",
-    },
-  ]);
+  // Audit logs state
+  const [auditLogs, setAuditLogs] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
 
   const [searchTerm, setSearchTerm] = useState("");
   const [actionFilter, setActionFilter] = useState("All actions");
   const [entityFilter, setEntityFilter] = useState("All entities");
   const [dateFrom, setDateFrom] = useState("");
   const [dateTo, setDateTo] = useState("");
+
+  // Fetch audit logs on mount
+  useEffect(() => {
+    fetchAuditLogs();
+  }, []);
+
+  const fetchAuditLogs = async () => {
+    try {
+      setLoading(true);
+      setError(null);
+      const data = await adminService.getAuditLogs();
+      setAuditLogs(data);
+    } catch (err) {
+      console.error("Error fetching audit logs:", err);
+      setError(err.response?.data?.message || "Failed to load audit logs");
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const handleLogout = () => {
     authService.logout();
@@ -133,19 +64,72 @@ const AuditLog = () => {
     }
   };
 
+  const formatTimestamp = (timestamp) => {
+    if (!timestamp) return "-";
+    return new Date(timestamp).toLocaleString("vi-VN");
+  };
+
   const filteredLogs = auditLogs.filter((log) => {
     const matchesSearch =
-      log.user_email.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      log.details.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      log.entity.toLowerCase().includes(searchTerm.toLowerCase());
+      (log.userEmail?.toLowerCase() || "").includes(searchTerm.toLowerCase()) ||
+      (log.userName?.toLowerCase() || "").includes(searchTerm.toLowerCase()) ||
+      (log.details?.toLowerCase() || "").includes(searchTerm.toLowerCase()) ||
+      (log.entity?.toLowerCase() || "").includes(searchTerm.toLowerCase());
     const matchesAction =
-      actionFilter === "All actions" || log.action_type === actionFilter;
+      actionFilter === "All actions" || log.actionType === actionFilter;
     const matchesEntity =
       entityFilter === "All entities" || log.entity === entityFilter;
-    return matchesSearch && matchesAction && matchesEntity;
+
+    // Date filtering
+    let matchesDate = true;
+    if (dateFrom) {
+      const fromDate = new Date(dateFrom);
+      const logDate = new Date(log.timestamp);
+      matchesDate = matchesDate && logDate >= fromDate;
+    }
+    if (dateTo) {
+      const toDate = new Date(dateTo);
+      toDate.setHours(23, 59, 59, 999);
+      const logDate = new Date(log.timestamp);
+      matchesDate = matchesDate && logDate <= toDate;
+    }
+
+    return matchesSearch && matchesAction && matchesEntity && matchesDate;
   });
 
-  const uniqueEntities = [...new Set(auditLogs.map((log) => log.entity))];
+  const uniqueEntities = [
+    ...new Set(auditLogs.map((log) => log.entity).filter(Boolean)),
+  ];
+
+  if (loading) {
+    return (
+      <div className="admin-container">
+        <div
+          className="loading-container"
+          style={{
+            display: "flex",
+            flexDirection: "column",
+            alignItems: "center",
+            justifyContent: "center",
+            height: "100vh",
+          }}
+        >
+          <div
+            className="loading-spinner"
+            style={{
+              width: "40px",
+              height: "40px",
+              border: "4px solid #f3f3f3",
+              borderTop: "4px solid #3498db",
+              borderRadius: "50%",
+              animation: "spin 1s linear infinite",
+            }}
+          ></div>
+          <p>Loading audit logs...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="admin-container">
@@ -196,6 +180,13 @@ const AuditLog = () => {
         <header className="admin-header">
           <h1 className="header-title">Audit Log</h1>
           <div className="header-actions">
+            <button
+              className="header-icon-btn"
+              onClick={fetchAuditLogs}
+              title="Refresh"
+            >
+              🔄
+            </button>
             <button className="header-icon-btn">🔔</button>
             <div className="user-menu">
               <div className="user-avatar"></div>
@@ -208,6 +199,37 @@ const AuditLog = () => {
         </header>
 
         <div className="admin-content">
+          {error && (
+            <div
+              className="error-banner"
+              style={{
+                background: "#ffebee",
+                color: "#c62828",
+                padding: "12px 16px",
+                borderRadius: "8px",
+                marginBottom: "16px",
+                display: "flex",
+                justifyContent: "space-between",
+                alignItems: "center",
+              }}
+            >
+              <span>⚠️ {error}</span>
+              <button
+                onClick={fetchAuditLogs}
+                style={{
+                  background: "#c62828",
+                  color: "white",
+                  border: "none",
+                  padding: "6px 12px",
+                  borderRadius: "4px",
+                  cursor: "pointer",
+                }}
+              >
+                Retry
+              </button>
+            </div>
+          )}
+
           <div className="content-header">
             <h2 className="content-title">System Activity Logs</h2>
             <button className="btn-primary" onClick={() => window.print()}>
@@ -293,35 +315,50 @@ const AuditLog = () => {
                 </tr>
               </thead>
               <tbody>
-                {filteredLogs.map((log) => (
-                  <tr key={log.log_id} className="table-row">
-                    <td className="table-cell">{log.log_id}</td>
-                    <td className="table-cell timestamp-cell">
-                      {log.timestamp}
+                {filteredLogs.length === 0 ? (
+                  <tr>
+                    <td
+                      colSpan="6"
+                      style={{
+                        textAlign: "center",
+                        padding: "40px",
+                        color: "#666",
+                      }}
+                    >
+                      No audit logs found
                     </td>
-                    <td className="table-cell">
-                      <div className="user-cell">
-                        <div className="user-avatar-small">
-                          {log.user_email.charAt(0).toUpperCase()}
-                        </div>
-                        <span>{log.user_email}</span>
-                      </div>
-                    </td>
-                    <td className="table-cell">
-                      <span
-                        className={`action-badge ${getActionClass(
-                          log.action_type
-                        )}`}
-                      >
-                        {log.action_type}
-                      </span>
-                    </td>
-                    <td className="table-cell">
-                      <span className="entity-badge">{log.entity}</span>
-                    </td>
-                    <td className="table-cell details-cell">{log.details}</td>
                   </tr>
-                ))}
+                ) : (
+                  filteredLogs.map((log) => (
+                    <tr key={log.id} className="table-row">
+                      <td className="table-cell">{log.id}</td>
+                      <td className="table-cell timestamp-cell">
+                        {formatTimestamp(log.timestamp)}
+                      </td>
+                      <td className="table-cell">
+                        <div className="user-cell">
+                          <div className="user-avatar-small">
+                            {(log.userEmail || log.userName || "?")
+                              .charAt(0)
+                              .toUpperCase()}
+                          </div>
+                          <span>{log.userEmail || log.userName || "-"}</span>
+                        </div>
+                      </td>
+                      <td className="table-cell">
+                        <span
+                          className={`action-badge ${getActionClass(log.actionType)}`}
+                        >
+                          {log.actionType}
+                        </span>
+                      </td>
+                      <td className="table-cell">
+                        <span className="entity-badge">{log.entity}</span>
+                      </td>
+                      <td className="table-cell details-cell">{log.details}</td>
+                    </tr>
+                  ))
+                )}
               </tbody>
             </table>
           </div>

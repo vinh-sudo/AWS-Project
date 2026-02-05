@@ -1,6 +1,7 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import authService from "../../services/authService";
+import adminService from "../../services/adminService";
 import imsLogo from "../../assets/ims2.jpg";
 import dashboardIcon from "../../assets/dashboard.jpg";
 import userIcon from "../../assets/user.jpg";
@@ -12,86 +13,49 @@ const AdminOrders = () => {
   const currentUser = authService.getCurrentUser();
 
   // Orders state
-  const [orders, setOrders] = useState([
-    {
-      id: "ORD-001",
-      customerName: "TechCorp Inc.",
-      productName: "PCB-A100",
-      quantity: 5000,
-      deadline: "2026-02-15",
-      priority: "High",
-      status: "In Production",
-      progress: 65,
-      createdAt: "2026-01-10",
-      createdBy: "Sales User",
-    },
-    {
-      id: "ORD-002",
-      customerName: "ElectroParts Ltd.",
-      productName: "PCB-B200",
-      quantity: 3000,
-      deadline: "2026-01-28",
-      priority: "Medium",
-      status: "Confirmed",
-      progress: 0,
-      createdAt: "2026-01-12",
-      createdBy: "Sales User",
-    },
-    {
-      id: "ORD-003",
-      customerName: "MicroTech Co.",
-      productName: "PCB-C300",
-      quantity: 8000,
-      deadline: "2026-01-25",
-      priority: "Critical",
-      status: "In Production",
-      progress: 85,
-      createdAt: "2026-01-05",
-      createdBy: "Admin",
-    },
-    {
-      id: "ORD-004",
-      customerName: "DigiSys Corp.",
-      productName: "PCB-D400",
-      quantity: 2500,
-      deadline: "2026-02-20",
-      priority: "Low",
-      status: "Draft",
-      progress: 0,
-      createdAt: "2026-01-18",
-      createdBy: "Sales User",
-    },
-    {
-      id: "ORD-005",
-      customerName: "CircuitMax",
-      productName: "PCB-E500",
-      quantity: 6000,
-      deadline: "2026-02-10",
-      priority: "Medium",
-      status: "On Hold",
-      progress: 30,
-      createdAt: "2026-01-15",
-      createdBy: "Admin",
-    },
-  ]);
+  const [orders, setOrders] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
 
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
   const [showConfirmModal, setShowConfirmModal] = useState(false);
-  const [confirmAction, setConfirmAction] = useState({ type: "", orderId: "" });
+  const [confirmAction, setConfirmAction] = useState({
+    type: "",
+    orderId: null,
+  });
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState("All");
-  
+  const [actionLoading, setActionLoading] = useState(false);
+
   const [formData, setFormData] = useState({
     customerName: "",
-    productName: "",
+    productType: "",
     quantity: "",
     deadline: "",
     priority: "Medium",
-    notes: "",
   });
 
   const [editingOrder, setEditingOrder] = useState(null);
+
+  // Fetch orders on mount
+  useEffect(() => {
+    fetchOrders();
+  }, []);
+
+  const fetchOrders = async () => {
+    try {
+      setLoading(true);
+      setError(null);
+      const data = await adminService.getAllOrders();
+      setOrders(data);
+    } catch (err) {
+      console.error("Error fetching orders:", err);
+      setError(err.response?.data?.message || "Failed to load orders");
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const handleLogout = () => {
     authService.logout();
@@ -99,65 +63,80 @@ const AdminOrders = () => {
   };
 
   // Create new order
-  const handleCreateOrder = () => {
-    const newOrder = {
-      id: `ORD-${String(orders.length + 1).padStart(3, "0")}`,
-      ...formData,
-      quantity: parseInt(formData.quantity),
-      status: "Draft",
-      progress: 0,
-      createdAt: new Date().toISOString().split("T")[0],
-      createdBy: currentUser?.fullName || "Admin",
-    };
-    setOrders([newOrder, ...orders]);
-    setShowCreateModal(false);
-    resetForm();
-    alert("Đơn hàng đã được tạo thành công!");
+  const handleCreateOrder = async () => {
+    try {
+      setActionLoading(true);
+      const orderData = {
+        customerName: formData.customerName,
+        productType: formData.productType,
+        quantity: parseInt(formData.quantity),
+        deadline: formData.deadline
+          ? new Date(formData.deadline).toISOString()
+          : null,
+        priority: formData.priority,
+      };
+      await adminService.createOrder(orderData);
+      setShowCreateModal(false);
+      resetForm();
+      fetchOrders();
+      alert("Đơn hàng đã được tạo thành công!");
+    } catch (err) {
+      console.error("Error creating order:", err);
+      alert(err.response?.data?.message || "Failed to create order");
+    } finally {
+      setActionLoading(false);
+    }
   };
 
   // Confirm order (Draft -> Confirmed)
-  const handleConfirmOrder = (orderId) => {
-    setOrders(
-      orders.map((order) =>
-        order.id === orderId
-          ? {
-              ...order,
-              status: "Confirmed",
-              confirmedAt: new Date().toISOString().split("T")[0],
-              confirmedBy: currentUser?.fullName || "Admin",
-            }
-          : order
-      )
-    );
-    alert("Đơn hàng đã được xác nhận!");
+  const handleConfirmOrder = async (orderId) => {
+    try {
+      setActionLoading(true);
+      await adminService.confirmOrder(orderId);
+      fetchOrders();
+      alert("Đơn hàng đã được xác nhận!");
+    } catch (err) {
+      console.error("Error confirming order:", err);
+      alert(err.response?.data?.message || "Failed to confirm order");
+    } finally {
+      setActionLoading(false);
+    }
+  };
+
+  // Start production (Confirmed -> In Production)
+  const handleStartProduction = async (orderId) => {
+    try {
+      setActionLoading(true);
+      await adminService.startProduction(orderId);
+      fetchOrders();
+      alert("Đã bắt đầu sản xuất!");
+    } catch (err) {
+      console.error("Error starting production:", err);
+      alert(err.response?.data?.message || "Failed to start production");
+    } finally {
+      setActionLoading(false);
+    }
+  };
+
+  // Complete order
+  const handleCompleteOrder = async (orderId) => {
+    try {
+      setActionLoading(true);
+      await adminService.completeOrder(orderId);
+      fetchOrders();
+      alert("Đơn hàng đã hoàn thành!");
+    } catch (err) {
+      console.error("Error completing order:", err);
+      alert(err.response?.data?.message || "Failed to complete order");
+    } finally {
+      setActionLoading(false);
+    }
   };
 
   // Cancel order
   const handleCancelOrder = (orderId) => {
     setConfirmAction({ type: "cancel", orderId });
     setShowConfirmModal(true);
-  };
-
-  // Hold/Pause order
-  const handleHoldOrder = (orderId) => {
-    setConfirmAction({ type: "hold", orderId });
-    setShowConfirmModal(true);
-  };
-
-  // Resume order (On Hold -> In Production)
-  const handleResumeOrder = (orderId) => {
-    setOrders(
-      orders.map((order) =>
-        order.id === orderId
-          ? {
-              ...order,
-              status: "In Production",
-              resumedAt: new Date().toISOString().split("T")[0],
-            }
-          : order
-      )
-    );
-    alert("Đơn hàng đã được tiếp tục!");
   };
 
   // Delete order
@@ -167,43 +146,27 @@ const AdminOrders = () => {
   };
 
   // Execute confirm action
-  const executeConfirmAction = () => {
+  const executeConfirmAction = async () => {
     const { type, orderId } = confirmAction;
-    
-    if (type === "cancel") {
-      setOrders(
-        orders.map((order) =>
-          order.id === orderId
-            ? {
-                ...order,
-                status: "Cancelled",
-                cancelledAt: new Date().toISOString().split("T")[0],
-                cancelledBy: currentUser?.fullName || "Admin",
-              }
-            : order
-        )
-      );
-      alert("Đơn hàng đã bị hủy!");
-    } else if (type === "hold") {
-      setOrders(
-        orders.map((order) =>
-          order.id === orderId
-            ? {
-                ...order,
-                status: "On Hold",
-                holdAt: new Date().toISOString().split("T")[0],
-              }
-            : order
-        )
-      );
-      alert("Đơn hàng đã được tạm dừng!");
-    } else if (type === "delete") {
-      setOrders(orders.filter((order) => order.id !== orderId));
-      alert("Đơn hàng đã bị xóa!");
+
+    try {
+      setActionLoading(true);
+      if (type === "cancel") {
+        await adminService.cancelOrder(orderId);
+        alert("Đơn hàng đã bị hủy!");
+      } else if (type === "delete") {
+        await adminService.deleteOrder(orderId);
+        alert("Đơn hàng đã bị xóa!");
+      }
+      fetchOrders();
+    } catch (err) {
+      console.error(`Error ${type} order:`, err);
+      alert(err.response?.data?.message || `Failed to ${type} order`);
+    } finally {
+      setActionLoading(false);
+      setShowConfirmModal(false);
+      setConfirmAction({ type: "", orderId: null });
     }
-    
-    setShowConfirmModal(false);
-    setConfirmAction({ type: "", orderId: "" });
   };
 
   // Edit order
@@ -211,87 +174,116 @@ const AdminOrders = () => {
     setEditingOrder(order);
     setFormData({
       customerName: order.customerName,
-      productName: order.productName,
-      quantity: order.quantity.toString(),
-      deadline: order.deadline,
-      priority: order.priority,
-      notes: order.notes || "",
+      productType: order.productType,
+      quantity: order.quantity?.toString() || "",
+      deadline: order.deadline ? order.deadline.split("T")[0] : "",
+      priority: order.priority || "Medium",
     });
     setShowEditModal(true);
   };
 
   // Save edited order
-  const handleSaveEdit = () => {
-    setOrders(
-      orders.map((order) =>
-        order.id === editingOrder.id
-          ? {
-              ...order,
-              ...formData,
-              quantity: parseInt(formData.quantity),
-              updatedAt: new Date().toISOString().split("T")[0],
-              updatedBy: currentUser?.fullName || "Admin",
-            }
-          : order
-      )
-    );
-    setShowEditModal(false);
-    setEditingOrder(null);
-    resetForm();
-    alert("Đơn hàng đã được cập nhật!");
+  const handleSaveEdit = async () => {
+    try {
+      setActionLoading(true);
+      const orderData = {
+        customerName: formData.customerName,
+        productType: formData.productType,
+        quantity: parseInt(formData.quantity),
+        deadline: formData.deadline
+          ? new Date(formData.deadline).toISOString()
+          : null,
+        priority: formData.priority,
+      };
+      await adminService.updateOrder(editingOrder.id, orderData);
+      setShowEditModal(false);
+      setEditingOrder(null);
+      resetForm();
+      fetchOrders();
+      alert("Đơn hàng đã được cập nhật!");
+    } catch (err) {
+      console.error("Error updating order:", err);
+      alert(err.response?.data?.message || "Failed to update order");
+    } finally {
+      setActionLoading(false);
+    }
   };
 
   const resetForm = () => {
     setFormData({
       customerName: "",
-      productName: "",
+      productType: "",
       quantity: "",
       deadline: "",
       priority: "Medium",
-      notes: "",
     });
   };
 
   const getStatusClass = (status) => {
     switch (status) {
-      case "Draft":
+      case "DRAFT":
         return "status-draft";
-      case "Confirmed":
+      case "CONFIRMED":
         return "status-confirmed";
-      case "In Production":
+      case "IN_PRODUCTION":
         return "status-production";
-      case "On Hold":
+      case "ON_HOLD":
         return "status-hold";
-      case "Completed":
+      case "COMPLETED":
         return "status-completed";
-      case "Cancelled":
+      case "CANCELLED":
         return "status-cancelled";
       default:
         return "";
     }
   };
 
+  const getStatusDisplay = (status) => {
+    switch (status) {
+      case "DRAFT":
+        return "Draft";
+      case "CONFIRMED":
+        return "Confirmed";
+      case "IN_PRODUCTION":
+        return "In Production";
+      case "ON_HOLD":
+        return "On Hold";
+      case "COMPLETED":
+        return "Completed";
+      case "CANCELLED":
+        return "Cancelled";
+      default:
+        return status;
+    }
+  };
+
   const getPriorityClass = (priority) => {
-    switch (priority) {
-      case "Critical":
+    switch (priority?.toUpperCase()) {
+      case "URGENT":
+      case "CRITICAL":
         return "priority-critical";
-      case "High":
+      case "HIGH":
         return "priority-high";
-      case "Medium":
+      case "MEDIUM":
         return "priority-medium";
-      case "Low":
+      case "LOW":
         return "priority-low";
       default:
         return "";
     }
   };
 
+  const formatDate = (dateString) => {
+    if (!dateString) return "-";
+    return new Date(dateString).toLocaleDateString("vi-VN");
+  };
+
   // Filter orders
   const filteredOrders = orders.filter((order) => {
     const matchSearch =
-      order.customerName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      order.productName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      order.id.toLowerCase().includes(searchTerm.toLowerCase());
+      order.customerName?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      order.productType?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      order.id?.toString().includes(searchTerm);
     const matchStatus = statusFilter === "All" || order.status === statusFilter;
     return matchSearch && matchStatus;
   });
@@ -299,13 +291,43 @@ const AdminOrders = () => {
   // Stats
   const stats = {
     total: orders.length,
-    draft: orders.filter((o) => o.status === "Draft").length,
-    confirmed: orders.filter((o) => o.status === "Confirmed").length,
-    inProduction: orders.filter((o) => o.status === "In Production").length,
-    onHold: orders.filter((o) => o.status === "On Hold").length,
-    completed: orders.filter((o) => o.status === "Completed").length,
-    cancelled: orders.filter((o) => o.status === "Cancelled").length,
+    draft: orders.filter((o) => o.status === "DRAFT").length,
+    confirmed: orders.filter((o) => o.status === "CONFIRMED").length,
+    inProduction: orders.filter((o) => o.status === "IN_PRODUCTION").length,
+    onHold: orders.filter((o) => o.status === "ON_HOLD").length,
+    completed: orders.filter((o) => o.status === "COMPLETED").length,
+    cancelled: orders.filter((o) => o.status === "CANCELLED").length,
   };
+
+  if (loading) {
+    return (
+      <div className="admin-container">
+        <div
+          className="loading-container"
+          style={{
+            display: "flex",
+            flexDirection: "column",
+            alignItems: "center",
+            justifyContent: "center",
+            height: "100vh",
+          }}
+        >
+          <div
+            className="loading-spinner"
+            style={{
+              width: "40px",
+              height: "40px",
+              border: "4px solid #f3f3f3",
+              borderTop: "4px solid #3498db",
+              borderRadius: "50%",
+              animation: "spin 1s linear infinite",
+            }}
+          ></div>
+          <p>Loading orders...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="admin-container">
@@ -317,7 +339,10 @@ const AdminOrders = () => {
         </div>
 
         <nav className="sidebar-nav">
-          <div className="nav-item" onClick={() => navigate("/admin/dashboard")}>
+          <div
+            className="nav-item"
+            onClick={() => navigate("/admin/dashboard")}
+          >
             <img src={dashboardIcon} alt="Dashboard" className="nav-icon-img" />
             <span>Dashboard</span>
           </div>
@@ -328,11 +353,15 @@ const AdminOrders = () => {
           <div className="nav-item active">
             <span className="nav-icon">📦</span>
             <span>Order Management</span>
-          </div>          <div className="nav-item" onClick={() => navigate("/admin")}>
+          </div>{" "}
+          <div className="nav-item" onClick={() => navigate("/admin")}>
             <img src={userIcon} alt="Users" className="nav-icon-img" />
             <span>User Management</span>
           </div>
-          <div className="nav-item" onClick={() => navigate("/admin/audit-log")}>
+          <div
+            className="nav-item"
+            onClick={() => navigate("/admin/audit-log")}
+          >
             <img src={auditIcon} alt="Audit Log" className="nav-icon-img" />
             <span>Audit Log</span>
           </div>
@@ -351,15 +380,55 @@ const AdminOrders = () => {
         <header className="admin-header">
           <h1 className="header-title">📦 Order Management</h1>
           <div className="header-actions">
+            <button
+              className="header-icon-btn"
+              onClick={fetchOrders}
+              title="Refresh"
+            >
+              🔄
+            </button>
             <button className="header-icon-btn">🔔</button>
             <div className="user-menu">
               <div className="user-avatar"></div>
-              <span className="user-name">{currentUser?.fullName || "Admin"}</span>
+              <span className="user-name">
+                {currentUser?.fullName || "Admin"}
+              </span>
             </div>
           </div>
         </header>
 
         <div className="admin-content">
+          {error && (
+            <div
+              className="error-banner"
+              style={{
+                background: "#ffebee",
+                color: "#c62828",
+                padding: "12px 16px",
+                borderRadius: "8px",
+                marginBottom: "16px",
+                display: "flex",
+                justifyContent: "space-between",
+                alignItems: "center",
+              }}
+            >
+              <span>⚠️ {error}</span>
+              <button
+                onClick={fetchOrders}
+                style={{
+                  background: "#c62828",
+                  color: "white",
+                  border: "none",
+                  padding: "6px 12px",
+                  borderRadius: "4px",
+                  cursor: "pointer",
+                }}
+              >
+                Retry
+              </button>
+            </div>
+          )}
+
           {/* Stats Cards */}
           <div className="stats-row">
             <div className="stat-card">
@@ -407,15 +476,18 @@ const AdminOrders = () => {
                 onChange={(e) => setStatusFilter(e.target.value)}
               >
                 <option value="All">All Status</option>
-                <option value="Draft">Draft</option>
-                <option value="Confirmed">Confirmed</option>
-                <option value="In Production">In Production</option>
-                <option value="On Hold">On Hold</option>
-                <option value="Completed">Completed</option>
-                <option value="Cancelled">Cancelled</option>
+                <option value="DRAFT">Draft</option>
+                <option value="CONFIRMED">Confirmed</option>
+                <option value="IN_PRODUCTION">In Production</option>
+                <option value="ON_HOLD">On Hold</option>
+                <option value="COMPLETED">Completed</option>
+                <option value="CANCELLED">Cancelled</option>
               </select>
             </div>
-            <button className="btn-primary" onClick={() => setShowCreateModal(true)}>
+            <button
+              className="btn-primary"
+              onClick={() => setShowCreateModal(true)}
+            >
               ➕ Create Order
             </button>
           </div>
@@ -425,115 +497,132 @@ const AdminOrders = () => {
             <table className="data-table">
               <thead>
                 <tr>
-                  <th>Order ID</th>
+                  <th>ID</th>
                   <th>Customer</th>
                   <th>Product</th>
                   <th>Quantity</th>
                   <th>Deadline</th>
                   <th>Priority</th>
                   <th>Status</th>
-                  <th>Progress</th>
+                  <th>Created</th>
                   <th>Actions</th>
                 </tr>
               </thead>
               <tbody>
-                {filteredOrders.map((order) => (
-                  <tr key={order.id}>
-                    <td className="order-id">{order.id}</td>
-                    <td>{order.customerName}</td>
-                    <td>{order.productName}</td>
-                    <td>{order.quantity.toLocaleString()}</td>
-                    <td>{order.deadline}</td>
-                    <td>
-                      <span className={`priority-badge ${getPriorityClass(order.priority)}`}>
-                        {order.priority}
-                      </span>
-                    </td>
-                    <td>
-                      <span className={`status-badge ${getStatusClass(order.status)}`}>
-                        {order.status}
-                      </span>
-                    </td>
-                    <td>
-                      <div className="progress-cell">
-                        <div className="progress-bar-small">
-                          <div
-                            className="progress-fill"
-                            style={{ width: `${order.progress}%` }}
-                          ></div>
-                        </div>
-                        <span>{order.progress}%</span>
-                      </div>
-                    </td>
-                    <td>
-                      <div className="action-buttons">
-                        {/* Edit */}
-                        <button
-                          className="btn-action btn-edit"
-                          onClick={() => handleEditOrder(order)}
-                          title="Edit"
-                        >
-                          ✏️
-                        </button>
-
-                        {/* Confirm (only for Draft) */}
-                        {order.status === "Draft" && (
-                          <button
-                            className="btn-action btn-confirm"
-                            onClick={() => handleConfirmOrder(order.id)}
-                            title="Confirm Order"
-                          >
-                            ✅
-                          </button>
-                        )}
-
-                        {/* Hold (for In Production) */}
-                        {order.status === "In Production" && (
-                          <button
-                            className="btn-action btn-hold"
-                            onClick={() => handleHoldOrder(order.id)}
-                            title="Hold Order"
-                          >
-                            ⏸️
-                          </button>
-                        )}
-
-                        {/* Resume (for On Hold) */}
-                        {order.status === "On Hold" && (
-                          <button
-                            className="btn-action btn-resume"
-                            onClick={() => handleResumeOrder(order.id)}
-                            title="Resume Order"
-                          >
-                            ▶️
-                          </button>
-                        )}
-
-                        {/* Cancel (not for Completed/Cancelled) */}
-                        {!["Completed", "Cancelled"].includes(order.status) && (
-                          <button
-                            className="btn-action btn-cancel"
-                            onClick={() => handleCancelOrder(order.id)}
-                            title="Cancel Order"
-                          >
-                            ❌
-                          </button>
-                        )}
-
-                        {/* Delete (only for Draft/Cancelled) */}
-                        {["Draft", "Cancelled"].includes(order.status) && (
-                          <button
-                            className="btn-action btn-delete"
-                            onClick={() => handleDeleteOrder(order.id)}
-                            title="Delete Order"
-                          >
-                            🗑️
-                          </button>
-                        )}
-                      </div>
+                {filteredOrders.length === 0 ? (
+                  <tr>
+                    <td
+                      colSpan="9"
+                      style={{
+                        textAlign: "center",
+                        padding: "40px",
+                        color: "#666",
+                      }}
+                    >
+                      No orders found
                     </td>
                   </tr>
-                ))}
+                ) : (
+                  filteredOrders.map((order) => (
+                    <tr key={order.id}>
+                      <td className="order-id">#{order.id}</td>
+                      <td>{order.customerName}</td>
+                      <td>{order.productType}</td>
+                      <td>{order.quantity?.toLocaleString()}</td>
+                      <td>{formatDate(order.deadline)}</td>
+                      <td>
+                        <span
+                          className={`priority-badge ${getPriorityClass(order.priority)}`}
+                        >
+                          {order.priority}
+                        </span>
+                      </td>
+                      <td>
+                        <span
+                          className={`status-badge ${getStatusClass(order.status)}`}
+                        >
+                          {getStatusDisplay(order.status)}
+                        </span>
+                      </td>
+                      <td>{formatDate(order.createdAt)}</td>
+                      <td>
+                        <div className="action-buttons">
+                          {/* Edit */}
+                          <button
+                            className="btn-action btn-edit"
+                            onClick={() => handleEditOrder(order)}
+                            title="Edit"
+                            disabled={actionLoading}
+                          >
+                            ✏️
+                          </button>
+
+                          {/* Confirm (only for Draft) */}
+                          {order.status === "DRAFT" && (
+                            <button
+                              className="btn-action btn-confirm"
+                              onClick={() => handleConfirmOrder(order.id)}
+                              title="Confirm Order"
+                              disabled={actionLoading}
+                            >
+                              ✅
+                            </button>
+                          )}
+
+                          {/* Start Production (only for Confirmed) */}
+                          {order.status === "CONFIRMED" && (
+                            <button
+                              className="btn-action btn-start"
+                              onClick={() => handleStartProduction(order.id)}
+                              title="Start Production"
+                              disabled={actionLoading}
+                            >
+                              ▶️
+                            </button>
+                          )}
+
+                          {/* Complete (only for In Production) */}
+                          {order.status === "IN_PRODUCTION" && (
+                            <button
+                              className="btn-action btn-complete"
+                              onClick={() => handleCompleteOrder(order.id)}
+                              title="Complete Order"
+                              disabled={actionLoading}
+                            >
+                              ✔️
+                            </button>
+                          )}
+
+                          {/* Cancel (not for Completed/Cancelled) */}
+                          {!["COMPLETED", "CANCELLED"].includes(
+                            order.status,
+                          ) && (
+                            <button
+                              className="btn-action btn-cancel"
+                              onClick={() => handleCancelOrder(order.id)}
+                              title="Cancel Order"
+                              disabled={actionLoading}
+                            >
+                              ❌
+                            </button>
+                          )}
+
+                          {/* Delete (only for Draft/Cancelled) */}
+                          {["DRAFT", "CANCELLED"].includes(order.status) && (
+                            <button
+                              className="btn-action btn-delete"
+                              onClick={() => handleDeleteOrder(order.id)}
+                              title="Delete Order"
+                              disabled={actionLoading}
+                            >
+                              🗑️
+                            </button>
+                          )}
+                        </div>
+                      </td>
+                    </tr>
+                  ))
+                )}
               </tbody>
             </table>
           </div>
@@ -546,7 +635,10 @@ const AdminOrders = () => {
           <div className="modal">
             <div className="modal-header">
               <h2>➕ Create New Order</h2>
-              <button className="close-button" onClick={() => setShowCreateModal(false)}>
+              <button
+                className="close-button"
+                onClick={() => setShowCreateModal(false)}
+              >
                 ✕
               </button>
             </div>
@@ -557,18 +649,22 @@ const AdminOrders = () => {
                   type="text"
                   className="form-input"
                   value={formData.customerName}
-                  onChange={(e) => setFormData({ ...formData, customerName: e.target.value })}
+                  onChange={(e) =>
+                    setFormData({ ...formData, customerName: e.target.value })
+                  }
                   placeholder="Enter customer name"
                 />
               </div>
               <div className="form-group">
-                <label className="form-label">Product Name *</label>
+                <label className="form-label">Product Type *</label>
                 <input
                   type="text"
                   className="form-input"
-                  value={formData.productName}
-                  onChange={(e) => setFormData({ ...formData, productName: e.target.value })}
-                  placeholder="Enter product name"
+                  value={formData.productType}
+                  onChange={(e) =>
+                    setFormData({ ...formData, productType: e.target.value })
+                  }
+                  placeholder="Enter product type"
                 />
               </div>
               <div className="form-row">
@@ -578,17 +674,21 @@ const AdminOrders = () => {
                     type="number"
                     className="form-input"
                     value={formData.quantity}
-                    onChange={(e) => setFormData({ ...formData, quantity: e.target.value })}
+                    onChange={(e) =>
+                      setFormData({ ...formData, quantity: e.target.value })
+                    }
                     placeholder="Enter quantity"
                   />
                 </div>
                 <div className="form-group">
-                  <label className="form-label">Deadline *</label>
+                  <label className="form-label">Deadline</label>
                   <input
                     type="date"
                     className="form-input"
                     value={formData.deadline}
-                    onChange={(e) => setFormData({ ...formData, deadline: e.target.value })}
+                    onChange={(e) =>
+                      setFormData({ ...formData, deadline: e.target.value })
+                    }
                   />
                 </div>
               </div>
@@ -597,31 +697,31 @@ const AdminOrders = () => {
                 <select
                   className="form-select"
                   value={formData.priority}
-                  onChange={(e) => setFormData({ ...formData, priority: e.target.value })}
+                  onChange={(e) =>
+                    setFormData({ ...formData, priority: e.target.value })
+                  }
                 >
                   <option value="Low">Low</option>
                   <option value="Medium">Medium</option>
                   <option value="High">High</option>
-                  <option value="Critical">Critical</option>
+                  <option value="Urgent">Urgent</option>
                 </select>
-              </div>
-              <div className="form-group">
-                <label className="form-label">Notes</label>
-                <textarea
-                  className="form-textarea"
-                  value={formData.notes}
-                  onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
-                  placeholder="Additional notes..."
-                  rows={3}
-                />
               </div>
             </div>
             <div className="modal-footer">
-              <button className="btn-cancel" onClick={() => setShowCreateModal(false)}>
+              <button
+                className="btn-cancel"
+                onClick={() => setShowCreateModal(false)}
+                disabled={actionLoading}
+              >
                 Cancel
               </button>
-              <button className="btn-save" onClick={handleCreateOrder}>
-                Create Order
+              <button
+                className="btn-save"
+                onClick={handleCreateOrder}
+                disabled={actionLoading}
+              >
+                {actionLoading ? "Creating..." : "Create Order"}
               </button>
             </div>
           </div>
@@ -633,8 +733,11 @@ const AdminOrders = () => {
         <div className="modal-overlay">
           <div className="modal">
             <div className="modal-header">
-              <h2>✏️ Edit Order - {editingOrder?.id}</h2>
-              <button className="close-button" onClick={() => setShowEditModal(false)}>
+              <h2>✏️ Edit Order #{editingOrder?.id}</h2>
+              <button
+                className="close-button"
+                onClick={() => setShowEditModal(false)}
+              >
                 ✕
               </button>
             </div>
@@ -645,16 +748,20 @@ const AdminOrders = () => {
                   type="text"
                   className="form-input"
                   value={formData.customerName}
-                  onChange={(e) => setFormData({ ...formData, customerName: e.target.value })}
+                  onChange={(e) =>
+                    setFormData({ ...formData, customerName: e.target.value })
+                  }
                 />
               </div>
               <div className="form-group">
-                <label className="form-label">Product Name *</label>
+                <label className="form-label">Product Type *</label>
                 <input
                   type="text"
                   className="form-input"
-                  value={formData.productName}
-                  onChange={(e) => setFormData({ ...formData, productName: e.target.value })}
+                  value={formData.productType}
+                  onChange={(e) =>
+                    setFormData({ ...formData, productType: e.target.value })
+                  }
                 />
               </div>
               <div className="form-row">
@@ -664,16 +771,20 @@ const AdminOrders = () => {
                     type="number"
                     className="form-input"
                     value={formData.quantity}
-                    onChange={(e) => setFormData({ ...formData, quantity: e.target.value })}
+                    onChange={(e) =>
+                      setFormData({ ...formData, quantity: e.target.value })
+                    }
                   />
                 </div>
                 <div className="form-group">
-                  <label className="form-label">Deadline *</label>
+                  <label className="form-label">Deadline</label>
                   <input
                     type="date"
                     className="form-input"
                     value={formData.deadline}
-                    onChange={(e) => setFormData({ ...formData, deadline: e.target.value })}
+                    onChange={(e) =>
+                      setFormData({ ...formData, deadline: e.target.value })
+                    }
                   />
                 </div>
               </div>
@@ -682,30 +793,31 @@ const AdminOrders = () => {
                 <select
                   className="form-select"
                   value={formData.priority}
-                  onChange={(e) => setFormData({ ...formData, priority: e.target.value })}
+                  onChange={(e) =>
+                    setFormData({ ...formData, priority: e.target.value })
+                  }
                 >
                   <option value="Low">Low</option>
                   <option value="Medium">Medium</option>
                   <option value="High">High</option>
-                  <option value="Critical">Critical</option>
+                  <option value="Urgent">Urgent</option>
                 </select>
-              </div>
-              <div className="form-group">
-                <label className="form-label">Notes</label>
-                <textarea
-                  className="form-textarea"
-                  value={formData.notes}
-                  onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
-                  rows={3}
-                />
               </div>
             </div>
             <div className="modal-footer">
-              <button className="btn-cancel" onClick={() => setShowEditModal(false)}>
+              <button
+                className="btn-cancel"
+                onClick={() => setShowEditModal(false)}
+                disabled={actionLoading}
+              >
                 Cancel
               </button>
-              <button className="btn-save" onClick={handleSaveEdit}>
-                Save Changes
+              <button
+                className="btn-save"
+                onClick={handleSaveEdit}
+                disabled={actionLoading}
+              >
+                {actionLoading ? "Saving..." : "Save Changes"}
               </button>
             </div>
           </div>
@@ -719,32 +831,31 @@ const AdminOrders = () => {
             <div className="modal-header">
               <h2>
                 {confirmAction.type === "cancel" && "⚠️ Cancel Order"}
-                {confirmAction.type === "hold" && "⏸️ Hold Order"}
                 {confirmAction.type === "delete" && "🗑️ Delete Order"}
               </h2>
             </div>
             <div className="modal-body">
               <p className="confirm-message">
                 {confirmAction.type === "cancel" &&
-                  `Are you sure you want to cancel order ${confirmAction.orderId}? This action cannot be undone.`}
-                {confirmAction.type === "hold" &&
-                  `Are you sure you want to put order ${confirmAction.orderId} on hold?`}
+                  `Are you sure you want to cancel order #${confirmAction.orderId}? This action cannot be undone.`}
                 {confirmAction.type === "delete" &&
-                  `Are you sure you want to permanently delete order ${confirmAction.orderId}?`}
+                  `Are you sure you want to permanently delete order #${confirmAction.orderId}?`}
               </p>
             </div>
             <div className="modal-footer">
               <button
                 className="btn-cancel"
                 onClick={() => setShowConfirmModal(false)}
+                disabled={actionLoading}
               >
                 No, Go Back
               </button>
               <button
                 className={`btn-confirm-action ${confirmAction.type === "delete" ? "btn-danger" : ""}`}
                 onClick={executeConfirmAction}
+                disabled={actionLoading}
               >
-                Yes, Proceed
+                {actionLoading ? "Processing..." : "Yes, Proceed"}
               </button>
             </div>
           </div>
