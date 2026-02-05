@@ -23,21 +23,27 @@ public class S3Service {
 
     public String uploadFile(MultipartFile file, String folderName) {
         try {
-            String key = folderName + "/" + Instant.now().getEpochSecond() + "_" + file.getOriginalFilename();
+
+            String fileName = folderName + "/" + Instant.now().getEpochSecond() + "_" + file.getOriginalFilename();
 
             PutObjectRequest putObjectRequest = PutObjectRequest.builder()
                     .bucket(bucketName)
-                    .key(key)
+                    .key(fileName)
                     .contentType(file.getContentType())
                     .build();
 
             s3Client.putObject(putObjectRequest, RequestBody.fromBytes(file.getBytes()));
 
-            return key;
+            return String.format("https://%s.s3.%s.amazonaws.com/%s",
+                    bucketName,
+                    "ap-southeast-1",
+                    fileName);
 
-        } catch (Exception e) {
-            throw new RuntimeException("Upload to S3 failed", e);
+        } catch (S3Exception e) {
+            throw new RuntimeException("Upload to S3 failed: " + e.awsErrorDetails().errorMessage(), e);
+
+        } catch (IOException e) {
+            throw new RuntimeException("Lỗi đọc file: " + e.getMessage(), e);
         }
     }
-
 }
