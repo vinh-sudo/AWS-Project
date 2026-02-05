@@ -216,11 +216,19 @@ const AdminDashboard = () => {
         <div className="admin-content dashboard-content">
           {loading ? (
             <div className="loading-container">
-              <div className="loading-spinner"></div>
-              <p>Loading dashboard data...</p>
+              <div className="loading-skeleton">
+                <div className="skeleton-icon"></div>
+                <div className="loading-dots">
+                  <div className="dot"></div>
+                  <div className="dot"></div>
+                  <div className="dot"></div>
+                </div>
+                <p className="loading-text">Loading dashboard data...</p>
+              </div>
             </div>
           ) : error ? (
             <div className="error-container">
+              <div className="error-icon">⚠️</div>
               <p className="error-message">{error}</p>
               <button className="btn-primary" onClick={fetchDashboardData}>
                 Retry

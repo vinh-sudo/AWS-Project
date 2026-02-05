@@ -203,29 +203,16 @@ const UsersAdmin = () => {
 
   if (loading) {
     return (
-      <div className="admin-container">
-        <div
-          className="loading-container"
-          style={{
-            display: "flex",
-            flexDirection: "column",
-            alignItems: "center",
-            justifyContent: "center",
-            height: "100vh",
-          }}
-        >
-          <div
-            className="loading-spinner"
-            style={{
-              width: "40px",
-              height: "40px",
-              border: "4px solid #f3f3f3",
-              borderTop: "4px solid #3498db",
-              borderRadius: "50%",
-              animation: "spin 1s linear infinite",
-            }}
-          ></div>
-          <p>Loading users...</p>
+      <div className="page-loading">
+        <div className="loading-card">
+          <img src={imsLogo} alt="Logo" className="loading-logo" />
+          <h2 className="loading-title">IMS Admin</h2>
+          <div className="loading-dots">
+            <div className="dot"></div>
+            <div className="dot"></div>
+            <div className="dot"></div>
+          </div>
+          <p className="loading-text">Loading users...</p>
         </div>
       </div>
     );
