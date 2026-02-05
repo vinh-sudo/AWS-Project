@@ -6,7 +6,7 @@ import be.backend.model.request.UpdateOrderRequest;
 import be.backend.model.response.OrderResponse;
 import be.backend.model.response.OrderResumeResponse;
 import be.backend.model.response.OrderStopResponse;
-import be.backend.service.OrderService;
+import be.backend.service.admin.OrderService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;

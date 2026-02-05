@@ -1,4 +1,4 @@
-package be.backend.service;
+package be.backend.service.utilities;
 
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;

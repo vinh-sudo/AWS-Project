@@ -1,7 +1,7 @@
 package be.backend.component;
 
-import be.backend.service.JwtService;
-import be.backend.service.TokenBlacklistService;
+import be.backend.service.utilities.JwtService;
+import be.backend.service.utilities.TokenBlacklistService;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
