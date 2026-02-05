@@ -1,6 +1,9 @@
-package be.backend.service;
+package be.backend.service.admin;
 
-import be.backend.entity.*;
+import be.backend.entity.Account;
+import be.backend.entity.Order;
+import be.backend.entity.OrderItem;
+import be.backend.entity.User;
 import be.backend.exception.BusinessException;
 import be.backend.exception.ResourceNotFoundException;
 import be.backend.mapper.OrderMapper;
@@ -10,7 +13,8 @@ import be.backend.model.request.UpdateOrderRequest;
 import be.backend.model.response.OrderResponse;
 import be.backend.model.response.OrderResumeResponse;
 import be.backend.model.response.OrderStopResponse;
-import be.backend.repository.*;
+import be.backend.repository.OrderRepository;
+import be.backend.repository.UserRepository;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -27,10 +31,7 @@ import java.util.Set;
 public class OrderService {
 
     private final OrderRepository orderRepository;
-    private final ProductionScheduleRepository scheduleRepo;
     private final UserRepository userRepository;
-    private final MachineRepository machineRepo;
-    private final AuditLogRepository auditRepo;
     private final OrderMapper orderMapper;
 
     private static final String STATUS_DRAFT = "Draft";
@@ -218,117 +219,6 @@ public class OrderService {
         log.info("Order {} cancelled. Reason: {}", orderId, reason != null ? reason : "No reason provided");
         return buildResponse(saved);
     }
-    // ==================== StopOrder ====================
-    @Transactional
-    public OrderStopResponse stopOrder(Integer orderId, Account account) {
-
-        Order order = orderRepository.findById(orderId)
-                .orElseThrow(() -> new RuntimeException("Order not found"));
-
-        if (order.getStatus().equals("COMPLETED")) {
-            throw new RuntimeException("Cannot stop completed order");
-        }
-
-        if (order.getStatus().equals("CANCELLED")) {
-            throw new RuntimeException("Order already cancelled");
-        }
-
-        order.setStatus("STOPPED");
-        orderRepository.save(order);
-
-        List<ProductionSchedule> schedules =
-                scheduleRepo.findByOrder(order);
-
-        int stopped = 0;
-
-        for (ProductionSchedule s : schedules) {
-
-            if (s.getStatus().equalsIgnoreCase("SCHEDULED")
-                    || s.getStatus().equalsIgnoreCase("RUNNING")) {
-
-                s.setStatus("STOPPED");
-                stopped++;
-
-                if (s.getMachine() != null) {
-                    Machine m = s.getMachine();
-                    m.setStatus("IDLE");
-                    machineRepo.save(m);
-                }
-            }
-        }
-
-        scheduleRepo.saveAll(schedules);
-
-        // ===== AUDIT LOG =====
-        AuditLog log = new AuditLog();
-        log.setUser(account.getUser());
-        log.setActionType("STOP_ORDER");
-        log.setEntity("Order");
-        log.setDetails("Stopped order " + orderId +
-                " | stopped schedules = " + stopped);
-
-        auditRepo.save(log);
-
-        return OrderStopResponse.builder()
-                .orderId(orderId)
-                .status("STOPPED")
-                .stoppedSchedules(stopped)
-                .build();
-
-    }
-    @Transactional
-    public OrderResumeResponse resumeOrder(Integer orderId, Account account) {
-
-        Order order = orderRepository.findById(orderId)
-                .orElseThrow(() -> new RuntimeException("Order not found"));
-
-        if (!order.getStatus().equals("STOPPED")) {
-            throw new RuntimeException("Only STOPPED order can be resumed");
-        }
-
-        // Resume Order
-        order.setStatus("RUNNING");
-        orderRepository.save(order);
-
-        // Resume Schedules
-        List<ProductionSchedule> schedules =
-                scheduleRepo.findByOrder(order);
-
-        int resumed = 0;
-
-        for (ProductionSchedule s : schedules) {
-            if (s.getStatus().equals("STOPPED")) {
-
-                s.setStatus("RUNNING");
-                resumed++;
-
-                if (s.getMachine() != null) {
-                    Machine m = s.getMachine();
-                    m.setStatus("BUSY");
-                    machineRepo.save(m);
-                }
-            }
-        }
-
-        scheduleRepo.saveAll(schedules);
-
-        // ===== AUDIT LOG =====
-        AuditLog log = new AuditLog();
-        log.setUser(account.getUser());
-        log.setActionType("RESUME_ORDER");
-        log.setEntity("Order");
-        log.setDetails("Resumed order " + orderId +
-                " | resumed schedules = " + resumed);
-
-        auditRepo.save(log);
-
-        return OrderResumeResponse.builder()
-                .orderId(orderId)
-                .status("RUNNING")
-                .resumedSchedules(resumed)
-                .build();
-    }
-
 
     // ==================== QUERIES (Index-based) ====================
 
@@ -381,7 +271,8 @@ public class OrderService {
     // ==================== STATISTICS ====================
 
     public long countOrdersByStatus(String status) {
-        return orderRepository.findByStatus(status).size();
+        validateStatus(status);
+        return orderRepository.countByStatus(status);
     }
 
     // ==================== PRIVATE VALIDATIONS ====================
@@ -409,6 +300,53 @@ public class OrderService {
             throw new BusinessException("Quantity must be greater than 0");
         }
     }
+
+    // ==================== STOP & RESUME ====================
+
+    @Transactional
+    public OrderStopResponse stopOrder(Integer orderId, Account account) {
+        Order order = getOrderEntity(orderId);
+        
+        if (STATUS_COMPLETED.equals(order.getStatus()) || STATUS_CANCELLED.equals(order.getStatus())) {
+            throw new BusinessException("Cannot stop order with status: " + order.getStatus());
+        }
+        
+        order.setStatus("STOPPED");
+        order.setUpdatedAt(OffsetDateTime.now());
+        orderRepository.save(order);
+        
+        log.info("Order {} stopped by user {}", orderId, account.getUsername());
+        
+        return OrderStopResponse.builder()
+                .orderId(orderId)
+                .status("STOPPED")
+                .cancelledSchedules(0)
+                .stoppedSchedules(0)
+                .build();
+    }
+
+    @Transactional
+    public OrderResumeResponse resumeOrder(Integer orderId, Account account) {
+        Order order = getOrderEntity(orderId);
+        
+        if (!"STOPPED".equals(order.getStatus())) {
+            throw new BusinessException("Only STOPPED orders can be resumed. Current status: " + order.getStatus());
+        }
+        
+        order.setStatus(STATUS_IN_PRODUCTION);
+        order.setUpdatedAt(OffsetDateTime.now());
+        orderRepository.save(order);
+        
+        log.info("Order {} resumed by user {}", orderId, account.getUsername());
+        
+        return OrderResumeResponse.builder()
+                .orderId(orderId)
+                .status(STATUS_IN_PRODUCTION)
+                .resumedSchedules(0)
+                .build();
+    }
+
+    // ==================== PRIVATE VALIDATORS ====================
 
     private void validateItemQuantity(Integer quantity) {
         if (quantity == null || quantity <= 0) {

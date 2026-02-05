@@ -96,6 +96,11 @@ public class Account implements UserDetails {
     }
 
     @Override
+    public String getUsername() {
+        return username;
+    }
+
+    @Override
     public String getPassword() {
         return passwordHash; // Trả về password hash, KHÔNG phải empty string
     }

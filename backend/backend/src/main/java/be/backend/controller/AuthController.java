@@ -14,7 +14,8 @@ import be.backend.model.request.RegisterRequest;
 import be.backend.model.response.LoginResponse;
 import be.backend.model.response.LogoutResponse;
 import be.backend.model.response.RegisterResponse;
-import be.backend.service.AuthService;
+import be.backend.service.admin.AuthService;
+
 import org.springframework.web.bind.annotation.RequestBody;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;

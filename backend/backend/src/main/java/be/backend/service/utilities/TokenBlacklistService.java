@@ -1,4 +1,4 @@
-package be.backend.service;
+package be.backend.service.utilities;
 
 import java.util.concurrent.TimeUnit;
 

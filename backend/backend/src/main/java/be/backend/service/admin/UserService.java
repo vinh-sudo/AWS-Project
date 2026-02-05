@@ -1,4 +1,4 @@
-package be.backend.service;
+package be.backend.service.admin;
 
 import be.backend.entity.Account;
 import be.backend.entity.User;
