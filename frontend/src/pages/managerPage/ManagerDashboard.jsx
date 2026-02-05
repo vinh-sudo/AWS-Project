@@ -32,7 +32,7 @@ const ManagerDashboard = () => {
       setDelays(delaysRes || []);
     } catch (error) {
       console.error("Error fetching dashboard data:", error);
-      setError("Không thể tải dữ liệu. Vui lòng thử lại sau.");
+      setError("Data loading failed. Please try again later.");
     } finally {
       setLoading(false);
     }
@@ -97,7 +97,7 @@ const ManagerDashboard = () => {
         <header className="manager-header">
           <div className="header-left">
             <h1>📊 Manager Dashboard</h1>
-            <p>Tổng quan hoạt động sản xuất</p>
+            <p>Overview of production activities</p>
           </div>
           <div className="header-right">
             <input
@@ -107,7 +107,7 @@ const ManagerDashboard = () => {
               className="date-picker"
             />
             <button className="btn-refresh" onClick={fetchDashboardData}>
-              🔄 Làm mới
+              🔄 Refresh
             </button>
           </div>
         </header>
@@ -130,7 +130,7 @@ const ManagerDashboard = () => {
                 <span className="kpi-value">
                   {runningLines}/{totalLines}
                 </span>
-                <span className="kpi-label">Lines đang chạy</span>
+                <span className="kpi-label">Lines Running</span>
               </div>
             </div>
 
@@ -138,7 +138,7 @@ const ManagerDashboard = () => {
               <div className="kpi-icon">📈</div>
               <div className="kpi-content">
                 <span className="kpi-value">{averageOEE}%</span>
-                <span className="kpi-label">OEE trung bình</span>
+                <span className="kpi-label">Average OEE</span>
               </div>
             </div>
 
@@ -146,7 +146,7 @@ const ManagerDashboard = () => {
               <div className="kpi-icon">⚠️</div>
               <div className="kpi-content">
                 <span className="kpi-value">{criticalDelays}</span>
-                <span className="kpi-label">Cảnh báo trễ tiến độ</span>
+                <span className="kpi-label">Critical Delays</span>
               </div>
             </div>
 
@@ -159,7 +159,7 @@ const ManagerDashboard = () => {
                     .toFixed(1)}
                   h
                 </span>
-                <span className="kpi-label">Giờ hoạt động hôm nay</span>
+                <span className="kpi-label">Operating Hours Today</span>
               </div>
             </div>
           </div>
@@ -170,28 +170,28 @@ const ManagerDashboard = () => {
           {/* Lines Overview */}
           <section className="dashboard-card lines-overview">
             <div className="card-header">
-              <h2>🏭 Tổng quan Lines</h2>
+              <h2>🏭 Lines Overview</h2>
               <span className="card-subtitle">
-                Trạng thái hoạt động các dây chuyền
+                Operating status of production lines
               </span>
             </div>
             <div className="card-content">
               {loading ? (
-                <div className="loading-spinner">Đang tải...</div>
+                <div className="loading-spinner">Loading...</div>
               ) : linesOverview.length === 0 ? (
                 <div className="no-data">
                   <span className="no-data-icon">📭</span>
-                  <span>Chưa có dữ liệu lines</span>
+                  <span>No lines data available</span>
                 </div>
               ) : (
                 <table className="data-table">
                   <thead>
                     <tr>
                       <th>Line</th>
-                      <th>Trạng thái</th>
-                      <th>Giờ hoạt động</th>
-                      <th>Máy khả dụng</th>
-                      <th>Tải công suất</th>
+                      <th>Status</th>
+                      <th>Operating Hours</th>
+                      <th>Available Machines</th>
+                      <th>Capacity Load</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -208,7 +208,7 @@ const ManagerDashboard = () => {
                         <td>
                           {line.busyHours}h / {line.availableHours}h
                         </td>
-                        <td>{line.availableMachines} máy</td>
+                        <td>{line.availableMachines} machines</td>
                         <td>
                           <div className="capacity-bar">
                             <div
@@ -238,18 +238,18 @@ const ManagerDashboard = () => {
           {/* OEE Chart */}
           <section className="dashboard-card oee-section">
             <div className="card-header">
-              <h2>📈 OEE theo Line</h2>
+              <h2>📈 OEE by Line</h2>
               <span className="card-subtitle">
                 Overall Equipment Effectiveness
               </span>
             </div>
             <div className="card-content">
               {loading ? (
-                <div className="loading-spinner">Đang tải...</div>
+                <div className="loading-spinner">Loading...</div>
               ) : oeeData.length === 0 ? (
                 <div className="no-data">
                   <span className="no-data-icon">📭</span>
-                  <span>Chưa có dữ liệu OEE</span>
+                  <span>No OEE data available</span>
                 </div>
               ) : (
                 <div className="oee-grid">
@@ -316,16 +316,16 @@ const ManagerDashboard = () => {
           {/* Delays Alert */}
           <section className="dashboard-card delays-section">
             <div className="card-header">
-              <h2>⚠️ Cảnh báo trễ tiến độ</h2>
-              <span className="card-subtitle">Các schedule có nguy cơ trễ</span>
+              <h2>⚠️ Delay Alerts</h2>
+              <span className="card-subtitle">Schedules at risk of delay</span>
             </div>
             <div className="card-content">
               {loading ? (
-                <div className="loading-spinner">Đang tải...</div>
+                <div className="loading-spinner">Loading...</div>
               ) : delays.length === 0 ? (
                 <div className="no-data">
                   <span className="no-data-icon">✅</span>
-                  <span>Không có cảnh báo trễ tiến độ</span>
+                  <span>No delay alerts</span>
                 </div>
               ) : (
                 <table className="data-table">
@@ -334,10 +334,10 @@ const ManagerDashboard = () => {
                       <th>Schedule ID</th>
                       <th>Line</th>
                       <th>Machine</th>
-                      <th>Dự kiến</th>
-                      <th>Thực tế</th>
-                      <th>Trễ</th>
-                      <th>Mức độ</th>
+                      <th>Expected</th>
+                      <th>Actual</th>
+                      <th>Delay</th>
+                      <th>Risk Level</th>
                     </tr>
                   </thead>
                   <tbody>

@@ -21,7 +21,7 @@ const ManagerLines = () => {
       setLinesOverview(response || []);
     } catch (error) {
       console.error("Error fetching lines:", error);
-      setError("Không thể tải dữ liệu. Vui lòng thử lại sau.");
+      setError("Unable to load data. Please try again later.");
     } finally {
       setLoading(false);
     }
@@ -61,12 +61,12 @@ const ManagerLines = () => {
         {/* Header */}
         <header className="manager-header">
           <div className="header-left">
-            <h1>🏭 Quản lý dây chuyền sản xuất</h1>
-            <p>Giám sát và quản lý các lines sản xuất</p>
+            <h1>🏭 Production Line Management</h1>
+            <p>Monitor and manage production lines</p>
           </div>
           <div className="header-right">
             <button className="btn-refresh" onClick={fetchLinesData}>
-              🔄 Làm mới
+              🔄 Refresh
             </button>
           </div>
         </header>
@@ -76,7 +76,7 @@ const ManagerLines = () => {
           <div className="error-banner">
             <span className="error-icon">⚠️</span>
             <span>{error}</span>
-            <button onClick={fetchLinesData}>Thử lại</button>
+            <button onClick={fetchLinesData}>Retry</button>
           </div>
         )}
 
@@ -92,7 +92,7 @@ const ManagerLines = () => {
                   ).length
                 }
               </span>
-              <span className="summary-label">Đang chạy</span>
+              <span className="summary-label">Running</span>
             </div>
           </div>
           <div className="summary-card">
@@ -105,7 +105,7 @@ const ManagerLines = () => {
                   ).length
                 }
               </span>
-              <span className="summary-label">Chờ việc</span>
+              <span className="summary-label">Idle</span>
             </div>
           </div>
           <div className="summary-card">
@@ -118,14 +118,14 @@ const ManagerLines = () => {
                   ).length
                 }
               </span>
-              <span className="summary-label">Bảo trì</span>
+              <span className="summary-label">Maintenance</span>
             </div>
           </div>
           <div className="summary-card">
             <div className="summary-icon total">🏭</div>
             <div className="summary-content">
               <span className="summary-value">{linesOverview.length}</span>
-              <span className="summary-label">Tổng Lines</span>
+              <span className="summary-label">Total Lines</span>
             </div>
           </div>
         </section>
@@ -133,11 +133,11 @@ const ManagerLines = () => {
         {/* Lines Grid */}
         <section className="lines-grid">
           {loading ? (
-            <div className="loading-spinner">Đang tải...</div>
+            <div className="loading-spinner">Loading...</div>
           ) : linesOverview.length === 0 ? (
             <div className="no-data">
               <span className="no-data-icon">📭</span>
-              <span>Chưa có dữ liệu lines</span>
+              <span>No lines data available</span>
             </div>
           ) : (
             linesOverview.map((line) => (
@@ -162,7 +162,7 @@ const ManagerLines = () => {
 
                 <div className="line-metrics">
                   <div className="metric">
-                    <span className="metric-label">Giờ hoạt động</span>
+                    <span className="metric-label">Operating Hours</span>
                     <span className="metric-value">
                       {line.busyHours || 0}h / {line.availableHours || 8}h
                     </span>
@@ -176,7 +176,7 @@ const ManagerLines = () => {
                     </div>
                   </div>
                   <div className="metric">
-                    <span className="metric-label">Máy khả dụng</span>
+                    <span className="metric-label">Available Machines</span>
                     <span className="metric-value">
                       {line.availableMachines || 0}
                     </span>
@@ -185,7 +185,7 @@ const ManagerLines = () => {
 
                 {line.currentOrder && (
                   <div className="line-current-order">
-                    <span className="current-order-label">Đơn hiện tại:</span>
+                    <span className="current-order-label">Current Order:</span>
                     <span className="current-order-id">
                       #{line.currentOrder}
                     </span>
@@ -195,7 +195,7 @@ const ManagerLines = () => {
                 {line.targetToday > 0 && (
                   <div className="line-progress">
                     <div className="progress-header">
-                      <span>Tiến độ hôm nay</span>
+                      <span>Today's Progress</span>
                       <span>
                         {(line.completedToday || 0).toLocaleString()} /{" "}
                         {(line.targetToday || 0).toLocaleString()}
@@ -215,7 +215,7 @@ const ManagerLines = () => {
                 {/* Expanded Content - Machines */}
                 {selectedLine?.lineId === line.lineId && line.machines && (
                   <div className="line-machines">
-                    <h4>Danh sách máy móc</h4>
+                    <h4>Machine List</h4>
                     <div className="machines-list">
                       {line.machines.map((machine) => (
                         <div key={machine.id} className="machine-item">
@@ -228,7 +228,9 @@ const ManagerLines = () => {
                             </span>
                           </div>
                           <div className="machine-efficiency">
-                            <span className="efficiency-label">Hiệu suất:</span>
+                            <span className="efficiency-label">
+                              Efficiency:
+                            </span>
                             <span
                               className={`efficiency-value ${getEfficiencyClass(machine.efficiency)}`}
                             >
@@ -240,7 +242,7 @@ const ManagerLines = () => {
                     </div>
                     {line.supervisor && (
                       <div className="line-supervisor">
-                        <span className="supervisor-label">👤 Quản lý:</span>
+                        <span className="supervisor-label">👤 Supervisor:</span>
                         <span className="supervisor-name">
                           {line.supervisor}
                         </span>

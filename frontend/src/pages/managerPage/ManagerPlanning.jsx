@@ -40,7 +40,7 @@ const ManagerPlanning = () => {
       setLinesOverview(linesRes || []);
     } catch (error) {
       console.error("Error fetching data:", error);
-      setError("Không thể tải dữ liệu. Vui lòng thử lại sau.");
+      setError("Unable to load data. Please try again later.");
     } finally {
       setLoading(false);
     }
@@ -87,38 +87,38 @@ const ManagerPlanning = () => {
       };
 
       await managerService.createPlan(request);
-      alert("Tạo kế hoạch thành công!");
+      alert("Plan created successfully!");
       setShowCreateModal(false);
       fetchData();
     } catch (error) {
       console.error("Error creating plan:", error);
       alert(
-        "Lỗi khi tạo kế hoạch: " +
+        "Error creating plan: " +
           (error.response?.data?.message || error.message),
       );
     }
   };
 
   const handleConfirmPlan = async (orderId) => {
-    if (!window.confirm("Bạn có chắc chắn muốn xác nhận kế hoạch này?")) return;
+    if (!window.confirm("Are you sure you want to confirm this plan?")) return;
 
     try {
       const result = await managerService.confirmPlan(orderId);
       if (result.ok) {
-        alert("Xác nhận kế hoạch thành công!");
+        alert("Plan confirmed successfully!");
         fetchData();
       } else {
-        alert("Không thể xác nhận kế hoạch:\n" + result.message);
+        alert("Unable to confirm plan:\n" + result.message);
       }
     } catch (error) {
       console.error("Error confirming plan:", error);
       // Backend trả về ScheduleValidationResult trong response.data khi lỗi 400
       const errorData = error.response?.data;
       if (errorData && errorData.message) {
-        alert("Không thể xác nhận kế hoạch:\n" + errorData.message);
+        alert("Unable to confirm plan:\n" + errorData.message);
       } else {
         alert(
-          "Lỗi khi xác nhận kế hoạch: " +
+          "Error confirming plan: " +
             (error.response?.data?.message || error.message),
         );
       }
@@ -126,16 +126,16 @@ const ManagerPlanning = () => {
   };
 
   const handleCancelPlan = async (orderId) => {
-    if (!window.confirm("Bạn có chắc chắn muốn hủy kế hoạch này?")) return;
+    if (!window.confirm("Are you sure you want to cancel this plan?")) return;
 
     try {
       await managerService.cancelPlan(orderId);
-      alert("Hủy kế hoạch thành công!");
+      alert("Plan cancelled successfully!");
       fetchData();
     } catch (error) {
       console.error("Error cancelling plan:", error);
       alert(
-        "Lỗi khi hủy kế hoạch: " +
+        "Error cancelling plan: " +
           (error.response?.data?.message || error.message),
       );
     }
@@ -188,8 +188,8 @@ const ManagerPlanning = () => {
         {/* Header */}
         <header className="manager-header">
           <div className="header-left">
-            <h1>📋 Lập kế hoạch sản xuất</h1>
-            <p>Phân bổ đơn hàng cho các dây chuyền sản xuất</p>
+            <h1>📋 Production Planning</h1>
+            <p>Allocate orders to production lines</p>
           </div>
           <div className="header-right">
             <select
@@ -197,13 +197,13 @@ const ManagerPlanning = () => {
               onChange={(e) => setFilterStatus(e.target.value)}
               className="filter-select"
             >
-              <option value="">Tất cả trạng thái</option>
-              <option value="DRAFT">Nháp</option>
-              <option value="CONFIRMED">Đã xác nhận</option>
-              <option value="CANCELLED">Đã hủy</option>
+              <option value="">All Statuses</option>
+              <option value="DRAFT">Draft</option>
+              <option value="CONFIRMED">Confirmed</option>
+              <option value="CANCELLED">Cancelled</option>
             </select>
             <button className="btn-refresh" onClick={fetchData}>
-              🔄 Làm mới
+              🔄 Refresh
             </button>
           </div>
         </header>
@@ -213,7 +213,7 @@ const ManagerPlanning = () => {
           <div className="error-banner">
             <span className="error-icon">⚠️</span>
             <span>{error}</span>
-            <button onClick={fetchData}>Thử lại</button>
+            <button onClick={fetchData}>Retry</button>
           </div>
         )}
 
@@ -221,16 +221,16 @@ const ManagerPlanning = () => {
           {/* Orders Awaiting Planning */}
           <section className="planning-card orders-section">
             <div className="card-header">
-              <h2>📦 Đơn hàng cần lập kế hoạch</h2>
-              <span className="card-subtitle">Các đơn hàng đã được duyệt</span>
+              <h2>📦 Orders Awaiting Planning</h2>
+              <span className="card-subtitle">Approved orders</span>
             </div>
             <div className="card-content">
               {loading ? (
-                <div className="loading-spinner">Đang tải...</div>
+                <div className="loading-spinner">Loading...</div>
               ) : orders.length === 0 ? (
                 <div className="no-data">
                   <span className="no-data-icon">📭</span>
-                  <span>Chưa có đơn hàng nào</span>
+                  <span>No orders available</span>
                 </div>
               ) : (
                 <div className="orders-list">
@@ -279,25 +279,23 @@ const ManagerPlanning = () => {
           {/* Existing Plans */}
           <section className="planning-card plans-section">
             <div className="card-header">
-              <h2>📊 Kế hoạch đã tạo</h2>
-              <span className="card-subtitle">Danh sách kế hoạch sản xuất</span>
+              <h2>📊 Existing Plans</h2>
+              <span className="card-subtitle">List of production plans</span>
             </div>
             <div className="card-content">
               {loading ? (
-                <div className="loading-spinner">Đang tải...</div>
+                <div className="loading-spinner">Loading...</div>
               ) : Object.keys(plansByOrder).length === 0 ? (
                 <div className="no-data">
                   <span className="no-data-icon">📋</span>
-                  <span>Chưa có kế hoạch nào</span>
+                  <span>No plans available</span>
                 </div>
               ) : (
                 <div className="plans-list">
                   {Object.entries(plansByOrder).map(([orderId, orderPlans]) => (
                     <div key={orderId} className="plan-group">
                       <div className="plan-group-header">
-                        <span className="plan-order-id">
-                          Đơn hàng #{orderId}
-                        </span>
+                        <span className="plan-order-id">Order #{orderId}</span>
                         <div className="plan-group-actions">
                           {orderPlans.some(
                             (p) =>
@@ -311,7 +309,7 @@ const ManagerPlanning = () => {
                                   handleConfirmPlan(parseInt(orderId))
                                 }
                               >
-                                ✓ Xác nhận
+                                ✓ Confirm
                               </button>
                               <button
                                 className="btn-cancel"
@@ -319,7 +317,7 @@ const ManagerPlanning = () => {
                                   handleCancelPlan(parseInt(orderId))
                                 }
                               >
-                                ✗ Hủy
+                                ✗ Cancel
                               </button>
                             </>
                           )}
@@ -329,11 +327,11 @@ const ManagerPlanning = () => {
                         <thead>
                           <tr>
                             <th>Line</th>
-                            <th>Số lượng</th>
-                            <th>Ngày bắt đầu</th>
-                            <th>Ngày kết thúc</th>
-                            <th>Giờ ước tính</th>
-                            <th>Trạng thái</th>
+                            <th>Quantity</th>
+                            <th>Start Date</th>
+                            <th>End Date</th>
+                            <th>Estimated Hours</th>
+                            <th>Status</th>
                           </tr>
                         </thead>
                         <tbody>
@@ -363,7 +361,7 @@ const ManagerPlanning = () => {
                       </table>
                       {orderPlans[0]?.note && (
                         <div className="plan-note">
-                          <strong>Ghi chú:</strong> {orderPlans[0].note}
+                          <strong>Note:</strong> {orderPlans[0].note}
                         </div>
                       )}
                     </div>
@@ -382,7 +380,7 @@ const ManagerPlanning = () => {
           >
             <div className="modal-content" onClick={(e) => e.stopPropagation()}>
               <div className="modal-header">
-                <h2>Tạo kế hoạch sản xuất</h2>
+                <h2>Create Production Plan</h2>
                 <button
                   className="modal-close"
                   onClick={() => setShowCreateModal(false)}
@@ -395,23 +393,23 @@ const ManagerPlanning = () => {
                 {/* Order Info */}
                 <div className="order-summary">
                   <div className="summary-item">
-                    <span className="summary-label">Đơn hàng</span>
+                    <span className="summary-label">Order</span>
                     <span className="summary-value">#{selectedOrder.id}</span>
                   </div>
                   <div className="summary-item">
-                    <span className="summary-label">Khách hàng</span>
+                    <span className="summary-label">Customer</span>
                     <span className="summary-value">
                       {selectedOrder.customerName}
                     </span>
                   </div>
                   <div className="summary-item">
-                    <span className="summary-label">Sản phẩm</span>
+                    <span className="summary-label">Product</span>
                     <span className="summary-value">
                       {selectedOrder.productType}
                     </span>
                   </div>
                   <div className="summary-item highlight">
-                    <span className="summary-label">Tổng số lượng cần</span>
+                    <span className="summary-label">Total Quantity Needed</span>
                     <span className="summary-value">
                       {(selectedOrder.quantity || 0).toLocaleString()}
                     </span>
@@ -426,7 +424,7 @@ const ManagerPlanning = () => {
 
                 {/* Form */}
                 <div className="form-group">
-                  <label>Ngày bắt đầu</label>
+                  <label>Start Date</label>
                   <input
                     type="date"
                     value={planForm.startDate}
@@ -441,23 +439,23 @@ const ManagerPlanning = () => {
                 </div>
 
                 <div className="form-group">
-                  <label>Ghi chú</label>
+                  <label>Note</label>
                   <textarea
                     value={planForm.note}
                     onChange={(e) =>
                       setPlanForm((prev) => ({ ...prev, note: e.target.value }))
                     }
                     className="form-textarea"
-                    placeholder="Nhập ghi chú cho kế hoạch..."
+                    placeholder="Enter notes for the plan..."
                   />
                 </div>
 
                 {/* Line Allocation */}
                 <div className="line-allocation">
-                  <h3>Phân bổ cho các Line</h3>
+                  <h3>Allocate to Lines</h3>
                   {planForm.lines.length === 0 ? (
                     <div className="no-data">
-                      <span>Chưa có line nào để phân bổ</span>
+                      <span>No lines available for allocation</span>
                     </div>
                   ) : (
                     <div className="allocation-grid">
@@ -483,7 +481,7 @@ const ManagerPlanning = () => {
                     </div>
                   )}
                   <div className="allocation-summary">
-                    <span>Tổng đã phân bổ: </span>
+                    <span>Total Allocated: </span>
                     <span
                       className={
                         totalPlanned === selectedOrder.quantity
@@ -503,14 +501,14 @@ const ManagerPlanning = () => {
                   className="btn-secondary"
                   onClick={() => setShowCreateModal(false)}
                 >
-                  Hủy
+                  Cancel
                 </button>
                 <button
                   className="btn-primary"
                   onClick={handleCreatePlan}
                   disabled={totalPlanned === 0}
                 >
-                  Tạo kế hoạch
+                  Create Plan
                 </button>
               </div>
             </div>

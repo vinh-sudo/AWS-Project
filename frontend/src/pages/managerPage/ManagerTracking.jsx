@@ -33,7 +33,7 @@ const ManagerTracking = () => {
       setDelays(delaysRes || []);
     } catch (error) {
       console.error("Error fetching tracking data:", error);
-      setError("Không thể tải dữ liệu. Vui lòng thử lại sau.");
+      setError("Unable to load data. Please try again later.");
     } finally {
       setLoading(false);
     }
@@ -118,8 +118,8 @@ const ManagerTracking = () => {
         {/* Header */}
         <header className="manager-header">
           <div className="header-left">
-            <h1>📈 Theo dõi tiến độ sản xuất</h1>
-            <p>Giám sát realtime hoạt động sản xuất</p>
+            <h1>📈 Production Tracking</h1>
+            <p>Real-time monitoring of production activities</p>
           </div>
           <div className="header-right">
             <input
@@ -129,7 +129,7 @@ const ManagerTracking = () => {
               className="date-picker"
             />
             <button className="btn-refresh" onClick={fetchTrackingData}>
-              🔄 Làm mới
+              🔄 Refresh
             </button>
           </div>
         </header>
@@ -139,7 +139,7 @@ const ManagerTracking = () => {
           <div className="error-banner">
             <span className="error-icon">⚠️</span>
             <span>{error}</span>
-            <button onClick={fetchTrackingData}>Thử lại</button>
+            <button onClick={fetchTrackingData}>Retry</button>
           </div>
         )}
 
@@ -171,18 +171,18 @@ const ManagerTracking = () => {
           {activeTab === "gantt" && (
             <section className="tracking-card gantt-section">
               <div className="card-header">
-                <h2>📊 Gantt Chart - Lịch sản xuất</h2>
+                <h2>📊 Gantt Chart - Production Schedule</h2>
                 <span className="card-subtitle">
-                  Ngày: {new Date(selectedDate).toLocaleDateString("vi-VN")}
+                  Date: {new Date(selectedDate).toLocaleDateString("en-US")}
                 </span>
               </div>
               <div className="card-content">
                 {loading ? (
-                  <div className="loading-spinner">Đang tải...</div>
+                  <div className="loading-spinner">Loading...</div>
                 ) : ganttData.length === 0 ? (
                   <div className="no-data">
                     <span className="no-data-icon">📭</span>
-                    <span>Chưa có lịch sản xuất cho ngày này</span>
+                    <span>No production schedule for this date</span>
                   </div>
                 ) : (
                   <div className="gantt-container">
@@ -222,7 +222,7 @@ const ManagerTracking = () => {
                                 <div
                                   className={`gantt-bar ${getStatusClass(item.status)}`}
                                   style={getBarStyle(item.start, item.end)}
-                                  title={`${item.machine}\n${new Date(item.start).toLocaleTimeString("vi-VN", { hour: "2-digit", minute: "2-digit" })} - ${new Date(item.end).toLocaleTimeString("vi-VN", { hour: "2-digit", minute: "2-digit" })}\nStatus: ${item.status}`}
+                                  title={`${item.machine}\n${new Date(item.start).toLocaleTimeString("en-US", { hour: "2-digit", minute: "2-digit" })} - ${new Date(item.end).toLocaleTimeString("en-US", { hour: "2-digit", minute: "2-digit" })}\nStatus: ${item.status}`}
                                 >
                                   <span className="bar-label">
                                     {item.status}
@@ -239,19 +239,19 @@ const ManagerTracking = () => {
                     <div className="gantt-legend">
                       <div className="legend-item">
                         <span className="legend-color status-completed"></span>
-                        <span>Hoàn thành</span>
+                        <span>Completed</span>
                       </div>
                       <div className="legend-item">
                         <span className="legend-color status-progress"></span>
-                        <span>Đang chạy</span>
+                        <span>In Progress</span>
                       </div>
                       <div className="legend-item">
                         <span className="legend-color status-pending"></span>
-                        <span>Chờ</span>
+                        <span>Pending</span>
                       </div>
                       <div className="legend-item">
                         <span className="legend-color status-delayed"></span>
-                        <span>Trễ</span>
+                        <span>Delayed</span>
                       </div>
                     </div>
                   </div>
@@ -266,16 +266,16 @@ const ManagerTracking = () => {
               <div className="card-header">
                 <h2>📈 OEE Analysis</h2>
                 <span className="card-subtitle">
-                  Overall Equipment Effectiveness theo Line
+                  Overall Equipment Effectiveness by Line
                 </span>
               </div>
               <div className="card-content">
                 {loading ? (
-                  <div className="loading-spinner">Đang tải...</div>
+                  <div className="loading-spinner">Loading...</div>
                 ) : oeeData.length === 0 ? (
                   <div className="no-data">
                     <span className="no-data-icon">📭</span>
-                    <span>Chưa có dữ liệu OEE</span>
+                    <span>No OEE data available</span>
                   </div>
                 ) : (
                   <>
@@ -290,9 +290,7 @@ const ManagerTracking = () => {
                           ).toFixed(1)}
                           %
                         </span>
-                        <span className="oee-summary-label">
-                          OEE Trung bình
-                        </span>
+                        <span className="oee-summary-label">Average OEE</span>
                       </div>
                       <div className="oee-summary-card">
                         <span className="oee-summary-value">
@@ -441,18 +439,18 @@ const ManagerTracking = () => {
           {activeTab === "delays" && (
             <section className="tracking-card delays-section">
               <div className="card-header">
-                <h2>⚠️ Cảnh báo trễ tiến độ</h2>
+                <h2>⚠️ Delay Warnings</h2>
                 <span className="card-subtitle">
-                  Các schedule đang có nguy cơ trễ deadline
+                  Schedules at risk of missing deadlines
                 </span>
               </div>
               <div className="card-content">
                 {loading ? (
-                  <div className="loading-spinner">Đang tải...</div>
+                  <div className="loading-spinner">Loading...</div>
                 ) : delays.length === 0 ? (
                   <div className="no-data">
                     <span className="no-data-icon">✅</span>
-                    <span>Không có cảnh báo trễ tiến độ</span>
+                    <span>No delay warnings</span>
                   </div>
                 ) : (
                   <div className="delays-grid">
@@ -483,19 +481,21 @@ const ManagerTracking = () => {
                         </div>
                         <div className="delay-metrics">
                           <div className="delay-metric">
-                            <span className="delay-metric-label">Dự kiến</span>
+                            <span className="delay-metric-label">Expected</span>
                             <span className="delay-metric-value">
                               {delay.expected}
                             </span>
                           </div>
                           <div className="delay-metric">
-                            <span className="delay-metric-label">Thực tế</span>
+                            <span className="delay-metric-label">Actual</span>
                             <span className="delay-metric-value actual">
                               {delay.actual}
                             </span>
                           </div>
                           <div className="delay-metric">
-                            <span className="delay-metric-label">Thiếu</span>
+                            <span className="delay-metric-label">
+                              Shortfall
+                            </span>
                             <span className="delay-metric-value delay-amount">
                               -{delay.delay}
                             </span>
@@ -515,7 +515,7 @@ const ManagerTracking = () => {
                               ((delay.actual || 0) / (delay.expected || 1)) *
                               100
                             ).toFixed(0)}
-                            % hoàn thành
+                            % completed
                           </span>
                         </div>
                       </div>
