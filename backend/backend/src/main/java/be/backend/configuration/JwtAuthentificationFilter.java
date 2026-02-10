@@ -1,4 +1,4 @@
-package be.backend.component;
+package be.backend.configuration;
 
 import be.backend.service.utilities.JwtService;
 import be.backend.service.utilities.TokenBlacklistService;
