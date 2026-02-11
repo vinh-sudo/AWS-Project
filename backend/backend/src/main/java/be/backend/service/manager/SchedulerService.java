@@ -1,14 +1,13 @@
 package be.backend.service.manager;
 
-import be.backend.entity.Machine;
-import be.backend.entity.ProductionPlan;
-import be.backend.entity.ProductionSchedule;
+import be.backend.entity.*;
 import be.backend.model.response.ScheduleValidationResult;
 import be.backend.repository.*;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
+import java.time.OffsetDateTime;
 import java.time.ZoneOffset;
 import java.util.ArrayList;
 import java.util.List;
@@ -116,4 +115,57 @@ public class SchedulerService {
 
         return result;
     }
+    @Transactional
+    public void pauseSchedule(Integer scheduleId, Account account) {
+
+        ProductionSchedule schedule = scheduleRepo.findById(scheduleId)
+                .orElseThrow(() -> new RuntimeException("Schedule not found"));
+
+        if (!schedule.getStatus().equals("RUNNING")) {
+            throw new RuntimeException("Only RUNNING schedule can be paused");
+        }
+
+        // 1. Pause schedule
+        schedule.setStatus("PAUSED");
+
+        // 2. Pause machine
+        Machine machine = schedule.getMachine();
+        machine.setRuntimeStatus("PAUSED");
+        machineRepo.save(machine);
+
+        // 3. Log
+        IncidentLog log = new IncidentLog();
+        log.setSchedule(schedule);
+        log.setIncidentType("PAUSE");
+        log.setDescription("Paused by " + account.getUser().getLastName());
+        log.setTimestamp(OffsetDateTime.now());
+        incidentRepo.save(log);
+    }
+    @Transactional
+    public void resumeSchedule(Integer scheduleId, Account account) {
+
+        ProductionSchedule schedule = scheduleRepo.findById(scheduleId)
+                .orElseThrow(() -> new RuntimeException("Schedule not found"));
+
+        if (!schedule.getStatus().equals("PAUSED")) {
+            throw new RuntimeException("Only PAUSED schedule can be resumed");
+        }
+
+        // 1. Resume schedule
+        schedule.setStatus("RUNNING");
+
+        // 2. Resume machine
+        Machine machine = schedule.getMachine();
+        machine.setRuntimeStatus("RUNNING");
+        machineRepo.save(machine);
+
+        // 3. Log
+        IncidentLog log = new IncidentLog();
+        log.setSchedule(schedule);
+        log.setIncidentType("RESUME");
+        log.setDescription("Resumed by " + account.getUser().getLastName());
+        log.setTimestamp(OffsetDateTime.now());
+        incidentRepo.save(log);
+    }
+
 }

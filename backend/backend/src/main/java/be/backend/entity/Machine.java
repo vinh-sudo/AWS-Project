@@ -10,6 +10,8 @@ import org.hibernate.annotations.OnDelete;
 import org.hibernate.annotations.OnDeleteAction;
 
 import java.time.OffsetDateTime;
+import java.util.LinkedHashSet;
+import java.util.Set;
 
 @Getter
 @Setter
@@ -61,5 +63,15 @@ public class Machine {
     @Size(max = 100)
     @Column(name = "machine_code", length = 100)
     private String machineCode;
+
+    @Size(max = 20)
+    @Column(name = "runtime_status", length = 20)
+    private String runtimeStatus;
+
+    @OneToMany(mappedBy = "machine")
+    private Set<IncidentLog> incidentLogs = new LinkedHashSet<>();
+
+    @OneToMany(mappedBy = "machine")
+    private Set<ProductionSchedule> productionSchedules = new LinkedHashSet<>();
 
 }
