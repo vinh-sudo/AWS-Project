@@ -2,111 +2,112 @@
 <html xmlns:th="http://www.thymeleaf.org">
 <head>
     <meta charset="UTF-8">
-    <title>IMS - Verification Code</title>
-    <style>
-        @keyframes fadeInUp {
-            from {
-                opacity: 0;
-                transform: translateY(20px);
-            }
-            to {
-                opacity: 1;
-                transform: translateY(0);
-            }
-        }
-
-        @keyframes float {
-            0%, 100% {
-                transform: translateY(0px);
-            }
-            50% {
-                transform: translateY(-8px);
-            }
-        }
-
-        .fade-in {
-            animation: fadeInUp 0.6s ease-out;
-        }
-
-        .float {
-            animation: float 3s ease-in-out infinite;
-        }
-    </style>
+    <title>Enter OTP</title>
 </head>
-<body style="margin:0; padding:0; font-family: 'Segoe UI', system-ui, sans-serif; background: linear-gradient(135deg, #e3f2fd 0%, #f3e5f5 100%);">
-<table width="100%" cellpadding="0" cellspacing="0" border="0">
+<body style="margin:0; padding:0; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif; background-color: #ffffff; display:flex; align-items:center; justify-content:center; min-height:100vh;">
+<table width="100%" cellpadding="0" cellspacing="0" border="0" style="background-color: #ffffff;">
     <tr>
         <td align="center" style="padding:40px 15px;">
 
             <!-- Main Card -->
-            <table width="400" cellpadding="0" cellspacing="0" border="0" style="background:#ffffff; border-radius:24px; box-shadow: 0 10px 40px rgba(103, 126, 234, 0.15); overflow:hidden;" class="fade-in">
+            <table width="380" cellpadding="0" cellspacing="0" border="0" style="background:#ffffff; border-radius:16px; box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3); overflow:hidden; position:relative;">
 
-                <!-- Cute Header Icon -->
+                <!-- Close Button -->
                 <tr>
-                    <td align="center" style="padding:35px 20px 20px 20px;">
-                        <div style="width:65px; height:65px; background: linear-gradient(135deg, #7c4dff 0%, #536dfe 100%); border-radius:50%; display:inline-flex; align-items:center; justify-content:center; box-shadow: 0 8px 20px rgba(124, 77, 255, 0.25);" class="float">
-                            <span style="font-size:32px;">🔐</span>
+                    <td align="right" style="padding:16px 16px 0 0;">
+                        <div style="width:28px; height:28px; background:#f0f0f0; border-radius:50%; display:inline-flex; align-items:center; justify-content:center; cursor:pointer;">
+                            <span style="color:#666; font-size:18px; line-height:1;">×</span>
                         </div>
                     </td>
                 </tr>
 
                 <!-- Title -->
                 <tr>
-                    <td align="center" style="padding:0 20px 10px 20px;">
-                        <h2 style="margin:0; color:#333; font-size:24px; font-weight:700;">
-                            IMS
-                        </h2>
-                        <p style="margin:8px 0 0 0; color:#999; font-size:13px; font-weight:500;">
-                            Identity Management System
-                        </p>
+                    <td align="center" style="padding:8px 40px 16px 40px;">
+                        <h1 style="margin:0; color:#000000; font-size:28px; font-weight:700; letter-spacing:-0.5px;">
+                            Enter OTP
+                        </h1>
                     </td>
                 </tr>
 
                 <!-- Message -->
                 <tr>
-                    <td align="center" style="padding:15px 30px 25px 30px;">
-                        <p style="margin:0; color:#666; font-size:14px; line-height:22px;">
-                            Enter your One-Time Password to continue
+                    <td align="center" style="padding:0 40px 24px 40px;">
+                        <p style="margin:0; color:#6b7280; font-size:14px; line-height:20px; font-weight:400;">
+                            We have sent a verification code to<br>your registered email
                         </p>
                     </td>
                 </tr>
 
-                <!-- OTP Code in Boxes -->
+                <!-- OTP Input Boxes -->
                 <tr>
-                    <td align="center" style="padding:0 30px 30px 30px;">
+                    <td align="center" style="padding:0 40px 28px 40px;">
                         <table cellpadding="0" cellspacing="0" border="0" style="margin:0 auto;">
                             <tr>
                                 <td align="center" style="padding:0 4px;">
-                                    <div style="width:45px; height:55px; background:#f5f7fa; border:2px solid #7c4dff; border-radius:12px; display:inline-flex; align-items:center; justify-content:center; box-shadow: 0 4px 12px rgba(124, 77, 255, 0.1);">
-                                        <span style="font-size:28px; font-weight:700; color:#7c4dff;" th:text="${otp.substring(0,1)}">1</span>
+                                    <div style="width:48px; height:52px; background:#f3f4f6; border:none; border-radius:12px; display:inline-block;">
+                                        <table width="100%" height="100%" cellpadding="0" cellspacing="0" border="0">
+                                            <tr>
+                                                <td align="center" valign="middle">
+                                                    <span style="font-size:24px; font-weight:600; color:#374151; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;" th:text="${otp.substring(0,1)}">1</span>
+                                                </td>
+                                            </tr>
+                                        </table>
                                     </div>
                                 </td>
                                 <td align="center" style="padding:0 4px;">
-                                    <div style="width:45px; height:55px; background:#f5f7fa; border:2px solid #7c4dff; border-radius:12px; display:inline-flex; align-items:center; justify-content:center; box-shadow: 0 4px 12px rgba(124, 77, 255, 0.1);">
-                                        <span style="font-size:28px; font-weight:700; color:#7c4dff;" th:text="${otp.substring(1,2)}">2</span>
+                                    <div style="width:48px; height:52px; background:#f3f4f6; border:none; border-radius:12px; display:inline-block;">
+                                        <table width="100%" height="100%" cellpadding="0" cellspacing="0" border="0">
+                                            <tr>
+                                                <td align="center" valign="middle">
+                                                    <span style="font-size:24px; font-weight:600; color:#374151; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;" th:text="${otp.substring(1,2)}">2</span>
+                                                </td>
+                                            </tr>
+                                        </table>
                                     </div>
                                 </td>
                                 <td align="center" style="padding:0 4px;">
-                                    <div style="width:45px; height:55px; background:#f5f7fa; border:2px solid #7c4dff; border-radius:12px; display:inline-flex; align-items:center; justify-content:center; box-shadow: 0 4px 12px rgba(124, 77, 255, 0.1);">
-                                        <span style="font-size:28px; font-weight:700; color:#7c4dff;" th:text="${otp.substring(2,3)}">3</span>
-                                    </div>
-                                </td>
-                                <td align="center" style="padding:0 12px;">
-                                    <span style="font-size:24px; color:#ccc; font-weight:300;">-</span>
-                                </td>
-                                <td align="center" style="padding:0 4px;">
-                                    <div style="width:45px; height:55px; background:#f5f7fa; border:2px solid #7c4dff; border-radius:12px; display:inline-flex; align-items:center; justify-content:center; box-shadow: 0 4px 12px rgba(124, 77, 255, 0.1);">
-                                        <span style="font-size:28px; font-weight:700; color:#7c4dff;" th:text="${otp.substring(3,4)}">4</span>
-                                    </div>
-                                </td>
-                                <td align="center" style="padding:0 4px;">
-                                    <div style="width:45px; height:55px; background:#f5f7fa; border:2px solid #7c4dff; border-radius:12px; display:inline-flex; align-items:center; justify-content:center; box-shadow: 0 4px 12px rgba(124, 77, 255, 0.1);">
-                                        <span style="font-size:28px; font-weight:700; color:#7c4dff;" th:text="${otp.substring(4,5)}">5</span>
+                                    <div style="width:48px; height:52px; background:#f3f4f6; border:none; border-radius:12px; display:inline-block;">
+                                        <table width="100%" height="100%" cellpadding="0" cellspacing="0" border="0">
+                                            <tr>
+                                                <td align="center" valign="middle">
+                                                    <span style="font-size:24px; font-weight:600; color:#374151; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;" th:text="${otp.substring(2,3)}">3</span>
+                                                </td>
+                                            </tr>
+                                        </table>
                                     </div>
                                 </td>
                                 <td align="center" style="padding:0 4px;">
-                                    <div style="width:45px; height:55px; background:#f5f7fa; border:2px solid #7c4dff; border-radius:12px; display:inline-flex; align-items:center; justify-content:center; box-shadow: 0 4px 12px rgba(124, 77, 255, 0.1);">
-                                        <span style="font-size:28px; font-weight:700; color:#7c4dff;" th:text="${otp.substring(5,6)}">6</span>
+                                    <div style="width:48px; height:52px; background:#f3f4f6; border:none; border-radius:12px; display:inline-block;">
+                                        <table width="100%" height="100%" cellpadding="0" cellspacing="0" border="0">
+                                            <tr>
+                                                <td align="center" valign="middle">
+                                                    <span style="font-size:24px; font-weight:600; color:#374151; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;" th:text="${otp.substring(3,4)}">4</span>
+                                                </td>
+                                            </tr>
+                                        </table>
+                                    </div>
+                                </td>
+                                <td align="center" style="padding:0 4px;">
+                                    <div style="width:48px; height:52px; background:#f3f4f6; border:none; border-radius:12px; display:inline-block;">
+                                        <table width="100%" height="100%" cellpadding="0" cellspacing="0" border="0">
+                                            <tr>
+                                                <td align="center" valign="middle">
+                                                    <span style="font-size:24px; font-weight:600; color:#374151; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;" th:text="${otp.substring(4,5)}">5</span>
+                                                </td>
+                                            </tr>
+                                        </table>
+                                    </div>
+                                </td>
+                                <td align="center" style="padding:0 4px;">
+                                    <div style="width:48px; height:52px; background:#f3f4f6; border:none; border-radius:12px; display:inline-block;">
+                                        <table width="100%" height="100%" cellpadding="0" cellspacing="0" border="0">
+                                            <tr>
+                                                <td align="center" valign="middle">
+                                                    <span style="font-size:24px; font-weight:600; color:#374151; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;" th:text="${otp.substring(5,6)}">6</span>
+                                                </td>
+                                            </tr>
+                                        </table>
                                     </div>
                                 </td>
                             </tr>
@@ -114,33 +115,30 @@
                     </td>
                 </tr>
 
-                <!-- Timer -->
+                <!-- Verify Button -->
                 <tr>
-                    <td align="center" style="padding:0 30px 30px 30px;">
-                        <div style="background:#fff8e1; border-radius:30px; padding:12px 24px; display:inline-block; border:1px solid #ffe082;">
-                            <p style="margin:0; color:#f57f17; font-size:13px; font-weight:600;">
-                                ⏱️ Valid for <b>5 minutes</b>
-                            </p>
-                        </div>
+                    <td align="center" style="padding:0 40px 20px 40px;">
+                        <table width="100%" cellpadding="0" cellspacing="0" border="0">
+                            <tr>
+                                <td align="center" style="background:#6366f1; border-radius:12px; padding:14px 0;">
+                                    <a href="#" style="display:block; color:#ffffff; font-size:16px; font-weight:600; text-decoration:none; letter-spacing:0.2px;">
+                                        Verify
+                                    </a>
+                                </td>
+                            </tr>
+                        </table>
                     </td>
                 </tr>
 
-                <!-- Security Note -->
+                <!-- Resend Code -->
                 <tr>
-                    <td align="center" style="padding:0 30px 30px 30px; border-top:1px dashed #e8eaf6;">
-                        <p style="margin:20px 0 0 0; color:#9e9e9e; font-size:12px; line-height:18px;">
-                            🔒 Keep this code private and secure<br>
-                            <span style="font-size:11px;">Didn't request this? You can safely ignore this email</span>
+                    <td align="center" style="padding:0 40px 32px 40px;">
+                        <p style="margin:0 0 8px 0; color:#6b7280; font-size:13px; font-weight:400;">
+                            Didn't receive the code?
                         </p>
-                    </td>
-                </tr>
-
-                <!-- Footer -->
-                <tr>
-                    <td align="center" style="padding:20px; background:#fafbfc; border-top:1px solid #f0f0f0;">
-                        <p style="margin:0; color:#bdbdbd; font-size:11px;">
-                            © 2024 IMS • Automated Message
-                        </p>
+                        <a href="#" style="color:#6366f1; font-size:14px; font-weight:600; text-decoration:none;">
+                            Resend Code
+                        </a>
                     </td>
                 </tr>
 
@@ -150,4 +148,4 @@
     </tr>
 </table>
 </body>
-</html>v+
+</html>
