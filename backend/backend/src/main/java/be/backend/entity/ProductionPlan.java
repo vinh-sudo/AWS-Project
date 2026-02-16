@@ -67,4 +67,8 @@ public class ProductionPlan {
     @JoinColumn(name = "plan_id")
     private Set<ProductionSchedule> productionSchedules = new LinkedHashSet<>();
 
+    @Size(max = 100)
+    @Column(name = "plan_name", length = 100)
+    private String planName;
+
 }

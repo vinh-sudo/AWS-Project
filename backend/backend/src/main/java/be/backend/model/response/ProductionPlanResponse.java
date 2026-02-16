@@ -11,7 +11,7 @@ public class ProductionPlanResponse {
 
     private Integer planId;
     private Integer orderId;
-
+    private String planName;
     private Integer lineId;
     private String lineName;
 

@@ -1,8 +1,8 @@
 package be.backend.controller;
 
 import be.backend.model.request.PasswordResetRequest;
-import be.backend.service.OtpService;
-import be.backend.service.UserService;
+import be.backend.service.admin.OtpService;
+import be.backend.service.admin.UserService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;

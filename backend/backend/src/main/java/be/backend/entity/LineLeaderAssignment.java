@@ -17,12 +17,11 @@ import java.time.OffsetDateTime;
 public class LineLeaderAssignment {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    @Column(name = "assignment_id", nullable = false)
+    @Column(name = "assignment_id")
     private Long id;
 
     @NotNull
-    @OneToOne(fetch = FetchType.LAZY, optional = false)
-    @OnDelete(action = OnDeleteAction.CASCADE)
+    @ManyToOne(fetch = FetchType.LAZY, optional = false)
     @JoinColumn(name = "line_id", nullable = false)
     private ProductionLine line;
 
@@ -31,6 +30,10 @@ public class LineLeaderAssignment {
     @OnDelete(action = OnDeleteAction.CASCADE)
     @JoinColumn(name = "leader_id", nullable = false)
     private Employee leader;
+
+    @NotNull
+    @Column(name = "status", nullable = false)
+    private String status;
 
     @NotNull
     @Column(name = "start_date", nullable = false)

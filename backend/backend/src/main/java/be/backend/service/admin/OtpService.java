@@ -1,7 +1,8 @@
-package be.backend.service;
+package be.backend.service.admin;
 
 import be.backend.entity.Employee;
 import be.backend.repository.EmployeeRepository;
+import be.backend.service.utilities.EmailService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.redis.core.RedisTemplate;

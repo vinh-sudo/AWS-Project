@@ -28,6 +28,8 @@ public class ManagerPlanningService {
     private final ProductionPlanMapper mapper;
     private final OrderMapper orderMapper;
     private final AuditLogRepository auditRepo;
+    private final ProductionFileRepository fileRepo;
+
     private final SchedulerService schedulerService;
 
     // ================= GET ORDERS FOR PLANNING =================
@@ -74,6 +76,7 @@ public class ManagerPlanningService {
             ProductionPlan plan = new ProductionPlan();
             plan.setOrder(order);
             plan.setLine(line);
+            plan.setPlanName(request.getPlanName());
             plan.setCreatedBy(manager);
             plan.setPlannedQuantity(qty);
             plan.setPlannedStartDate(request.getStartDate());
@@ -103,6 +106,11 @@ public class ManagerPlanningService {
 
         if (plans.isEmpty()) {
             return ScheduleValidationResult.fail("No draft plan");
+        }
+        if (!fileRepo.existsByOrderId(orderId)) {
+            return ScheduleValidationResult.fail(
+                    "Order " + orderId + " has no SOP / BOM file"
+            );
         }
 
         ScheduleValidationResult result =

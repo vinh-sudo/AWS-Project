@@ -1,5 +1,6 @@
 package be.backend.repository;
 
+import be.backend.entity.Order;
 import be.backend.entity.ProductionSchedule;
 import jakarta.persistence.LockModeType;
 import org.springframework.data.jpa.repository.JpaRepository;
@@ -8,6 +9,7 @@ import org.springframework.data.jpa.repository.Query;
 
 import java.time.OffsetDateTime;
 import java.util.List;
+import java.util.Optional;
 
 public interface ProductionScheduleRepository extends JpaRepository<ProductionSchedule, Integer> {
 
@@ -47,5 +49,7 @@ public interface ProductionScheduleRepository extends JpaRepository<ProductionSc
     where s.status = 'RUNNING'
 """)
     List<ProductionSchedule> findRunning();
+    Optional<ProductionSchedule> findByIdAndStatus(Integer id, String status);
 
+    List<ProductionSchedule> findByOrderIdAndStatus(Integer orderId, String status);
 }

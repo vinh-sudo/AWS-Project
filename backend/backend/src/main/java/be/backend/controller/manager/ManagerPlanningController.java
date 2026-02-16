@@ -22,17 +22,7 @@ import java.util.List;
 public class ManagerPlanningController {
 
     private final ManagerPlanningService planningService;
-
-    // ===================== ORDERS (for planning) =====================
-    @GetMapping("/orders")
-    public ResponseEntity<List<OrderResponse>> getOrdersForPlanning(
-            @RequestParam(required = false) String status
-    ) {
-        return ResponseEntity.ok(planningService.getOrdersForPlanning(status));
-    }
-
-    // ===================== PLANS =====================
-    @PostMapping("/plans/create")
+    @PostMapping("/create")
     public ResponseEntity<List<ProductionPlanResponse>> createPlan(
             @RequestBody ProductionPlanRequest request,
             @AuthenticationPrincipal Account account

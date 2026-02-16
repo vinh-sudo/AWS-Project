@@ -1,5 +1,6 @@
-package be.backend.service;
+package be.backend.service.admin;
 
+import be.backend.entity.Account;
 import be.backend.entity.Order;
 import be.backend.entity.OrderItem;
 import be.backend.entity.User;
@@ -10,6 +11,8 @@ import be.backend.model.request.CreateOrderRequest;
 import be.backend.model.request.OrderItemRequest;
 import be.backend.model.request.UpdateOrderRequest;
 import be.backend.model.response.OrderResponse;
+import be.backend.model.response.OrderResumeResponse;
+import be.backend.model.response.OrderStopResponse;
 import be.backend.repository.OrderRepository;
 import be.backend.repository.UserRepository;
 import jakarta.transaction.Transactional;
@@ -268,7 +271,8 @@ public class OrderService {
     // ==================== STATISTICS ====================
 
     public long countOrdersByStatus(String status) {
-        return orderRepository.findByStatus(status).size();
+        validateStatus(status);
+        return orderRepository.countByStatus(status);
     }
 
     // ==================== PRIVATE VALIDATIONS ====================
@@ -296,6 +300,53 @@ public class OrderService {
             throw new BusinessException("Quantity must be greater than 0");
         }
     }
+
+    // ==================== STOP & RESUME ====================
+
+    @Transactional
+    public OrderStopResponse stopOrder(Integer orderId, Account account) {
+        Order order = getOrderEntity(orderId);
+        
+        if (STATUS_COMPLETED.equals(order.getStatus()) || STATUS_CANCELLED.equals(order.getStatus())) {
+            throw new BusinessException("Cannot stop order with status: " + order.getStatus());
+        }
+        
+        order.setStatus("STOPPED");
+        order.setUpdatedAt(OffsetDateTime.now());
+        orderRepository.save(order);
+        
+        log.info("Order {} stopped by user {}", orderId, account.getUsername());
+        
+        return OrderStopResponse.builder()
+                .orderId(orderId)
+                .status("STOPPED")
+                .cancelledSchedules(0)
+                .stoppedSchedules(0)
+                .build();
+    }
+
+    @Transactional
+    public OrderResumeResponse resumeOrder(Integer orderId, Account account) {
+        Order order = getOrderEntity(orderId);
+        
+        if (!"STOPPED".equals(order.getStatus())) {
+            throw new BusinessException("Only STOPPED orders can be resumed. Current status: " + order.getStatus());
+        }
+        
+        order.setStatus(STATUS_IN_PRODUCTION);
+        order.setUpdatedAt(OffsetDateTime.now());
+        orderRepository.save(order);
+        
+        log.info("Order {} resumed by user {}", orderId, account.getUsername());
+        
+        return OrderResumeResponse.builder()
+                .orderId(orderId)
+                .status(STATUS_IN_PRODUCTION)
+                .resumedSchedules(0)
+                .build();
+    }
+
+    // ==================== PRIVATE VALIDATORS ====================
 
     private void validateItemQuantity(Integer quantity) {
         if (quantity == null || quantity <= 0) {

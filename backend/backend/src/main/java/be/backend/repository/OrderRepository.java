@@ -13,6 +13,7 @@ import java.util.Optional;
 @Repository
 public interface OrderRepository extends JpaRepository<Order, Integer> {
 
+
     // ==================== SINGLE ORDER ====================
     
     @Query("SELECT DISTINCT o FROM Order o " +
@@ -62,5 +63,8 @@ public interface OrderRepository extends JpaRepository<Order, Integer> {
     // ==================== STATISTICS ====================
 
     @Query("SELECT o.status, COUNT(o) FROM Order o GROUP BY o.status")
-    List<Object[]> countByStatus();
+    List<Object[]> countGroupByStatus();
+
+    // Count by specific status (sử dụng index idx_orders_status)
+    long countByStatus(String status);
 }

@@ -4,7 +4,9 @@ import be.backend.entity.Account;
 import be.backend.model.request.CreateOrderRequest;
 import be.backend.model.request.UpdateOrderRequest;
 import be.backend.model.response.OrderResponse;
-import be.backend.service.OrderService;
+import be.backend.model.response.OrderResumeResponse;
+import be.backend.model.response.OrderStopResponse;
+import be.backend.service.admin.OrderService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
@@ -117,4 +119,21 @@ public class OrderController {
             @RequestParam(defaultValue = "7") int days) {
         return ResponseEntity.ok(orderService.getUpcomingDeadlineOrders(days));
     }
+    @PostMapping("/{orderId}/stop")
+    public ResponseEntity<OrderStopResponse> stopOrder(
+            @PathVariable Integer orderId,
+            @AuthenticationPrincipal Account account
+    ) {
+        return ResponseEntity.ok(
+                orderService.stopOrder(orderId, account)
+        );
+    }
+    @PostMapping("/{orderId}/resume")
+    public ResponseEntity<OrderResumeResponse> resumeOrder(
+            @PathVariable Integer orderId,
+            @AuthenticationPrincipal Account account
+    ) {
+        return ResponseEntity.ok(orderService.resumeOrder(orderId, account));
+    }
+
 }

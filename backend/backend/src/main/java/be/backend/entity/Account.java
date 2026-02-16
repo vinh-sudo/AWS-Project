@@ -74,17 +74,13 @@ public class Account implements UserDetails {
     }
 
     @Override
-    public @Nullable String getPassword() {
-        return passwordHash;
+    public String getUsername() {
+        return username;
     }
 
     @Override
-    public String getUsername() {
-        return username != null ? username : (employee != null ? employee.getEmployeeCode() : String.valueOf(id));
-    }
-    
-    public void setUsername(String username) {
-        this.username = username;
+    public String getPassword() {
+        return passwordHash; // Trả về password hash, KHÔNG phải empty string
     }
 
     @Override

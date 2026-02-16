@@ -11,7 +11,7 @@ import org.springframework.stereotype.Component;
 
 @Generated(
     value = "org.mapstruct.ap.MappingProcessor",
-    date = "2026-01-30T20:28:22+0700",
+    date = "2026-02-11T16:16:43+0800",
     comments = "version: 1.5.5.Final, compiler: javac, environment: Java 17.0.12 (Oracle Corporation)"
 )
 @Component
@@ -29,6 +29,7 @@ public class ProductionPlanMapperImpl implements ProductionPlanMapper {
         productionPlanResponse.orderId( planOrderId( plan ) );
         productionPlanResponse.lineId( planLineId( plan ) );
         productionPlanResponse.lineName( planLineLineName( plan ) );
+        productionPlanResponse.planName( plan.getPlanName() );
         productionPlanResponse.plannedQuantity( plan.getPlannedQuantity() );
         productionPlanResponse.startDate( plan.getPlannedStartDate() );
         productionPlanResponse.endDate( plan.getPlannedEndDate() );
