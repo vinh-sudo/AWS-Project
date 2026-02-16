@@ -1,11 +1,9 @@
 package be.backend.service.manager;
 
 import be.backend.entity.*;
-import be.backend.mapper.OrderMapper;
 import be.backend.mapper.ProductionPlanMapper;
 import be.backend.model.request.LinePlanRequest;
 import be.backend.model.request.ProductionPlanRequest;
-import be.backend.model.response.OrderResponse;
 import be.backend.model.response.ProductionPlanResponse;
 import be.backend.model.response.ScheduleValidationResult;
 import be.backend.repository.*;
@@ -26,22 +24,10 @@ public class ManagerPlanningService {
     private final ProductionPlanRepository planRepo;
     private final EmployeeRepository employeeRepo;
     private final ProductionPlanMapper mapper;
-    private final OrderMapper orderMapper;
     private final AuditLogRepository auditRepo;
     private final ProductionFileRepository fileRepo;
 
     private final SchedulerService schedulerService;
-
-    // ================= GET ORDERS FOR PLANNING =================
-    public List<OrderResponse> getOrdersForPlanning(String status) {
-        List<Order> orders;
-        if (status != null && !status.isEmpty()) {
-            orders = orderRepo.findByStatus(status);
-        } else {
-            orders = orderRepo.findAll();
-        }
-        return orders.stream().map(orderMapper::toResponse).toList();
-    }
 
     @Transactional
     public List<ProductionPlanResponse> createPlan(
@@ -54,10 +40,7 @@ public class ManagerPlanningService {
         Order order = orderRepo.findById(request.getOrderId())
                 .orElseThrow(() -> new RuntimeException("Order not found"));
 
-        Integer userId = account.getUser() != null ? account.getUser().getId() 
-                : (account.getEmployee() != null && account.getEmployee().getUser() != null 
-                    ? account.getEmployee().getUser().getId() : null);
-        Employee manager = employeeRepo.findByUserId(userId)
+        Employee manager = employeeRepo.findByUserId(account.getUser().getId())
                 .orElseThrow(() -> new RuntimeException("Employee not found"));
 
         List<ProductionPlan> plans = new ArrayList<>();
@@ -116,12 +99,9 @@ public class ManagerPlanningService {
         ScheduleValidationResult result =
                 schedulerService.validateCapacity(plans);
 
-        User user = account.getUser() != null ? account.getUser() 
-                : (account.getEmployee() != null ? account.getEmployee().getUser() : null);
-
         if (!result.isOk()) {
             AuditLog log = new AuditLog();
-            log.setUser(user);
+            log.setUser(account.getUser());
             log.setActionType("CONFIRM_PLAN");
             log.setEntity("Order");
             log.setDetails("FAILED: " + result.getMessage());
@@ -139,7 +119,7 @@ public class ManagerPlanningService {
         orderRepo.save(order);
 
         AuditLog log = new AuditLog();
-        log.setUser(user);
+        log.setUser(account.getUser());
         log.setActionType("CONFIRM_PLAN");
         log.setEntity("Order");
         log.setDetails("Order " + orderId + " scheduled");
@@ -166,11 +146,8 @@ public class ManagerPlanningService {
         order.setStatus("NEW");
         orderRepo.save(order);
 
-        User user = account.getUser() != null ? account.getUser() 
-                : (account.getEmployee() != null ? account.getEmployee().getUser() : null);
-
         AuditLog log = new AuditLog();
-        log.setUser(user);
+        log.setUser(account.getUser());
         log.setActionType("CANCEL_PLAN");
         log.setEntity("Order");
         log.setDetails("Cancelled plan for order " + orderId);

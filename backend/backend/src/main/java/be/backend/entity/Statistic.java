@@ -22,9 +22,10 @@ public class Statistic {
     @Column(name = "statistic_id", nullable = false)
     private Integer id;
 
-    @ManyToOne(fetch = FetchType.LAZY)
+    @NotNull
+    @ManyToOne(fetch = FetchType.LAZY, optional = false)
     @OnDelete(action = OnDeleteAction.CASCADE)
-    @JoinColumn(name = "line_id")
+    @JoinColumn(name = "line_id", nullable = false)
     private ProductionLine line;
 
     @NotNull
@@ -43,18 +44,5 @@ public class Statistic {
     @ColumnDefault("CURRENT_TIMESTAMP")
     @Column(name = "created_at")
     private OffsetDateTime createdAt;
-
-    @NotNull
-    @Column(name = "date", nullable = false)
-    private LocalDate date;
-
-    @Column(name = "downtime")
-    private Integer downtime;
-
-    @Column(name = "efficiency", precision = 5, scale = 2)
-    private BigDecimal efficiency;
-
-    @Column(name = "output")
-    private Integer output;
 
 }

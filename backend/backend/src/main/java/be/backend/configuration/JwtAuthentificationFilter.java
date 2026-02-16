@@ -14,11 +14,9 @@ import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.web.authentication.WebAuthenticationDetailsSource;
 import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
-import lombok.extern.slf4j.Slf4j;
 
 import java.io.IOException;
 
-@Slf4j
 @Component
 public class JwtAuthentificationFilter extends OncePerRequestFilter {
     @Autowired
@@ -27,6 +25,9 @@ public class JwtAuthentificationFilter extends OncePerRequestFilter {
     @Autowired
     private UserDetailsService userDetailsService;
 
+    @Autowired
+    private TokenBlacklistService tokenBlacklistService;
+
     @Override
     protected void doFilterInternal(HttpServletRequest request,
                                     HttpServletResponse response,
@@ -34,10 +35,12 @@ public class JwtAuthentificationFilter extends OncePerRequestFilter {
 
         String path = request.getServletPath();
 
-        // Skip JWT filter for authentication and OTP endpoints
-        if (path.startsWith("/auth/") || path.startsWith("/api/auth/") || 
-            path.startsWith("/otp/") || path.startsWith("/api/otp/") ||
-            path.startsWith("/swagger") || path.startsWith("/v3/api-docs")) {
+
+        if (path.startsWith("/api/auth/") ||
+                path.startsWith("/otp") ||
+                path.startsWith("/api/vnpay/") ||
+                path.contains("/public")) {
+
             filterChain.doFilter(request, response);
             return;
         }
@@ -46,29 +49,24 @@ public class JwtAuthentificationFilter extends OncePerRequestFilter {
         final String authHeader = request.getHeader("Authorization");
         if (authHeader != null && authHeader.startsWith("Bearer ")) {
             String jwt = authHeader.substring(7);
-            try {
-                String username = jwtService.extractUsername(jwt);
-                log.info("JWT Filter - Extracted username: {}", username);
 
-                if (username != null && SecurityContextHolder.getContext().getAuthentication() == null) {
-                    UserDetails user = userDetailsService.loadUserByUsername(username);
-                    log.info("JWT Filter - Loaded user: {}, authorities: {}", user.getUsername(), user.getAuthorities());
-                    
-                    if (jwtService.isTokenValid(jwt, user)) {
-                        UsernamePasswordAuthenticationToken authToken =
-                                new UsernamePasswordAuthenticationToken(user, null, user.getAuthorities());
-                        authToken.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
-                        SecurityContextHolder.getContext().setAuthentication(authToken);
-                        log.info("JWT Filter - Authentication set successfully for user: {}", username);
-                    } else {
-                        log.warn("JWT Filter - Token invalid for user: {}", username);
-                    }
+             //  Check blacklist TRƯỚC khi xử lý
+        if (tokenBlacklistService.isBlacklisted(jwt)) {           
+            response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
+            response.getWriter().write("{\"error\": \"Token has been invalidated\"}");
+            return;  // Stop processing
+        }
+            String username = jwtService.extractUsername(jwt);
+
+            if (username != null && SecurityContextHolder.getContext().getAuthentication() == null) {
+                UserDetails user = userDetailsService.loadUserByUsername(username);
+                if (jwtService.isTokenValid(jwt, user)) {
+                    UsernamePasswordAuthenticationToken authToken =
+                            new UsernamePasswordAuthenticationToken(user, null, user.getAuthorities());
+                    authToken.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
+                    SecurityContextHolder.getContext().setAuthentication(authToken);
                 }
-            } catch (Exception e) {
-                log.error("JWT Filter - Error processing token: {}", e.getMessage());
             }
-        } else {
-            log.warn("JWT Filter - No Authorization header or not Bearer token for path: {}", path);
         }
 
         filterChain.doFilter(request, response);

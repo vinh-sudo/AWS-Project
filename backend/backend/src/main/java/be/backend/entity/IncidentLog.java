@@ -21,7 +21,6 @@ public class IncidentLog {
     @Column(name = "incident_id", nullable = false)
     private Integer id;
 
-
     @NotNull
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
     @OnDelete(action = OnDeleteAction.CASCADE)

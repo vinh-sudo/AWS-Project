@@ -32,10 +32,7 @@ public class OrderController {
     public ResponseEntity<OrderResponse> createOrder(
             @Valid @RequestBody CreateOrderRequest request,
             @AuthenticationPrincipal Account account) {
-        Integer userId = account.getUser() != null ? account.getUser().getId() 
-                : (account.getEmployee() != null && account.getEmployee().getUser() != null 
-                    ? account.getEmployee().getUser().getId() : null);
-        OrderResponse response = orderService.createOrder(request, userId);
+        OrderResponse response = orderService.createOrder(request, account.getUser().getId());
         return ResponseEntity.status(HttpStatus.CREATED).body(response);
     }
 
@@ -100,10 +97,7 @@ public class OrderController {
 
     @GetMapping("/my-orders")
     public ResponseEntity<List<OrderResponse>> getMyOrders(@AuthenticationPrincipal Account account) {
-        Integer userId = account.getUser() != null ? account.getUser().getId() 
-                : (account.getEmployee() != null && account.getEmployee().getUser() != null 
-                    ? account.getEmployee().getUser().getId() : null);
-        return ResponseEntity.ok(orderService.getOrdersByCreatedBy(userId));
+        return ResponseEntity.ok(orderService.getOrdersByCreatedBy(account.getUser().getId()));
     }
 
     @GetMapping("/search")
