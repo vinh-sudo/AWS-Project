@@ -1,2 +1,0 @@
-ALTER TABLE accounts
-    ADD COLUMN employee_code VARCHAR(20) NOT NULL UNIQUE;
