@@ -1,7 +1,7 @@
 import axios from "axios";
 
 const API_BASE_URL =
-  import.meta.env.VITE_API_URL || "http://localhost:8082/api";
+  import.meta.env.VITE_API_URL || "http://localhost:8080/api";
 
 // Get token from localStorage - must match authService key "accessToken"
 const getAuthHeader = () => {
