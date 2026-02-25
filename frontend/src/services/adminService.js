@@ -1,12 +1,9 @@
-import axios from "axios";
+import { api } from "./authService";
 
-const API_URL = "http://localhost:8082/api";
-
-// Helper function to get auth header
-const getAuthHeader = () => {
-  const token = localStorage.getItem("accessToken");
-  return token ? { Authorization: `Bearer ${token}` } : {};
-};
+// Uses the shared axios instance from authService which:
+// - Automatically injects Authorization header from localStorage
+// - Handles 401/403 responses (clears session & redirects to login)
+// - Uses correct base URL (localhost:8080)
 
 // ==================== ORDER MANAGEMENT ====================
 
@@ -14,9 +11,7 @@ const getAuthHeader = () => {
  * Get all orders
  */
 const getAllOrders = async () => {
-  const response = await axios.get(`${API_URL}/admin/orders`, {
-    headers: getAuthHeader(),
-  });
+  const response = await api.get("/api/admin/orders");
   return response.data;
 };
 
@@ -24,9 +19,7 @@ const getAllOrders = async () => {
  * Get order by ID
  */
 const getOrderById = async (id) => {
-  const response = await axios.get(`${API_URL}/admin/orders/${id}`, {
-    headers: getAuthHeader(),
-  });
+  const response = await api.get(`/api/admin/orders/${id}`);
   return response.data;
 };
 
@@ -34,9 +27,7 @@ const getOrderById = async (id) => {
  * Create new order
  */
 const createOrder = async (orderData) => {
-  const response = await axios.post(`${API_URL}/admin/orders`, orderData, {
-    headers: getAuthHeader(),
-  });
+  const response = await api.post("/api/admin/orders", orderData);
   return response.data;
 };
 
@@ -44,9 +35,7 @@ const createOrder = async (orderData) => {
  * Update order
  */
 const updateOrder = async (id, orderData) => {
-  const response = await axios.put(`${API_URL}/admin/orders/${id}`, orderData, {
-    headers: getAuthHeader(),
-  });
+  const response = await api.put(`/api/admin/orders/${id}`, orderData);
   return response.data;
 };
 
@@ -54,9 +43,7 @@ const updateOrder = async (id, orderData) => {
  * Delete order
  */
 const deleteOrder = async (id) => {
-  const response = await axios.delete(`${API_URL}/admin/orders/${id}`, {
-    headers: getAuthHeader(),
-  });
+  const response = await api.delete(`/api/admin/orders/${id}`);
   return response.data;
 };
 
@@ -64,13 +51,7 @@ const deleteOrder = async (id) => {
  * Confirm order (Draft -> Confirmed)
  */
 const confirmOrder = async (id) => {
-  const response = await axios.post(
-    `${API_URL}/admin/orders/${id}/confirm`,
-    {},
-    {
-      headers: getAuthHeader(),
-    },
-  );
+  const response = await api.post(`/api/admin/orders/${id}/confirm`, {});
   return response.data;
 };
 
@@ -78,12 +59,9 @@ const confirmOrder = async (id) => {
  * Start production (Confirmed -> In Production)
  */
 const startProduction = async (id) => {
-  const response = await axios.post(
-    `${API_URL}/admin/orders/${id}/start-production`,
+  const response = await api.post(
+    `/api/admin/orders/${id}/start-production`,
     {},
-    {
-      headers: getAuthHeader(),
-    },
   );
   return response.data;
 };
@@ -92,13 +70,7 @@ const startProduction = async (id) => {
  * Complete order (In Production -> Completed)
  */
 const completeOrder = async (id) => {
-  const response = await axios.post(
-    `${API_URL}/admin/orders/${id}/complete`,
-    {},
-    {
-      headers: getAuthHeader(),
-    },
-  );
+  const response = await api.post(`/api/admin/orders/${id}/complete`, {});
   return response.data;
 };
 
@@ -106,13 +78,25 @@ const completeOrder = async (id) => {
  * Cancel order
  */
 const cancelOrder = async (id, reason = null) => {
-  const response = await axios.post(
-    `${API_URL}/admin/orders/${id}/cancel`,
-    { reason },
-    {
-      headers: getAuthHeader(),
-    },
-  );
+  const response = await api.post(`/api/admin/orders/${id}/cancel`, {
+    reason,
+  });
+  return response.data;
+};
+
+/**
+ * Stop order production
+ */
+const stopOrder = async (orderId) => {
+  const response = await api.post(`/api/admin/orders/${orderId}/stop`, {});
+  return response.data;
+};
+
+/**
+ * Resume order production
+ */
+const resumeOrder = async (orderId) => {
+  const response = await api.post(`/api/admin/orders/${orderId}/resume`, {});
   return response.data;
 };
 
@@ -120,9 +104,7 @@ const cancelOrder = async (id, reason = null) => {
  * Get orders by status
  */
 const getOrdersByStatus = async (status) => {
-  const response = await axios.get(`${API_URL}/admin/orders/status/${status}`, {
-    headers: getAuthHeader(),
-  });
+  const response = await api.get(`/api/admin/orders/status/${status}`);
   return response.data;
 };
 
@@ -130,12 +112,7 @@ const getOrdersByStatus = async (status) => {
  * Get orders by priority
  */
 const getOrdersByPriority = async (priority) => {
-  const response = await axios.get(
-    `${API_URL}/admin/orders/priority/${priority}`,
-    {
-      headers: getAuthHeader(),
-    },
-  );
+  const response = await api.get(`/api/admin/orders/priority/${priority}`);
   return response.data;
 };
 
@@ -143,10 +120,7 @@ const getOrdersByPriority = async (priority) => {
  * Search orders
  */
 const searchOrders = async (params) => {
-  const response = await axios.get(`${API_URL}/admin/orders/search`, {
-    params,
-    headers: getAuthHeader(),
-  });
+  const response = await api.get("/api/admin/orders/search", { params });
   return response.data;
 };
 
@@ -154,142 +128,40 @@ const searchOrders = async (params) => {
  * Get upcoming deadline orders
  */
 const getUpcomingDeadlineOrders = async (days = 7) => {
-  const response = await axios.get(
-    `${API_URL}/admin/orders/upcoming-deadline`,
-    {
-      params: { days },
-      headers: getAuthHeader(),
-    },
-  );
+  const response = await api.get("/api/admin/orders/upcoming-deadline", {
+    params: { days },
+  });
+  return response.data;
+};
+
+/**
+ * Get my orders (current admin's orders)
+ */
+const getMyOrders = async () => {
+  const response = await api.get("/api/admin/orders/my-orders");
   return response.data;
 };
 
 // ==================== AUDIT LOG ====================
+// NOTE: Backend chưa có endpoint /api/admin/audit-logs.
+// Khi backend tạo endpoint này, uncomment và sửa lại.
 
-/**
- * Get all audit logs
- */
-const getAuditLogs = async () => {
-  const response = await axios.get(`${API_URL}/admin/audit-logs`, {
-    headers: getAuthHeader(),
-  });
-  return response.data;
-};
-
-/**
- * Get audit logs by user
- */
-const getAuditLogsByUser = async (userId) => {
-  const response = await axios.get(
-    `${API_URL}/admin/audit-logs/user/${userId}`,
-    {
-      headers: getAuthHeader(),
-    },
-  );
-  return response.data;
-};
-
-/**
- * Get audit logs by action type
- */
-const getAuditLogsByAction = async (actionType) => {
-  const response = await axios.get(
-    `${API_URL}/admin/audit-logs/action/${actionType}`,
-    {
-      headers: getAuthHeader(),
-    },
-  );
-  return response.data;
-};
-
-/**
- * Get audit logs by entity
- */
-const getAuditLogsByEntity = async (entity) => {
-  const response = await axios.get(
-    `${API_URL}/admin/audit-logs/entity/${entity}`,
-    {
-      headers: getAuthHeader(),
-    },
-  );
-  return response.data;
-};
+const getAuditLogs = async () => [];
+const getAuditLogsByUser = async (/* userId */) => [];
+const getAuditLogsByAction = async (/* actionType */) => [];
+const getAuditLogsByEntity = async (/* entity */) => [];
 
 // ==================== USER MANAGEMENT ====================
+// NOTE: Backend chưa có endpoint /api/admin/users.
+// Khi backend tạo endpoint này, uncomment và sửa lại.
 
-/**
- * Get all users
- */
-const getAllUsers = async () => {
-  const response = await axios.get(`${API_URL}/admin/users`, {
-    headers: getAuthHeader(),
-  });
-  return response.data;
-};
-
-/**
- * Get user by ID
- */
-const getUserById = async (id) => {
-  const response = await axios.get(`${API_URL}/admin/users/${id}`, {
-    headers: getAuthHeader(),
-  });
-  return response.data;
-};
-
-/**
- * Create new user
- */
-const createUser = async (userData) => {
-  const response = await axios.post(`${API_URL}/admin/users`, userData, {
-    headers: getAuthHeader(),
-  });
-  return response.data;
-};
-
-/**
- * Update user
- */
-const updateUser = async (id, userData) => {
-  const response = await axios.put(`${API_URL}/admin/users/${id}`, userData, {
-    headers: getAuthHeader(),
-  });
-  return response.data;
-};
-
-/**
- * Delete user
- */
-const deleteUser = async (id) => {
-  const response = await axios.delete(`${API_URL}/admin/users/${id}`, {
-    headers: getAuthHeader(),
-  });
-  return response.data;
-};
-
-/**
- * Update user status (Active/Blocked)
- */
-const updateUserStatus = async (id, status) => {
-  const response = await axios.patch(
-    `${API_URL}/admin/users/${id}/status`,
-    { status },
-    {
-      headers: getAuthHeader(),
-    },
-  );
-  return response.data;
-};
-
-/**
- * Get users by role
- */
-const getUsersByRole = async (role) => {
-  const response = await axios.get(`${API_URL}/admin/users/role/${role}`, {
-    headers: getAuthHeader(),
-  });
-  return response.data;
-};
+const getAllUsers = async () => [];
+const getUserById = async (/* id */) => null;
+const createUser = async (/* userData */) => null;
+const updateUser = async (/* id, userData */) => null;
+const deleteUser = async (/* id */) => null;
+const updateUserStatus = async (/* id, status */) => null;
+const getUsersByRole = async (/* role */) => [];
 
 // ==================== DASHBOARD STATS ====================
 
@@ -298,29 +170,18 @@ const getUsersByRole = async (role) => {
  */
 const getDashboardStats = async () => {
   try {
-    // Fetch data from multiple endpoints in parallel
-    const [ordersResponse, usersResponse, auditLogsResponse] =
-      await Promise.all([
-        axios
-          .get(`${API_URL}/admin/orders`, { headers: getAuthHeader() })
-          .catch(() => ({ data: [] })),
-        axios
-          .get(`${API_URL}/admin/users`, { headers: getAuthHeader() })
-          .catch(() => ({ data: [] })),
-        axios
-          .get(`${API_URL}/admin/audit-logs`, { headers: getAuthHeader() })
-          .catch(() => ({ data: [] })),
-      ]);
+    // Only /api/admin/orders exists in backend.
+    // /api/admin/users and /api/admin/audit-logs do NOT exist yet.
+    const ordersResponse = await api
+      .get("/api/admin/orders")
+      .catch(() => ({ data: [] }));
 
     const orders = ordersResponse.data || [];
-    const users = usersResponse.data || [];
-    const auditLogs = auditLogsResponse.data || [];
 
-    // Calculate stats
     return {
-      totalUsers: users.length,
-      activeUsers: users.filter((u) => u.status === "active").length,
-      blockedUsers: users.filter((u) => u.status === "blocked").length,
+      totalUsers: 0,
+      activeUsers: 0,
+      blockedUsers: 0,
       totalOrders: orders.length,
       pendingOrders: orders.filter(
         (o) => o.status === "DRAFT" || o.status === "CONFIRMED",
@@ -329,7 +190,7 @@ const getDashboardStats = async () => {
       inProgressOrders: orders.filter((o) => o.status === "IN_PRODUCTION")
         .length,
       cancelledOrders: orders.filter((o) => o.status === "CANCELLED").length,
-      recentActivities: auditLogs.slice(0, 10), // Get 10 most recent
+      recentActivities: [],
     };
   } catch (error) {
     console.error("Error fetching dashboard stats:", error);
@@ -348,10 +209,13 @@ const adminService = {
   startProduction,
   completeOrder,
   cancelOrder,
+  stopOrder,
+  resumeOrder,
   getOrdersByStatus,
   getOrdersByPriority,
   searchOrders,
   getUpcomingDeadlineOrders,
+  getMyOrders,
   // Audit Logs
   getAuditLogs,
   getAuditLogsByUser,

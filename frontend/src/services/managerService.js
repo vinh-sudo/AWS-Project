@@ -19,10 +19,7 @@ const managerService = {
   // ===================== PLANNING =====================
   createPlan: async (planRequest) => {
     try {
-      const response = await api.post(
-        "/api/manager/plans/create",
-        planRequest,
-      );
+      const response = await api.post("/api/manager/plans/create", planRequest);
       return response.data;
     } catch (error) {
       console.error("Error creating plan:", error);
