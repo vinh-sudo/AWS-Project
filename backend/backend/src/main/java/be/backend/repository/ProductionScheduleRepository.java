@@ -11,6 +11,9 @@ import java.time.OffsetDateTime;
 import java.util.List;
 import java.util.Optional;
 
+import be.backend.model.dto.projection.ScheduleAdherenceProjection;
+import org.springframework.data.repository.query.Param;
+
 public interface ProductionScheduleRepository extends JpaRepository<ProductionSchedule, Integer> {
 
     @Lock(LockModeType.PESSIMISTIC_WRITE)
@@ -52,4 +55,15 @@ public interface ProductionScheduleRepository extends JpaRepository<ProductionSc
     Optional<ProductionSchedule> findByIdAndStatus(Integer id, String status);
 
     List<ProductionSchedule> findByOrderIdAndStatus(Integer orderId, String status);
+    @Query(value = """
+    SELECT COUNT(*) AS totalSchedules,
+           COUNT(CASE WHEN status = 'COMPLETED' THEN 1 END) AS completedCount,
+           COUNT(CASE WHEN status = 'RUNNING' THEN 1 END) AS runningCount,
+           COUNT(CASE WHEN status = 'PAUSED' THEN 1 END) AS pausedCount
+    FROM production_schedule
+    WHERE start_time >= :from AND start_time < :to
+    """, nativeQuery = true)
+    ScheduleAdherenceProjection getAdherenceStats(
+        @Param("from") OffsetDateTime from,
+        @Param("to") OffsetDateTime to);
 }

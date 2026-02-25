@@ -7,6 +7,10 @@ import org.springframework.data.jpa.repository.Query;
 import java.time.LocalDate;
 import java.util.List;
 
+import be.backend.model.dto.projection.ProductionSummaryProjection;
+import be.backend.model.dto.projection.OeeTrendProjection;
+import be.backend.model.dto.projection.LineComparisonProjection;
+import org.springframework.data.repository.query.Param;
 public interface ReportRepository extends JpaRepository<Report, Integer> {
 
     @Query("""
@@ -19,5 +23,50 @@ public interface ReportRepository extends JpaRepository<Report, Integer> {
             List<Integer> lineIds,
             LocalDate date
     );
+@Query(value = """
+    SELECT COALESCE(SUM(r.good_quantity), 0) AS totalGood,
+           COALESCE(SUM(r.reject_quantity), 0) AS totalReject,
+           COALESCE(SUM(r.target_quantity), 0) AS totalTarget,
+           COALESCE(SUM(r.downtime_minutes), 0) AS totalDowntime
+    FROM report r
+    WHERE r.work_date BETWEEN :from AND :to
+    """, nativeQuery = true)
+ProductionSummaryProjection getProductionSummary(
+        @Param("from") LocalDate from,
+        @Param("to") LocalDate to);
 
+@Query(value = """
+    SELECT r.work_date AS workDate,
+           SUM(r.good_quantity) AS totalGood,
+           SUM(r.reject_quantity) AS totalReject,
+           SUM(r.target_quantity) AS totalTarget,
+           COALESCE(SUM(r.downtime_minutes), 0) AS totalDowntime,
+           MAX(pl.shift_hours) AS shiftHours
+    FROM report r
+    JOIN production_line pl ON pl.line_id = r.line_id
+    WHERE r.work_date BETWEEN :from AND :to
+    GROUP BY r.work_date
+    ORDER BY r.work_date
+    """, nativeQuery = true)
+List<OeeTrendProjection> getOeeTrend(
+        @Param("from") LocalDate from,
+        @Param("to") LocalDate to);
+
+@Query(value = """
+    SELECT r.line_id AS lineId,
+           pl.line_name AS lineName,
+           COALESCE(SUM(r.good_quantity), 0) AS totalGood,
+           COALESCE(SUM(r.reject_quantity), 0) AS totalReject,
+           COALESCE(SUM(r.target_quantity), 0) AS totalTarget,
+           COALESCE(SUM(r.downtime_minutes), 0) AS totalDowntime,
+           MAX(pl.shift_hours) AS shiftHours
+    FROM report r
+    JOIN production_line pl ON pl.line_id = r.line_id
+    WHERE r.work_date BETWEEN :from AND :to
+    GROUP BY r.line_id, pl.line_name
+    ORDER BY pl.line_name
+    """, nativeQuery = true)
+List<LineComparisonProjection> getLineComparison(
+        @Param("from") LocalDate from,
+        @Param("to") LocalDate to);
 }
