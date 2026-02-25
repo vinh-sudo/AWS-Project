@@ -1,21 +1,24 @@
 import React, { useState, useEffect } from "react";
 import ManagerSidebar from "../../components/ManagerSidebar/ManagerSidebar";
+import NotificationBell from "../../components/NotificationBell/NotificationBell";
 import managerService from "../../services/managerService";
 import "./ManagerPlanning.css";
 
 const ManagerPlanning = () => {
   const [plans, setPlans] = useState([]);
-  const [orders, setOrders] = useState([]);
   const [linesOverview, setLinesOverview] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [showCreateModal, setShowCreateModal] = useState(false);
-  const [selectedOrder, setSelectedOrder] = useState(null);
   const [filterStatus, setFilterStatus] = useState("");
+
+  // For creating a new plan by orderId
+  const [newOrderId, setNewOrderId] = useState("");
 
   // Form state for creating plan
   const [planForm, setPlanForm] = useState({
     orderId: "",
+    planName: "",
     startDate: "",
     note: "",
     lines: [],
@@ -35,8 +38,6 @@ const ManagerPlanning = () => {
       ]);
 
       setPlans(plansRes || []);
-      // Orders endpoint chưa có trên backend cho MANAGER role
-      setOrders(await managerService.getOrders());
       setLinesOverview(linesRes || []);
     } catch (error) {
       console.error("Error fetching data:", error);
@@ -46,10 +47,14 @@ const ManagerPlanning = () => {
     }
   };
 
-  const openCreateModal = (order) => {
-    setSelectedOrder(order);
+  const openCreatePlanModal = (orderId) => {
+    if (!orderId) {
+      alert("Vui lòng nhập Order ID!");
+      return;
+    }
     setPlanForm({
-      orderId: order.id,
+      orderId: parseInt(orderId),
+      planName: "",
       startDate: new Date().toISOString().split("T")[0],
       note: "",
       lines: linesOverview.map((line) => ({
@@ -76,6 +81,7 @@ const ManagerPlanning = () => {
     try {
       const request = {
         orderId: planForm.orderId,
+        planName: planForm.planName,
         startDate: planForm.startDate,
         note: planForm.note,
         lines: planForm.lines
@@ -145,7 +151,6 @@ const ManagerPlanning = () => {
     switch (decision?.toUpperCase()) {
       case "CONFIRMED":
         return "decision-confirmed";
-      case "PENDING":
       case "DRAFT":
         return "decision-pending";
       case "CANCELLED":
@@ -205,6 +210,7 @@ const ManagerPlanning = () => {
             <button className="btn-refresh" onClick={fetchData}>
               🔄 Refresh
             </button>
+            <NotificationBell />
           </div>
         </header>
 
@@ -218,61 +224,85 @@ const ManagerPlanning = () => {
         )}
 
         <div className="planning-grid">
-          {/* Orders Awaiting Planning */}
+          {/* Create Plan for Order */}
           <section className="planning-card orders-section">
             <div className="card-header">
-              <h2>📦 Orders Awaiting Planning</h2>
-              <span className="card-subtitle">Approved orders</span>
+              <h2>📦 Tạo kế hoạch sản xuất</h2>
+              <span className="card-subtitle">
+                Nhập Order ID (từ thông báo hoặc Admin cung cấp) để lập kế hoạch
+              </span>
             </div>
             <div className="card-content">
-              {loading ? (
-                <div className="loading-spinner">Loading...</div>
-              ) : orders.length === 0 ? (
-                <div className="no-data">
-                  <span className="no-data-icon">📭</span>
-                  <span>No orders available</span>
+              <div
+                className="create-plan-form"
+                style={{
+                  display: "flex",
+                  gap: "12px",
+                  alignItems: "flex-end",
+                  padding: "16px 0",
+                }}
+              >
+                <div className="form-group" style={{ flex: 1, margin: 0 }}>
+                  <label
+                    style={{
+                      display: "block",
+                      marginBottom: "6px",
+                      fontWeight: 600,
+                      fontSize: "14px",
+                    }}
+                  >
+                    Order ID
+                  </label>
+                  <input
+                    type="number"
+                    min="1"
+                    value={newOrderId}
+                    onChange={(e) => setNewOrderId(e.target.value)}
+                    placeholder="Nhập Order ID..."
+                    className="form-input"
+                    style={{
+                      width: "100%",
+                      padding: "10px 14px",
+                      border: "1px solid #d1d5db",
+                      borderRadius: "8px",
+                      fontSize: "14px",
+                    }}
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter") openCreatePlanModal(newOrderId);
+                    }}
+                  />
                 </div>
-              ) : (
-                <div className="orders-list">
-                  {orders
-                    .filter(
-                      (o) => o.status === "APPROVED" || o.status === "NEW",
-                    )
-                    .map((order) => (
-                      <div key={order.id} className="order-card">
-                        <div className="order-info">
-                          <div className="order-header">
-                            <span className="order-id">#{order.id}</span>
-                            <span
-                              className={`priority-badge ${getPriorityClass(order.priority)}`}
-                            >
-                              {order.priority}
-                            </span>
-                          </div>
-                          <div className="order-customer">
-                            {order.customerName}
-                          </div>
-                          <div className="order-product">
-                            {order.productType}
-                          </div>
-                          <div className="order-details">
-                            <span>
-                              📦 {(order.quantity || 0).toLocaleString()} units
-                            </span>
-                            <span>📅 {order.deadline}</span>
-                          </div>
-                        </div>
-                        <button
-                          className="btn-create-plan"
-                          onClick={() => openCreateModal(order)}
-                          disabled={linesOverview.length === 0}
-                        >
-                          Lập kế hoạch
-                        </button>
-                      </div>
-                    ))}
+                <button
+                  className="btn-create-plan"
+                  onClick={() => openCreatePlanModal(newOrderId)}
+                  disabled={!newOrderId || linesOverview.length === 0}
+                  style={{ padding: "10px 24px", whiteSpace: "nowrap" }}
+                >
+                  📋 Lập kế hoạch
+                </button>
+              </div>
+              {linesOverview.length === 0 && !loading && (
+                <div className="no-data" style={{ marginTop: "8px" }}>
+                  <span className="no-data-icon">⚠️</span>
+                  <span>
+                    Chưa có dây chuyền sản xuất nào. Không thể lập kế hoạch.
+                  </span>
                 </div>
               )}
+              <div
+                style={{
+                  marginTop: "12px",
+                  padding: "12px 16px",
+                  background: "#f0f9ff",
+                  borderRadius: "8px",
+                  fontSize: "13px",
+                  color: "#1e40af",
+                }}
+              >
+                💡 <strong>Hướng dẫn:</strong> Khi Admin xác nhận đơn hàng, bạn
+                sẽ nhận thông báo. Nhập Order ID vào ô trên rồi nhấn "Lập kế
+                hoạch" để phân bổ sản lượng cho các dây chuyền.
+              </div>
             </div>
           </section>
 
@@ -297,11 +327,7 @@ const ManagerPlanning = () => {
                       <div className="plan-group-header">
                         <span className="plan-order-id">Order #{orderId}</span>
                         <div className="plan-group-actions">
-                          {orderPlans.some(
-                            (p) =>
-                              p.decision === "DRAFT" ||
-                              p.decision === "PENDING",
-                          ) && (
+                          {orderPlans.some((p) => p.decision === "DRAFT") && (
                             <>
                               <button
                                 className="btn-confirm"
@@ -326,6 +352,7 @@ const ManagerPlanning = () => {
                       <table className="plans-table">
                         <thead>
                           <tr>
+                            <th>Plan Name</th>
                             <th>Line</th>
                             <th>Quantity</th>
                             <th>Start Date</th>
@@ -336,15 +363,14 @@ const ManagerPlanning = () => {
                         </thead>
                         <tbody>
                           {orderPlans.map((plan) => (
-                            <tr key={plan.planId || plan.id}>
-                              <td className="line-name">
-                                {plan.lineName || plan.line?.name}
-                              </td>
+                            <tr key={plan.planId}>
+                              <td>{plan.planName || "—"}</td>
+                              <td className="line-name">{plan.lineName}</td>
                               <td>
                                 {(plan.plannedQuantity || 0).toLocaleString()}
                               </td>
-                              <td>{plan.plannedStartDate || plan.startDate}</td>
-                              <td>{plan.plannedEndDate || plan.endDate}</td>
+                              <td>{plan.startDate}</td>
+                              <td>{plan.endDate}</td>
                               <td>
                                 {Number(plan.estimatedHours || 0).toFixed(1)}h
                               </td>
@@ -373,7 +399,7 @@ const ManagerPlanning = () => {
         </div>
 
         {/* Create Plan Modal */}
-        {showCreateModal && selectedOrder && (
+        {showCreateModal && (
           <div
             className="modal-overlay"
             onClick={() => setShowCreateModal(false)}
@@ -392,37 +418,29 @@ const ManagerPlanning = () => {
               <div className="modal-body">
                 {/* Order Info */}
                 <div className="order-summary">
-                  <div className="summary-item">
-                    <span className="summary-label">Order</span>
-                    <span className="summary-value">#{selectedOrder.id}</span>
-                  </div>
-                  <div className="summary-item">
-                    <span className="summary-label">Customer</span>
-                    <span className="summary-value">
-                      {selectedOrder.customerName}
-                    </span>
-                  </div>
-                  <div className="summary-item">
-                    <span className="summary-label">Product</span>
-                    <span className="summary-value">
-                      {selectedOrder.productType}
-                    </span>
-                  </div>
                   <div className="summary-item highlight">
-                    <span className="summary-label">Total Quantity Needed</span>
-                    <span className="summary-value">
-                      {(selectedOrder.quantity || 0).toLocaleString()}
-                    </span>
-                  </div>
-                  <div className="summary-item">
-                    <span className="summary-label">Deadline</span>
-                    <span className="summary-value">
-                      {selectedOrder.deadline}
-                    </span>
+                    <span className="summary-label">Order ID</span>
+                    <span className="summary-value">#{planForm.orderId}</span>
                   </div>
                 </div>
 
                 {/* Form */}
+                <div className="form-group">
+                  <label>Plan Name</label>
+                  <input
+                    type="text"
+                    value={planForm.planName}
+                    onChange={(e) =>
+                      setPlanForm((prev) => ({
+                        ...prev,
+                        planName: e.target.value,
+                      }))
+                    }
+                    className="form-input"
+                    placeholder="Enter plan name..."
+                  />
+                </div>
+
                 <div className="form-group">
                   <label>Start Date</label>
                   <input
@@ -481,16 +499,9 @@ const ManagerPlanning = () => {
                     </div>
                   )}
                   <div className="allocation-summary">
-                    <span>Total Allocated: </span>
-                    <span
-                      className={
-                        totalPlanned === selectedOrder.quantity
-                          ? "match"
-                          : "mismatch"
-                      }
-                    >
-                      {totalPlanned.toLocaleString()} /{" "}
-                      {(selectedOrder.quantity || 0).toLocaleString()}
+                    <span>Tổng phân bổ: </span>
+                    <span className={totalPlanned > 0 ? "match" : "mismatch"}>
+                      {totalPlanned.toLocaleString()} units
                     </span>
                   </div>
                 </div>

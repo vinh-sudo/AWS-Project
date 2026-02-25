@@ -1,7 +1,15 @@
+// ============================================================================
+// NOTE: Backend chưa có controller/endpoint cho Leader.
+// Trang này sử dụng 100% dữ liệu mock từ localStorage.
+// Khi backend tạo LeaderController, refactor để gọi API thực.
+// Backend ĐÃ có entity/DTO sẵn: LeaderDashboardResponse, ScheduleSummaryResponse,
+// IncidentSummaryResponse — nhưng chưa có controller trả về.
+// ============================================================================
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useDispatch } from "react-redux";
 import { logout } from "../../redux";
+import NotificationBell from "../../components/NotificationBell/NotificationBell";
 import imsLogo from "../../assets/ims2.jpg";
 import "./LeaderProgress.css";
 
@@ -329,6 +337,7 @@ const LeaderProgress = () => {
                 <span>Sự cố đang mở</span>
               </div>
             )}
+            <NotificationBell />
             <div className="user-info">
               <span className="user-name">{currentLeaderName}</span>
               <span className="user-role">Leader - {currentTeam}</span>

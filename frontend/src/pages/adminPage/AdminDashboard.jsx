@@ -2,6 +2,7 @@ import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useDispatch } from "react-redux";
 import { logout } from "../../redux";
+import NotificationBell from "../../components/NotificationBell/NotificationBell";
 import {
   PieChart,
   Pie,
@@ -206,7 +207,7 @@ const AdminDashboard = () => {
         <header className="admin-header">
           <h1 className="header-title">Dashboard</h1>
           <div className="header-actions">
-            <button className="header-icon-btn">🔔</button>
+            <NotificationBell />
             <div className="user-menu">
               <div className="user-avatar"></div>
               <span className="user-name">

@@ -2,6 +2,7 @@ import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useDispatch } from "react-redux";
 import { logout } from "../../redux";
+import NotificationBell from "../../components/NotificationBell/NotificationBell";
 import authService from "../../services/authService";
 import adminService from "../../services/adminService";
 import imsLogo from "../../assets/ims2.jpg";
@@ -92,20 +93,7 @@ const AdminOrders = () => {
     }
   };
 
-  // Confirm order (Draft -> Confirmed)
-  const handleConfirmOrder = async (orderId) => {
-    try {
-      setActionLoading(true);
-      await adminService.confirmOrder(orderId);
-      fetchOrders();
-      alert("Đơn hàng đã được xác nhận!");
-    } catch (err) {
-      console.error("Error confirming order:", err);
-      alert(err.response?.data?.message || "Failed to confirm order");
-    } finally {
-      setActionLoading(false);
-    }
-  };
+  // Confirm order (Draft -> Confirmed) — removed: orders don't need approval
 
   // Start production (Confirmed -> In Production)
   const handleStartProduction = async (orderId) => {
@@ -225,17 +213,15 @@ const AdminOrders = () => {
 
   const getStatusClass = (status) => {
     switch (status) {
-      case "DRAFT":
+      case "Draft":
         return "status-draft";
-      case "CONFIRMED":
+      case "Confirmed":
         return "status-confirmed";
-      case "IN_PRODUCTION":
+      case "In Production":
         return "status-production";
-      case "ON_HOLD":
-        return "status-hold";
-      case "COMPLETED":
+      case "Completed":
         return "status-completed";
-      case "CANCELLED":
+      case "Cancelled":
         return "status-cancelled";
       default:
         return "";
@@ -243,22 +229,7 @@ const AdminOrders = () => {
   };
 
   const getStatusDisplay = (status) => {
-    switch (status) {
-      case "DRAFT":
-        return "Draft";
-      case "CONFIRMED":
-        return "Confirmed";
-      case "IN_PRODUCTION":
-        return "In Production";
-      case "ON_HOLD":
-        return "On Hold";
-      case "COMPLETED":
-        return "Completed";
-      case "CANCELLED":
-        return "Cancelled";
-      default:
-        return status;
-    }
+    return status || "Unknown";
   };
 
   const getPriorityClass = (priority) => {
@@ -295,12 +266,11 @@ const AdminOrders = () => {
   // Stats
   const stats = {
     total: orders.length,
-    draft: orders.filter((o) => o.status === "DRAFT").length,
-    confirmed: orders.filter((o) => o.status === "CONFIRMED").length,
-    inProduction: orders.filter((o) => o.status === "IN_PRODUCTION").length,
-    onHold: orders.filter((o) => o.status === "ON_HOLD").length,
-    completed: orders.filter((o) => o.status === "COMPLETED").length,
-    cancelled: orders.filter((o) => o.status === "CANCELLED").length,
+    draft: orders.filter((o) => o.status === "Draft").length,
+    confirmed: orders.filter((o) => o.status === "Confirmed").length,
+    inProduction: orders.filter((o) => o.status === "In Production").length,
+    completed: orders.filter((o) => o.status === "Completed").length,
+    cancelled: orders.filter((o) => o.status === "Cancelled").length,
   };
 
   if (loading) {
@@ -378,7 +348,7 @@ const AdminOrders = () => {
             >
               🔄
             </button>
-            <button className="header-icon-btn">🔔</button>
+            <NotificationBell />
             <div className="user-menu">
               <div className="user-avatar"></div>
               <span className="user-name">
@@ -467,12 +437,11 @@ const AdminOrders = () => {
                 onChange={(e) => setStatusFilter(e.target.value)}
               >
                 <option value="All">All Status</option>
-                <option value="DRAFT">Draft</option>
-                <option value="CONFIRMED">Confirmed</option>
-                <option value="IN_PRODUCTION">In Production</option>
-                <option value="ON_HOLD">On Hold</option>
-                <option value="COMPLETED">Completed</option>
-                <option value="CANCELLED">Cancelled</option>
+                <option value="Draft">Draft</option>
+                <option value="Confirmed">Confirmed</option>
+                <option value="In Production">In Production</option>
+                <option value="Completed">Completed</option>
+                <option value="Cancelled">Cancelled</option>
               </select>
             </div>
             <button
@@ -548,20 +517,8 @@ const AdminOrders = () => {
                             ✏️
                           </button>
 
-                          {/* Confirm (only for Draft) */}
-                          {order.status === "DRAFT" && (
-                            <button
-                              className="btn-action btn-confirm"
-                              onClick={() => handleConfirmOrder(order.id)}
-                              title="Confirm Order"
-                              disabled={actionLoading}
-                            >
-                              ✅
-                            </button>
-                          )}
-
                           {/* Start Production (only for Confirmed) */}
-                          {order.status === "CONFIRMED" && (
+                          {order.status === "Confirmed" && (
                             <button
                               className="btn-action btn-start"
                               onClick={() => handleStartProduction(order.id)}
@@ -573,7 +530,7 @@ const AdminOrders = () => {
                           )}
 
                           {/* Complete (only for In Production) */}
-                          {order.status === "IN_PRODUCTION" && (
+                          {order.status === "In Production" && (
                             <button
                               className="btn-action btn-complete"
                               onClick={() => handleCompleteOrder(order.id)}
@@ -585,7 +542,7 @@ const AdminOrders = () => {
                           )}
 
                           {/* Cancel (not for Completed/Cancelled) */}
-                          {!["COMPLETED", "CANCELLED"].includes(
+                          {!["Completed", "Cancelled"].includes(
                             order.status,
                           ) && (
                             <button

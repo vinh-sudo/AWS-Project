@@ -1,7 +1,13 @@
+// ============================================================================
+// NOTE: Backend chưa có controller/endpoint cho Leader.
+// Trang này sử dụng 100% dữ liệu mock từ localStorage (ims_leader_notes).
+// Khi backend tạo LeaderController, refactor để gọi API thực.
+// ============================================================================
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useDispatch } from "react-redux";
 import { logout } from "../../redux";
+import NotificationBell from "../../components/NotificationBell/NotificationBell";
 import imsLogo from "../../assets/ims2.jpg";
 import "./LeaderTaskAssignment.css";
 
@@ -207,6 +213,7 @@ const LeaderInternalNotes = () => {
             <button className="btn-create" onClick={openCreateModal}>
               + Tạo ghi chú mới
             </button>
+            <NotificationBell />
             <div className="user-info">
               <span className="user-name">{currentLeaderName}</span>
               <span className="user-role">Leader - {currentTeam}</span>

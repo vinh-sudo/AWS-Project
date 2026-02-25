@@ -171,20 +171,16 @@
     z-index: 10;
 }
 
-.gantt-bar.status-completed {
-    background: linear-gradient(90deg, #4caf50, #66bb6a);
-}
-
-.gantt-bar.status-progress {
-    background: linear-gradient(90deg, #2196f3, #42a5f5);
-}
-
-.gantt-bar.status-pending {
+.gantt-bar.status-scheduled {
     background: linear-gradient(90deg, #9e9e9e, #bdbdbd);
 }
 
-.gantt-bar.status-delayed {
-    background: linear-gradient(90deg, #f44336, #ef5350);
+.gantt-bar.status-running {
+    background: linear-gradient(90deg, #2196f3, #42a5f5);
+}
+
+.gantt-bar.status-paused {
+    background: linear-gradient(90deg, #ff9800, #ffb74d);
 }
 
 .bar-label {
@@ -219,20 +215,16 @@
     border-radius: 4px;
 }
 
-.legend-color.status-completed {
-    background: #4caf50;
-}
-
-.legend-color.status-progress {
-    background: #2196f3;
-}
-
-.legend-color.status-pending {
+.legend-color.status-scheduled {
     background: #9e9e9e;
 }
 
-.legend-color.status-delayed {
-    background: #f44336;
+.legend-color.status-running {
+    background: #2196f3;
+}
+
+.legend-color.status-paused {
+    background: #ff9800;
 }
 
 /* OEE Analysis */

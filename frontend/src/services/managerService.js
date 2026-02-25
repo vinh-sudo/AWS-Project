@@ -98,15 +98,6 @@ const managerService = {
       throw error;
     }
   },
-
-  // ===================== ORDERS (for planning) =====================
-  // NOTE: Backend chưa có endpoint /api/manager/orders cho role MANAGER.
-  // Orders chỉ có ở /api/admin/orders (yêu cầu ADMIN role).
-  // Khi backend tạo endpoint này, uncomment và sửa lại.
-  getOrders: async (/* status = null */) => {
-    // Trả về mảng rỗng vì backend chưa có endpoint cho manager xem orders
-    return [];
-  },
 };
 
 export default managerService;

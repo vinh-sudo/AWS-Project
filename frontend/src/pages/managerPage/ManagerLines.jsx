@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from "react";
 import ManagerSidebar from "../../components/ManagerSidebar/ManagerSidebar";
+import NotificationBell from "../../components/NotificationBell/NotificationBell";
 import managerService from "../../services/managerService";
 import "./ManagerLines.css";
 
@@ -7,7 +8,6 @@ const ManagerLines = () => {
   const [linesOverview, setLinesOverview] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  const [selectedLine, setSelectedLine] = useState(null);
 
   useEffect(() => {
     fetchLinesData();
@@ -28,29 +28,16 @@ const ManagerLines = () => {
   };
 
   const getStatusClass = (status) => {
-    switch (status?.toLowerCase()) {
-      case "running":
-        return "status-running";
-      case "idle":
-        return "status-idle";
-      case "maintenance":
-        return "status-maintenance";
-      case "warning":
-        return "status-warning";
+    switch (status?.toUpperCase()) {
+      case "OK":
+        return "status-ok";
+      case "TIGHT":
+        return "status-tight";
+      case "OVERLOAD":
+        return "status-overload";
       default:
         return "";
     }
-  };
-
-  const getEfficiencyClass = (efficiency) => {
-    if (efficiency >= 85) return "efficiency-high";
-    if (efficiency >= 60) return "efficiency-medium";
-    if (efficiency > 0) return "efficiency-low";
-    return "efficiency-none";
-  };
-
-  const handleLineClick = (line) => {
-    setSelectedLine(selectedLine?.lineId === line.lineId ? null : line);
   };
 
   return (
@@ -68,6 +55,7 @@ const ManagerLines = () => {
             <button className="btn-refresh" onClick={fetchLinesData}>
               🔄 Refresh
             </button>
+            <NotificationBell />
           </div>
         </header>
 
@@ -83,42 +71,41 @@ const ManagerLines = () => {
         {/* Summary Cards */}
         <section className="lines-summary">
           <div className="summary-card">
-            <div className="summary-icon running">🟢</div>
+            <div className="summary-icon ok">🟢</div>
             <div className="summary-content">
               <span className="summary-value">
                 {
-                  linesOverview.filter(
-                    (l) => l.status?.toLowerCase() === "running",
-                  ).length
+                  linesOverview.filter((l) => l.status?.toUpperCase() === "OK")
+                    .length
                 }
               </span>
-              <span className="summary-label">Running</span>
+              <span className="summary-label">OK</span>
             </div>
           </div>
           <div className="summary-card">
-            <div className="summary-icon idle">⚪</div>
+            <div className="summary-icon tight">🟡</div>
             <div className="summary-content">
               <span className="summary-value">
                 {
                   linesOverview.filter(
-                    (l) => l.status?.toLowerCase() === "idle",
+                    (l) => l.status?.toUpperCase() === "TIGHT",
                   ).length
                 }
               </span>
-              <span className="summary-label">Idle</span>
+              <span className="summary-label">Tight</span>
             </div>
           </div>
           <div className="summary-card">
-            <div className="summary-icon maintenance">🟡</div>
+            <div className="summary-icon overload">🔴</div>
             <div className="summary-content">
               <span className="summary-value">
                 {
                   linesOverview.filter(
-                    (l) => l.status?.toLowerCase() === "maintenance",
+                    (l) => l.status?.toUpperCase() === "OVERLOAD",
                   ).length
                 }
               </span>
-              <span className="summary-label">Maintenance</span>
+              <span className="summary-label">Overload</span>
             </div>
           </div>
           <div className="summary-card">
@@ -141,11 +128,7 @@ const ManagerLines = () => {
             </div>
           ) : (
             linesOverview.map((line) => (
-              <div
-                key={line.lineId}
-                className={`line-card ${selectedLine?.lineId === line.lineId ? "expanded" : ""}`}
-                onClick={() => handleLineClick(line)}
-              >
+              <div key={line.lineId} className="line-card">
                 <div className="line-card-header">
                   <div className="line-info">
                     <span className="line-name">{line.lineName}</span>
@@ -155,22 +138,21 @@ const ManagerLines = () => {
                       {line.status}
                     </span>
                   </div>
-                  <span className="expand-icon">
-                    {selectedLine?.lineId === line.lineId ? "▼" : "▶"}
-                  </span>
+                  <span className="line-status-text">{line.status}</span>
                 </div>
 
                 <div className="line-metrics">
                   <div className="metric">
                     <span className="metric-label">Operating Hours</span>
                     <span className="metric-value">
-                      {line.busyHours || 0}h / {line.availableHours || 8}h
+                      {(line.busyHours || 0).toFixed(1)}h /{" "}
+                      {(line.availableHours || 0).toFixed(1)}h
                     </span>
                     <div className="metric-bar">
                       <div
                         className="metric-fill"
                         style={{
-                          width: `${((line.busyHours || 0) / (line.availableHours || 8)) * 100}%`,
+                          width: `${((line.busyHours || 0) / (line.availableHours || 1)) * 100}%`,
                         }}
                       />
                     </div>
@@ -182,74 +164,6 @@ const ManagerLines = () => {
                     </span>
                   </div>
                 </div>
-
-                {line.currentOrder && (
-                  <div className="line-current-order">
-                    <span className="current-order-label">Current Order:</span>
-                    <span className="current-order-id">
-                      #{line.currentOrder}
-                    </span>
-                  </div>
-                )}
-
-                {line.targetToday > 0 && (
-                  <div className="line-progress">
-                    <div className="progress-header">
-                      <span>Today's Progress</span>
-                      <span>
-                        {(line.completedToday || 0).toLocaleString()} /{" "}
-                        {(line.targetToday || 0).toLocaleString()}
-                      </span>
-                    </div>
-                    <div className="progress-bar">
-                      <div
-                        className="progress-fill"
-                        style={{
-                          width: `${((line.completedToday || 0) / (line.targetToday || 1)) * 100}%`,
-                        }}
-                      />
-                    </div>
-                  </div>
-                )}
-
-                {/* Expanded Content - Machines */}
-                {selectedLine?.lineId === line.lineId && line.machines && (
-                  <div className="line-machines">
-                    <h4>Machine List</h4>
-                    <div className="machines-list">
-                      {line.machines.map((machine) => (
-                        <div key={machine.id} className="machine-item">
-                          <div className="machine-info">
-                            <span className="machine-name">{machine.name}</span>
-                            <span
-                              className={`machine-status ${getStatusClass(machine.status)}`}
-                            >
-                              {machine.status}
-                            </span>
-                          </div>
-                          <div className="machine-efficiency">
-                            <span className="efficiency-label">
-                              Efficiency:
-                            </span>
-                            <span
-                              className={`efficiency-value ${getEfficiencyClass(machine.efficiency)}`}
-                            >
-                              {machine.efficiency || 0}%
-                            </span>
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                    {line.supervisor && (
-                      <div className="line-supervisor">
-                        <span className="supervisor-label">👤 Supervisor:</span>
-                        <span className="supervisor-name">
-                          {line.supervisor}
-                        </span>
-                      </div>
-                    )}
-                  </div>
-                )}
               </div>
             ))
           )}

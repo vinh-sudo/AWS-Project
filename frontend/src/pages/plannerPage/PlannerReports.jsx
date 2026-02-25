@@ -1,3 +1,9 @@
+// ============================================================================
+// NOTE: Backend chưa có ReportsController hoặc KPI endpoint.
+// Trang này sử dụng 100% dữ liệu mock (hardcoded kpiData, productionSummary, etc).
+// Backend CÓ ManagerTrackingController (OEE, Gantt, Delays) có thể tái sử dụng
+// nếu backend cấp quyền cho role PRODUCTION_PLANNER.
+// ============================================================================
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useDispatch } from "react-redux";

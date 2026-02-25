@@ -142,6 +142,28 @@ const getMyOrders = async () => {
   return response.data;
 };
 
+// ==================== FILE UPLOAD ====================
+
+/**
+ * Upload file(s) for an order
+ * POST /api/upload/admin/order/{orderId}/files
+ * @param {number} orderId
+ * @param {File} file - the file to upload
+ * @returns {Promise<ProductionFileResponse>}
+ */
+const uploadOrderFile = async (orderId, file) => {
+  const formData = new FormData();
+  formData.append("file", file);
+  const response = await api.post(
+    `/api/upload/admin/order/${orderId}/files`,
+    formData,
+    {
+      headers: { "Content-Type": "multipart/form-data" },
+    },
+  );
+  return response.data;
+};
+
 // ==================== AUDIT LOG ====================
 // NOTE: Backend chưa có endpoint /api/admin/audit-logs.
 // Khi backend tạo endpoint này, uncomment và sửa lại.
@@ -216,6 +238,8 @@ const adminService = {
   searchOrders,
   getUpcomingDeadlineOrders,
   getMyOrders,
+  // File Upload
+  uploadOrderFile,
   // Audit Logs
   getAuditLogs,
   getAuditLogsByUser,

@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from "react";
 import ManagerSidebar from "../../components/ManagerSidebar/ManagerSidebar";
+import NotificationBell from "../../components/NotificationBell/NotificationBell";
 import managerService from "../../services/managerService";
 import "./ManagerTracking.css";
 
@@ -41,14 +42,12 @@ const ManagerTracking = () => {
 
   const getStatusClass = (status) => {
     switch (status?.toUpperCase()) {
-      case "COMPLETED":
-        return "status-completed";
-      case "IN_PROGRESS":
-        return "status-progress";
-      case "PENDING":
-        return "status-pending";
-      case "DELAYED":
-        return "status-delayed";
+      case "SCHEDULED":
+        return "status-scheduled";
+      case "RUNNING":
+        return "status-running";
+      case "PAUSED":
+        return "status-paused";
       default:
         return "";
     }
@@ -131,6 +130,7 @@ const ManagerTracking = () => {
             <button className="btn-refresh" onClick={fetchTrackingData}>
               🔄 Refresh
             </button>
+            <NotificationBell />
           </div>
         </header>
 
@@ -238,20 +238,16 @@ const ManagerTracking = () => {
                     {/* Legend */}
                     <div className="gantt-legend">
                       <div className="legend-item">
-                        <span className="legend-color status-completed"></span>
-                        <span>Completed</span>
+                        <span className="legend-color status-scheduled"></span>
+                        <span>Scheduled</span>
                       </div>
                       <div className="legend-item">
-                        <span className="legend-color status-progress"></span>
-                        <span>In Progress</span>
+                        <span className="legend-color status-running"></span>
+                        <span>Running</span>
                       </div>
                       <div className="legend-item">
-                        <span className="legend-color status-pending"></span>
-                        <span>Pending</span>
-                      </div>
-                      <div className="legend-item">
-                        <span className="legend-color status-delayed"></span>
-                        <span>Delayed</span>
+                        <span className="legend-color status-paused"></span>
+                        <span>Paused</span>
                       </div>
                     </div>
                   </div>

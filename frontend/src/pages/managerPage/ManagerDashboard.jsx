@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from "react";
 import ManagerSidebar from "../../components/ManagerSidebar/ManagerSidebar";
+import NotificationBell from "../../components/NotificationBell/NotificationBell";
 import managerService from "../../services/managerService";
 import "./ManagerDashboard.css";
 
@@ -39,13 +40,13 @@ const ManagerDashboard = () => {
   };
 
   const getStatusClass = (status) => {
-    switch (status?.toLowerCase()) {
-      case "running":
-        return "status-running";
-      case "idle":
-        return "status-idle";
-      case "maintenance":
-        return "status-maintenance";
+    switch (status?.toUpperCase()) {
+      case "OK":
+        return "status-ok";
+      case "TIGHT":
+        return "status-tight";
+      case "OVERLOAD":
+        return "status-overload";
       default:
         return "";
     }
@@ -74,8 +75,8 @@ const ManagerDashboard = () => {
 
   // Calculate summary stats
   const totalLines = linesOverview.length;
-  const runningLines = linesOverview.filter(
-    (l) => l.status?.toLowerCase() === "running",
+  const okLines = linesOverview.filter(
+    (l) => l.status?.toUpperCase() === "OK",
   ).length;
   const averageOEE =
     oeeData.length > 0
@@ -109,6 +110,7 @@ const ManagerDashboard = () => {
             <button className="btn-refresh" onClick={fetchDashboardData}>
               🔄 Refresh
             </button>
+            <NotificationBell />
           </div>
         </header>
 
@@ -128,9 +130,9 @@ const ManagerDashboard = () => {
               <div className="kpi-icon">🏭</div>
               <div className="kpi-content">
                 <span className="kpi-value">
-                  {runningLines}/{totalLines}
+                  {okLines}/{totalLines}
                 </span>
-                <span className="kpi-label">Lines Running</span>
+                <span className="kpi-label">Lines OK</span>
               </div>
             </div>
 

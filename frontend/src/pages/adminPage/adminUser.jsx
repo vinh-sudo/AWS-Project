@@ -2,6 +2,7 @@ import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useDispatch } from "react-redux";
 import { logout } from "../../redux";
+import NotificationBell from "../../components/NotificationBell/NotificationBell";
 import authService from "../../services/authService";
 import adminService from "../../services/adminService";
 import imsLogo from "../../assets/ims2.jpg";
@@ -412,7 +413,7 @@ const UsersAdmin = () => {
             >
               🔄
             </button>
-            <button className="header-icon-btn">🔔</button>
+            <NotificationBell />
             <div className="user-menu">
               <div className="user-avatar"></div>
               <span className="user-name">

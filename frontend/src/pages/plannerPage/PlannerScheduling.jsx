@@ -1,3 +1,9 @@
+// ============================================================================
+// NOTE: Backend chưa có PlannerController.
+// Trang này sử dụng 100% dữ liệu mock (hardcoded productionLines, pendingOrders).
+// Backend CÓ ScheduleController với pause/resume, nhưng không có CRUD schedule.
+// Khi backend tạo endpoint cho Planner, refactor để gọi API thực.
+// ============================================================================
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useDispatch } from "react-redux";

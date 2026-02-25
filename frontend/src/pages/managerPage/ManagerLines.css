@@ -118,24 +118,19 @@
     font-weight: 600;
 }
 
-.status-running {
+.status-ok {
     background: rgba(76, 175, 80, 0.15);
     color: #2e7d32;
 }
 
-.status-idle {
-    background: rgba(158, 158, 158, 0.15);
-    color: #616161;
-}
-
-.status-maintenance {
+.status-tight {
     background: rgba(255, 152, 0, 0.15);
     color: #ef6c00;
 }
 
-.status-warning {
-    background: rgba(255, 193, 7, 0.15);
-    color: #f9a825;
+.status-overload {
+    background: rgba(244, 67, 54, 0.15);
+    color: #c62828;
 }
 
 /* Line Metrics */

@@ -1,3 +1,12 @@
+// ============================================================================
+// NOTE: Backend chưa có DashboardController chung.
+// Trang này sử dụng 100% dữ liệu mock (hardcoded realTimeStats, lineStatus, etc).
+// Có thể tái sử dụng dữ liệu từ các endpoint hiện có:
+//   - adminService.getAllOrders() cho order stats
+//   - managerService.getLinesOverview() cho line status
+//   - managerService.getOEE() cho OEE data
+// Tuy nhiên cần backend cấp quyền phù hợp cho route /dashboard (all roles).
+// ============================================================================
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useDispatch } from "react-redux";
