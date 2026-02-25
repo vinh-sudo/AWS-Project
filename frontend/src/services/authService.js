@@ -24,18 +24,21 @@ api.interceptors.request.use(
   },
 );
 
-// Add response interceptor to handle 401 (token expired / invalid)
+// Add response interceptor to handle 401 & 403 (token expired / invalid / no auth)
+// Backend returns 403 (not 401) when SecurityContext is missing because
+// Spring Security's default AuthenticationEntryPoint is Http403ForbiddenEntryPoint.
 api.interceptors.response.use(
   (response) => response,
   async (error) => {
     const originalRequest = error.config;
+    const status = error.response?.status;
 
-    // If 401 and not already retrying, clear session and redirect to login
-    // Skip if this is the logout request itself
+    // Handle both 401 and 403 as auth failures
+    // Skip if this is the logout request itself or auth endpoints
     if (
-      error.response?.status === 401 &&
+      (status === 401 || status === 403) &&
       !originalRequest._retry &&
-      !originalRequest.url?.includes("/api/auth/logout")
+      !originalRequest.url?.includes("/api/auth/")
     ) {
       originalRequest._retry = true;
 
@@ -249,5 +252,9 @@ export const authService = {
     return authService.hasRole("PRODUCTION_PLANNER");
   },
 };
+
+// Export the shared axios instance so other services can use the same
+// interceptors (auto token injection, 401/403 handling)
+export { api };
 
 export default authService;

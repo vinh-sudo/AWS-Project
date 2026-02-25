@@ -1,28 +1,14 @@
-import axios from "axios";
+import { api } from "./authService";
 
-const API_BASE_URL =
-  import.meta.env.VITE_API_URL || "http://localhost:8080/api";
-
-// Get token from localStorage - must match authService key "accessToken"
-const getAuthHeader = () => {
-  const token = localStorage.getItem("accessToken");
-  console.log(
-    "Token being sent:",
-    token ? token.substring(0, 50) + "..." : "NO TOKEN",
-  ); // Debug
-  return token ? { Authorization: `Bearer ${token}` } : {};
-};
+// Uses the shared axios instance from authService which:
+// - Automatically injects Authorization header from localStorage
+// - Handles 401/403 responses (clears session & redirects to login)
 
 const managerService = {
   // ===================== LINES OVERVIEW =====================
   getLinesOverview: async () => {
     try {
-      const response = await axios.get(
-        `${API_BASE_URL}/manager/lines/overview`,
-        {
-          headers: getAuthHeader(),
-        },
-      );
+      const response = await api.get("/api/manager/lines/overview");
       return response.data;
     } catch (error) {
       console.error("Error fetching lines overview:", error);
@@ -33,12 +19,9 @@ const managerService = {
   // ===================== PLANNING =====================
   createPlan: async (planRequest) => {
     try {
-      const response = await axios.post(
-        `${API_BASE_URL}/manager/plans/create`,
+      const response = await api.post(
+        "/api/manager/plans/create",
         planRequest,
-        {
-          headers: getAuthHeader(),
-        },
       );
       return response.data;
     } catch (error) {
@@ -49,12 +32,9 @@ const managerService = {
 
   confirmPlan: async (orderId) => {
     try {
-      const response = await axios.post(
-        `${API_BASE_URL}/manager/plans/order/${orderId}/confirm`,
+      const response = await api.post(
+        `/api/manager/plans/order/${orderId}/confirm`,
         {},
-        {
-          headers: getAuthHeader(),
-        },
       );
       return response.data;
     } catch (error) {
@@ -65,12 +45,9 @@ const managerService = {
 
   cancelPlan: async (orderId) => {
     try {
-      const response = await axios.post(
-        `${API_BASE_URL}/manager/plans/order/${orderId}/cancel`,
+      const response = await api.post(
+        `/api/manager/plans/order/${orderId}/cancel`,
         {},
-        {
-          headers: getAuthHeader(),
-        },
       );
       return response.data;
     } catch (error) {
@@ -82,10 +59,7 @@ const managerService = {
   getAllPlans: async (status = null) => {
     try {
       const params = status ? { status } : {};
-      const response = await axios.get(`${API_BASE_URL}/manager/plans/view`, {
-        headers: getAuthHeader(),
-        params,
-      });
+      const response = await api.get("/api/manager/plans/view", { params });
       return response.data;
     } catch (error) {
       console.error("Error fetching plans:", error);
@@ -96,8 +70,7 @@ const managerService = {
   // ===================== TRACKING =====================
   getOEE: async (date) => {
     try {
-      const response = await axios.get(`${API_BASE_URL}/manager/tracking/oee`, {
-        headers: getAuthHeader(),
+      const response = await api.get("/api/manager/tracking/oee", {
         params: { date },
       });
       return response.data;
@@ -109,13 +82,9 @@ const managerService = {
 
   getGantt: async (date) => {
     try {
-      const response = await axios.get(
-        `${API_BASE_URL}/manager/tracking/gantt`,
-        {
-          headers: getAuthHeader(),
-          params: { date },
-        },
-      );
+      const response = await api.get("/api/manager/tracking/gantt", {
+        params: { date },
+      });
       return response.data;
     } catch (error) {
       console.error("Error fetching Gantt data:", error);
@@ -125,12 +94,7 @@ const managerService = {
 
   getDelays: async () => {
     try {
-      const response = await axios.get(
-        `${API_BASE_URL}/manager/tracking/delays`,
-        {
-          headers: getAuthHeader(),
-        },
-      );
+      const response = await api.get("/api/manager/tracking/delays");
       return response.data;
     } catch (error) {
       console.error("Error fetching delays:", error);
@@ -139,18 +103,12 @@ const managerService = {
   },
 
   // ===================== ORDERS (for planning) =====================
-  getOrders: async (status = null) => {
-    try {
-      const params = status ? { status } : {};
-      const response = await axios.get(`${API_BASE_URL}/manager/orders`, {
-        headers: getAuthHeader(),
-        params,
-      });
-      return response.data;
-    } catch (error) {
-      console.error("Error fetching orders:", error);
-      throw error;
-    }
+  // NOTE: Backend chưa có endpoint /api/manager/orders cho role MANAGER.
+  // Orders chỉ có ở /api/admin/orders (yêu cầu ADMIN role).
+  // Khi backend tạo endpoint này, uncomment và sửa lại.
+  getOrders: async (/* status = null */) => {
+    // Trả về mảng rỗng vì backend chưa có endpoint cho manager xem orders
+    return [];
   },
 };
 

@@ -29,14 +29,14 @@ const ManagerPlanning = () => {
     setLoading(true);
     setError(null);
     try {
-      const [plansRes, ordersRes, linesRes] = await Promise.all([
+      const [plansRes, linesRes] = await Promise.all([
         managerService.getAllPlans(filterStatus || null),
-        managerService.getOrders(),
         managerService.getLinesOverview(),
       ]);
 
       setPlans(plansRes || []);
-      setOrders(ordersRes || []);
+      // Orders endpoint chưa có trên backend cho MANAGER role
+      setOrders(await managerService.getOrders());
       setLinesOverview(linesRes || []);
     } catch (error) {
       console.error("Error fetching data:", error);
