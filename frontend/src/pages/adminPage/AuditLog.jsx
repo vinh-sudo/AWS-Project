@@ -1,5 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
+import { useDispatch } from "react-redux";
+import { logout } from "../../redux";
 import authService from "../../services/authService";
 import adminService from "../../services/adminService";
 import imsLogo from "../../assets/ims2.jpg";
@@ -42,8 +44,10 @@ const AuditLog = () => {
     }
   };
 
-  const handleLogout = () => {
-    authService.logout();
+  const dispatch = useDispatch();
+
+  const handleLogout = async () => {
+    await dispatch(logout());
     navigate("/login");
   };
 

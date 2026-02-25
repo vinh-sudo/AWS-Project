@@ -1,5 +1,7 @@
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { useDispatch } from "react-redux";
+import { logout } from "../../redux";
 import imsLogo from "../../assets/ims2.jpg";
 import "./LeaderTaskAssignment.css";
 
@@ -70,7 +72,10 @@ const LeaderInternalNotes = () => {
     setNotes(updatedNotes);
   };
 
-  const handleLogout = () => {
+  const dispatch = useDispatch();
+
+  const handleLogout = async () => {
+    await dispatch(logout());
     navigate("/login");
   };
 

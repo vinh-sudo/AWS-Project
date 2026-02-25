@@ -1,14 +1,17 @@
 import React from "react";
 import { NavLink, useNavigate } from "react-router-dom";
+import { useDispatch } from "react-redux";
+import { logout } from "../../redux";
 import authService from "../../services/authService";
 import "./ManagerSidebar.css";
 
 const ManagerSidebar = () => {
   const navigate = useNavigate();
+  const dispatch = useDispatch();
   const currentUser = authService.getCurrentUser();
 
-  const handleLogout = () => {
-    authService.logout();
+  const handleLogout = async () => {
+    await dispatch(logout());
     navigate("/login");
   };
 

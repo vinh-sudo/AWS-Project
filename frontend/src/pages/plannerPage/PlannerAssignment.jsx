@@ -1,5 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
+import { useDispatch } from "react-redux";
+import { logout } from "../../redux";
 import imsLogo from "../../assets/ims2.jpg";
 import "./PlannerAssignment.css";
 
@@ -52,7 +54,10 @@ const PlannerAssignment = () => {
     setTasks(updatedTasks);
   };
 
-  const handleLogout = () => {
+  const dispatch = useDispatch();
+
+  const handleLogout = async () => {
+    await dispatch(logout());
     navigate("/login");
   };
 

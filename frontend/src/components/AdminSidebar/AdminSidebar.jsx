@@ -1,15 +1,17 @@
 import React from "react";
 import { useNavigate, useLocation } from "react-router-dom";
-import authService from "../../services/authService";
+import { useDispatch } from "react-redux";
+import { logout } from "../../redux";
 import imsLogo from "../../assets/ims2.jpg";
 import "./AdminSidebar.css";
 
 const AdminSidebar = () => {
   const navigate = useNavigate();
   const location = useLocation();
+  const dispatch = useDispatch();
 
-  const handleLogout = () => {
-    authService.logout();
+  const handleLogout = async () => {
+    await dispatch(logout());
     navigate("/login");
   };
 

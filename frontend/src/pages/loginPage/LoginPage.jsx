@@ -40,22 +40,19 @@ const LoginPage = () => {
         const user = result.payload;
         console.log("Login successful", user);
 
-        // Redirect based on role (backend returns uppercase roles)
+        // Redirect based on role (matches backend Role enum: ADMIN, MANAGER, LINE_LEADER, PRODUCTION_PLANNER)
         const role = user.role?.toUpperCase();
         switch (role) {
           case "ADMIN":
             navigate("/admin/approval");
             break;
-          case "DIRECTOR":
-            navigate("/director/dashboard");
-            break;
           case "MANAGER":
             navigate("/manager/dashboard");
             break;
-          case "PLANNER":
+          case "PRODUCTION_PLANNER":
             navigate("/planner/assignment");
             break;
-          case "LEADER":
+          case "LINE_LEADER":
             navigate("/leader/progress");
             break;
           default:

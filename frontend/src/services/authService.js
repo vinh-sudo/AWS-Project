@@ -24,28 +24,38 @@ api.interceptors.request.use(
   },
 );
 
-// Add response interceptor to handle token refresh
+// Add response interceptor to handle 401 (token expired / invalid)
 api.interceptors.response.use(
   (response) => response,
   async (error) => {
     const originalRequest = error.config;
 
-    // If 401 and not already retrying, try to refresh token
-    if (error.response?.status === 401 && !originalRequest._retry) {
+    // If 401 and not already retrying, clear session and redirect to login
+    // Skip if this is the logout request itself
+    if (
+      error.response?.status === 401 &&
+      !originalRequest._retry &&
+      !originalRequest.url?.includes("/api/auth/logout")
+    ) {
       originalRequest._retry = true;
 
-      const refreshToken = localStorage.getItem("refreshToken");
-      if (refreshToken) {
-        try {
-          // TODO: Implement refresh token endpoint when available
-          // const response = await api.post('/api/auth/refresh', { refreshToken });
-          // localStorage.setItem('accessToken', response.data.accessToken);
-          // return api(originalRequest);
-        } catch (refreshError) {
-          // Refresh failed, logout user
-          authService.logout();
-          window.location.href = "/login";
-        }
+      // Clear all auth data from localStorage
+      localStorage.removeItem("accessToken");
+      localStorage.removeItem("refreshToken");
+      localStorage.removeItem("user");
+      localStorage.removeItem("isAuthenticated");
+
+      // Only redirect if not already on login/auth pages
+      const publicPaths = [
+        "/login",
+        "/forgot-password",
+        "/otp-verification",
+        "/reset-password",
+      ];
+      if (
+        !publicPaths.some((path) => window.location.pathname.startsWith(path))
+      ) {
+        window.location.href = "/login";
       }
     }
 
@@ -119,27 +129,19 @@ export const authService = {
     }
   },
 
-  // Logout function - calls POST /api/auth/logout
+  // Logout function
+  // NOTE: Backend /api/auth/logout always returns 403 because:
+  //   - JwtFilter skips /api/auth/* (no SecurityContext set)
+  //   - SecurityConfig requires auth for /api/auth/logout (not in permitAll)
+  // So we skip the API call entirely and just clear client-side session.
+  // Token will expire naturally (15min access, 4h refresh).
+  // TODO: Re-enable API call once backend fixes SecurityConfig to add
+  //       "/api/auth/logout" to permitAll or stops skipping it in JwtFilter.
   logout: async () => {
-    try {
-      const accessToken = localStorage.getItem("accessToken");
-      const refreshToken = localStorage.getItem("refreshToken");
-
-      if (accessToken) {
-        await api.post("/api/auth/logout", {
-          accessToken,
-          refreshToken,
-        });
-      }
-    } catch (error) {
-      console.error("Logout error:", error);
-    } finally {
-      // Always clear local storage
-      localStorage.removeItem("accessToken");
-      localStorage.removeItem("refreshToken");
-      localStorage.removeItem("user");
-      localStorage.removeItem("isAuthenticated");
-    }
+    localStorage.removeItem("accessToken");
+    localStorage.removeItem("refreshToken");
+    localStorage.removeItem("user");
+    localStorage.removeItem("isAuthenticated");
   },
 
   // Request password reset OTP - calls POST /otp/forgot/request
@@ -237,9 +239,14 @@ export const authService = {
     return authService.hasRole("MANAGER");
   },
 
-  // Check if user is director
-  isDirector: () => {
-    return authService.hasRole("DIRECTOR");
+  // Check if user is line leader
+  isLineLeader: () => {
+    return authService.hasRole("LINE_LEADER");
+  },
+
+  // Check if user is production planner
+  isProductionPlanner: () => {
+    return authService.hasRole("PRODUCTION_PLANNER");
   },
 };
 

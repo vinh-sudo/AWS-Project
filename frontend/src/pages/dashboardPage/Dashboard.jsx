@@ -1,5 +1,7 @@
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { useDispatch } from "react-redux";
+import { logout } from "../../redux";
 import authService from "../../services/authService";
 import AICopilot from "../../components/AICopilot/AICopilot";
 import imsLogo from "../../assets/ims2.jpg";
@@ -129,8 +131,10 @@ const Dashboard = () => {
     { day: "Sun", produced: 2800, target: 3000 },
   ];
 
-  const handleLogout = () => {
-    authService.logout();
+  const dispatch = useDispatch();
+
+  const handleLogout = async () => {
+    await dispatch(logout());
     navigate("/login");
   };
 

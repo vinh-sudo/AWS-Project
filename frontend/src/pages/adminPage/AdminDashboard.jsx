@@ -117,8 +117,10 @@ const AdminDashboard = () => {
 
   const COLORS = ["#5ec8c4", "#f195b3", "#9E9E9E"];
 
-  const handleLogout = () => {
-    authService.logout();
+  const dispatch = useDispatch();
+
+  const handleLogout = async () => {
+    await dispatch(logout());
     navigate("/login");
   };
 
