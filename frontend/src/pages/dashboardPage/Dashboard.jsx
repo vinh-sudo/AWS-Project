@@ -181,7 +181,10 @@ const Dashboard = () => {
             <span className="nav-icon">📊</span>
             <span>Dashboard</span>
           </div>
-          <div className="nav-item" onClick={() => navigate("/planner/assignment")}>
+          <div
+            className="nav-item"
+            onClick={() => navigate("/planner/assignment")}
+          >
             <span className="nav-icon">📋</span>
             <span>Orders</span>
           </div>
@@ -230,9 +233,7 @@ const Dashboard = () => {
               <span className="user-name">
                 {currentUser?.fullName || "User"}
               </span>
-              <span className="user-role">
-                {currentUser?.role || "Admin"}
-              </span>
+              <span className="user-role">{currentUser?.role || "Admin"}</span>
             </div>
           </div>
         </header>

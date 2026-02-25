@@ -124,9 +124,7 @@ const AdminApproval = () => {
       return order;
     });
     saveOrders(updatedOrders);
-    alert(
-      "Đơn hàng đã được xác nhận và chuyển sang Planner để lập lịch!",
-    );
+    alert("Đơn hàng đã được xác nhận và chuyển sang Planner để lập lịch!");
   };
 
   const handleRejectClick = (order) => {

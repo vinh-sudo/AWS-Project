@@ -114,8 +114,8 @@ const DirectorDashboard = () => {
       priorityOrders.map((order) =>
         order.id === selectedOrder.id
           ? { ...order, directorNote: directive, priority: newPriority }
-          : order
-      )
+          : order,
+      ),
     );
     setShowDirectiveModal(false);
     setSelectedOrder(null);
@@ -343,7 +343,9 @@ const DirectorDashboard = () => {
                 <div key={index} className="line-card">
                   <div className="line-header">
                     <span className="line-name">{line.name}</span>
-                    <span className={`line-status ${getStatusClass(line.status)}`}>
+                    <span
+                      className={`line-status ${getStatusClass(line.status)}`}
+                    >
                       {line.status}
                     </span>
                   </div>
