@@ -32,7 +32,7 @@ const UsersAdmin = () => {
     firstName: "",
     lastName: "",
     phoneNumber: "",
-    role: "Admin",
+    role: "ADMIN",
     status: true,
   });
 
@@ -46,7 +46,8 @@ const UsersAdmin = () => {
       setLoading(true);
       setError(null);
       const data = await adminService.getAllUsers();
-      setUsers(data);
+      // getAllUsers() returns [] since backend has no /api/admin/users endpoint yet
+      setUsers(Array.isArray(data) ? data : []);
     } catch (err) {
       console.error("Error fetching users:", err);
       setError(err.response?.data?.message || "Failed to load users");
@@ -62,23 +63,24 @@ const UsersAdmin = () => {
   const handleSave = async () => {
     try {
       setActionLoading(true);
-      const userData = {
+      // Use /api/auth/register endpoint (the only user-creation endpoint available)
+      const registerData = {
         username: formData.username,
         password: formData.password,
         firstName: formData.firstName,
         lastName: formData.lastName,
         email: formData.email,
-        phoneNumber: formData.phoneNumber,
+        phoneNumber: formData.phoneNumber || undefined,
         role: formData.role,
       };
-      await adminService.createUser(userData);
+      await authService.register(registerData);
       resetForm();
       setShowCreateUser(false);
       fetchUsers();
       alert("User created successfully!");
     } catch (err) {
       console.error("Error creating user:", err);
-      alert(err.response?.data?.message || "Failed to create user");
+      alert(err.message || "Failed to create user");
     } finally {
       setActionLoading(false);
     }
@@ -99,13 +101,21 @@ const UsersAdmin = () => {
       firstName: "",
       lastName: "",
       phoneNumber: "",
-      role: "Admin",
+      role: "ADMIN",
       status: true,
     });
   };
 
   // Edit user handlers
   const handleEditClick = (user) => {
+    // NOTE: Backend chưa có endpoint /api/admin/users/{id} (PUT) để edit user.
+    // Hiện tại chỉ hiển thị form nhưng save sẽ không hoạt động.
+    alert(
+      "Edit user is not available yet. Backend does not have user update endpoint.",
+    );
+    return;
+    // Uncomment when backend adds PUT /api/admin/users/{id}
+    /*
     setSelectedUser(user);
     setFormData({
       username: user.username || "",
@@ -114,10 +124,11 @@ const UsersAdmin = () => {
       firstName: user.firstName || "",
       lastName: user.lastName || "",
       phoneNumber: user.phoneNumber || "",
-      role: user.role || "Admin",
+      role: user.role || "ADMIN",
       status: user.status === "active",
     });
     setShowEditUser(true);
+    */
   };
 
   const handleEditSave = async () => {
@@ -161,8 +172,16 @@ const UsersAdmin = () => {
 
   // Delete user handlers
   const handleDeleteClick = (user) => {
+    // NOTE: Backend chưa có endpoint /api/admin/users/{id} (DELETE).
+    alert(
+      "Delete user is not available yet. Backend does not have user delete endpoint.",
+    );
+    return;
+    // Uncomment when backend adds DELETE /api/admin/users/{id}
+    /*
     setSelectedUser(user);
     setShowDeleteConfirm(true);
+    */
   };
 
   const handleDeleteConfirm = async () => {
@@ -308,12 +327,10 @@ const UsersAdmin = () => {
                 onChange={(e) => handleChange("role", e.target.value)}
                 className="form-select"
               >
-                <option>Admin</option>
-                <option>Sales</option>
-                <option>Planner</option>
-                <option>LineLeader</option>
-                <option>Director</option>
-                <option>Manager</option>
+                <option value="ADMIN">Admin</option>
+                <option value="MANAGER">Manager</option>
+                <option value="LINE_LEADER">Line Leader</option>
+                <option value="PRODUCTION_PLANNER">Production Planner</option>
               </select>
             </div>
           </div>
@@ -465,11 +482,10 @@ const UsersAdmin = () => {
                 className="role-select"
               >
                 <option>All roles</option>
-                <option>Admin</option>
-                <option>Sales</option>
-                <option>Planner</option>
-                <option>LineLeader</option>
-                <option>Director</option>
+                <option value="ADMIN">Admin</option>
+                <option value="MANAGER">Manager</option>
+                <option value="LINE_LEADER">Line Leader</option>
+                <option value="PRODUCTION_PLANNER">Production Planner</option>
               </select>
             </div>
           </div>{" "}
@@ -634,12 +650,10 @@ const UsersAdmin = () => {
                   onChange={(e) => handleChange("role", e.target.value)}
                   className="form-select"
                 >
-                  <option>Admin</option>
-                  <option>Sales</option>
-                  <option>Planner</option>
-                  <option>LineLeader</option>
-                  <option>Director</option>
-                  <option>Manager</option>
+                  <option value="ADMIN">Admin</option>
+                  <option value="MANAGER">Manager</option>
+                  <option value="LINE_LEADER">Line Leader</option>
+                  <option value="PRODUCTION_PLANNER">Production Planner</option>
                 </select>
               </div>
 
