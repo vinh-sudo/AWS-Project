@@ -35,7 +35,6 @@ const ManagerPlanning = () => {
       ]);
 
       setPlans(plansRes || []);
-      // Orders endpoint chưa có trên backend cho MANAGER role
       setOrders(await managerService.getOrders());
       setLinesOverview(linesRes || []);
     } catch (error) {
@@ -112,7 +111,6 @@ const ManagerPlanning = () => {
       }
     } catch (error) {
       console.error("Error confirming plan:", error);
-      // Backend trả về ScheduleValidationResult trong response.data khi lỗi 400
       const errorData = error.response?.data;
       if (errorData && errorData.message) {
         alert("Unable to confirm plan:\n" + errorData.message);
@@ -168,7 +166,6 @@ const ManagerPlanning = () => {
     }
   };
 
-  // Group plans by orderId
   const plansByOrder = plans.reduce((acc, plan) => {
     const orderId = plan.orderId || plan.order?.id;
     if (!acc[orderId]) {
@@ -180,123 +177,238 @@ const ManagerPlanning = () => {
 
   const totalPlanned = planForm.lines.reduce((sum, l) => sum + l.plannedQty, 0);
 
+  const totalOrders = orders.filter(
+    (o) => o.status === "APPROVED" || o.status === "NEW",
+  ).length;
+  const totalPlanGroups = Object.keys(plansByOrder).length;
+  const confirmedPlans = plans.filter(
+    (p) => p.decision === "CONFIRMED",
+  ).length;
+  const pendingPlans = plans.filter(
+    (p) => p.decision === "DRAFT" || p.decision === "PENDING",
+  ).length;
+
   return (
     <div className="manager-container">
       <ManagerSidebar />
 
       <main className="manager-main">
-        {/* Header */}
-        <header className="manager-header">
-          <div className="header-left">
-            <h1>📋 Production Planning</h1>
-            <p>Allocate orders to production lines</p>
-          </div>
-          <div className="header-right">
-            <select
-              value={filterStatus}
-              onChange={(e) => setFilterStatus(e.target.value)}
-              className="filter-select"
-            >
-              <option value="">All Statuses</option>
-              <option value="DRAFT">Draft</option>
-              <option value="CONFIRMED">Confirmed</option>
-              <option value="CANCELLED">Cancelled</option>
-            </select>
-            <button className="btn-refresh" onClick={fetchData}>
-              🔄 Refresh
-            </button>
-          </div>
-        </header>
-
-        {/* Error Message */}
-        {error && (
-          <div className="error-banner">
-            <span className="error-icon">⚠️</span>
-            <span>{error}</span>
-            <button onClick={fetchData}>Retry</button>
-          </div>
-        )}
-
-        <div className="planning-grid">
-          {/* Orders Awaiting Planning */}
-          <section className="planning-card orders-section">
-            <div className="card-header">
-              <h2>📦 Orders Awaiting Planning</h2>
-              <span className="card-subtitle">Approved orders</span>
+        <div className="page-content">
+          {/* ── Header Bar ── */}
+          <div className="pp-header">
+            <div className="pp-header-left">
+              <h1>Production Planning</h1>
+              <p>Allocate orders to production lines</p>
             </div>
-            <div className="card-content">
+            <div className="pp-header-actions">
+              <select
+                value={filterStatus}
+                onChange={(e) => setFilterStatus(e.target.value)}
+                className="pp-select"
+              >
+                <option value="">All Statuses</option>
+                <option value="DRAFT">Draft</option>
+                <option value="CONFIRMED">Confirmed</option>
+                <option value="CANCELLED">Cancelled</option>
+              </select>
+              <button className="pp-btn-refresh" onClick={fetchData}>
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0114.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0020.49 15"/></svg>
+                Refresh
+              </button>
+            </div>
+          </div>
+
+          {/* ── Error ── */}
+          {error && (
+            <div className="error-banner">
+              <span>⚠️</span>
+              <span>{error}</span>
+              <button onClick={fetchData}>Retry</button>
+            </div>
+          )}
+
+          {/* ── Mini Summary Strip ── */}
+          <div className="pp-summary-strip">
+            <div className="pp-stat">
+              <span className="pp-stat-dot blue"></span>
+              <span className="pp-stat-label">Awaiting</span>
+              <span className="pp-stat-value">{totalOrders}</span>
+            </div>
+            <div className="pp-stat-divider" />
+            <div className="pp-stat">
+              <span className="pp-stat-dot purple"></span>
+              <span className="pp-stat-label">Plans</span>
+              <span className="pp-stat-value">{totalPlanGroups}</span>
+            </div>
+            <div className="pp-stat-divider" />
+            <div className="pp-stat">
+              <span className="pp-stat-dot orange"></span>
+              <span className="pp-stat-label">Pending</span>
+              <span className="pp-stat-value">{pendingPlans}</span>
+            </div>
+            <div className="pp-stat-divider" />
+            <div className="pp-stat">
+              <span className="pp-stat-dot green"></span>
+              <span className="pp-stat-label">Confirmed</span>
+              <span className="pp-stat-value">{confirmedPlans}</span>
+            </div>
+          </div>
+
+          {/* ── Main Workspace ── */}
+          <div className="pp-workspace">
+            {/* Left: Orders Table */}
+            <section className="pp-panel pp-orders">
+              <div className="pp-panel-header">
+                <h2>📦 Orders Awaiting Planning</h2>
+                <span className="pp-badge">{totalOrders}</span>
+              </div>
+
               {loading ? (
-                <div className="loading-spinner">Loading...</div>
-              ) : orders.length === 0 ? (
-                <div className="no-data">
-                  <span className="no-data-icon">📭</span>
-                  <span>No orders available</span>
+                <div className="pp-loading">
+                  <div className="spinner"></div>
+                  <span>Loading orders...</span>
+                </div>
+              ) : orders.filter(
+                  (o) => o.status === "APPROVED" || o.status === "NEW",
+                ).length === 0 ? (
+                <div className="pp-empty">
+                  <span>📭</span>
+                  <span>No orders awaiting planning</span>
                 </div>
               ) : (
-                <div className="orders-list">
-                  {orders
-                    .filter(
-                      (o) => o.status === "APPROVED" || o.status === "NEW",
-                    )
-                    .map((order) => (
-                      <div key={order.id} className="order-card">
-                        <div className="order-info">
-                          <div className="order-header">
-                            <span className="order-id">#{order.id}</span>
-                            <span
-                              className={`priority-badge ${getPriorityClass(order.priority)}`}
-                            >
-                              {order.priority}
-                            </span>
-                          </div>
-                          <div className="order-customer">
-                            {order.customerName}
-                          </div>
-                          <div className="order-product">
-                            {order.productType}
-                          </div>
-                          <div className="order-details">
-                            <span>
-                              📦 {(order.quantity || 0).toLocaleString()} units
-                            </span>
-                            <span>📅 {order.deadline}</span>
-                          </div>
-                        </div>
-                        <button
-                          className="btn-create-plan"
-                          onClick={() => openCreateModal(order)}
-                          disabled={linesOverview.length === 0}
-                        >
-                          Lập kế hoạch
-                        </button>
-                      </div>
-                    ))}
+                <div className="pp-table-wrap">
+                  <table className="pp-table">
+                    <thead>
+                      <tr>
+                        <th>Order</th>
+                        <th>Customer</th>
+                        <th>Product</th>
+                        <th>Qty</th>
+                        <th>Priority</th>
+                        <th>Deadline</th>
+                        <th></th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {orders
+                        .filter(
+                          (o) => o.status === "APPROVED" || o.status === "NEW",
+                        )
+                        .map((order) => (
+                          <tr key={order.id}>
+                            <td className="pp-cell-id">#{order.id}</td>
+                            <td>{order.customerName}</td>
+                            <td className="pp-cell-muted">{order.productType}</td>
+                            <td className="pp-cell-num">
+                              {(order.quantity || 0).toLocaleString()}
+                            </td>
+                            <td>
+                              <span
+                                className={`pp-priority ${getPriorityClass(order.priority)}`}
+                              >
+                                {order.priority}
+                              </span>
+                            </td>
+                            <td className="pp-cell-muted">{order.deadline}</td>
+                            <td>
+                              <button
+                                className="pp-btn-plan"
+                                onClick={() => openCreateModal(order)}
+                                disabled={linesOverview.length === 0}
+                              >
+                                + Plan
+                              </button>
+                            </td>
+                          </tr>
+                        ))}
+                    </tbody>
+                  </table>
                 </div>
               )}
-            </div>
-          </section>
+            </section>
 
-          {/* Existing Plans */}
-          <section className="planning-card plans-section">
-            <div className="card-header">
-              <h2>📊 Existing Plans</h2>
-              <span className="card-subtitle">List of production plans</span>
-            </div>
-            <div className="card-content">
+            {/* Right: Line Capacity Panel */}
+            <aside className="pp-panel pp-lines">
+              <div className="pp-panel-header">
+                <h2>🏭 Line Capacity</h2>
+                <span className="pp-badge">{linesOverview.length}</span>
+              </div>
+
               {loading ? (
-                <div className="loading-spinner">Loading...</div>
-              ) : Object.keys(plansByOrder).length === 0 ? (
-                <div className="no-data">
-                  <span className="no-data-icon">📋</span>
-                  <span>No plans available</span>
+                <div className="pp-loading">
+                  <div className="spinner"></div>
+                  <span>Loading...</span>
+                </div>
+              ) : linesOverview.length === 0 ? (
+                <div className="pp-empty">
+                  <span>🏭</span>
+                  <span>No lines available</span>
                 </div>
               ) : (
-                <div className="plans-list">
-                  {Object.entries(plansByOrder).map(([orderId, orderPlans]) => (
-                    <div key={orderId} className="plan-group">
-                      <div className="plan-group-header">
-                        <span className="plan-order-id">Order #{orderId}</span>
-                        <div className="plan-group-actions">
+                <div className="pp-line-list">
+                  {linesOverview.map((line) => (
+                    <div key={line.lineId} className="pp-line-item">
+                      <div className="pp-line-top">
+                        <span className="pp-line-name">{line.lineName}</span>
+                        <span
+                          className={`pp-line-status ${
+                            line.status?.toLowerCase() === "running"
+                              ? "st-running"
+                              : line.status?.toLowerCase() === "idle"
+                                ? "st-idle"
+                                : "st-off"
+                          }`}
+                        >
+                          {line.status || "N/A"}
+                        </span>
+                      </div>
+                      {line.capacity && (
+                        <div className="pp-line-cap">
+                          <div className="pp-cap-bar">
+                            <div
+                              className="pp-cap-fill"
+                              style={{
+                                width: `${Math.min(((line.busyHours || 0) / (line.availableHours || 8)) * 100, 100)}%`,
+                              }}
+                            />
+                          </div>
+                          <span className="pp-cap-text">
+                            {line.capacity} cap
+                          </span>
+                        </div>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              )}
+            </aside>
+          </div>
+
+          {/* ── Plans Table (full-width below) ── */}
+          <section className="pp-panel pp-plans">
+            <div className="pp-panel-header">
+              <h2>📊 Production Plans</h2>
+              <span className="pp-badge">{totalPlanGroups} groups</span>
+            </div>
+
+            {loading ? (
+              <div className="pp-loading">
+                <div className="spinner"></div>
+                <span>Loading plans...</span>
+              </div>
+            ) : Object.keys(plansByOrder).length === 0 ? (
+              <div className="pp-empty">
+                <span>📋</span>
+                <span>No plans created yet</span>
+              </div>
+            ) : (
+              <div className="pp-plans-list">
+                {Object.entries(plansByOrder).map(
+                  ([orderId, orderPlans]) => (
+                    <div key={orderId} className="pp-plan-group">
+                      <div className="pp-plan-group-top">
+                        <span className="pp-plan-order">Order #{orderId}</span>
+                        <div className="pp-plan-actions">
                           {orderPlans.some(
                             (p) =>
                               p.decision === "DRAFT" ||
@@ -304,7 +416,7 @@ const ManagerPlanning = () => {
                           ) && (
                             <>
                               <button
-                                className="btn-confirm"
+                                className="pp-btn-confirm"
                                 onClick={() =>
                                   handleConfirmPlan(parseInt(orderId))
                                 }
@@ -312,7 +424,7 @@ const ManagerPlanning = () => {
                                 ✓ Confirm
                               </button>
                               <button
-                                className="btn-cancel"
+                                className="pp-btn-cancel"
                                 onClick={() =>
                                   handleCancelPlan(parseInt(orderId))
                                 }
@@ -323,34 +435,38 @@ const ManagerPlanning = () => {
                           )}
                         </div>
                       </div>
-                      <table className="plans-table">
+                      <table className="pp-table pp-table-compact">
                         <thead>
                           <tr>
                             <th>Line</th>
                             <th>Quantity</th>
-                            <th>Start Date</th>
-                            <th>End Date</th>
-                            <th>Estimated Hours</th>
+                            <th>Start</th>
+                            <th>End</th>
+                            <th>Est. Hours</th>
                             <th>Status</th>
                           </tr>
                         </thead>
                         <tbody>
                           {orderPlans.map((plan) => (
                             <tr key={plan.planId || plan.id}>
-                              <td className="line-name">
+                              <td className="pp-cell-id">
                                 {plan.lineName || plan.line?.name}
                               </td>
-                              <td>
+                              <td className="pp-cell-num">
                                 {(plan.plannedQuantity || 0).toLocaleString()}
                               </td>
-                              <td>{plan.plannedStartDate || plan.startDate}</td>
-                              <td>{plan.plannedEndDate || plan.endDate}</td>
-                              <td>
+                              <td className="pp-cell-muted">
+                                {plan.plannedStartDate || plan.startDate}
+                              </td>
+                              <td className="pp-cell-muted">
+                                {plan.plannedEndDate || plan.endDate}
+                              </td>
+                              <td className="pp-cell-num">
                                 {Number(plan.estimatedHours || 0).toFixed(1)}h
                               </td>
                               <td>
                                 <span
-                                  className={`decision-badge ${getDecisionClass(plan.decision)}`}
+                                  className={`pp-decision ${getDecisionClass(plan.decision)}`}
                                 >
                                   {plan.decision}
                                 </span>
@@ -360,19 +476,19 @@ const ManagerPlanning = () => {
                         </tbody>
                       </table>
                       {orderPlans[0]?.note && (
-                        <div className="plan-note">
+                        <div className="pp-note">
                           <strong>Note:</strong> {orderPlans[0].note}
                         </div>
                       )}
                     </div>
-                  ))}
-                </div>
-              )}
-            </div>
+                  ),
+                )}
+              </div>
+            )}
           </section>
         </div>
 
-        {/* Create Plan Modal */}
+        {/* ── Create Plan Modal ── */}
         {showCreateModal && selectedOrder && (
           <div
             className="modal-overlay"
@@ -454,7 +570,7 @@ const ManagerPlanning = () => {
                 <div className="line-allocation">
                   <h3>Allocate to Lines</h3>
                   {planForm.lines.length === 0 ? (
-                    <div className="no-data">
+                    <div className="pp-empty">
                       <span>No lines available for allocation</span>
                     </div>
                   ) : (

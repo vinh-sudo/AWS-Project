@@ -115,70 +115,120 @@ const ManagerTracking = () => {
       <ManagerSidebar />
 
       <main className="manager-main">
-        {/* Header */}
-        <header className="manager-header">
-          <div className="header-left">
-            <h1>📈 Production Tracking</h1>
-            <p>Real-time monitoring of production activities</p>
+        <div className="page-content">
+          {/* Page Title Row */}
+          <div className="page-title-row">
+            <div className="page-title-left">
+              <h1>Production Tracking</h1>
+              <p>Real-time monitoring of production activities</p>
+            </div>
+            <div className="header-controls">
+              <input
+                type="date"
+                value={selectedDate}
+                onChange={(e) => setSelectedDate(e.target.value)}
+                className="date-picker"
+              />
+              <button className="btn-refresh" onClick={fetchTrackingData}>
+                🔄 Refresh
+              </button>
+            </div>
           </div>
-          <div className="header-right">
-            <input
-              type="date"
-              value={selectedDate}
-              onChange={(e) => setSelectedDate(e.target.value)}
-              className="date-picker"
-            />
-            <button className="btn-refresh" onClick={fetchTrackingData}>
-              🔄 Refresh
+
+          {/* Error Message */}
+          {error && (
+            <div className="error-banner">
+              <span>⚠️</span>
+              <span>{error}</span>
+              <button onClick={fetchTrackingData}>Retry</button>
+            </div>
+          )}
+
+          {/* KPI Cards */}
+          <div className="tracking-kpi-grid">
+            <div className="tracking-kpi-card kpi-blue">
+              <div className="tracking-kpi-top">
+                <span className="tracking-kpi-label">Active Lines</span>
+                <div className="tracking-kpi-icon">🏭</div>
+              </div>
+              <div className="tracking-kpi-value">{Object.keys(ganttByLine).length}</div>
+              <div className="tracking-kpi-subtitle">Currently scheduled</div>
+            </div>
+            <div className="tracking-kpi-card kpi-green">
+              <div className="tracking-kpi-top">
+                <span className="tracking-kpi-label">Avg OEE</span>
+                <div className="tracking-kpi-icon">📈</div>
+              </div>
+              <div className="tracking-kpi-value">
+                {oeeData.length > 0
+                  ? ((oeeData.reduce((sum, d) => sum + (d.oee || 0), 0) / oeeData.length) * 100).toFixed(1) + "%"
+                  : "—"}
+              </div>
+              <div className="tracking-kpi-subtitle">Equipment effectiveness</div>
+            </div>
+            <div className="tracking-kpi-card kpi-orange">
+              <div className="tracking-kpi-top">
+                <span className="tracking-kpi-label">Delays</span>
+                <div className="tracking-kpi-icon">⚠️</div>
+              </div>
+              <div className="tracking-kpi-value">{delays.length}</div>
+              <div className="tracking-kpi-subtitle">Warnings detected</div>
+            </div>
+            <div className="tracking-kpi-card kpi-purple">
+              <div className="tracking-kpi-top">
+                <span className="tracking-kpi-label">Schedules</span>
+                <div className="tracking-kpi-icon">📊</div>
+              </div>
+              <div className="tracking-kpi-value">{ganttData.length}</div>
+              <div className="tracking-kpi-subtitle">Today's schedule items</div>
+            </div>
+          </div>
+
+          {/* Tabs */}
+          <div className="tracking-tabs">
+            <button
+              className={`tab-btn ${activeTab === "gantt" ? "active" : ""}`}
+              onClick={() => setActiveTab("gantt")}
+            >
+              <span className="tab-icon">📊</span> Gantt Chart
+            </button>
+            <button
+              className={`tab-btn ${activeTab === "oee" ? "active" : ""}`}
+              onClick={() => setActiveTab("oee")}
+            >
+              <span className="tab-icon">📈</span> OEE Analysis
+            </button>
+            <button
+              className={`tab-btn ${activeTab === "delays" ? "active" : ""}`}
+              onClick={() => setActiveTab("delays")}
+            >
+              <span className="tab-icon">⚠️</span> Delays ({delays.length})
             </button>
           </div>
-        </header>
 
-        {/* Error Message */}
-        {error && (
-          <div className="error-banner">
-            <span className="error-icon">⚠️</span>
-            <span>{error}</span>
-            <button onClick={fetchTrackingData}>Retry</button>
-          </div>
-        )}
-
-        {/* Tabs */}
-        <div className="tracking-tabs">
-          <button
-            className={`tab-btn ${activeTab === "gantt" ? "active" : ""}`}
-            onClick={() => setActiveTab("gantt")}
-          >
-            📊 Gantt Chart
-          </button>
-          <button
-            className={`tab-btn ${activeTab === "oee" ? "active" : ""}`}
-            onClick={() => setActiveTab("oee")}
-          >
-            📈 OEE Analysis
-          </button>
-          <button
-            className={`tab-btn ${activeTab === "delays" ? "active" : ""}`}
-            onClick={() => setActiveTab("delays")}
-          >
-            ⚠️ Delays ({delays.length})
-          </button>
-        </div>
-
-        {/* Content */}
-        <div className="tracking-content">
+          {/* Content */}
+          <div className="tracking-content">
           {/* Gantt Chart */}
           {activeTab === "gantt" && (
             <section className="tracking-card gantt-section">
               <div className="card-header">
-                <h2>📊 Gantt Chart - Production Schedule</h2>
-                <span className="card-subtitle">
-                  Date: {new Date(selectedDate).toLocaleDateString("en-US")}
-                </span>
+                <div className="card-header-left">
+                  <h2>
+                    <span className="card-icon blue">📊</span>
+                    Gantt Chart - Production Schedule
+                  </h2>
+                  <span className="card-subtitle">
+                    Date: {new Date(selectedDate).toLocaleDateString("en-US")}
+                  </span>
+                </div>
+                <span className="card-header-badge">{ganttData.length} items</span>
               </div>
               <div className="card-content">
                 {loading ? (
-                  <div className="loading-spinner">Loading...</div>
+                  <div className="loading-spinner">
+                    <div className="spinner"></div>
+                    <span>Loading schedule...</span>
+                  </div>
                 ) : ganttData.length === 0 ? (
                   <div className="no-data">
                     <span className="no-data-icon">📭</span>
@@ -264,14 +314,23 @@ const ManagerTracking = () => {
           {activeTab === "oee" && (
             <section className="tracking-card oee-analysis-section">
               <div className="card-header">
-                <h2>📈 OEE Analysis</h2>
-                <span className="card-subtitle">
-                  Overall Equipment Effectiveness by Line
-                </span>
+                <div className="card-header-left">
+                  <h2>
+                    <span className="card-icon green">📈</span>
+                    OEE Analysis
+                  </h2>
+                  <span className="card-subtitle">
+                    Overall Equipment Effectiveness by Line
+                  </span>
+                </div>
+                <span className="card-header-badge">{oeeData.length} lines</span>
               </div>
               <div className="card-content">
                 {loading ? (
-                  <div className="loading-spinner">Loading...</div>
+                  <div className="loading-spinner">
+                    <div className="spinner"></div>
+                    <span>Loading OEE data...</span>
+                  </div>
                 ) : oeeData.length === 0 ? (
                   <div className="no-data">
                     <span className="no-data-icon">📭</span>
@@ -439,14 +498,23 @@ const ManagerTracking = () => {
           {activeTab === "delays" && (
             <section className="tracking-card delays-section">
               <div className="card-header">
-                <h2>⚠️ Delay Warnings</h2>
-                <span className="card-subtitle">
-                  Schedules at risk of missing deadlines
-                </span>
+                <div className="card-header-left">
+                  <h2>
+                    <span className="card-icon orange">⚠️</span>
+                    Delay Warnings
+                  </h2>
+                  <span className="card-subtitle">
+                    Schedules at risk of missing deadlines
+                  </span>
+                </div>
+                <span className="card-header-badge">{delays.length} warnings</span>
               </div>
               <div className="card-content">
                 {loading ? (
-                  <div className="loading-spinner">Loading...</div>
+                  <div className="loading-spinner">
+                    <div className="spinner"></div>
+                    <span>Loading delays...</span>
+                  </div>
                 ) : delays.length === 0 ? (
                   <div className="no-data">
                     <span className="no-data-icon">✅</span>
@@ -525,6 +593,7 @@ const ManagerTracking = () => {
               </div>
             </section>
           )}
+        </div>
         </div>
       </main>
     </div>

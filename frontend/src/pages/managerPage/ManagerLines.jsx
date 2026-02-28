@@ -7,7 +7,8 @@ const ManagerLines = () => {
   const [linesOverview, setLinesOverview] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  const [selectedLine, setSelectedLine] = useState(null);
+  const [expandedLine, setExpandedLine] = useState(null);
+  const [filterStatus, setFilterStatus] = useState("");
 
   useEffect(() => {
     fetchLinesData();
@@ -30,230 +31,249 @@ const ManagerLines = () => {
   const getStatusClass = (status) => {
     switch (status?.toLowerCase()) {
       case "running":
-        return "status-running";
+        return "ln-st-running";
       case "idle":
-        return "status-idle";
+        return "ln-st-idle";
       case "maintenance":
-        return "status-maintenance";
+        return "ln-st-maintenance";
       case "warning":
-        return "status-warning";
+        return "ln-st-warning";
       default:
         return "";
     }
   };
 
   const getEfficiencyClass = (efficiency) => {
-    if (efficiency >= 85) return "efficiency-high";
-    if (efficiency >= 60) return "efficiency-medium";
-    if (efficiency > 0) return "efficiency-low";
-    return "efficiency-none";
+    if (efficiency >= 85) return "ln-eff-high";
+    if (efficiency >= 60) return "ln-eff-mid";
+    if (efficiency > 0) return "ln-eff-low";
+    return "ln-eff-none";
   };
 
-  const handleLineClick = (line) => {
-    setSelectedLine(selectedLine?.lineId === line.lineId ? null : line);
+  const toggleLine = (lineId) => {
+    setExpandedLine(expandedLine === lineId ? null : lineId);
   };
+
+  const filteredLines = filterStatus
+    ? linesOverview.filter(
+        (l) => l.status?.toLowerCase() === filterStatus.toLowerCase()
+      )
+    : linesOverview;
 
   return (
     <div className="manager-container">
       <ManagerSidebar />
 
       <main className="manager-main">
-        {/* Header */}
-        <header className="manager-header">
-          <div className="header-left">
-            <h1>🏭 Production Line Management</h1>
-            <p>Monitor and manage production lines</p>
-          </div>
-          <div className="header-right">
-            <button className="btn-refresh" onClick={fetchLinesData}>
-              🔄 Refresh
-            </button>
-          </div>
-        </header>
-
-        {/* Error Message */}
-        {error && (
-          <div className="error-banner">
-            <span className="error-icon">⚠️</span>
-            <span>{error}</span>
-            <button onClick={fetchLinesData}>Retry</button>
-          </div>
-        )}
-
-        {/* Summary Cards */}
-        <section className="lines-summary">
-          <div className="summary-card">
-            <div className="summary-icon running">🟢</div>
-            <div className="summary-content">
-              <span className="summary-value">
-                {
-                  linesOverview.filter(
-                    (l) => l.status?.toLowerCase() === "running",
-                  ).length
-                }
-              </span>
-              <span className="summary-label">Running</span>
+        <div className="page-content">
+          {/* ── Header ── */}
+          <div className="ln-header">
+            <div className="ln-header-left">
+              <h1>Production Lines</h1>
+              <p>Monitor status and capacity of all production lines</p>
             </div>
-          </div>
-          <div className="summary-card">
-            <div className="summary-icon idle">⚪</div>
-            <div className="summary-content">
-              <span className="summary-value">
-                {
-                  linesOverview.filter(
-                    (l) => l.status?.toLowerCase() === "idle",
-                  ).length
-                }
-              </span>
-              <span className="summary-label">Idle</span>
-            </div>
-          </div>
-          <div className="summary-card">
-            <div className="summary-icon maintenance">🟡</div>
-            <div className="summary-content">
-              <span className="summary-value">
-                {
-                  linesOverview.filter(
-                    (l) => l.status?.toLowerCase() === "maintenance",
-                  ).length
-                }
-              </span>
-              <span className="summary-label">Maintenance</span>
-            </div>
-          </div>
-          <div className="summary-card">
-            <div className="summary-icon total">🏭</div>
-            <div className="summary-content">
-              <span className="summary-value">{linesOverview.length}</span>
-              <span className="summary-label">Total Lines</span>
-            </div>
-          </div>
-        </section>
-
-        {/* Lines Grid */}
-        <section className="lines-grid">
-          {loading ? (
-            <div className="loading-spinner">Loading...</div>
-          ) : linesOverview.length === 0 ? (
-            <div className="no-data">
-              <span className="no-data-icon">📭</span>
-              <span>No lines data available</span>
-            </div>
-          ) : (
-            linesOverview.map((line) => (
-              <div
-                key={line.lineId}
-                className={`line-card ${selectedLine?.lineId === line.lineId ? "expanded" : ""}`}
-                onClick={() => handleLineClick(line)}
+            <div className="ln-header-actions">
+              <select
+                value={filterStatus}
+                onChange={(e) => setFilterStatus(e.target.value)}
+                className="ln-select"
               >
-                <div className="line-card-header">
-                  <div className="line-info">
-                    <span className="line-name">{line.lineName}</span>
-                    <span
-                      className={`status-badge ${getStatusClass(line.status)}`}
-                    >
-                      {line.status}
-                    </span>
-                  </div>
-                  <span className="expand-icon">
-                    {selectedLine?.lineId === line.lineId ? "▼" : "▶"}
-                  </span>
-                </div>
+                <option value="">All Status</option>
+                <option value="running">Running</option>
+                <option value="idle">Idle</option>
+                <option value="maintenance">Maintenance</option>
+              </select>
+              <button className="ln-btn-refresh" onClick={fetchLinesData}>
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0114.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0020.49 15"/></svg>
+                Refresh
+              </button>
+            </div>
+          </div>
 
-                <div className="line-metrics">
-                  <div className="metric">
-                    <span className="metric-label">Operating Hours</span>
-                    <span className="metric-value">
-                      {line.busyHours || 0}h / {line.availableHours || 8}h
-                    </span>
-                    <div className="metric-bar">
-                      <div
-                        className="metric-fill"
-                        style={{
-                          width: `${((line.busyHours || 0) / (line.availableHours || 8)) * 100}%`,
-                        }}
-                      />
-                    </div>
-                  </div>
-                  <div className="metric">
-                    <span className="metric-label">Available Machines</span>
-                    <span className="metric-value">
-                      {line.availableMachines || 0}
-                    </span>
-                  </div>
-                </div>
-
-                {line.currentOrder && (
-                  <div className="line-current-order">
-                    <span className="current-order-label">Current Order:</span>
-                    <span className="current-order-id">
-                      #{line.currentOrder}
-                    </span>
-                  </div>
-                )}
-
-                {line.targetToday > 0 && (
-                  <div className="line-progress">
-                    <div className="progress-header">
-                      <span>Today's Progress</span>
-                      <span>
-                        {(line.completedToday || 0).toLocaleString()} /{" "}
-                        {(line.targetToday || 0).toLocaleString()}
-                      </span>
-                    </div>
-                    <div className="progress-bar">
-                      <div
-                        className="progress-fill"
-                        style={{
-                          width: `${((line.completedToday || 0) / (line.targetToday || 1)) * 100}%`,
-                        }}
-                      />
-                    </div>
-                  </div>
-                )}
-
-                {/* Expanded Content - Machines */}
-                {selectedLine?.lineId === line.lineId && line.machines && (
-                  <div className="line-machines">
-                    <h4>Machine List</h4>
-                    <div className="machines-list">
-                      {line.machines.map((machine) => (
-                        <div key={machine.id} className="machine-item">
-                          <div className="machine-info">
-                            <span className="machine-name">{machine.name}</span>
-                            <span
-                              className={`machine-status ${getStatusClass(machine.status)}`}
-                            >
-                              {machine.status}
-                            </span>
-                          </div>
-                          <div className="machine-efficiency">
-                            <span className="efficiency-label">
-                              Efficiency:
-                            </span>
-                            <span
-                              className={`efficiency-value ${getEfficiencyClass(machine.efficiency)}`}
-                            >
-                              {machine.efficiency || 0}%
-                            </span>
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                    {line.supervisor && (
-                      <div className="line-supervisor">
-                        <span className="supervisor-label">👤 Supervisor:</span>
-                        <span className="supervisor-name">
-                          {line.supervisor}
-                        </span>
-                      </div>
-                    )}
-                  </div>
-                )}
-              </div>
-            ))
+          {/* ── Error ── */}
+          {error && (
+            <div className="ln-error">
+              <span>⚠️</span>
+              <span>{error}</span>
+              <button onClick={fetchLinesData}>Retry</button>
+            </div>
           )}
-        </section>
+
+          {/* ── Lines Table ── */}
+          <section className="ln-panel">
+            <div className="ln-panel-header">
+              <h2>
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#4a6cf7" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="2" y="7" width="20" height="14" rx="2" ry="2"/><path d="M16 3h-8l-2 4h12z"/></svg>
+                All Lines
+              </h2>
+              <span className="ln-badge">{filteredLines.length} lines</span>
+            </div>
+
+            {loading ? (
+              <div className="ln-loading">
+                <div className="ln-spinner"></div>
+                <span>Loading lines...</span>
+              </div>
+            ) : filteredLines.length === 0 ? (
+              <div className="ln-empty">
+                <span>📭</span>
+                <span>No lines found</span>
+              </div>
+            ) : (
+              <div className="ln-table-wrap">
+                <table className="ln-table">
+                  <thead>
+                    <tr>
+                      <th style={{ width: "32px" }}></th>
+                      <th>Line</th>
+                      <th>Status</th>
+                      <th>Operating Hours</th>
+                      <th>Machines</th>
+                      <th>Current Order</th>
+                      <th>Today's Progress</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {filteredLines.map((line) => {
+                      const isExpanded = expandedLine === line.lineId;
+                      const utilization =
+                        ((line.busyHours || 0) /
+                          (line.availableHours || 8)) *
+                        100;
+                      const progressPct =
+                        line.targetToday > 0
+                          ? ((line.completedToday || 0) /
+                              (line.targetToday || 1)) *
+                            100
+                          : 0;
+
+                      return (
+                        <React.Fragment key={line.lineId}>
+                          <tr
+                            className={`ln-row ${isExpanded ? "ln-row-active" : ""}`}
+                            onClick={() => toggleLine(line.lineId)}
+                          >
+                            <td className="ln-cell-toggle">
+                              <span
+                                className={`ln-chevron ${isExpanded ? "ln-chevron-open" : ""}`}
+                              >
+                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
+                              </span>
+                            </td>
+                            <td className="ln-cell-name">{line.lineName}</td>
+                            <td>
+                              <span
+                                className={`ln-status ${getStatusClass(line.status)}`}
+                              >
+                                {line.status || "N/A"}
+                              </span>
+                            </td>
+                            <td>
+                              <div className="ln-hours">
+                                <span className="ln-hours-text">
+                                  {line.busyHours || 0}h / {line.availableHours || 8}h
+                                </span>
+                                <div className="ln-bar">
+                                  <div
+                                    className="ln-bar-fill"
+                                    style={{ width: `${Math.min(utilization, 100)}%` }}
+                                  />
+                                </div>
+                              </div>
+                            </td>
+                            <td className="ln-cell-num">
+                              {line.availableMachines || 0}
+                            </td>
+                            <td>
+                              {line.currentOrder ? (
+                                <span className="ln-order-tag">
+                                  #{line.currentOrder}
+                                </span>
+                              ) : (
+                                <span className="ln-cell-muted">—</span>
+                              )}
+                            </td>
+                            <td>
+                              {line.targetToday > 0 ? (
+                                <div className="ln-progress">
+                                  <div className="ln-progress-bar">
+                                    <div
+                                      className="ln-progress-fill"
+                                      style={{ width: `${Math.min(progressPct, 100)}%` }}
+                                    />
+                                  </div>
+                                  <span className="ln-progress-text">
+                                    {(line.completedToday || 0).toLocaleString()}/
+                                    {(line.targetToday || 0).toLocaleString()}
+                                  </span>
+                                </div>
+                              ) : (
+                                <span className="ln-cell-muted">—</span>
+                              )}
+                            </td>
+                          </tr>
+
+                          {/* Expanded row: Machine details */}
+                          {isExpanded && (
+                            <tr className="ln-expand-row">
+                              <td colSpan="7">
+                                <div className="ln-expand-content">
+                                  {line.machines && line.machines.length > 0 ? (
+                                    <div className="ln-machines-section">
+                                      <h4>Machines</h4>
+                                      <div className="ln-machines-grid">
+                                        {line.machines.map((machine) => (
+                                          <div
+                                            key={machine.id}
+                                            className="ln-machine-item"
+                                          >
+                                            <div className="ln-machine-left">
+                                              <span className="ln-machine-name">
+                                                {machine.name}
+                                              </span>
+                                              <span
+                                                className={`ln-status ln-status-sm ${getStatusClass(machine.status)}`}
+                                              >
+                                                {machine.status}
+                                              </span>
+                                            </div>
+                                            <div className="ln-machine-eff">
+                                              <span className="ln-eff-label">Eff</span>
+                                              <span
+                                                className={`ln-eff-value ${getEfficiencyClass(machine.efficiency)}`}
+                                              >
+                                                {machine.efficiency || 0}%
+                                              </span>
+                                            </div>
+                                          </div>
+                                        ))}
+                                      </div>
+                                    </div>
+                                  ) : (
+                                    <div className="ln-no-machines">
+                                      No machine data available
+                                    </div>
+                                  )}
+                                  {line.supervisor && (
+                                    <div className="ln-supervisor">
+                                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#8a92a6" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+                                      <span className="ln-sup-label">Supervisor:</span>
+                                      <span className="ln-sup-name">{line.supervisor}</span>
+                                    </div>
+                                  )}
+                                </div>
+                              </td>
+                            </tr>
+                          )}
+                        </React.Fragment>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </div>
+            )}
+          </section>
+        </div>
       </main>
     </div>
   );
