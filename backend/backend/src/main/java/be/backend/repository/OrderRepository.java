@@ -10,6 +10,10 @@ import java.time.OffsetDateTime;
 import java.util.List;
 import java.util.Optional;
 
+import be.backend.model.dto.projection.OrderStatusCountProjection;
+import be.backend.model.dto.projection.OrderTrendProjection;
+import be.backend.model.dto.projection.RevenueProjection;
+
 @Repository
 public interface OrderRepository extends JpaRepository<Order, Integer> {
 
@@ -67,4 +71,38 @@ public interface OrderRepository extends JpaRepository<Order, Integer> {
 
     // Count by specific status (sử dụng index idx_orders_status)
     long countByStatus(String status);
+
+    // Type-safe version thay cho countGroupByStatus() hiện có
+@Query(value = """
+    SELECT status AS status, COUNT(*) AS count
+    FROM orders
+    GROUP BY status
+    """, nativeQuery = true)
+List<OrderStatusCountProjection> getOrderStatusCounts();
+
+@Query(value = """
+    SELECT TO_CHAR(date_trunc(:unit, created_at), 'YYYY-MM-DD') AS period,
+           COUNT(*) AS orderCount,
+           COALESCE(SUM(quantity), 0) AS totalQuantity
+    FROM orders
+    WHERE created_at >= :from AND created_at < :to
+    GROUP BY date_trunc(:unit, created_at)
+    ORDER BY period
+    """, nativeQuery = true)
+List<OrderTrendProjection> getOrderTrend(
+        @Param("from") OffsetDateTime from,
+        @Param("to") OffsetDateTime to,
+        @Param("unit") String unit);
+
+@Query(value = """
+    SELECT COALESCE(SUM(oi.price * oi.quantity), 0) AS totalRevenue,
+           COUNT(DISTINCT o.order_id) AS totalOrders
+    FROM orders o
+    JOIN order_items oi ON oi.order_id = o.order_id
+    WHERE o.created_at >= :from AND o.created_at < :to
+      AND o.status != 'Cancelled'
+    """, nativeQuery = true)
+RevenueProjection getRevenueSummary(
+        @Param("from") OffsetDateTime from,
+        @Param("to") OffsetDateTime to);
 }

@@ -7,5 +7,5 @@ import java.util.List;
 
 public interface MachineRepository extends JpaRepository<Machine,Integer> {
         List<Machine> findByLineIdAndStatus(Integer lineId, String status);
-
+        long countByStatus(String status);
     }

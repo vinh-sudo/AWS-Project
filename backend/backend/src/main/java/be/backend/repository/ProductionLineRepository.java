@@ -53,5 +53,7 @@ public interface ProductionLineRepository extends JpaRepository<ProductionLine, 
             pl.efficiency
         """, nativeQuery = true)
     List<LineCapacityDTO> getLineCapacity(@Param("now") OffsetDateTime now);
+
+    long countByStatus(String status);
 }
 
