@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { useDispatch } from "react-redux";
 import { logout } from "../../redux";
 import ManagerSidebar from "../../components/ManagerSidebar/ManagerSidebar";
+import ManagerTopBar from "./ManagerTopBar";
 import managerService from "../../services/managerService";
 import authService from "../../services/authService";
 import {
@@ -552,177 +553,11 @@ const ManagerDashboard = () => {
       )}
 
       <main className="manager-main">
-        {/* Top Header Bar */}
-        <div className="top-header-bar">
-          <div className="search-box">
-            <svg className="search-icon-svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-              <circle cx="11" cy="11" r="8" />
-              <line x1="21" y1="21" x2="16.65" y2="16.65" />
-            </svg>
-            <input
-              type="text"
-              placeholder="Search lines, machines, schedules..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-            />
-            {searchQuery && (
-              <button
-                className="search-clear-btn"
-                onClick={() => setSearchQuery("")}
-                title="Clear search"
-              >
-                ✕
-              </button>
-            )}
-          </div>
-          <div className="header-actions">
-            {/* Dark Mode Toggle */}
-            <button
-              className={`header-icon-btn ${darkMode ? "active" : ""}`}
-              onClick={() => setDarkMode(!darkMode)}
-              title={darkMode ? "Light Mode (Ctrl+D)" : "Dark Mode (Ctrl+D)"}
-            >
-              {darkMode ? (
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
-                  <circle cx="12" cy="12" r="5" />
-                  <line x1="12" y1="1" x2="12" y2="3" />
-                  <line x1="12" y1="21" x2="12" y2="23" />
-                  <line x1="4.22" y1="4.22" x2="5.64" y2="5.64" />
-                  <line x1="18.36" y1="18.36" x2="19.78" y2="19.78" />
-                  <line x1="1" y1="12" x2="3" y2="12" />
-                  <line x1="21" y1="12" x2="23" y2="12" />
-                  <line x1="4.22" y1="19.78" x2="5.64" y2="18.36" />
-                  <line x1="18.36" y1="5.64" x2="19.78" y2="4.22" />
-                </svg>
-              ) : (
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
-                  <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z" />
-                </svg>
-              )}
-            </button>
-
-            {/* Notifications */}
-            <div className="notification-wrapper" ref={notificationRef}>
-              <button
-                className="header-icon-btn"
-                title="Notifications"
-                onClick={() => setShowNotifications(!showNotifications)}
-              >
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
-                  <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9" />
-                  <path d="M13.73 21a2 2 0 0 1-3.46 0" />
-                </svg>
-                {unreadNotifications > 0 && (
-                  <span className="notification-badge">{unreadNotifications}</span>
-                )}
-              </button>
-
-              {showNotifications && (
-                <div className="notification-dropdown">
-                  <div className="notification-dropdown-header">
-                    <h3>Notifications</h3>
-                    <span className="notification-count">{unreadNotifications} new</span>
-                  </div>
-                  <div className="notification-dropdown-body">
-                    {notifications.length === 0 ? (
-                      <div className="notification-empty">
-                        <span>🔔</span>
-                        <p>No notifications</p>
-                      </div>
-                    ) : (
-                      notifications.map((n) => (
-                        <div
-                          key={n.id}
-                          className={`notification-item ${n.type} ${n.read ? "read" : ""}`}
-                          onClick={() => {
-                            setNotifications((prev) =>
-                              prev.map((item) =>
-                                item.id === n.id ? { ...item, read: true } : item,
-                              ),
-                            );
-                          }}
-                        >
-                          <div className={`notification-icon-circle ${n.type}`}>
-                            {n.type === "danger" && "🔴"}
-                            {n.type === "warning" && "🟡"}
-                            {n.type === "info" && "🔵"}
-                          </div>
-                          <div className="notification-content">
-                            <span className="notification-title">{n.title}</span>
-                            <span className="notification-message">{n.message}</span>
-                          </div>
-                        </div>
-                      ))
-                    )}
-                  </div>
-                  {notifications.length > 0 && (
-                    <div className="notification-dropdown-footer">
-                      <button
-                        onClick={() =>
-                          setNotifications((prev) =>
-                            prev.map((n) => ({ ...n, read: true })),
-                          )
-                        }
-                      >
-                        Mark all as read
-                      </button>
-                    </div>
-                  )}
-                </div>
-              )}
-            </div>
-
-            {/* Messages */}
-            <button className="header-icon-btn" title="Messages">
-              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
-                <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
-              </svg>
-            </button>
-
-            {/* User Avatar */}
-            <div className="header-avatar-wrapper">
-              <div
-                className="header-avatar"
-                ref={avatarRef}
-                title={currentUser?.fullName || "Manager"}
-                onClick={() => setShowUserDropdown(!showUserDropdown)}
-              >
-                {currentUser?.fullName?.charAt(0) || "M"}
-              </div>
-              {showUserDropdown && (
-                <div className="user-dropdown" ref={dropdownRef}>
-                  <div className="user-dropdown-header">
-                    <div className="user-dropdown-avatar">
-                      {currentUser?.fullName?.charAt(0) || "M"}
-                    </div>
-                    <div className="user-dropdown-info">
-                      <span className="user-dropdown-name">
-                        {currentUser?.fullName || "Manager"}
-                      </span>
-                      <span className="user-dropdown-role">
-                        Production Manager
-                      </span>
-                    </div>
-                  </div>
-                  <div className="user-dropdown-divider" />
-                  <button className="user-dropdown-item" onClick={() => navigate("/manager/dashboard")}>
-                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
-                    My Profile
-                  </button>
-                  <button className="user-dropdown-item" onClick={() => navigate("/manager/dashboard")}>
-                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
-                    Settings
-                  </button>
-                  <div className="user-dropdown-divider" />
-                  <button className="user-dropdown-item logout" onClick={handleLogout}>
-                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
-                    Logout
-                  </button>
-                </div>
-              )}
-            </div>
-          </div>
-        </div>
+        {/* Top Header Bar - now using shared component */}
+        <ManagerTopBar
+          searchPlaceholder="Search lines, machines, schedules..."
+          onSearch={(term) => setSearchQuery(term)}
+        />
 
         {/* Page Content */}
         <div className="page-content">

@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from "react";
 import ManagerSidebar from "../../components/ManagerSidebar/ManagerSidebar";
+import ManagerTopBar from "./ManagerTopBar";
 import managerService from "../../services/managerService";
 import "./ManagerTracking.css";
 
@@ -9,6 +10,7 @@ const ManagerTracking = () => {
   const [delays, setDelays] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [searchTerm, setSearchTerm] = useState("");
   const [selectedDate, setSelectedDate] = useState(
     new Date().toISOString().split("T")[0],
   );
@@ -107,6 +109,26 @@ const ManagerTracking = () => {
     return acc;
   }, {});
 
+  // Filter gantt data by search
+  const filteredGanttByLine = Object.entries(ganttByLine).reduce((acc, [line, items]) => {
+    if (!searchTerm) {
+      acc[line] = items;
+    } else {
+      const q = searchTerm.toLowerCase();
+      if (
+        line.toLowerCase().includes(q) ||
+        items.some(
+          (item) =>
+            (item.machine || "").toLowerCase().includes(q) ||
+            String(item.orderId).includes(q)
+        )
+      ) {
+        acc[line] = items;
+      }
+    }
+    return acc;
+  }, {});
+
   // Time slots for header
   const timeSlots = Array.from({ length: 13 }, (_, i) => i + 7);
 
@@ -115,6 +137,12 @@ const ManagerTracking = () => {
       <ManagerSidebar />
 
       <main className="manager-main">
+        {/* Top Bar - outside page-content, same as Dashboard */}
+        <ManagerTopBar
+          searchPlaceholder="Search lines, machines, schedules..."
+          onSearch={(term) => setSearchTerm(term)}
+        />
+
         <div className="page-content">
           {/* Page Title Row */}
           <div className="page-title-row">
@@ -130,7 +158,12 @@ const ManagerTracking = () => {
                 className="date-picker"
               />
               <button className="btn-refresh" onClick={fetchTrackingData}>
-                🔄 Refresh
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <polyline points="23 4 23 10 17 10" />
+                  <polyline points="1 20 1 14 7 14" />
+                  <path d="M3.51 9a9 9 0 0114.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0020.49 15" />
+                </svg>
+                Refresh
               </button>
             </div>
           </div>
@@ -149,7 +182,11 @@ const ManagerTracking = () => {
             <div className="tracking-kpi-card kpi-blue">
               <div className="tracking-kpi-top">
                 <span className="tracking-kpi-label">Active Lines</span>
-                <div className="tracking-kpi-icon">🏭</div>
+                <div className="tracking-kpi-icon">
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <rect x="2" y="7" width="20" height="14" rx="2" ry="2" /><path d="M16 3h-8l-2 4h12z" />
+                  </svg>
+                </div>
               </div>
               <div className="tracking-kpi-value">{Object.keys(ganttByLine).length}</div>
               <div className="tracking-kpi-subtitle">Currently scheduled</div>
@@ -157,7 +194,11 @@ const ManagerTracking = () => {
             <div className="tracking-kpi-card kpi-green">
               <div className="tracking-kpi-top">
                 <span className="tracking-kpi-label">Avg OEE</span>
-                <div className="tracking-kpi-icon">📈</div>
+                <div className="tracking-kpi-icon">
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <polyline points="22 12 18 12 15 21 9 3 6 12 2 12" />
+                  </svg>
+                </div>
               </div>
               <div className="tracking-kpi-value">
                 {oeeData.length > 0
@@ -169,7 +210,12 @@ const ManagerTracking = () => {
             <div className="tracking-kpi-card kpi-orange">
               <div className="tracking-kpi-top">
                 <span className="tracking-kpi-label">Delays</span>
-                <div className="tracking-kpi-icon">⚠️</div>
+                <div className="tracking-kpi-icon">
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z" />
+                    <line x1="12" y1="9" x2="12" y2="13" /><line x1="12" y1="17" x2="12.01" y2="17" />
+                  </svg>
+                </div>
               </div>
               <div className="tracking-kpi-value">{delays.length}</div>
               <div className="tracking-kpi-subtitle">Warnings detected</div>
@@ -177,7 +223,11 @@ const ManagerTracking = () => {
             <div className="tracking-kpi-card kpi-purple">
               <div className="tracking-kpi-top">
                 <span className="tracking-kpi-label">Schedules</span>
-                <div className="tracking-kpi-icon">📊</div>
+                <div className="tracking-kpi-icon">
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <rect x="3" y="4" width="18" height="18" rx="2" ry="2" /><line x1="16" y1="2" x2="16" y2="6" /><line x1="8" y1="2" x2="8" y2="6" /><line x1="3" y1="10" x2="21" y2="10" />
+                  </svg>
+                </div>
               </div>
               <div className="tracking-kpi-value">{ganttData.length}</div>
               <div className="tracking-kpi-subtitle">Today's schedule items</div>
@@ -190,19 +240,29 @@ const ManagerTracking = () => {
               className={`tab-btn ${activeTab === "gantt" ? "active" : ""}`}
               onClick={() => setActiveTab("gantt")}
             >
-              <span className="tab-icon">📊</span> Gantt Chart
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <line x1="8" y1="6" x2="21" y2="6" /><line x1="8" y1="12" x2="21" y2="12" /><line x1="8" y1="18" x2="21" y2="18" /><line x1="3" y1="6" x2="3.01" y2="6" /><line x1="3" y1="12" x2="3.01" y2="12" /><line x1="3" y1="18" x2="3.01" y2="18" />
+              </svg>
+              Gantt Chart
             </button>
             <button
               className={`tab-btn ${activeTab === "oee" ? "active" : ""}`}
               onClick={() => setActiveTab("oee")}
             >
-              <span className="tab-icon">📈</span> OEE Analysis
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <polyline points="22 12 18 12 15 21 9 3 6 12 2 12" />
+              </svg>
+              OEE Analysis
             </button>
             <button
               className={`tab-btn ${activeTab === "delays" ? "active" : ""}`}
               onClick={() => setActiveTab("delays")}
             >
-              <span className="tab-icon">⚠️</span> Delays ({delays.length})
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z" />
+                <line x1="12" y1="9" x2="12" y2="13" /><line x1="12" y1="17" x2="12.01" y2="17" />
+              </svg>
+              Delays ({delays.length})
             </button>
           </div>
 
@@ -213,10 +273,7 @@ const ManagerTracking = () => {
             <section className="tracking-card gantt-section">
               <div className="card-header">
                 <div className="card-header-left">
-                  <h2>
-                    <span className="card-icon blue">📊</span>
-                    Gantt Chart - Production Schedule
-                  </h2>
+                  <h2>Gantt Chart - Production Schedule</h2>
                   <span className="card-subtitle">
                     Date: {new Date(selectedDate).toLocaleDateString("en-US")}
                   </span>
@@ -229,10 +286,12 @@ const ManagerTracking = () => {
                     <div className="spinner"></div>
                     <span>Loading schedule...</span>
                   </div>
-                ) : ganttData.length === 0 ? (
+                ) : Object.keys(filteredGanttByLine).length === 0 ? (
                   <div className="no-data">
-                    <span className="no-data-icon">📭</span>
-                    <span>No production schedule for this date</span>
+                    <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="#ccc" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+                      <rect x="3" y="4" width="18" height="18" rx="2" ry="2" /><line x1="16" y1="2" x2="16" y2="6" /><line x1="8" y1="2" x2="8" y2="6" /><line x1="3" y1="10" x2="21" y2="10" />
+                    </svg>
+                    <span>{searchTerm ? "No matching schedules" : "No production schedule for this date"}</span>
                   </div>
                 ) : (
                   <div className="gantt-container">
@@ -250,7 +309,7 @@ const ManagerTracking = () => {
 
                     {/* Gantt Rows */}
                     <div className="gantt-body">
-                      {Object.entries(ganttByLine).map(([line, items]) => (
+                      {Object.entries(filteredGanttByLine).map(([line, items]) => (
                         <div key={line} className="gantt-line-group">
                           <div className="gantt-line-header">{line}</div>
                           {items.map((item) => (
