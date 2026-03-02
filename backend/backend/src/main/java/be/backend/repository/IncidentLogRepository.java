@@ -25,6 +25,8 @@ public interface IncidentLogRepository extends JpaRepository<IncidentLog, Intege
                                 OffsetDateTime start,
                                 OffsetDateTime end);
 
+    long countByLineIdAndTimestampAfter(Integer lineId, OffsetDateTime after);
+
     @Query(value = """
     SELECT incident_type AS incidentType,
            severity AS severity,

@@ -27,7 +27,7 @@ public class SchedulerService {
         for (ProductionPlan plan : plans) {
 
             var start = plan.getPlannedStartDate().atStartOfDay().atOffset(ZoneOffset.of("+07"));
-            var end   = plan.getPlannedEndDate().atStartOfDay().atOffset(ZoneOffset.of("+07"));
+            var end = plan.getPlannedEndDate().atStartOfDay().atOffset(ZoneOffset.of("+07"));
 
             // 1. Leader check
             if (leaderRepo.findActiveLeader(plan.getLine().getId().longValue(), start, end).isEmpty()) {
@@ -42,8 +42,7 @@ public class SchedulerService {
                         "Line " + plan.getLine().getLineName() + " has blocking incident");
             }
 
-            List<Machine> machines =
-                    machineRepo.findByLineIdAndStatus(plan.getLine().getId(), "ACTIVE");
+            List<Machine> machines = machineRepo.findByLineIdAndStatus(plan.getLine().getId(), "ACTIVE");
 
             double totalHours = 0;
 
@@ -53,16 +52,17 @@ public class SchedulerService {
                 if (incidentRepo.hasBlockingIncident(
                         plan.getLine().getId().longValue(),
                         m.getId().longValue(),
-                        start, end)) continue;
+                        start, end))
+                    continue;
 
                 // 4. Busy
                 if (scheduleRepo.existsOverlappingMachineForUpdate(
-                        m.getId().longValue(), start, end)) continue;
+                        m.getId().longValue(), start, end))
+                    continue;
 
                 // 5. Capacity in hours
-                double hours =
-                        plan.getLine().getShiftHours()
-                                * plan.getLine().getEfficiency().doubleValue();
+                double hours = plan.getLine().getShiftHours()
+                        * plan.getLine().getEfficiency().doubleValue();
 
                 totalHours += hours;
             }
@@ -80,22 +80,23 @@ public class SchedulerService {
     public List<ProductionSchedule> createSchedules(ProductionPlan plan) {
 
         var start = plan.getPlannedStartDate().atStartOfDay().atOffset(ZoneOffset.of("+07"));
-        var end   = plan.getPlannedEndDate().atStartOfDay().atOffset(ZoneOffset.of("+07"));
+        var end = plan.getPlannedEndDate().atStartOfDay().atOffset(ZoneOffset.of("+07"));
 
         double remaining = plan.getEstimatedHours();
         double shift = plan.getLine().getShiftHours().doubleValue();
-        double eff   = plan.getLine().getEfficiency().doubleValue();
+        double eff = plan.getLine().getEfficiency().doubleValue();
 
-        List<Machine> machines =
-                machineRepo.findByLineIdAndStatus(plan.getLine().getId(), "ACTIVE");
+        List<Machine> machines = machineRepo.findByLineIdAndStatus(plan.getLine().getId(), "ACTIVE");
 
         List<ProductionSchedule> result = new ArrayList<>();
 
         for (Machine m : machines) {
-            if (remaining <= 0) break;
+            if (remaining <= 0)
+                break;
 
             if (scheduleRepo.existsOverlappingMachineForUpdate(
-                    m.getId().longValue(), start, end)) continue;
+                    m.getId().longValue(), start, end))
+                continue;
 
             double available = shift * eff;
             double assigned = Math.min(available, remaining);
@@ -115,6 +116,7 @@ public class SchedulerService {
 
         return result;
     }
+
     @Transactional
     public void pauseSchedule(Integer scheduleId, Account account) {
 
@@ -136,11 +138,14 @@ public class SchedulerService {
         // 3. Log
         IncidentLog log = new IncidentLog();
         log.setSchedule(schedule);
+        log.setLine(schedule.getPlan().getLine()); // ← FIX
         log.setIncidentType("PAUSE");
-        log.setDescription("Paused by " + account.getUser().getLastName());
+        log.setSeverity("LOW"); // ← BONUS
+        log.setDescription("Resumed by " + account.getUser().getLastName());
         log.setTimestamp(OffsetDateTime.now());
         incidentRepo.save(log);
     }
+
     @Transactional
     public void resumeSchedule(Integer scheduleId, Account account) {
 
