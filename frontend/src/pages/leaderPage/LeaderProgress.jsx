@@ -1,7 +1,19 @@
-import React, { useState, useEffect } from "react";
+// ============================================================================
+// LeaderProgress — Connected to backend LeaderController API
+// Endpoints used:
+//   GET  /api/leader/dashboard    → overview + active schedules + incidents
+//   GET  /api/leader/schedules    → schedule list
+//   PUT  /api/leader/progress     → update progress
+//   POST /api/leader/incident     → report incident
+//   POST /api/leader/report       → submit end-of-shift report
+// ============================================================================
+import React, { useState, useEffect, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import { useDispatch } from "react-redux";
 import { logout } from "../../redux";
+import NotificationBell from "../../components/NotificationBell/NotificationBell";
+import authService from "../../services/authService";
+import leaderService from "../../services/leaderService";
 import imsLogo from "../../assets/ims2.jpg";
 import "./LeaderProgress.css";
 
@@ -10,119 +22,105 @@ const LeaderProgress = () => {
   const [activeTab, setActiveTab] = useState("inProgress");
   const [showUpdateModal, setShowUpdateModal] = useState(false);
   const [showIncidentModal, setShowIncidentModal] = useState(false);
-  const [saelectedSchedule, setSelectedSchedule] = useState(null);
-  const [newOutput, setNewOutput] = useState(0);
+  const [showReportModal, setShowReportModal] = useState(false);
+  const [selectedSchedule, setSelectedSchedule] = useState(null);
+  const [newPercentage, setNewPercentage] = useState(0);
   const [progressNote, setProgressNote] = useState("");
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
 
-  // Current leader info
-  const currentLeaderId = "LD001";
-  const currentLeaderName = "John Leader";
-  const currentTeam = "SMT Line 1";
+  // Current leader info from auth
+  const currentUser = authService.getCurrentUser();
+  const currentLeaderName = currentUser?.fullName || "Leader";
 
-  // Load production schedules assigned to this leader
-  const [schedules, setSchedules] = useState(() => {
-    const saved = localStorage.getItem("ims_schedules");
-    return saved
-      ? JSON.parse(saved)
-      : [
-          {
-            id: "SCH-001",
-            orderId: "ORD-001",
-            orderName: "PCB-A100 - TechCorp Inc.",
-            lineName: "SMT Line 1",
-            lineId: "LINE-SMT-01",
-            quantity: 5000,
-            completedQty: 3250,
-            scheduledStart: "2026-01-20",
-            scheduledEnd: "2026-02-15",
-            status: "In Production",
-            priority: "High",
-            assignedLeader: "John Leader",
-            assignedLeaderId: "LD001",
-            progress: 65,
-            lastUpdate: "2026-01-25 14:30",
-            notes: "Đang chạy đúng tiến độ",
-            outputHistory: [
-              { date: "2026-01-20", qty: 1000, note: "Day 1 - Good start" },
-              {
-                date: "2026-01-21",
-                qty: 1200,
-                note: "Day 2 - Smooth production",
-              },
-              {
-                date: "2026-01-22",
-                qty: 1050,
-                note: "Day 3 - Minor adjustments",
-              },
-            ],
-            incidents: [],
-          },
-          {
-            id: "SCH-003",
-            orderId: "ORD-003",
-            orderName: "PCB-C300 - MicroTech Co.",
-            lineName: "SMT Line 1",
-            lineId: "LINE-SMT-01",
-            quantity: 8000,
-            completedQty: 6800,
-            scheduledStart: "2026-01-10",
-            scheduledEnd: "2026-01-25",
-            status: "In Production",
-            priority: "Critical",
-            assignedLeader: "John Leader",
-            assignedLeaderId: "LD001",
-            progress: 85,
-            lastUpdate: "2026-01-25 16:00",
-            notes: "Sắp hoàn thành",
-            outputHistory: [],
-            incidents: [],
-          },
-        ];
-  });
+  // Dashboard data from API
+  const [dashboard, setDashboard] = useState(null);
+  const [schedules, setSchedules] = useState([]);
 
-  // Incident types
+  // Incident types (matching backend incidentType field)
   const incidentTypes = [
-    "Máy hỏng",
-    "Thiếu nguyên liệu",
-    "Chất lượng kém",
-    "An toàn lao động",
-    "Thiếu nhân công",
-    "Khác",
+    "MACHINE_FAILURE",
+    "MATERIAL_SHORTAGE",
+    "QUALITY_ISSUE",
+    "SAFETY_INCIDENT",
+    "LABOR_SHORTAGE",
+    "OTHER",
   ];
 
+  const incidentTypeLabels = {
+    MACHINE_FAILURE: "Máy hỏng",
+    MATERIAL_SHORTAGE: "Thiếu nguyên liệu",
+    QUALITY_ISSUE: "Chất lượng kém",
+    SAFETY_INCIDENT: "An toàn lao động",
+    LABOR_SHORTAGE: "Thiếu nhân công",
+    OTHER: "Khác",
+  };
+
   const [newIncident, setNewIncident] = useState({
-    type: "Máy hỏng",
+    incidentType: "MACHINE_FAILURE",
     description: "",
-    severity: "Medium",
-    affectedQty: 0,
+    severity: "MEDIUM",
+    machineId: null,
   });
 
-  // Get schedules for current leader
-  const getMySchedules = () => {
-    return schedules.filter((s) => s.assignedLeaderId === currentLeaderId);
-  };
+  // End-of-shift report state
+  const [shiftReport, setShiftReport] = useState({
+    shift: "MORNING",
+    targetQuantity: 0,
+    goodQuantity: 0,
+    rejectQuantity: 0,
+    downtimeMinutes: 0,
+    notes: "",
+  });
+
+  // Fetch data from API
+  const fetchData = useCallback(async () => {
+    setLoading(true);
+    setError(null);
+    try {
+      const [dashboardRes, schedulesRes] = await Promise.all([
+        leaderService.getDashboard(),
+        leaderService.getMySchedules(),
+      ]);
+      setDashboard(dashboardRes);
+      setSchedules(schedulesRes || []);
+    } catch (err) {
+      console.error("Error fetching leader data:", err);
+      setError(err.response?.data?.message || "Không thể tải dữ liệu");
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    fetchData();
+  }, [fetchData]);
 
   // Filter based on active tab
   const getFilteredSchedules = () => {
-    const mySchedules = getMySchedules();
     switch (activeTab) {
       case "scheduled":
-        return mySchedules.filter((s) => s.status === "Scheduled");
+        return schedules.filter(
+          (s) => s.status === "SCHEDULED" || s.status === "Scheduled",
+        );
       case "inProgress":
-        return mySchedules.filter((s) => s.status === "In Production");
+        return schedules.filter(
+          (s) =>
+            s.status === "ACTIVE" ||
+            s.status === "IN_PROGRESS" ||
+            s.status === "In Production",
+        );
       case "completed":
-        return mySchedules.filter((s) => s.status === "Completed");
+        return schedules.filter(
+          (s) => s.status === "COMPLETED" || s.status === "Completed",
+        );
       case "onHold":
-        return mySchedules.filter((s) => s.status === "On Hold");
+        return schedules.filter(
+          (s) => s.status === "PAUSED" || s.status === "On Hold",
+        );
       default:
-        return mySchedules;
+        return schedules;
     }
-  };
-
-  // Save schedules to localStorage
-  const saveSchedules = (updatedSchedules) => {
-    localStorage.setItem("ims_schedules", JSON.stringify(updatedSchedules));
-    setSchedules(updatedSchedules);
   };
 
   const dispatch = useDispatch();
@@ -134,7 +132,7 @@ const LeaderProgress = () => {
 
   const openUpdateModal = (schedule) => {
     setSelectedSchedule(schedule);
-    setNewOutput(0);
+    setNewPercentage(0);
     setProgressNote("");
     setShowUpdateModal(true);
   };
@@ -142,115 +140,88 @@ const LeaderProgress = () => {
   const openIncidentModal = (schedule) => {
     setSelectedSchedule(schedule);
     setNewIncident({
-      type: "Máy hỏng",
+      incidentType: "MACHINE_FAILURE",
       description: "",
-      severity: "Medium",
-      affectedQty: 0,
+      severity: "MEDIUM",
+      machineId: null,
     });
     setShowIncidentModal(true);
   };
 
-  const handleUpdateOutput = () => {
-    const now = new Date().toISOString();
-    const today = now.split("T")[0];
-
-    const outputHistory = selectedSchedule.outputHistory || [];
-    outputHistory.push({
-      date: today,
-      qty: newOutput,
-      note: progressNote,
-      updatedAt: now,
-      updatedBy: currentLeaderName,
+  const openReportModal = () => {
+    setShiftReport({
+      shift: "MORNING",
+      targetQuantity: 0,
+      goodQuantity: 0,
+      rejectQuantity: 0,
+      downtimeMinutes: 0,
+      notes: "",
     });
+    setShowReportModal(true);
+  };
 
-    const newCompletedQty = selectedSchedule.completedQty + newOutput;
-    const newProgress = Math.min(
-      100,
-      Math.round((newCompletedQty / selectedSchedule.quantity) * 100),
-    );
+  const handleUpdateProgress = async () => {
+    try {
+      const result = await leaderService.updateProgress({
+        scheduleId: selectedSchedule.scheduleId,
+        percentage: newPercentage,
+        note: progressNote || undefined,
+      });
+      alert(`✅ ${result.message || "Đã cập nhật tiến độ!"}`);
+      setShowUpdateModal(false);
+      setSelectedSchedule(null);
+      fetchData(); // Reload data
+    } catch (err) {
+      alert(`❌ Lỗi: ${err.response?.data?.message || "Không thể cập nhật"}`);
+    }
+  };
 
-    // Auto-complete if 100%
-    const newStatus =
-      newProgress >= 100 ? "Completed" : selectedSchedule.status;
-
-    const updatedSchedules = schedules.map((s) =>
-      s.id === selectedSchedule.id
-        ? {
-            ...s,
-            completedQty: Math.min(newCompletedQty, s.quantity),
-            progress: newProgress,
-            status: newStatus,
-            outputHistory: outputHistory,
-            lastUpdate: now.replace("T", " ").slice(0, 16),
-            completedAt: newProgress >= 100 ? today : s.completedAt,
-          }
-        : s,
-    );
-
-    saveSchedules(updatedSchedules);
-    setShowUpdateModal(false);
-    setSelectedSchedule(null);
-
-    if (newProgress >= 100) {
-      alert("🎉 Hoàn thành sản xuất! Đã đạt 100%");
-    } else {
+  const handleReportIncident = async () => {
+    try {
+      await leaderService.reportIncident({
+        scheduleId: selectedSchedule.scheduleId,
+        machineId: newIncident.machineId || undefined,
+        incidentType: newIncident.incidentType,
+        severity: newIncident.severity,
+        description: newIncident.description,
+      });
+      alert("⚠️ Đã báo cáo sự cố thành công!");
+      setShowIncidentModal(false);
+      setSelectedSchedule(null);
+      fetchData();
+    } catch (err) {
       alert(
-        `✅ Đã cập nhật: +${newOutput} sản phẩm. Tổng: ${newCompletedQty}/${selectedSchedule.quantity}`,
+        `❌ Lỗi: ${err.response?.data?.message || "Không thể báo cáo sự cố"}`,
       );
     }
   };
 
-  const handleReportIncident = () => {
-    const now = new Date().toISOString();
-
-    const incidents = selectedSchedule.incidents || [];
-    incidents.push({
-      id: `INC-${Date.now()}`,
-      ...newIncident,
-      reportedAt: now,
-      reportedBy: currentLeaderName,
-      status: "Open",
-    });
-
-    const updatedSchedules = schedules.map((s) =>
-      s.id === selectedSchedule.id
-        ? {
-            ...s,
-            incidents: incidents,
-            lastUpdate: now.replace("T", " ").slice(0, 16),
-          }
-        : s,
-    );
-
-    saveSchedules(updatedSchedules);
-    setShowIncidentModal(false);
-    setSelectedSchedule(null);
-    alert("⚠️ Đã báo cáo sự cố. Admin sẽ được thông báo.");
-  };
-
-  const getPriorityClass = (priority) => {
-    switch (priority) {
-      case "Critical":
-        return "priority-critical";
-      case "High":
-        return "priority-high";
-      case "Medium":
-        return "priority-medium";
-      case "Low":
-        return "priority-low";
-      default:
-        return "";
+  const handleSubmitReport = async () => {
+    try {
+      const result = await leaderService.submitReport(shiftReport);
+      alert(`✅ ${result.message || "Đã gửi báo cáo ca thành công!"}`);
+      setShowReportModal(false);
+      fetchData();
+    } catch (err) {
+      alert(
+        `❌ Lỗi: ${err.response?.data?.message || "Không thể gửi báo cáo"}`,
+      );
     }
   };
 
   const getStatusClass = (status) => {
     switch (status) {
+      case "SCHEDULED":
       case "Scheduled":
         return "status-scheduled";
+      case "ACTIVE":
+      case "IN_PROGRESS":
       case "In Production":
         return "status-production";
+      case "COMPLETED":
       case "Completed":
         return "status-completed";
+      case "PAUSED":
       case "On Hold":
         return "status-hold";
       default:
@@ -258,30 +229,23 @@ const LeaderProgress = () => {
     }
   };
 
-  const getProgressColor = (progress) => {
-    if (progress >= 80) return "#4caf50";
-    if (progress >= 50) return "#ff9800";
-    if (progress >= 20) return "#2196f3";
-    return "#9e9e9e";
-  };
-
-  const mySchedules = getMySchedules();
   const filteredSchedules = getFilteredSchedules();
-  const scheduledCount = mySchedules.filter(
-    (s) => s.status === "Scheduled",
+  const scheduledCount = schedules.filter(
+    (s) => s.status === "SCHEDULED" || s.status === "Scheduled",
   ).length;
-  const inProgressCount = mySchedules.filter(
-    (s) => s.status === "In Production",
+  const inProgressCount = schedules.filter(
+    (s) =>
+      s.status === "ACTIVE" ||
+      s.status === "IN_PROGRESS" ||
+      s.status === "In Production",
   ).length;
-  const completedCount = mySchedules.filter(
-    (s) => s.status === "Completed",
+  const completedCount = schedules.filter(
+    (s) => s.status === "COMPLETED" || s.status === "Completed",
   ).length;
-  const onHoldCount = mySchedules.filter((s) => s.status === "On Hold").length;
-  const totalIncidents = mySchedules.reduce(
-    (sum, s) =>
-      sum + (s.incidents?.filter((i) => i.status === "Open").length || 0),
-    0,
-  );
+  const onHoldCount = schedules.filter(
+    (s) => s.status === "PAUSED" || s.status === "On Hold",
+  ).length;
+  const totalIncidents = dashboard?.unresolvedIncidentCount || 0;
 
   return (
     <div className="leader-progress-container">
@@ -320,7 +284,11 @@ const LeaderProgress = () => {
         <header className="leader-header">
           <div className="header-left">
             <h1>📊 Cập nhật tiến độ sản xuất</h1>
-            <p>Báo cáo sản lượng và sự cố cho từng lịch sản xuất</p>
+            <p>
+              {dashboard?.lineName
+                ? `${dashboard.lineName} — Hiệu suất hôm nay: ${dashboard.todayEfficiency || 0}%`
+                : "Báo cáo sản lượng và sự cố cho từng lịch sản xuất"}
+            </p>
           </div>
           <div className="header-right">
             {totalIncidents > 0 && (
@@ -329,9 +297,15 @@ const LeaderProgress = () => {
                 <span>Sự cố đang mở</span>
               </div>
             )}
+            <button className="btn-report-shift" onClick={openReportModal}>
+              📝 Báo cáo ca
+            </button>
+            <NotificationBell />
             <div className="user-info">
               <span className="user-name">{currentLeaderName}</span>
-              <span className="user-role">Leader - {currentTeam}</span>
+              <span className="user-role">
+                Leader - {dashboard?.lineName || "Loading..."}
+              </span>
             </div>
           </div>
         </header>
@@ -360,24 +334,51 @@ const LeaderProgress = () => {
         </div>
 
         {/* Stats Row */}
-        <div className="stats-row">
-          <div className="stat-card scheduled">
-            <span className="stat-number">{scheduledCount}</span>
-            <span className="stat-label">Chờ sản xuất</span>
+        {dashboard && (
+          <div className="stats-row">
+            <div className="stat-card progress">
+              <span className="stat-number">
+                {dashboard.todayProducedQuantity || 0}
+              </span>
+              <span className="stat-label">SL hôm nay</span>
+            </div>
+            <div className="stat-card scheduled">
+              <span className="stat-number">
+                {dashboard.activeScheduleCount || 0}
+              </span>
+              <span className="stat-label">Lịch đang chạy</span>
+            </div>
+            <div className="stat-card hold">
+              <span className="stat-number">
+                {dashboard.todayDowntimeMinutes || 0}p
+              </span>
+              <span className="stat-label">Downtime</span>
+            </div>
+            <div className="stat-card completed">
+              <span className="stat-number">
+                {dashboard.todayEfficiency || 0}%
+              </span>
+              <span className="stat-label">Hiệu suất</span>
+            </div>
           </div>
-          <div className="stat-card progress">
-            <span className="stat-number">{inProgressCount}</span>
-            <span className="stat-label">Đang sản xuất</span>
+        )}
+
+        {/* Loading / Error */}
+        {loading && (
+          <div className="empty-state">
+            <span>⏳</span>
+            <p>Đang tải dữ liệu...</p>
           </div>
-          <div className="stat-card hold">
-            <span className="stat-number">{onHoldCount}</span>
-            <span className="stat-label">Tạm dừng</span>
+        )}
+        {error && (
+          <div className="empty-state">
+            <span>⚠️</span>
+            <p>{error}</p>
+            <button className="btn-update" onClick={fetchData}>
+              Thử lại
+            </button>
           </div>
-          <div className="stat-card completed">
-            <span className="stat-number">{completedCount}</span>
-            <span className="stat-label">Hoàn thành</span>
-          </div>
-        </div>
+        )}
 
         {/* Tabs */}
         <div className="tabs-container">
@@ -408,205 +409,85 @@ const LeaderProgress = () => {
         </div>
 
         {/* Schedule Cards */}
-        <div className="tasks-list">
-          {filteredSchedules.length === 0 ? (
-            <div className="empty-state">
-              <span>📭</span>
-              <p>Không có lịch sản xuất nào</p>
-            </div>
-          ) : (
-            filteredSchedules.map((schedule) => (
-              <div
-                key={schedule.id}
-                className={`task-card ${schedule.status.replace(" ", "-").toLowerCase()}`}
-              >
-                <div className="task-header">
-                  <div className="task-id-priority">
-                    <span className="task-id">{schedule.id}</span>
+        {!loading && !error && (
+          <div className="tasks-list">
+            {filteredSchedules.length === 0 ? (
+              <div className="empty-state">
+                <span>📭</span>
+                <p>Không có lịch sản xuất nào</p>
+              </div>
+            ) : (
+              filteredSchedules.map((schedule) => (
+                <div
+                  key={schedule.scheduleId}
+                  className={`task-card ${(schedule.status || "").replace(/[ _]/g, "-").toLowerCase()}`}
+                >
+                  <div className="task-header">
+                    <div className="task-id-priority">
+                      <span className="task-id">SCH-{schedule.scheduleId}</span>
+                    </div>
                     <span
-                      className={`priority-badge ${getPriorityClass(schedule.priority)}`}
+                      className={`status-badge ${getStatusClass(schedule.status)}`}
                     >
-                      {schedule.priority}
+                      {schedule.status}
                     </span>
-                    {schedule.incidents?.filter((i) => i.status === "Open")
-                      .length > 0 && (
-                      <span className="incident-flag">⚠️ Có sự cố</span>
-                    )}
                   </div>
-                  <span
-                    className={`status-badge ${getStatusClass(schedule.status)}`}
-                  >
-                    {schedule.status}
-                  </span>
-                </div>
 
-                <h3 className="task-title">
-                  {schedule.orderId} - {schedule.orderName}
-                </h3>
+                  <h3 className="task-title">{schedule.orderInfo || "N/A"}</h3>
 
-                <div className="task-details">
-                  <div className="detail-item">
-                    <span className="detail-label">Line sản xuất</span>
-                    <span className="detail-value">{schedule.lineName}</span>
+                  <div className="task-details">
+                    <div className="detail-item">
+                      <span className="detail-label">Bắt đầu</span>
+                      <span className="detail-value">
+                        {schedule.startTime
+                          ? new Date(schedule.startTime).toLocaleString("vi-VN")
+                          : "—"}
+                      </span>
+                    </div>
+                    <div className="detail-item">
+                      <span className="detail-label">Kết thúc</span>
+                      <span className="detail-value">
+                        {schedule.endTime
+                          ? new Date(schedule.endTime).toLocaleString("vi-VN")
+                          : "—"}
+                      </span>
+                    </div>
                   </div>
-                  <div className="detail-item">
-                    <span className="detail-label">Thời gian</span>
-                    <span className="detail-value">
-                      {schedule.scheduledStart} → {schedule.scheduledEnd}
-                    </span>
-                  </div>
-                </div>
 
-                {/* Quantity Progress - MAIN FEATURE */}
-                <div className="quantity-section">
-                  <div className="quantity-header">
-                    <span className="quantity-label">
-                      Sản lượng hoàn thành:
-                    </span>
-                    <span className="quantity-value">
-                      <strong>{schedule.completedQty.toLocaleString()}</strong>
-                      <span className="qty-sep">/</span>
-                      {schedule.quantity.toLocaleString()} units
-                    </span>
-                  </div>
-                  <div className="progress-bar">
-                    <div
-                      className="progress-fill"
-                      style={{
-                        width: `${schedule.progress}%`,
-                        background: getProgressColor(schedule.progress),
-                      }}
-                    ></div>
-                  </div>
-                  <div className="progress-info">
-                    <span
-                      className="progress-percentage"
-                      style={{ color: getProgressColor(schedule.progress) }}
-                    >
-                      {schedule.progress}%
-                    </span>
-                    <span className="remaining">
-                      Còn lại:{" "}
-                      {(
-                        schedule.quantity - schedule.completedQty
-                      ).toLocaleString()}{" "}
-                      units
-                    </span>
-                  </div>
-                </div>
-
-                {/* Output History */}
-                {schedule.outputHistory &&
-                  schedule.outputHistory.length > 0 && (
-                    <div className="output-history">
-                      <h4>📈 Lịch sử sản lượng gần đây:</h4>
-                      <div className="history-list">
-                        {schedule.outputHistory
-                          .slice(-3)
-                          .reverse()
-                          .map((entry, index) => (
-                            <div key={index} className="history-item">
-                              <span className="history-date">{entry.date}</span>
-                              <span className="history-qty">
-                                +{entry.qty.toLocaleString()}
-                              </span>
-                              <span className="history-note">
-                                {entry.note || "—"}
-                              </span>
-                            </div>
-                          ))}
-                      </div>
+                  {/* Actions */}
+                  {(schedule.status === "ACTIVE" ||
+                    schedule.status === "IN_PROGRESS" ||
+                    schedule.status === "In Production") && (
+                    <div className="task-actions">
+                      <button
+                        className="btn-update"
+                        onClick={() => openUpdateModal(schedule)}
+                      >
+                        📊 Cập nhật tiến độ
+                      </button>
+                      <button
+                        className="btn-incident"
+                        onClick={() => openIncidentModal(schedule)}
+                      >
+                        ⚠️ Báo cáo sự cố
+                      </button>
                     </div>
                   )}
 
-                {/* Incidents */}
-                {schedule.incidents && schedule.incidents.length > 0 && (
-                  <div className="incidents-section">
-                    <h4>⚠️ Sự cố:</h4>
-                    <div className="incidents-list">
-                      {schedule.incidents.slice(-2).map((incident) => (
-                        <div
-                          key={incident.id}
-                          className={`incident-item ${incident.severity.toLowerCase()}`}
-                        >
-                          <span className="incident-type">{incident.type}</span>
-                          <span className="incident-desc">
-                            {incident.description}
-                          </span>
-                          <span
-                            className={`incident-status ${incident.status.toLowerCase()}`}
-                          >
-                            {incident.status}
-                          </span>
-                        </div>
-                      ))}
+                  {(schedule.status === "COMPLETED" ||
+                    schedule.status === "Completed") && (
+                    <div className="completed-info">
+                      <span>✅ Hoàn thành</span>
                     </div>
-                  </div>
-                )}
-
-                {/* Last Update */}
-                {schedule.lastUpdate && (
-                  <div className="last-update-info">
-                    <span>Cập nhật lần cuối: {schedule.lastUpdate}</span>
-                  </div>
-                )}
-
-                {/* Actions */}
-                {schedule.status === "In Production" && (
-                  <div className="task-actions">
-                    <button
-                      className="btn-update"
-                      onClick={() => openUpdateModal(schedule)}
-                    >
-                      📊 Cập nhật sản lượng
-                    </button>
-                    <button
-                      className="btn-incident"
-                      onClick={() => openIncidentModal(schedule)}
-                    >
-                      ⚠️ Báo cáo sự cố
-                    </button>
-                  </div>
-                )}
-
-                {schedule.status === "Scheduled" && (
-                  <div className="task-actions">
-                    <button
-                      className="btn-start"
-                      onClick={() => {
-                        const updatedSchedules = schedules.map((s) =>
-                          s.id === schedule.id
-                            ? {
-                                ...s,
-                                status: "In Production",
-                                lastUpdate: new Date()
-                                  .toISOString()
-                                  .replace("T", " ")
-                                  .slice(0, 16),
-                              }
-                            : s,
-                        );
-                        saveSchedules(updatedSchedules);
-                        alert("✅ Đã bắt đầu sản xuất!");
-                      }}
-                    >
-                      ▶️ Bắt đầu sản xuất
-                    </button>
-                  </div>
-                )}
-
-                {schedule.status === "Completed" && (
-                  <div className="completed-info">
-                    <span>✅ Hoàn thành: {schedule.completedAt}</span>
-                  </div>
-                )}
-              </div>
-            ))
-          )}
-        </div>
+                  )}
+                </div>
+              ))
+            )}
+          </div>
+        )}
       </main>
 
-      {/* Update Output Modal */}
+      {/* Update Progress Modal */}
       {showUpdateModal && selectedSchedule && (
         <div
           className="modal-overlay"
@@ -614,7 +495,7 @@ const LeaderProgress = () => {
         >
           <div className="modal-content" onClick={(e) => e.stopPropagation()}>
             <div className="modal-header">
-              <h2>📊 Cập nhật sản lượng</h2>
+              <h2>📊 Cập nhật tiến độ</h2>
               <button
                 className="modal-close"
                 onClick={() => setShowUpdateModal(false)}
@@ -625,53 +506,39 @@ const LeaderProgress = () => {
             <div className="modal-body">
               <div className="modal-task-info">
                 <p>
-                  <strong>Lịch:</strong> {selectedSchedule.id}
+                  <strong>Lịch:</strong> SCH-{selectedSchedule.scheduleId}
                 </p>
                 <p className="task-title-modal">
-                  {selectedSchedule.orderId} - {selectedSchedule.orderName}
-                </p>
-                <p>
-                  <strong>Hiện tại:</strong>{" "}
-                  {selectedSchedule.completedQty.toLocaleString()} /{" "}
-                  {selectedSchedule.quantity.toLocaleString()}(
-                  {selectedSchedule.progress}%)
+                  {selectedSchedule.orderInfo || "N/A"}
                 </p>
               </div>
 
               <div className="form-group">
-                <label>Số lượng sản xuất được hôm nay (units)</label>
+                <label>Phần trăm hoàn thành (%)</label>
                 <input
                   type="number"
                   min="0"
-                  max={
-                    selectedSchedule.quantity - selectedSchedule.completedQty
+                  max="100"
+                  value={newPercentage}
+                  onChange={(e) =>
+                    setNewPercentage(parseInt(e.target.value) || 0)
                   }
-                  value={newOutput}
-                  onChange={(e) => setNewOutput(parseInt(e.target.value) || 0)}
                   className="form-input"
-                  placeholder="Nhập số lượng..."
+                  placeholder="Nhập phần trăm..."
                 />
-                <div className="output-preview">
-                  <span>Sau khi cập nhật: </span>
-                  <strong>
-                    {(
-                      selectedSchedule.completedQty + newOutput
-                    ).toLocaleString()}{" "}
-                    / {selectedSchedule.quantity.toLocaleString()}
-                  </strong>
-                  <span>
-                    {" "}
-                    (
-                    {Math.min(
-                      100,
-                      Math.round(
-                        ((selectedSchedule.completedQty + newOutput) /
-                          selectedSchedule.quantity) *
-                          100,
-                      ),
-                    )}
-                    %)
-                  </span>
+                <div className="progress-bar" style={{ marginTop: 8 }}>
+                  <div
+                    className="progress-fill"
+                    style={{
+                      width: `${Math.min(100, newPercentage)}%`,
+                      background:
+                        newPercentage >= 100
+                          ? "#27ae60"
+                          : newPercentage >= 50
+                            ? "#2ecc71"
+                            : "#f39c12",
+                    }}
+                  ></div>
                 </div>
               </div>
 
@@ -681,7 +548,7 @@ const LeaderProgress = () => {
                   value={progressNote}
                   onChange={(e) => setProgressNote(e.target.value)}
                   className="form-textarea"
-                  placeholder="Nhập ghi chú về ca sản xuất..."
+                  placeholder="Nhập ghi chú về tiến độ sản xuất..."
                   rows={3}
                 />
               </div>
@@ -714,10 +581,10 @@ const LeaderProgress = () => {
               </button>
               <button
                 className="btn-update-confirm"
-                onClick={handleUpdateOutput}
-                disabled={newOutput <= 0}
+                onClick={handleUpdateProgress}
+                disabled={newPercentage <= 0}
               >
-                Cập nhật sản lượng
+                Cập nhật tiến độ
               </button>
             </div>
           </div>
@@ -743,25 +610,28 @@ const LeaderProgress = () => {
             <div className="modal-body">
               <div className="modal-task-info">
                 <p>
-                  <strong>Lịch:</strong> {selectedSchedule.id}
+                  <strong>Lịch:</strong> SCH-{selectedSchedule.scheduleId}
                 </p>
                 <p className="task-title-modal">
-                  {selectedSchedule.orderId} - {selectedSchedule.orderName}
+                  {selectedSchedule.orderInfo || "N/A"}
                 </p>
               </div>
 
               <div className="form-group">
                 <label>Loại sự cố</label>
                 <select
-                  value={newIncident.type}
+                  value={newIncident.incidentType}
                   onChange={(e) =>
-                    setNewIncident({ ...newIncident, type: e.target.value })
+                    setNewIncident({
+                      ...newIncident,
+                      incidentType: e.target.value,
+                    })
                   }
                   className="form-select"
                 >
                   {incidentTypes.map((type) => (
                     <option key={type} value={type}>
-                      {type}
+                      {incidentTypeLabels[type] || type}
                     </option>
                   ))}
                 </select>
@@ -776,32 +646,12 @@ const LeaderProgress = () => {
                   }
                   className="form-select"
                 >
-                  <option value="Low">Thấp - Không ảnh hưởng nhiều</option>
-                  <option value="Medium">
+                  <option value="LOW">Thấp - Không ảnh hưởng nhiều</option>
+                  <option value="MEDIUM">
                     Trung bình - Ảnh hưởng năng suất
                   </option>
-                  <option value="High">Cao - Phải dừng sản xuất</option>
-                  <option value="Critical">
-                    Nghiêm trọng - Cần xử lý ngay
-                  </option>
+                  <option value="HIGH">Cao - Phải dừng sản xuất</option>
                 </select>
-              </div>
-
-              <div className="form-group">
-                <label>Số lượng bị ảnh hưởng (nếu có)</label>
-                <input
-                  type="number"
-                  min="0"
-                  value={newIncident.affectedQty}
-                  onChange={(e) =>
-                    setNewIncident({
-                      ...newIncident,
-                      affectedQty: parseInt(e.target.value) || 0,
-                    })
-                  }
-                  className="form-input"
-                  placeholder="0"
-                />
               </div>
 
               <div className="form-group">
@@ -834,6 +684,138 @@ const LeaderProgress = () => {
                 disabled={!newIncident.description}
               >
                 Gửi báo cáo sự cố
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Shift Report Modal */}
+      {showReportModal && (
+        <div
+          className="modal-overlay"
+          onClick={() => setShowReportModal(false)}
+        >
+          <div className="modal-content" onClick={(e) => e.stopPropagation()}>
+            <div className="modal-header">
+              <h2>📋 Báo cáo cuối ca</h2>
+              <button
+                className="modal-close"
+                onClick={() => setShowReportModal(false)}
+              >
+                ×
+              </button>
+            </div>
+            <div className="modal-body">
+              <div className="form-group">
+                <label>Ca làm việc</label>
+                <select
+                  value={shiftReport.shift}
+                  onChange={(e) =>
+                    setShiftReport({ ...shiftReport, shift: e.target.value })
+                  }
+                  className="form-select"
+                >
+                  <option value="MORNING">Ca sáng</option>
+                  <option value="AFTERNOON">Ca chiều</option>
+                  <option value="NIGHT">Ca đêm</option>
+                </select>
+              </div>
+
+              <div className="form-group">
+                <label>Sản lượng mục tiêu</label>
+                <input
+                  type="number"
+                  min="0"
+                  value={shiftReport.targetQuantity}
+                  onChange={(e) =>
+                    setShiftReport({
+                      ...shiftReport,
+                      targetQuantity: parseInt(e.target.value) || 0,
+                    })
+                  }
+                  className="form-input"
+                  placeholder="Nhập sản lượng mục tiêu..."
+                />
+              </div>
+
+              <div className="form-group">
+                <label>Sản lượng đạt</label>
+                <input
+                  type="number"
+                  min="0"
+                  value={shiftReport.goodQuantity}
+                  onChange={(e) =>
+                    setShiftReport({
+                      ...shiftReport,
+                      goodQuantity: parseInt(e.target.value) || 0,
+                    })
+                  }
+                  className="form-input"
+                  placeholder="Nhập sản lượng đạt..."
+                />
+              </div>
+
+              <div className="form-group">
+                <label>Sản lượng lỗi</label>
+                <input
+                  type="number"
+                  min="0"
+                  value={shiftReport.rejectQuantity}
+                  onChange={(e) =>
+                    setShiftReport({
+                      ...shiftReport,
+                      rejectQuantity: parseInt(e.target.value) || 0,
+                    })
+                  }
+                  className="form-input"
+                  placeholder="Nhập sản lượng lỗi..."
+                />
+              </div>
+
+              <div className="form-group">
+                <label>Thời gian dừng (phút)</label>
+                <input
+                  type="number"
+                  min="0"
+                  value={shiftReport.downtimeMinutes}
+                  onChange={(e) =>
+                    setShiftReport({
+                      ...shiftReport,
+                      downtimeMinutes: parseInt(e.target.value) || 0,
+                    })
+                  }
+                  className="form-input"
+                  placeholder="Nhập thời gian dừng..."
+                />
+              </div>
+
+              <div className="form-group">
+                <label>Ghi chú</label>
+                <textarea
+                  value={shiftReport.notes}
+                  onChange={(e) =>
+                    setShiftReport({ ...shiftReport, notes: e.target.value })
+                  }
+                  className="form-textarea"
+                  placeholder="Ghi chú thêm..."
+                  rows={3}
+                />
+              </div>
+            </div>
+            <div className="modal-actions">
+              <button
+                className="btn-cancel"
+                onClick={() => setShowReportModal(false)}
+              >
+                Hủy
+              </button>
+              <button
+                className="btn-update-confirm"
+                onClick={handleSubmitReport}
+                disabled={shiftReport.goodQuantity <= 0}
+              >
+                Gửi báo cáo ca
               </button>
             </div>
           </div>

@@ -6,6 +6,7 @@ import * as Yup from "yup";
 import "./LoginPage.css";
 import imsLogo from "../../assets/ims2.jpg";
 import { login, clearError, selectIsLoading, selectError } from "../../redux";
+import { getRoleDefaultPath } from "../../routes/RoleBasedRoute";
 
 const LoginPage = () => {
   const navigate = useNavigate();
@@ -40,24 +41,8 @@ const LoginPage = () => {
         const user = result.payload;
         console.log("Login successful", user);
 
-        // Redirect based on role (matches backend Role enum: ADMIN, MANAGER, LINE_LEADER, PRODUCTION_PLANNER)
-        const role = user.role?.toUpperCase();
-        switch (role) {
-          case "ADMIN":
-            navigate("/admin/approval");
-            break;
-          case "MANAGER":
-            navigate("/manager/dashboard");
-            break;
-          case "PRODUCTION_PLANNER":
-            navigate("/planner/assignment");
-            break;
-          case "LINE_LEADER":
-            navigate("/leader/progress");
-            break;
-          default:
-            navigate("/dashboard");
-        }
+        // Redirect based on role using shared helper
+        navigate(getRoleDefaultPath(user.role));
       }
     },
   });

@@ -1,3 +1,8 @@
+// ============================================================================
+// NOTE: Backend chưa có PlannerController.
+// Trang này sử dụng 100% dữ liệu mock từ localStorage (ims_tasks).
+// Khi backend tạo endpoint cho Planner, refactor để gọi API thực.
+// ============================================================================
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useDispatch } from "react-redux";

@@ -18,10 +18,6 @@ import {
   PieChart,
   Pie,
   Cell,
-  LineChart,
-  Line,
-  Area,
-  AreaChart,
 } from "recharts";
 import "./ManagerDashboard.css";
 
@@ -39,7 +35,6 @@ const useAnimatedValue = (targetValue, duration = 1000) => {
       const now = Date.now();
       const elapsed = now - startTime.current;
       const progress = Math.min(elapsed / duration, 1);
-      // Ease out cubic
       const eased = 1 - Math.pow(1 - progress, 3);
       const current = startValue + (targetValue - startValue) * eased;
       setValue(current);
@@ -62,22 +57,20 @@ const ManagerDashboard = () => {
   const [linesOverview, setLinesOverview] = useState([]);
   const [oeeData, setOeeData] = useState([]);
   const [delays, setDelays] = useState([]);
+  const [productionOverview, setProductionOverview] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [selectedDate, setSelectedDate] = useState(
-    new Date().toISOString().split("T")[0],
+    new Date().toISOString().split("T")[0]
   );
-  const [showUserDropdown, setShowUserDropdown] = useState(false);
+  const [overviewRange, setOverviewRange] = useState("TODAY");
 
   // === NEW STATES ===
   const [darkMode, setDarkMode] = useState(() => {
     return localStorage.getItem("dashboard-dark-mode") === "true";
   });
-  const [chartView, setChartView] = useState("daily"); // daily | weekly
   const [expandedChart, setExpandedChart] = useState(null);
   const [showExportMenu, setShowExportMenu] = useState(false);
-  const [notifications, setNotifications] = useState([]);
-  const [showNotifications, setShowNotifications] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const [filteredDelays, setFilteredDelays] = useState([]);
   const [sortConfig, setSortConfig] = useState({ key: null, direction: "asc" });
@@ -85,10 +78,7 @@ const ManagerDashboard = () => {
   const currentUser = authService.getCurrentUser();
   const navigate = useNavigate();
   const dispatch = useDispatch();
-  const avatarRef = useRef(null);
-  const dropdownRef = useRef(null);
   const exportMenuRef = useRef(null);
-  const notificationRef = useRef(null);
 
   // === DARK MODE TOGGLE ===
   useEffect(() => {
@@ -108,83 +98,20 @@ const ManagerDashboard = () => {
             d.line?.toLowerCase().includes(query) ||
             d.machine?.toLowerCase().includes(query) ||
             d.risk?.toLowerCase().includes(query) ||
-            String(d.scheduleId).includes(query),
-        ),
+            String(d.scheduleId).includes(query)
+        )
       );
     }
   }, [searchQuery, delays]);
 
-  // === GENERATE NOTIFICATIONS FROM DATA ===
-  useEffect(() => {
-    const newNotifications = [];
-
-    // Critical delays
-    delays
-      .filter((d) => d.risk?.toUpperCase() === "HIGH")
-      .forEach((d) => {
-        newNotifications.push({
-          id: `delay-${d.scheduleId}`,
-          type: "danger",
-          title: "Critical Delay Alert",
-          message: `Schedule #${d.scheduleId} on ${d.line} - ${d.machine} is at high risk`,
-          time: new Date(),
-          read: false,
-        });
-      });
-
-    // Low OEE warnings
-    oeeData
-      .filter((d) => (d.oee || 0) < 0.5 && (d.oee || 0) > 0)
-      .forEach((d) => {
-        newNotifications.push({
-          id: `oee-${d.line}`,
-          type: "warning",
-          title: "Low OEE Warning",
-          message: `${d.line} has OEE of ${((d.oee || 0) * 100).toFixed(1)}%`,
-          time: new Date(),
-          read: false,
-        });
-      });
-
-    // Idle lines
-    linesOverview
-      .filter((l) => l.status?.toLowerCase() === "idle")
-      .forEach((l) => {
-        newNotifications.push({
-          id: `idle-${l.lineId}`,
-          type: "info",
-          title: "Idle Line",
-          message: `${l.lineName} is currently idle`,
-          time: new Date(),
-          read: false,
-        });
-      });
-
-    setNotifications(newNotifications);
-  }, [delays, oeeData, linesOverview]);
-
-  // Close dropdown when clicking outside
+  // Close menus when clicking outside
   useEffect(() => {
     const handleClickOutside = (e) => {
-      if (
-        avatarRef.current &&
-        !avatarRef.current.contains(e.target) &&
-        dropdownRef.current &&
-        !dropdownRef.current.contains(e.target)
-      ) {
-        setShowUserDropdown(false);
-      }
       if (
         exportMenuRef.current &&
         !exportMenuRef.current.contains(e.target)
       ) {
         setShowExportMenu(false);
-      }
-      if (
-        notificationRef.current &&
-        !notificationRef.current.contains(e.target)
-      ) {
-        setShowNotifications(false);
       }
     };
     document.addEventListener("mousedown", handleClickOutside);
@@ -194,17 +121,13 @@ const ManagerDashboard = () => {
   // === KEYBOARD SHORTCUTS ===
   useEffect(() => {
     const handleKeyDown = (e) => {
-      // Ctrl+D for dark mode
       if (e.ctrlKey && e.key === "d") {
         e.preventDefault();
         setDarkMode((prev) => !prev);
       }
-      // Escape to close modals
       if (e.key === "Escape") {
         setExpandedChart(null);
-        setShowUserDropdown(false);
         setShowExportMenu(false);
-        setShowNotifications(false);
       }
     };
     document.addEventListener("keydown", handleKeyDown);
@@ -220,116 +143,62 @@ const ManagerDashboard = () => {
     setLoading(true);
     setError(null);
     try {
-      const [linesRes, oeeRes, delaysRes] = await Promise.all([
+      const [linesRes, oeeRes, delaysRes, prodRes] = await Promise.allSettled([
         managerService.getLinesOverview(),
         managerService.getOEE(selectedDate),
         managerService.getDelays(),
+        managerService.getProductionOverview(overviewRange),
       ]);
 
-      setLinesOverview(linesRes || []);
-      setOeeData(oeeRes || []);
-      setDelays(delaysRes || []);
+      setLinesOverview(
+        linesRes.status === "fulfilled" ? linesRes.value || [] : []
+      );
+      setOeeData(oeeRes.status === "fulfilled" ? oeeRes.value || [] : []);
+      setDelays(delaysRes.status === "fulfilled" ? delaysRes.value || [] : []);
+      setProductionOverview(
+        prodRes.status === "fulfilled" ? prodRes.value || null : null
+      );
+
+      const errors = [linesRes, oeeRes, delaysRes, prodRes]
+        .filter((r) => r.status === "rejected")
+        .map((r) => r.reason?.message || "Unknown error");
+      if (errors.length > 0) {
+        console.error("Partial dashboard errors:", errors);
+        if (errors.length === 4) {
+          setError("Data loading failed. Please try again later.");
+        }
+      }
     } catch (error) {
       console.error("Error fetching dashboard data:", error);
       setError("Data loading failed. Please try again later.");
     } finally {
       setLoading(false);
     }
-  }, [selectedDate]);
+  }, [selectedDate, overviewRange]);
 
   useEffect(() => {
     fetchDashboardData();
   }, [fetchDashboardData]);
 
-  // === GREETING BY TIME OF DAY ===
+  // === HELPER FUNCTIONS ===
   const getGreeting = () => {
     const hour = new Date().getHours();
-    if (hour < 12) return "Good Morning";
-    if (hour < 17) return "Good Afternoon";
-    return "Good Evening";
-  };
-
-  // === EXPORT FUNCTIONS ===
-  const exportToCSV = () => {
-    const headers = ["Line,Status,Operating Hours,Available Hours,Available Machines"];
-    const rows = linesOverview.map(
-      (l) =>
-        `${l.lineName},${l.status},${l.busyHours},${l.availableHours},${l.availableMachines}`,
-    );
-    const csvContent = [...headers, ...rows].join("\n");
-    downloadFile(csvContent, `dashboard-report-${selectedDate}.csv`, "text/csv");
-    setShowExportMenu(false);
-  };
-
-  const exportDelaysCSV = () => {
-    const headers = ["Schedule ID,Line,Machine,Expected,Actual,Delay,Risk"];
-    const rows = delays.map(
-      (d) =>
-        `${d.scheduleId},${d.line},${d.machine},${d.expected},${d.actual},${d.delay},${d.risk}`,
-    );
-    const csvContent = [...headers, ...rows].join("\n");
-    downloadFile(csvContent, `delay-alerts-${selectedDate}.csv`, "text/csv");
-    setShowExportMenu(false);
-  };
-
-  const exportOEECSV = () => {
-    const headers = ["Line,Availability,Performance,Quality,OEE"];
-    const rows = oeeData.map(
-      (d) =>
-        `${d.line},${((d.availability || 0) * 100).toFixed(1)}%,${((d.performance || 0) * 100).toFixed(1)}%,${((d.quality || 0) * 100).toFixed(1)}%,${((d.oee || 0) * 100).toFixed(1)}%`,
-    );
-    const csvContent = [...headers, ...rows].join("\n");
-    downloadFile(csvContent, `oee-report-${selectedDate}.csv`, "text/csv");
-    setShowExportMenu(false);
-  };
-
-  const downloadFile = (content, fileName, mimeType) => {
-    const blob = new Blob([content], { type: mimeType });
-    const url = window.URL.createObjectURL(blob);
-    const link = document.createElement("a");
-    link.href = url;
-    link.download = fileName;
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-    window.URL.revokeObjectURL(url);
-  };
-
-  // === TABLE SORT ===
-  const handleSort = (key) => {
-    let direction = "asc";
-    if (sortConfig.key === key && sortConfig.direction === "asc") {
-      direction = "desc";
-    }
-    setSortConfig({ key, direction });
-  };
-
-  const getSortedLines = () => {
-    if (!sortConfig.key) return linesOverview;
-    return [...linesOverview].sort((a, b) => {
-      let aVal = a[sortConfig.key];
-      let bVal = b[sortConfig.key];
-      if (typeof aVal === "string") aVal = aVal.toLowerCase();
-      if (typeof bVal === "string") bVal = bVal.toLowerCase();
-      if (aVal < bVal) return sortConfig.direction === "asc" ? -1 : 1;
-      if (aVal > bVal) return sortConfig.direction === "asc" ? 1 : -1;
-      return 0;
-    });
-  };
-
-  const getSortIcon = (key) => {
-    if (sortConfig.key !== key) return "↕️";
-    return sortConfig.direction === "asc" ? "⬆️" : "⬇️";
+    if (hour < 12) return "Good morning";
+    if (hour < 18) return "Good afternoon";
+    return "Good evening";
   };
 
   const getStatusClass = (status) => {
-    switch (status?.toLowerCase()) {
-      case "running":
-        return "status-running";
-      case "idle":
-        return "status-idle";
-      case "maintenance":
-        return "status-maintenance";
+    switch (status?.toUpperCase()) {
+      case "OK":
+      case "RUNNING":
+        return "status-ok";
+      case "TIGHT":
+      case "IDLE":
+        return "status-tight";
+      case "OVERLOAD":
+      case "MAINTENANCE":
+        return "status-overload";
       default:
         return "";
     }
@@ -348,29 +217,81 @@ const ManagerDashboard = () => {
     }
   };
 
-  // Calculate summary stats
+  const handleSort = (key) => {
+    setSortConfig((prev) => ({
+      key,
+      direction: prev.key === key && prev.direction === "asc" ? "desc" : "asc",
+    }));
+  };
+
+  const getSortIcon = (key) => {
+    if (sortConfig.key !== key) return "↕";
+    return sortConfig.direction === "asc" ? "↑" : "↓";
+  };
+
+  // === EXPORT FUNCTIONS ===
+  const downloadCSV = (filename, headers, rows) => {
+    const csvContent = [headers.join(","), ...rows.map((r) => r.join(","))].join("\n");
+    const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
+    const link = document.createElement("a");
+    link.href = URL.createObjectURL(blob);
+    link.download = filename;
+    link.click();
+    URL.revokeObjectURL(link.href);
+  };
+
+  const exportToCSV = () => {
+    const headers = ["Line", "Status", "Busy Hours", "Available Hours", "Machines"];
+    const rows = linesOverview.map((l) => [
+      l.lineName, l.status, l.busyHours, l.availableHours, l.availableMachines,
+    ]);
+    downloadCSV("lines_overview.csv", headers, rows);
+    setShowExportMenu(false);
+  };
+
+  const exportOEECSV = () => {
+    const headers = ["Line", "Availability", "Performance", "Quality", "OEE"];
+    const rows = oeeData.map((d) => [
+      d.line,
+      ((d.availability || 0) * 100).toFixed(1),
+      ((d.performance || 0) * 100).toFixed(1),
+      ((d.quality || 0) * 100).toFixed(1),
+      ((d.oee || 0) * 100).toFixed(1),
+    ]);
+    downloadCSV("oee_report.csv", headers, rows);
+    setShowExportMenu(false);
+  };
+
+  const exportDelaysCSV = () => {
+    const headers = ["Schedule ID", "Line", "Machine", "Expected", "Actual", "Delay", "Risk"];
+    const rows = delays.map((d) => [
+      d.scheduleId, d.line, d.machine, d.expected, d.actual, d.delay, d.risk,
+    ]);
+    downloadCSV("delay_alerts.csv", headers, rows);
+    setShowExportMenu(false);
+  };
+
+  // === COMPUTED VALUES ===
   const totalLines = linesOverview.length;
   const runningLines = linesOverview.filter(
-    (l) => l.status?.toLowerCase() === "running",
+    (l) => l.status?.toUpperCase() === "OK" || l.status?.toLowerCase() === "running"
   ).length;
   const idleLines = linesOverview.filter(
-    (l) => l.status?.toLowerCase() === "idle",
+    (l) => l.status?.toLowerCase() === "idle"
   ).length;
   const maintenanceLines = linesOverview.filter(
-    (l) => l.status?.toLowerCase() === "maintenance",
+    (l) => l.status?.toLowerCase() === "maintenance"
   ).length;
   const averageOEE =
     oeeData.length > 0
       ? (
           (oeeData.reduce((sum, d) => sum + (d.oee || 0), 0) /
-            oeeData.filter((d) => d.oee > 0).length || 0) * 100
+            (oeeData.filter((d) => d.oee > 0).length || 1)) *
+          100
         ).toFixed(1)
       : 0;
   const criticalDelays = delays.filter(
-    (d) => d.risk?.toUpperCase() === "HIGH",
-  ).length;
-  const mediumDelays = delays.filter(
-    (d) => d.risk?.toUpperCase() === "MEDIUM",
+    (d) => d.risk?.toUpperCase() === "HIGH"
   ).length;
   const totalOperatingHours = linesOverview
     .reduce((sum, l) => sum + (l.busyHours || 0), 0)
@@ -382,7 +303,7 @@ const ManagerDashboard = () => {
   const animatedDelays = useAnimatedValue(criticalDelays, 800);
   const animatedHours = useAnimatedValue(parseFloat(totalOperatingHours), 1000);
 
-  // Prepare chart data from OEE
+  // Chart data
   const barChartData = oeeData.map((item) => ({
     name: item.line || "N/A",
     Availability: parseFloat(((item.availability || 0) * 100).toFixed(1)),
@@ -391,42 +312,23 @@ const ManagerDashboard = () => {
     OEE: parseFloat(((item.oee || 0) * 100).toFixed(1)),
   }));
 
-  // Line status distribution for mini pie
-  const statusDistribution = [
-    { name: "Running", value: runningLines, color: "#36b58a" },
-    { name: "Idle", value: idleLines, color: "#f0ad4e" },
-    { name: "Maintenance", value: maintenanceLines, color: "#e74c5e" },
-  ].filter((s) => s.value > 0);
-
-  // Calculate average availability & performance for donut charts
+  // Donut chart data
   const avgAvailability =
     oeeData.length > 0
       ? parseFloat(
-          (
-            (oeeData.reduce((sum, d) => sum + (d.availability || 0), 0) /
-              oeeData.length) *
-            100
-          ).toFixed(1),
+          ((oeeData.reduce((sum, d) => sum + (d.availability || 0), 0) / oeeData.length) * 100).toFixed(1)
         )
       : 0;
   const avgPerformance =
     oeeData.length > 0
       ? parseFloat(
-          (
-            (oeeData.reduce((sum, d) => sum + (d.performance || 0), 0) /
-              oeeData.length) *
-            100
-          ).toFixed(1),
+          ((oeeData.reduce((sum, d) => sum + (d.performance || 0), 0) / oeeData.length) * 100).toFixed(1)
         )
       : 0;
   const avgQuality =
     oeeData.length > 0
       ? parseFloat(
-          (
-            (oeeData.reduce((sum, d) => sum + (d.quality || 0), 0) /
-              oeeData.length) *
-            100
-          ).toFixed(1),
+          ((oeeData.reduce((sum, d) => sum + (d.quality || 0), 0) / oeeData.length) * 100).toFixed(1)
         )
       : 0;
 
@@ -471,89 +373,12 @@ const ManagerDashboard = () => {
     });
   };
 
-  const unreadNotifications = notifications.filter((n) => !n.read).length;
-
   return (
     <div className={`manager-container ${darkMode ? "dark-mode" : ""}`}>
       <ManagerSidebar />
 
-      {/* Expanded Chart Modal */}
-      {expandedChart && (
-        <div className="chart-modal-overlay" onClick={() => setExpandedChart(null)}>
-          <div className="chart-modal" onClick={(e) => e.stopPropagation()}>
-            <div className="chart-modal-header">
-              <h2>
-                {expandedChart === "bar" && "OEE Breakdown by Line"}
-                {expandedChart === "availability" && "Avg. Availability"}
-                {expandedChart === "performance" && "Avg. Performance"}
-                {expandedChart === "quality" && "Avg. Quality"}
-              </h2>
-              <button
-                className="chart-modal-close"
-                onClick={() => setExpandedChart(null)}
-              >
-                ✕
-              </button>
-            </div>
-            <div className="chart-modal-content">
-              {expandedChart === "bar" && (
-                <ResponsiveContainer width="100%" height={500}>
-                  <BarChart
-                    data={barChartData}
-                    margin={{ top: 20, right: 30, left: 10, bottom: 10 }}
-                    barCategoryGap="18%"
-                  >
-                    <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#eef0f5" />
-                    <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fontSize: 14, fill: "#8a92a6" }} />
-                    <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 14, fill: "#8a92a6" }} domain={[0, 100]} tickFormatter={(v) => `${v}%`} />
-                    <Tooltip contentStyle={{ borderRadius: "10px", border: "1px solid #e8ecf1", boxShadow: "0 4px 14px rgba(0,0,0,0.08)", fontSize: "14px" }} formatter={(value) => [`${value}%`]} />
-                    <Legend iconType="circle" iconSize={10} wrapperStyle={{ fontSize: "14px", paddingTop: "14px" }} />
-                    <Bar dataKey="Availability" fill="#4a6cf7" radius={[4, 4, 0, 0]} />
-                    <Bar dataKey="Performance" fill="#9b59f0" radius={[4, 4, 0, 0]} />
-                    <Bar dataKey="Quality" fill="#36b58a" radius={[4, 4, 0, 0]} />
-                  </BarChart>
-                </ResponsiveContainer>
-              )}
-              {expandedChart === "availability" && (
-                <ResponsiveContainer width="100%" height={400}>
-                  <PieChart>
-                    <Pie data={availabilityDonut} cx="50%" cy="50%" innerRadius={100} outerRadius={150} dataKey="value" startAngle={90} endAngle={-270} strokeWidth={0} label={renderCustomLabel} labelLine={false}>
-                      {availabilityDonut.map((entry, index) => (
-                        <Cell key={`cell-a-${index}`} fill={DONUT_COLORS_1[index]} />
-                      ))}
-                    </Pie>
-                  </PieChart>
-                </ResponsiveContainer>
-              )}
-              {expandedChart === "performance" && (
-                <ResponsiveContainer width="100%" height={400}>
-                  <PieChart>
-                    <Pie data={performanceDonut} cx="50%" cy="50%" innerRadius={100} outerRadius={150} dataKey="value" startAngle={90} endAngle={-270} strokeWidth={0} label={renderCustomLabel} labelLine={false}>
-                      {performanceDonut.map((entry, index) => (
-                        <Cell key={`cell-p-${index}`} fill={DONUT_COLORS_2[index]} />
-                      ))}
-                    </Pie>
-                  </PieChart>
-                </ResponsiveContainer>
-              )}
-              {expandedChart === "quality" && (
-                <ResponsiveContainer width="100%" height={400}>
-                  <PieChart>
-                    <Pie data={qualityDonut} cx="50%" cy="50%" innerRadius={100} outerRadius={150} dataKey="value" startAngle={90} endAngle={-270} strokeWidth={0} label={renderCustomLabel} labelLine={false}>
-                      {qualityDonut.map((entry, index) => (
-                        <Cell key={`cell-q-${index}`} fill={DONUT_COLORS_3[index]} />
-                      ))}
-                    </Pie>
-                  </PieChart>
-                </ResponsiveContainer>
-              )}
-            </div>
-          </div>
-        </div>
-      )}
-
       <main className="manager-main">
-        {/* Top Header Bar - now using shared component */}
+        {/* Top Header Bar - shared component */}
         <ManagerTopBar
           searchPlaceholder="Search lines, machines, schedules..."
           onSearch={(term) => setSearchQuery(term)}
@@ -564,8 +389,13 @@ const ManagerDashboard = () => {
           {/* Page Title */}
           <div className="page-title-row">
             <div className="page-title-left">
-              <h1>{getGreeting()}, {currentUser?.fullName?.split(" ")[0] || "Manager"} 👋</h1>
-              <p>{formatDate(new Date())} — Overview of production activities</p>
+              <h1>
+                {getGreeting()},{" "}
+                {currentUser?.fullName?.split(" ")[0] || "Manager"} 👋
+              </h1>
+              <p>
+                {formatDate(new Date())} — Overview of production activities
+              </p>
             </div>
             <div className="header-controls">
               <input
@@ -582,7 +412,16 @@ const ManagerDashboard = () => {
                   onClick={() => setShowExportMenu(!showExportMenu)}
                   title="Export Data"
                 >
-                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <svg
+                    width="16"
+                    height="16"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="2"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  >
                     <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
                     <polyline points="7 10 12 15 17 10" />
                     <line x1="12" y1="15" x2="12" y2="3" />
@@ -624,14 +463,17 @@ const ManagerDashboard = () => {
                   <div className="kpi-icon">🏭</div>
                 </div>
                 <span className="kpi-value">
-                  {Math.round(animatedRunning)}/{totalLines}
+                  {runningLines}/{totalLines}
                 </span>
                 <span className="kpi-subtitle">Active production lines</span>
                 {totalLines > 0 && (
                   <div className="kpi-mini-bar">
                     <div
                       className="kpi-mini-fill"
-                      style={{ width: `${(runningLines / totalLines) * 100}%`, background: "#4a6cf7" }}
+                      style={{
+                        width: `${(runningLines / totalLines) * 100}%`,
+                        background: "#4a6cf7",
+                      }}
                     />
                   </div>
                 )}
@@ -639,25 +481,13 @@ const ManagerDashboard = () => {
 
               <div className="kpi-card kpi-green">
                 <div className="kpi-card-top">
-                  <span className="kpi-label">Average OEE</span>
-                  <div className="kpi-icon">📈</div>
+                  <span className="kpi-label">Achievement Rate</span>
+                  <div className="kpi-icon">🎯</div>
                 </div>
-                <span className="kpi-value">{animatedOEE.toFixed(1)}%</span>
-                <span className="kpi-subtitle">Overall equipment effectiveness</span>
-                <div className="kpi-mini-bar">
-                  <div
-                    className="kpi-mini-fill"
-                    style={{
-                      width: `${averageOEE}%`,
-                      background:
-                        averageOEE >= 85
-                          ? "#36b58a"
-                          : averageOEE >= 60
-                            ? "#f0ad4e"
-                            : "#e74c5e",
-                    }}
-                  />
-                </div>
+                <span className="kpi-value">{averageOEE}%</span>
+                <span className="kpi-subtitle">
+                  Overall equipment effectiveness
+                </span>
               </div>
 
               <div className="kpi-card kpi-orange">
@@ -665,50 +495,24 @@ const ManagerDashboard = () => {
                   <span className="kpi-label">Critical Delays</span>
                   <div className="kpi-icon">⚠️</div>
                 </div>
-                <span className="kpi-value">{Math.round(animatedDelays)}</span>
-                <span className="kpi-subtitle">
-                  {mediumDelays > 0
-                    ? `+ ${mediumDelays} medium risk`
-                    : "Schedules at high risk"}
-                </span>
-                {delays.length > 0 && (
-                  <div className="kpi-risk-dots">
-                    {delays.slice(0, 8).map((d, i) => (
-                      <span
-                        key={i}
-                        className={`risk-dot ${d.risk?.toUpperCase() === "HIGH" ? "high" : d.risk?.toUpperCase() === "MEDIUM" ? "medium" : "low"}`}
-                        title={`#${d.scheduleId} - ${d.risk}`}
-                      />
-                    ))}
-                    {delays.length > 8 && <span className="risk-dot-more">+{delays.length - 8}</span>}
-                  </div>
-                )}
+                <span className="kpi-value">{criticalDelays}</span>
+                <span className="kpi-subtitle">Schedules at high risk</span>
               </div>
 
               <div className="kpi-card kpi-purple">
                 <div className="kpi-card-top">
                   <span className="kpi-label">Operating Hours</span>
-                  <div className="kpi-icon">⏰</div>
+                  <div className="kpi-icon">📈</div>
                 </div>
-                <span className="kpi-value">{animatedHours.toFixed(1)}h</span>
+                <span className="kpi-value">{totalOperatingHours}h</span>
                 <span className="kpi-subtitle">Total hours today</span>
-                {statusDistribution.length > 0 && (
-                  <div className="kpi-status-legend">
-                    {statusDistribution.map((s) => (
-                      <span key={s.name} className="status-legend-item">
-                        <span className="legend-dot" style={{ background: s.color }}></span>
-                        {s.value} {s.name}
-                      </span>
-                    ))}
-                  </div>
-                )}
               </div>
             </div>
           </section>
 
           {/* Main Content Grid */}
           <div className="dashboard-grid">
-            {/* === Charts Row === */}
+            {/* === OEE Bar Chart === */}
             <section className="dashboard-card chart-bar-card">
               <div className="card-header">
                 <div className="card-header-left">
@@ -716,39 +520,7 @@ const ManagerDashboard = () => {
                     <span className="card-icon blue">📊</span>
                     OEE Breakdown by Line
                   </h2>
-                  <span className="card-subtitle">
-                    Avg. OEE {averageOEE}%
-                    {parseFloat(averageOEE) >= 85 && " ✅"}
-                    {parseFloat(averageOEE) < 60 && parseFloat(averageOEE) > 0 && " ⚠️"}
-                  </span>
-                </div>
-                <div className="chart-actions">
-                  <div className="chart-filter-group">
-                    <button
-                      className={`chart-filter-btn ${chartView === "daily" ? "active" : ""}`}
-                      onClick={() => setChartView("daily")}
-                    >
-                      Daily
-                    </button>
-                    <button
-                      className={`chart-filter-btn ${chartView === "weekly" ? "active" : ""}`}
-                      onClick={() => setChartView("weekly")}
-                    >
-                      Weekly
-                    </button>
-                  </div>
-                  <button
-                    className="chart-expand-btn"
-                    onClick={() => setExpandedChart("bar")}
-                    title="Expand chart"
-                  >
-                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                      <polyline points="15 3 21 3 21 9" />
-                      <polyline points="9 21 3 21 3 15" />
-                      <line x1="21" y1="3" x2="14" y2="10" />
-                      <line x1="3" y1="21" x2="10" y2="14" />
-                    </svg>
-                  </button>
+                  <span className="card-subtitle">Avg. OEE {averageOEE}%</span>
                 </div>
               </div>
               <div className="card-content chart-content">
@@ -778,12 +550,18 @@ const ManagerDashboard = () => {
                         dataKey="name"
                         axisLine={false}
                         tickLine={false}
-                        tick={{ fontSize: 12, fill: darkMode ? "#999" : "#8a92a6" }}
+                        tick={{
+                          fontSize: 12,
+                          fill: darkMode ? "#999" : "#8a92a6",
+                        }}
                       />
                       <YAxis
                         axisLine={false}
                         tickLine={false}
-                        tick={{ fontSize: 12, fill: darkMode ? "#999" : "#8a92a6" }}
+                        tick={{
+                          fontSize: 12,
+                          fill: darkMode ? "#999" : "#8a92a6",
+                        }}
                         domain={[0, 100]}
                         tickFormatter={(v) => `${v}%`}
                       />
@@ -830,7 +608,7 @@ const ManagerDashboard = () => {
             {/* Donut Charts */}
             <section className="dashboard-card donut-charts-card">
               <div className="donut-charts-row">
-                <div className="donut-chart-item" onClick={() => setExpandedChart("availability")} style={{ cursor: "pointer" }}>
+                <div className="donut-chart-item">
                   <div className="donut-chart-header">
                     <h3>Avg. Availability</h3>
                   </div>
@@ -842,9 +620,25 @@ const ManagerDashboard = () => {
                     ) : (
                       <ResponsiveContainer width="100%" height={150}>
                         <PieChart>
-                          <Pie data={availabilityDonut} cx="50%" cy="50%" innerRadius={45} outerRadius={62} dataKey="value" startAngle={90} endAngle={-270} strokeWidth={0} label={renderCustomLabel} labelLine={false} animationDuration={1200}>
+                          <Pie
+                            data={availabilityDonut}
+                            cx="50%"
+                            cy="50%"
+                            innerRadius={45}
+                            outerRadius={62}
+                            dataKey="value"
+                            startAngle={90}
+                            endAngle={-270}
+                            strokeWidth={0}
+                            label={renderCustomLabel}
+                            labelLine={false}
+                            animationDuration={1200}
+                          >
                             {availabilityDonut.map((entry, index) => (
-                              <Cell key={`cell-a-${index}`} fill={DONUT_COLORS_1[index]} />
+                              <Cell
+                                key={`cell-a-${index}`}
+                                fill={DONUT_COLORS_1[index]}
+                              />
                             ))}
                           </Pie>
                         </PieChart>
@@ -853,17 +647,23 @@ const ManagerDashboard = () => {
                   </div>
                   <div className="donut-chart-legend">
                     <div className="legend-item">
-                      <span className="legend-dot" style={{ background: "#4a6cf7" }}></span>
+                      <span
+                        className="legend-dot"
+                        style={{ background: "#4a6cf7" }}
+                      ></span>
                       <span>Available</span>
                     </div>
                     <div className="legend-item">
-                      <span className="legend-dot" style={{ background: "#e8ecf1" }}></span>
+                      <span
+                        className="legend-dot"
+                        style={{ background: "#e8ecf1" }}
+                      ></span>
                       <span>Downtime</span>
                     </div>
                   </div>
                 </div>
 
-                <div className="donut-chart-item" onClick={() => setExpandedChart("performance")} style={{ cursor: "pointer" }}>
+                <div className="donut-chart-item">
                   <div className="donut-chart-header">
                     <h3>Avg. Performance</h3>
                   </div>
@@ -875,9 +675,25 @@ const ManagerDashboard = () => {
                     ) : (
                       <ResponsiveContainer width="100%" height={150}>
                         <PieChart>
-                          <Pie data={performanceDonut} cx="50%" cy="50%" innerRadius={45} outerRadius={62} dataKey="value" startAngle={90} endAngle={-270} strokeWidth={0} label={renderCustomLabel} labelLine={false} animationDuration={1200}>
+                          <Pie
+                            data={performanceDonut}
+                            cx="50%"
+                            cy="50%"
+                            innerRadius={45}
+                            outerRadius={62}
+                            dataKey="value"
+                            startAngle={90}
+                            endAngle={-270}
+                            strokeWidth={0}
+                            label={renderCustomLabel}
+                            labelLine={false}
+                            animationDuration={1200}
+                          >
                             {performanceDonut.map((entry, index) => (
-                              <Cell key={`cell-p-${index}`} fill={DONUT_COLORS_2[index]} />
+                              <Cell
+                                key={`cell-p-${index}`}
+                                fill={DONUT_COLORS_2[index]}
+                              />
                             ))}
                           </Pie>
                         </PieChart>
@@ -886,17 +702,23 @@ const ManagerDashboard = () => {
                   </div>
                   <div className="donut-chart-legend">
                     <div className="legend-item">
-                      <span className="legend-dot" style={{ background: "#36b58a" }}></span>
+                      <span
+                        className="legend-dot"
+                        style={{ background: "#36b58a" }}
+                      ></span>
                       <span>Effective</span>
                     </div>
                     <div className="legend-item">
-                      <span className="legend-dot" style={{ background: "#e8ecf1" }}></span>
+                      <span
+                        className="legend-dot"
+                        style={{ background: "#e8ecf1" }}
+                      ></span>
                       <span>Loss</span>
                     </div>
                   </div>
                 </div>
 
-                <div className="donut-chart-item" onClick={() => setExpandedChart("quality")} style={{ cursor: "pointer" }}>
+                <div className="donut-chart-item">
                   <div className="donut-chart-header">
                     <h3>Avg. Quality</h3>
                   </div>
@@ -908,9 +730,25 @@ const ManagerDashboard = () => {
                     ) : (
                       <ResponsiveContainer width="100%" height={150}>
                         <PieChart>
-                          <Pie data={qualityDonut} cx="50%" cy="50%" innerRadius={45} outerRadius={62} dataKey="value" startAngle={90} endAngle={-270} strokeWidth={0} label={renderCustomLabel} labelLine={false} animationDuration={1200}>
+                          <Pie
+                            data={qualityDonut}
+                            cx="50%"
+                            cy="50%"
+                            innerRadius={45}
+                            outerRadius={62}
+                            dataKey="value"
+                            startAngle={90}
+                            endAngle={-270}
+                            strokeWidth={0}
+                            label={renderCustomLabel}
+                            labelLine={false}
+                            animationDuration={1200}
+                          >
                             {qualityDonut.map((entry, index) => (
-                              <Cell key={`cell-q-${index}`} fill={DONUT_COLORS_3[index]} />
+                              <Cell
+                                key={`cell-q-${index}`}
+                                fill={DONUT_COLORS_3[index]}
+                              />
                             ))}
                           </Pie>
                         </PieChart>
@@ -919,11 +757,17 @@ const ManagerDashboard = () => {
                   </div>
                   <div className="donut-chart-legend">
                     <div className="legend-item">
-                      <span className="legend-dot" style={{ background: "#9b59f0" }}></span>
+                      <span
+                        className="legend-dot"
+                        style={{ background: "#9b59f0" }}
+                      ></span>
                       <span>Good</span>
                     </div>
                     <div className="legend-item">
-                      <span className="legend-dot" style={{ background: "#e8ecf1" }}></span>
+                      <span
+                        className="legend-dot"
+                        style={{ background: "#e8ecf1" }}
+                      ></span>
                       <span>Defect</span>
                     </div>
                   </div>
@@ -939,19 +783,11 @@ const ManagerDashboard = () => {
                     <span className="card-icon blue">🏭</span>
                     Lines Overview
                   </h2>
-                  <span className="card-subtitle">Operating status of production lines</span>
+                  <span className="card-subtitle">
+                    Operating status of production lines
+                  </span>
                 </div>
-                <div className="card-header-right">
-                  <div className="status-filter-pills">
-                    {statusDistribution.map((s) => (
-                      <span key={s.name} className="status-pill" style={{ borderColor: s.color, color: s.color }}>
-                        <span className="legend-dot" style={{ background: s.color }}></span>
-                        {s.value} {s.name}
-                      </span>
-                    ))}
-                  </div>
-                  <span className="card-header-badge">{totalLines} Lines</span>
-                </div>
+                <span className="card-header-badge">{totalLines} Lines</span>
               </div>
               <div className="card-content">
                 {loading ? (
@@ -968,13 +804,22 @@ const ManagerDashboard = () => {
                   <table className="data-table">
                     <thead>
                       <tr>
-                        <th onClick={() => handleSort("lineName")} style={{ cursor: "pointer" }}>
+                        <th
+                          onClick={() => handleSort("lineName")}
+                          style={{ cursor: "pointer" }}
+                        >
                           Line {getSortIcon("lineName")}
                         </th>
-                        <th onClick={() => handleSort("status")} style={{ cursor: "pointer" }}>
+                        <th
+                          onClick={() => handleSort("status")}
+                          style={{ cursor: "pointer" }}
+                        >
                           Status {getSortIcon("status")}
                         </th>
-                        <th onClick={() => handleSort("busyHours")} style={{ cursor: "pointer" }}>
+                        <th
+                          onClick={() => handleSort("busyHours")}
+                          style={{ cursor: "pointer" }}
+                        >
                           Operating Hours {getSortIcon("busyHours")}
                         </th>
                         <th>Available Machines</th>
@@ -982,46 +827,42 @@ const ManagerDashboard = () => {
                       </tr>
                     </thead>
                     <tbody>
-                      {getSortedLines().map((line) => {
-                        const capacityPercent = (
-                          ((line.busyHours || 0) / (line.availableHours || 1)) *
-                          100
-                        ).toFixed(0);
-                        return (
-                          <tr key={line.lineId} className={capacityPercent > 90 ? "row-highlight" : ""}>
-                            <td className="line-name">{line.lineName}</td>
-                            <td>
-                              <span className={`status-badge ${getStatusClass(line.status)}`}>
-                                <span className="status-pulse"></span>
-                                {line.status}
-                              </span>
-                            </td>
-                            <td>
-                              {line.busyHours}h / {line.availableHours}h
-                            </td>
-                            <td>{line.availableMachines} machines</td>
-                            <td>
-                              <div className="capacity-cell">
-                                <div className="capacity-bar">
-                                  <div
-                                    className="capacity-fill"
-                                    style={{
-                                      width: `${capacityPercent}%`,
-                                      background:
-                                        capacityPercent > 90
-                                          ? "#e74c5e"
-                                          : capacityPercent > 70
-                                            ? "#f0ad4e"
-                                            : "#36b58a",
-                                    }}
-                                  />
-                                </div>
-                                <span className="capacity-text">{capacityPercent}%</span>
+                      {linesOverview.map((line) => (
+                        <tr key={line.lineId}>
+                          <td className="line-name">{line.lineName}</td>
+                          <td>
+                            <span
+                              className={`status-badge ${getStatusClass(line.status)}`}
+                            >
+                              {line.status}
+                            </span>
+                          </td>
+                          <td>
+                            {line.busyHours}h / {line.availableHours}h
+                          </td>
+                          <td>{line.availableMachines} machines</td>
+                          <td>
+                            <div className="capacity-cell">
+                              <div className="capacity-bar">
+                                <div
+                                  className="capacity-fill"
+                                  style={{
+                                    width: `${((line.busyHours || 0) / (line.availableHours || 1)) * 100}%`,
+                                  }}
+                                />
                               </div>
-                            </td>
-                          </tr>
-                        );
-                      })}
+                              <span className="capacity-text">
+                                {(
+                                  ((line.busyHours || 0) /
+                                    (line.availableHours || 1)) *
+                                  100
+                                ).toFixed(0)}
+                                %
+                              </span>
+                            </div>
+                          </td>
+                        </tr>
+                      ))}
                     </tbody>
                   </table>
                 )}
@@ -1036,16 +877,15 @@ const ManagerDashboard = () => {
                     <span className="card-icon orange">⚠️</span>
                     Delay Alerts
                   </h2>
-                  <span className="card-subtitle">Schedules at risk of delay</span>
+                  <span className="card-subtitle">
+                    Schedules at risk of delay
+                  </span>
                 </div>
-                <div className="card-header-right">
-                  {criticalDelays > 0 && (
-                    <span className="card-header-badge danger">{criticalDelays} Critical</span>
-                  )}
-                  {delays.length > 0 && (
-                    <span className="card-header-badge">{delays.length} Alerts</span>
-                  )}
-                </div>
+                {delays.length > 0 && (
+                  <span className="card-header-badge">
+                    {delays.length} Alerts
+                  </span>
+                )}
               </div>
               <div className="card-content">
                 {loading ? (
@@ -1081,7 +921,11 @@ const ManagerDashboard = () => {
                       {filteredDelays.map((delay) => (
                         <tr
                           key={delay.scheduleId}
-                          className={delay.risk?.toUpperCase() === "HIGH" ? "row-critical" : ""}
+                          className={
+                            delay.risk?.toUpperCase() === "HIGH"
+                              ? "row-critical"
+                              : ""
+                          }
                         >
                           <td>#{delay.scheduleId}</td>
                           <td>{delay.line}</td>
@@ -1090,7 +934,9 @@ const ManagerDashboard = () => {
                           <td>{delay.actual}</td>
                           <td className="delay-value">-{delay.delay}</td>
                           <td>
-                            <span className={`risk-badge ${getRiskClass(delay.risk)}`}>
+                            <span
+                              className={`risk-badge ${getRiskClass(delay.risk)}`}
+                            >
                               {delay.risk?.toUpperCase() === "HIGH" && "🔴 "}
                               {delay.risk?.toUpperCase() === "MEDIUM" && "🟡 "}
                               {delay.risk?.toUpperCase() === "LOW" && "🟢 "}

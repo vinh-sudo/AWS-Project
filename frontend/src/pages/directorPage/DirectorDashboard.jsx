@@ -1,3 +1,9 @@
+// ============================================================================
+// NOTE: Backend chưa có DirectorController hoặc role DIRECTOR.
+// Trang này sử dụng 100% dữ liệu mock (hardcoded priorityOrders, kpiSummary, etc).
+// Backend chỉ có 4 role: ADMIN, MANAGER, LINE_LEADER, PRODUCTION_PLANNER.
+// Director không có trong hệ thống backend hiện tại.
+// ============================================================================
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useDispatch } from "react-redux";

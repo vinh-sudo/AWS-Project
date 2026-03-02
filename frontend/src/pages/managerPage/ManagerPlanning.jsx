@@ -6,8 +6,8 @@ import "./ManagerPlanning.css";
 
 const ManagerPlanning = () => {
   const [plans, setPlans] = useState([]);
-  const [orders, setOrders] = useState([]);
   const [linesOverview, setLinesOverview] = useState([]);
+  const [orders, setOrders] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [filterStatus, setFilterStatus] = useState("");
@@ -16,6 +16,7 @@ const ManagerPlanning = () => {
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [planForm, setPlanForm] = useState({
     orderId: "",
+    planName: "",
     startDate: new Date().toISOString().split("T")[0],
     note: "",
     lines: [],
@@ -45,11 +46,11 @@ const ManagerPlanning = () => {
     }
   };
 
-  // ── Modal handlers ──
   const openCreateModal = (order) => {
     setSelectedOrder(order);
     setPlanForm({
       orderId: order.id,
+      planName: "",
       startDate: new Date().toISOString().split("T")[0],
       note: "",
       lines: linesOverview.map((l) => ({
@@ -76,6 +77,7 @@ const ManagerPlanning = () => {
     try {
       const request = {
         orderId: planForm.orderId,
+        planName: planForm.planName,
         startDate: planForm.startDate,
         note: planForm.note,
         lines: planForm.lines
@@ -119,7 +121,6 @@ const ManagerPlanning = () => {
     }
   };
 
-  // ── Helpers ──
   const getDecisionClass = (decision) => {
     switch (decision?.toUpperCase()) {
       case "CONFIRMED": return "decision-confirmed";
@@ -145,7 +146,6 @@ const ManagerPlanning = () => {
     return "load-low";
   };
 
-  // ── Derived data ──
   const awaitingOrders = useMemo(() => {
     return (orders || []).filter(
       (o) => o.status === "APPROVED" || o.status === "NEW"
@@ -164,7 +164,6 @@ const ManagerPlanning = () => {
     });
   }, [awaitingOrders, searchTerm]);
 
-  // Group plans by orderId
   const plansByOrder = useMemo(() => {
     const grouped = {};
     (plans || []).forEach((p) => {
@@ -193,7 +192,6 @@ const ManagerPlanning = () => {
     (p) => p.decision === "DRAFT" || p.decision === "PENDING"
   ).length;
 
-  // Modal computed values
   const totalPlanned = selectedOrder
     ? planForm.lines.reduce((sum, l) => sum + l.plannedQty, 0)
     : 0;
@@ -206,14 +204,12 @@ const ManagerPlanning = () => {
       <ManagerSidebar />
 
       <main className="manager-main">
-        {/* Top Bar - outside page-content, same as Dashboard */}
         <ManagerTopBar
           searchPlaceholder="Search orders, plans, customers..."
           onSearch={(term) => setSearchTerm(term)}
         />
 
         <div className="page-content">
-          {/* ── Error Banner ── */}
           {error && (
             <div className="error-banner">
               <span>⚠️</span>
@@ -222,7 +218,6 @@ const ManagerPlanning = () => {
             </div>
           )}
 
-          {/* ── Toolbar ── */}
           <div className="pp-toolbar">
             <div className="pp-toolbar-left">
               <select
@@ -251,9 +246,7 @@ const ManagerPlanning = () => {
             </div>
           </div>
 
-          {/* ── Workspace ── */}
           <div className="pp-workspace">
-            {/* Left: Orders Table */}
             <section className="pp-panel pp-orders">
               <div className="pp-panel-header">
                 <h2 className="pp-panel-title">
@@ -327,7 +320,6 @@ const ManagerPlanning = () => {
               )}
             </section>
 
-            {/* Right: Line Capacity */}
             <aside className="pp-panel pp-lines">
               <div className="pp-panel-header">
                 <h2 className="pp-panel-title">
@@ -386,7 +378,6 @@ const ManagerPlanning = () => {
             </aside>
           </div>
 
-          {/* ── Plans Section ── */}
           <section className="pp-panel pp-plans-section">
             <div className="pp-panel-header">
               <h2 className="pp-panel-title">
@@ -449,6 +440,7 @@ const ManagerPlanning = () => {
                     <table className="pp-table pp-table-compact">
                       <thead>
                         <tr>
+                          <th>Plan Name</th>
                           <th>Line</th>
                           <th>Quantity</th>
                           <th>Start</th>
@@ -460,6 +452,7 @@ const ManagerPlanning = () => {
                       <tbody>
                         {orderPlans.map((plan) => (
                           <tr key={plan.id || plan.planId}>
+                            <td>{plan.planName || "—"}</td>
                             <td className="pp-cell-id">
                               {plan.lineName || `Line ${plan.lineId}`}
                             </td>
@@ -493,7 +486,6 @@ const ManagerPlanning = () => {
           </section>
         </div>
 
-        {/* ── Create Plan Modal ── */}
         {showCreateModal && selectedOrder && (
           <div className="modal-overlay" onClick={() => setShowCreateModal(false)}>
             <div className="modal-content" onClick={(e) => e.stopPropagation()}>
@@ -508,7 +500,6 @@ const ManagerPlanning = () => {
               </div>
 
               <div className="modal-body">
-                {/* Order Info */}
                 <div className="order-summary">
                   <div className="summary-item">
                     <span className="summary-label">Customer</span>
@@ -530,7 +521,19 @@ const ManagerPlanning = () => {
                   </div>
                 </div>
 
-                {/* Form */}
+                <div className="form-group">
+                  <label>Plan Name</label>
+                  <input
+                    type="text"
+                    value={planForm.planName}
+                    onChange={(e) =>
+                      setPlanForm((prev) => ({ ...prev, planName: e.target.value }))
+                    }
+                    className="form-input"
+                    placeholder="Enter plan name..."
+                  />
+                </div>
+
                 <div className="form-row">
                   <div className="form-group">
                     <label>Start Date</label>
@@ -557,7 +560,6 @@ const ManagerPlanning = () => {
                   </div>
                 </div>
 
-                {/* Line Allocation */}
                 <div className="line-allocation">
                   <h3>
                     Allocate to Lines

@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
 import ManagerSidebar from "../../components/ManagerSidebar/ManagerSidebar";
 import ManagerTopBar from "./ManagerTopBar";
+import NotificationBell from "../../components/NotificationBell/NotificationBell";
 import managerService from "../../services/managerService";
 import "./ManagerTracking.css";
 
@@ -24,15 +25,27 @@ const ManagerTracking = () => {
     setLoading(true);
     setError(null);
     try {
-      const [ganttRes, oeeRes, delaysRes] = await Promise.all([
+      // Use Promise.allSettled so one failing API doesn't block the rest
+      const [ganttRes, oeeRes, delaysRes] = await Promise.allSettled([
         managerService.getGantt(selectedDate),
         managerService.getOEE(selectedDate),
         managerService.getDelays(),
       ]);
 
-      setGanttData(ganttRes || []);
-      setOeeData(oeeRes || []);
-      setDelays(delaysRes || []);
+      setGanttData(ganttRes.status === "fulfilled" ? ganttRes.value || [] : []);
+      setOeeData(oeeRes.status === "fulfilled" ? oeeRes.value || [] : []);
+      setDelays(delaysRes.status === "fulfilled" ? delaysRes.value || [] : []);
+
+      // Collect partial errors
+      const errors = [ganttRes, oeeRes, delaysRes]
+        .filter((r) => r.status === "rejected")
+        .map((r) => r.reason?.message || "Unknown error");
+      if (errors.length > 0) {
+        console.error("Partial tracking errors:", errors);
+        if (errors.length === 3) {
+          setError("Unable to load data. Please try again later.");
+        }
+      }
     } catch (error) {
       console.error("Error fetching tracking data:", error);
       setError("Unable to load data. Please try again later.");
@@ -43,14 +56,12 @@ const ManagerTracking = () => {
 
   const getStatusClass = (status) => {
     switch (status?.toUpperCase()) {
-      case "COMPLETED":
-        return "status-completed";
-      case "IN_PROGRESS":
-        return "status-progress";
-      case "PENDING":
-        return "status-pending";
-      case "DELAYED":
-        return "status-delayed";
+      case "SCHEDULED":
+        return "status-scheduled";
+      case "RUNNING":
+        return "status-running";
+      case "PAUSED":
+        return "status-paused";
       default:
         return "";
     }
@@ -264,6 +275,7 @@ const ManagerTracking = () => {
               </svg>
               Delays ({delays.length})
             </button>
+            <NotificationBell />
           </div>
 
           {/* Content */}
@@ -347,20 +359,16 @@ const ManagerTracking = () => {
                     {/* Legend */}
                     <div className="gantt-legend">
                       <div className="legend-item">
-                        <span className="legend-color status-completed"></span>
-                        <span>Completed</span>
+                        <span className="legend-color status-scheduled"></span>
+                        <span>Scheduled</span>
                       </div>
                       <div className="legend-item">
-                        <span className="legend-color status-progress"></span>
-                        <span>In Progress</span>
+                        <span className="legend-color status-running"></span>
+                        <span>Running</span>
                       </div>
                       <div className="legend-item">
-                        <span className="legend-color status-pending"></span>
-                        <span>Pending</span>
-                      </div>
-                      <div className="legend-item">
-                        <span className="legend-color status-delayed"></span>
-                        <span>Delayed</span>
+                        <span className="legend-color status-paused"></span>
+                        <span>Paused</span>
                       </div>
                     </div>
                   </div>

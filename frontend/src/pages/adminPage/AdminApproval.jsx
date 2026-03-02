@@ -2,7 +2,9 @@ import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useDispatch } from "react-redux";
 import { logout } from "../../redux";
+import NotificationBell from "../../components/NotificationBell/NotificationBell";
 import authService from "../../services/authService";
+import adminService from "../../services/adminService";
 import imsLogo from "../../assets/ims2.jpg";
 import dashboardIcon from "../../assets/dashboard.jpg";
 import userIcon from "../../assets/user.jpg";
@@ -18,89 +20,29 @@ const AdminApproval = () => {
   const [selectedOrder, setSelectedOrder] = useState(null);
   const [rejectReason, setRejectReason] = useState("");
 
-  // Load orders from localStorage
-  const [orders, setOrders] = useState(() => {
-    const saved = localStorage.getItem("ims_orders");
-    return saved
-      ? JSON.parse(saved)
-      : [
-          {
-            id: "ORD-001",
-            customerName: "TechCorp Inc.",
-            productName: "PCB-A100",
-            quantity: 5000,
-            deadline: "2026-02-15",
-            priority: "High",
-            status: "Draft",
-            createdAt: "2026-01-20",
-            createdBy: "Sales User",
-            notes: "Đơn hàng quan trọng, cần ưu tiên xử lý",
-          },
-          {
-            id: "ORD-002",
-            customerName: "ElectroParts Ltd.",
-            productName: "PCB-B200",
-            quantity: 3000,
-            deadline: "2026-01-28",
-            priority: "Medium",
-            status: "Draft",
-            createdAt: "2026-01-22",
-            createdBy: "Sales User",
-            notes: "",
-          },
-          {
-            id: "ORD-003",
-            customerName: "MicroTech Co.",
-            productName: "PCB-C300",
-            quantity: 8000,
-            deadline: "2026-02-25",
-            priority: "Critical",
-            status: "Confirmed",
-            createdAt: "2026-01-15",
-            createdBy: "Admin",
-            confirmedAt: "2026-01-16",
-            confirmedBy: "System Administrator",
-          },
-          {
-            id: "ORD-004",
-            customerName: "DigiSys Corp.",
-            productName: "PCB-D400",
-            quantity: 2500,
-            deadline: "2026-02-20",
-            priority: "Low",
-            status: "Rejected",
-            createdAt: "2026-01-18",
-            createdBy: "Sales User",
-            rejectedAt: "2026-01-19",
-            rejectedBy: "System Administrator",
-            rejectedReason: "Không đủ nguyên liệu trong kho",
-          },
-          {
-            id: "ORD-005",
-            customerName: "GlobalTech",
-            productName: "PCB-E500",
-            quantity: 4000,
-            deadline: "2026-02-10",
-            priority: "High",
-            status: "Draft",
-            createdAt: "2026-01-24",
-            createdBy: "Sales User",
-            notes: "Khách hàng VIP",
-          },
-        ];
-  });
+  // Orders from real backend API
+  const [orders, setOrders] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+  const [actionLoading, setActionLoading] = useState(false);
 
-  // Reload orders when component mounts
+  // Fetch orders from backend on mount and tab change
   useEffect(() => {
-    const saved = localStorage.getItem("ims_orders");
-    if (saved) {
-      setOrders(JSON.parse(saved));
-    }
-  }, [activeTab]);
+    fetchOrders();
+  }, []);
 
-  const saveOrders = (updatedOrders) => {
-    localStorage.setItem("ims_orders", JSON.stringify(updatedOrders));
-    setOrders(updatedOrders);
+  const fetchOrders = async () => {
+    try {
+      setLoading(true);
+      setError(null);
+      const data = await adminService.getAllOrders();
+      setOrders(data);
+    } catch (err) {
+      console.error("Error fetching orders:", err);
+      setError(err.response?.data?.message || "Failed to load orders");
+    } finally {
+      setLoading(false);
+    }
   };
 
   const dispatch = useDispatch();
@@ -110,21 +52,19 @@ const AdminApproval = () => {
     navigate("/login");
   };
 
-  // Confirm order (Draft → Confirmed)
-  const handleConfirmOrder = (orderId) => {
-    const updatedOrders = orders.map((order) => {
-      if (order.id === orderId) {
-        return {
-          ...order,
-          status: "Confirmed",
-          confirmedBy: currentUser?.fullName || "System Administrator",
-          confirmedAt: new Date().toISOString().split("T")[0],
-        };
-      }
-      return order;
-    });
-    saveOrders(updatedOrders);
-    alert("Đơn hàng đã được xác nhận và chuyển sang Planner để lập lịch!");
+  // Confirm order (DRAFT → CONFIRMED) via real backend API
+  const handleConfirmOrder = async (orderId) => {
+    try {
+      setActionLoading(true);
+      await adminService.confirmOrder(orderId);
+      await fetchOrders(); // Refresh from backend
+      alert("Đơn hàng đã được xác nhận và chuyển sang Planner để lập lịch!");
+    } catch (err) {
+      console.error("Error confirming order:", err);
+      alert(err.response?.data?.message || "Failed to confirm order");
+    } finally {
+      setActionLoading(false);
+    }
   };
 
   const handleRejectClick = (order) => {
@@ -132,26 +72,25 @@ const AdminApproval = () => {
     setShowRejectModal(true);
   };
 
-  const handleRejectConfirm = () => {
+  // Cancel/reject order via real backend API
+  // NOTE: Backend uses "cancel" (status CANCELLED), not "reject"
+  const handleRejectConfirm = async () => {
     if (!selectedOrder) return;
 
-    const updatedOrders = orders.map((order) => {
-      if (order.id === selectedOrder.id) {
-        return {
-          ...order,
-          status: "Rejected",
-          rejectedBy: currentUser?.fullName || "System Administrator",
-          rejectedAt: new Date().toISOString().split("T")[0],
-          rejectedReason: rejectReason,
-        };
-      }
-      return order;
-    });
-    saveOrders(updatedOrders);
-    setShowRejectModal(false);
-    setSelectedOrder(null);
-    setRejectReason("");
-    alert("Đơn hàng đã bị từ chối!");
+    try {
+      setActionLoading(true);
+      await adminService.cancelOrder(selectedOrder.id, rejectReason);
+      setShowRejectModal(false);
+      setSelectedOrder(null);
+      setRejectReason("");
+      await fetchOrders(); // Refresh from backend
+      alert("Đơn hàng đã bị từ chối (hủy)!");
+    } catch (err) {
+      console.error("Error cancelling order:", err);
+      alert(err.response?.data?.message || "Failed to cancel order");
+    } finally {
+      setActionLoading(false);
+    }
   };
 
   const getStatusClass = (status) => {
@@ -160,10 +99,8 @@ const AdminApproval = () => {
         return "status-draft";
       case "Confirmed":
         return "status-confirmed";
-      case "Rejected":
+      case "Cancelled":
         return "status-rejected";
-      case "Scheduled":
-        return "status-scheduled";
       case "In Production":
         return "status-production";
       case "Completed":
@@ -172,6 +109,9 @@ const AdminApproval = () => {
         return "";
     }
   };
+
+  // Backend already returns display-friendly status strings
+  const getStatusDisplay = (status) => status || "Unknown";
 
   const getPriorityClass = (priority) => {
     switch (priority) {
@@ -188,9 +128,10 @@ const AdminApproval = () => {
     }
   };
 
+  // Filter using backend status values (Title Case)
   const draftOrders = orders.filter((o) => o.status === "Draft");
   const confirmedOrders = orders.filter((o) => o.status === "Confirmed");
-  const rejectedOrders = orders.filter((o) => o.status === "Rejected");
+  const cancelledOrders = orders.filter((o) => o.status === "Cancelled");
   const allProcessedOrders = orders.filter((o) => o.status !== "Draft");
 
   const filteredOrders =
@@ -199,7 +140,7 @@ const AdminApproval = () => {
       : activeTab === "confirmed"
         ? confirmedOrders
         : activeTab === "rejected"
-          ? rejectedOrders
+          ? cancelledOrders
           : allProcessedOrders;
 
   return (
@@ -261,6 +202,7 @@ const AdminApproval = () => {
               <span className="pending-count">{draftOrders.length}</span>
               <span>Chờ xác nhận</span>
             </div>
+            <NotificationBell />
             <div className="user-info">
               <span className="user-name">
                 {currentUser?.fullName || "Admin"}
@@ -304,7 +246,7 @@ const AdminApproval = () => {
             <span className="stat-label">Đã xác nhận</span>
           </div>
           <div className="stat-card rejected">
-            <span className="stat-number">{rejectedOrders.length}</span>
+            <span className="stat-number">{cancelledOrders.length}</span>
             <span className="stat-label">Đã từ chối</span>
           </div>
           <div className="stat-card total">
@@ -331,7 +273,7 @@ const AdminApproval = () => {
             className={`tab-btn ${activeTab === "rejected" ? "active" : ""}`}
             onClick={() => setActiveTab("rejected")}
           >
-            ❌ Đã từ chối ({rejectedOrders.length})
+            ❌ Đã hủy ({cancelledOrders.length})
           </button>
           <button
             className={`tab-btn ${activeTab === "history" ? "active" : ""}`}
@@ -342,111 +284,144 @@ const AdminApproval = () => {
         </div>
 
         {/* Orders List */}
-        <div className="tasks-list">
-          {filteredOrders.length === 0 ? (
-            <div className="empty-state">
-              <span>{activeTab === "draft" ? "✅" : "📋"}</span>
-              <p>
-                {activeTab === "draft"
-                  ? "Không có đơn hàng nào chờ xác nhận"
-                  : "Không tìm thấy đơn hàng"}
-              </p>
-            </div>
-          ) : (
-            filteredOrders.map((order) => (
-              <div
-                key={order.id}
-                className={`task-card ${activeTab === "draft" ? "pending" : ""}`}
-              >
-                <div className="task-header">
-                  <div className="task-id-priority">
-                    <span className="task-id">{order.id}</span>
-                    <span
-                      className={`priority-badge ${getPriorityClass(order.priority)}`}
-                    >
-                      {order.priority}
-                    </span>
-                  </div>
-                  <span
-                    className={`status-badge ${getStatusClass(order.status)}`}
-                  >
-                    {order.status}
-                  </span>
-                </div>
-
-                <h3 className="task-title">{order.customerName}</h3>
-                <p className="task-description">
-                  Sản phẩm: {order.productName}
+        {loading ? (
+          <div className="empty-state">
+            <span>⏳</span>
+            <p>Đang tải dữ liệu...</p>
+          </div>
+        ) : error ? (
+          <div className="empty-state">
+            <span>⚠️</span>
+            <p>{error}</p>
+            <button className="btn-approve" onClick={fetchOrders}>
+              Thử lại
+            </button>
+          </div>
+        ) : (
+          <div className="tasks-list">
+            {filteredOrders.length === 0 ? (
+              <div className="empty-state">
+                <span>{activeTab === "draft" ? "✅" : "📋"}</span>
+                <p>
+                  {activeTab === "draft"
+                    ? "Không có đơn hàng nào chờ xác nhận"
+                    : "Không tìm thấy đơn hàng"}
                 </p>
-
-                <div className="task-details">
-                  <div className="detail-item">
-                    <span className="detail-label">Số lượng:</span>
-                    <span className="detail-value">
-                      {order.quantity?.toLocaleString()} units
+              </div>
+            ) : (
+              filteredOrders.map((order) => (
+                <div
+                  key={order.id}
+                  className={`task-card ${activeTab === "draft" ? "pending" : ""}`}
+                >
+                  <div className="task-header">
+                    <div className="task-id-priority">
+                      <span className="task-id">#{order.id}</span>
+                      <span
+                        className={`priority-badge ${getPriorityClass(order.priority)}`}
+                      >
+                        {order.priority}
+                      </span>
+                    </div>
+                    <span
+                      className={`status-badge ${getStatusClass(order.status)}`}
+                    >
+                      {getStatusDisplay(order.status)}
                     </span>
                   </div>
-                  <div className="detail-item">
-                    <span className="detail-label">Deadline:</span>
-                    <span className="detail-value deadline">
-                      {order.deadline}
-                    </span>
-                  </div>
-                  <div className="detail-item">
-                    <span className="detail-label">Ngày tạo:</span>
-                    <span className="detail-value">{order.createdAt}</span>
-                  </div>
-                  <div className="detail-item">
-                    <span className="detail-label">Người tạo:</span>
-                    <span className="detail-value">{order.createdBy}</span>
-                  </div>
-                </div>
 
-                {order.notes && (
-                  <div className="order-notes">
-                    <span>📝 Ghi chú:</span> {order.notes}
-                  </div>
-                )}
+                  <h3 className="task-title">{order.customerName}</h3>
+                  <p className="task-description">
+                    Sản phẩm: {order.productType}
+                  </p>
 
-                {order.status === "Rejected" && order.rejectedReason && (
-                  <div className="rejection-reason">
-                    <span>❌ Lý do từ chối:</span> {order.rejectedReason}
-                    <div className="rejection-meta">
-                      Từ chối bởi: <strong>{order.rejectedBy}</strong> vào{" "}
-                      {order.rejectedAt}
+                  <div className="task-details">
+                    <div className="detail-item">
+                      <span className="detail-label">Số lượng:</span>
+                      <span className="detail-value">
+                        {order.quantity?.toLocaleString()} units
+                      </span>
+                    </div>
+                    <div className="detail-item">
+                      <span className="detail-label">Deadline:</span>
+                      <span className="detail-value deadline">
+                        {order.deadline
+                          ? new Date(order.deadline).toLocaleDateString("vi-VN")
+                          : "N/A"}
+                      </span>
+                    </div>
+                    <div className="detail-item">
+                      <span className="detail-label">Ngày tạo:</span>
+                      <span className="detail-value">
+                        {order.createdAt
+                          ? new Date(order.createdAt).toLocaleDateString(
+                              "vi-VN",
+                            )
+                          : "N/A"}
+                      </span>
+                    </div>
+                    <div className="detail-item">
+                      <span className="detail-label">Người tạo:</span>
+                      <span className="detail-value">
+                        {order.createdByName || "N/A"}
+                      </span>
                     </div>
                   </div>
-                )}
 
-                {order.status === "Confirmed" && (
-                  <div className="approval-info">
-                    <span>
-                      ✅ Xác nhận bởi: <strong>{order.confirmedBy}</strong>
-                    </span>
-                    <span>vào {order.confirmedAt}</span>
-                  </div>
-                )}
+                  {/* Show order items if any */}
+                  {order.items && order.items.length > 0 && (
+                    <div className="order-notes">
+                      <span>📦 Chi tiết:</span>{" "}
+                      {order.items
+                        .map((item) => `${item.productName} x${item.quantity}`)
+                        .join(", ")}
+                    </div>
+                  )}
 
-                {activeTab === "draft" && (
-                  <div className="task-actions">
-                    <button
-                      className="btn-approve"
-                      onClick={() => handleConfirmOrder(order.id)}
-                    >
-                      ✅ Xác nhận đơn hàng
-                    </button>
-                    <button
-                      className="btn-reject"
-                      onClick={() => handleRejectClick(order)}
-                    >
-                      ❌ Từ chối
-                    </button>
-                  </div>
-                )}
-              </div>
-            ))
-          )}
-        </div>
+                  {order.status === "Cancelled" && (
+                    <div className="rejection-reason">
+                      <span>❌ Đơn hàng đã bị hủy</span>
+                    </div>
+                  )}
+
+                  {order.status === "Confirmed" && (
+                    <div className="approval-info">
+                      <span>✅ Đã xác nhận</span>
+                      <span>
+                        {order.updatedAt
+                          ? new Date(order.updatedAt).toLocaleDateString(
+                              "vi-VN",
+                            )
+                          : ""}
+                      </span>
+                    </div>
+                  )}
+
+                  {activeTab === "draft" && (
+                    <div className="task-actions">
+                      <button
+                        className="btn-approve"
+                        onClick={() => handleConfirmOrder(order.id)}
+                        disabled={actionLoading}
+                      >
+                        {actionLoading
+                          ? "⏳ Đang xử lý..."
+                          : "✅ Xác nhận đơn hàng"}
+                      </button>
+                      <button
+                        className="btn-reject"
+                        onClick={() => handleRejectClick(order)}
+                        disabled={actionLoading}
+                      >
+                        ❌ Từ chối
+                      </button>
+                    </div>
+                  )}
+                </div>
+              ))
+            )}
+          </div>
+        )}
       </main>
 
       {/* Reject Modal */}
@@ -469,7 +444,7 @@ const AdminApproval = () => {
               <p className="task-title-modal">
                 Khách hàng: {selectedOrder?.customerName}
                 <br />
-                Sản phẩm: {selectedOrder?.productName}
+                Sản phẩm: {selectedOrder?.productType}
                 <br />
                 Số lượng: {selectedOrder?.quantity?.toLocaleString()} units
               </p>
@@ -494,9 +469,9 @@ const AdminApproval = () => {
               <button
                 className="btn-reject-confirm"
                 onClick={handleRejectConfirm}
-                disabled={!rejectReason.trim()}
+                disabled={!rejectReason.trim() || actionLoading}
               >
-                Xác nhận từ chối
+                {actionLoading ? "⏳ Đang xử lý..." : "Xác nhận từ chối"}
               </button>
             </div>
           </div>

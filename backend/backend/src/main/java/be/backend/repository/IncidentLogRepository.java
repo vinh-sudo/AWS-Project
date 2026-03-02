@@ -6,6 +6,10 @@ import org.springframework.data.jpa.repository.Query;
 
 import java.time.OffsetDateTime;
 
+import be.backend.model.dto.projection.IncidentStatsProjection;
+import org.springframework.data.repository.query.Param;
+import java.util.List;
+
 public interface IncidentLogRepository extends JpaRepository<IncidentLog, Integer> {
 
     @Query("""
@@ -20,4 +24,19 @@ public interface IncidentLogRepository extends JpaRepository<IncidentLog, Intege
                                 Long machineId,
                                 OffsetDateTime start,
                                 OffsetDateTime end);
+
+    long countByLineIdAndTimestampAfter(Integer lineId, OffsetDateTime after);
+
+    @Query(value = """
+    SELECT incident_type AS incidentType,
+           severity AS severity,
+           COUNT(*) AS count
+    FROM incident_log
+    WHERE timestamp BETWEEN :from AND :to
+    GROUP BY incident_type, severity
+    ORDER BY count DESC
+    """, nativeQuery = true)
+    List<IncidentStatsProjection> getIncidentSummary(
+        @Param("from") OffsetDateTime from,
+        @Param("to") OffsetDateTime to);
 }

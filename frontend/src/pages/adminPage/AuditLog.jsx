@@ -2,6 +2,7 @@ import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useDispatch } from "react-redux";
 import { logout } from "../../redux";
+import NotificationBell from "../../components/NotificationBell/NotificationBell";
 import authService from "../../services/authService";
 import adminService from "../../services/adminService";
 import imsLogo from "../../assets/ims2.jpg";
@@ -15,17 +16,10 @@ const AuditLog = () => {
   const currentUser = authService.getCurrentUser();
 
   // Audit logs state
-  const [auditLogs, setAuditLogs] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
-  const [searchTerm, setSearchTerm] = useState("");
-  const [actionFilter, setActionFilter] = useState("All actions");
-  const [entityFilter, setEntityFilter] = useState("All entities");
-  const [dateFrom, setDateFrom] = useState("");
-  const [dateTo, setDateTo] = useState("");
-
-  // Fetch audit logs on mount
+  // Fetch audit logs on mount (no backend API yet — resolves immediately)
   useEffect(() => {
     fetchAuditLogs();
   }, []);
@@ -34,8 +28,8 @@ const AuditLog = () => {
     try {
       setLoading(true);
       setError(null);
-      const data = await adminService.getAuditLogs();
-      setAuditLogs(data);
+      // No backend API available — getAuditLogs returns []
+      await adminService.getAuditLogs();
     } catch (err) {
       console.error("Error fetching audit logs:", err);
       setError(err.response?.data?.message || "Failed to load audit logs");
@@ -50,60 +44,6 @@ const AuditLog = () => {
     await dispatch(logout());
     navigate("/login");
   };
-
-  const getActionClass = (action) => {
-    switch (action) {
-      case "CREATE":
-        return "action-create";
-      case "UPDATE":
-        return "action-update";
-      case "DELETE":
-        return "action-delete";
-      case "LOGIN":
-        return "action-login";
-      case "LOGOUT":
-        return "action-logout";
-      default:
-        return "";
-    }
-  };
-
-  const formatTimestamp = (timestamp) => {
-    if (!timestamp) return "-";
-    return new Date(timestamp).toLocaleString("vi-VN");
-  };
-
-  const filteredLogs = auditLogs.filter((log) => {
-    const matchesSearch =
-      (log.userEmail?.toLowerCase() || "").includes(searchTerm.toLowerCase()) ||
-      (log.userName?.toLowerCase() || "").includes(searchTerm.toLowerCase()) ||
-      (log.details?.toLowerCase() || "").includes(searchTerm.toLowerCase()) ||
-      (log.entity?.toLowerCase() || "").includes(searchTerm.toLowerCase());
-    const matchesAction =
-      actionFilter === "All actions" || log.actionType === actionFilter;
-    const matchesEntity =
-      entityFilter === "All entities" || log.entity === entityFilter;
-
-    // Date filtering
-    let matchesDate = true;
-    if (dateFrom) {
-      const fromDate = new Date(dateFrom);
-      const logDate = new Date(log.timestamp);
-      matchesDate = matchesDate && logDate >= fromDate;
-    }
-    if (dateTo) {
-      const toDate = new Date(dateTo);
-      toDate.setHours(23, 59, 59, 999);
-      const logDate = new Date(log.timestamp);
-      matchesDate = matchesDate && logDate <= toDate;
-    }
-
-    return matchesSearch && matchesAction && matchesEntity && matchesDate;
-  });
-
-  const uniqueEntities = [
-    ...new Set(auditLogs.map((log) => log.entity).filter(Boolean)),
-  ];
 
   if (loading) {
     return (
@@ -171,14 +111,7 @@ const AuditLog = () => {
         <header className="admin-header">
           <h1 className="header-title">Audit Log</h1>
           <div className="header-actions">
-            <button
-              className="header-icon-btn"
-              onClick={fetchAuditLogs}
-              title="Refresh"
-            >
-              🔄
-            </button>
-            <button className="header-icon-btn">🔔</button>
+            <NotificationBell />
             <div className="user-menu">
               <div className="user-avatar"></div>
               <span className="user-name">
@@ -190,184 +123,41 @@ const AuditLog = () => {
         </header>
 
         <div className="admin-content">
-          {error && (
-            <div
-              className="error-banner"
-              style={{
-                background: "#ffebee",
-                color: "#c62828",
-                padding: "12px 16px",
-                borderRadius: "8px",
-                marginBottom: "16px",
-                display: "flex",
-                justifyContent: "space-between",
-                alignItems: "center",
-              }}
-            >
-              <span>⚠️ {error}</span>
-              <button
-                onClick={fetchAuditLogs}
-                style={{
-                  background: "#c62828",
-                  color: "white",
-                  border: "none",
-                  padding: "6px 12px",
-                  borderRadius: "4px",
-                  cursor: "pointer",
-                }}
-              >
-                Retry
-              </button>
-            </div>
-          )}
-
           <div className="content-header">
             <h2 className="content-title">System Activity Logs</h2>
-            <button className="btn-primary" onClick={() => window.print()}>
-              📥 Export Logs
+          </div>
+
+          {/* No backend API available */}
+          <div
+            style={{
+              display: "flex",
+              flexDirection: "column",
+              alignItems: "center",
+              justifyContent: "center",
+              padding: "80px 20px",
+              textAlign: "center",
+              color: "#666",
+            }}
+          >
+            <span style={{ fontSize: "48px", marginBottom: "16px" }}>🔒</span>
+            <h3
+              style={{ fontSize: "20px", color: "#333", marginBottom: "8px" }}
+            >
+              Audit Log - Coming Soon
+            </h3>
+            <p
+              style={{ fontSize: "14px", maxWidth: "400px", lineHeight: "1.6" }}
+            >
+              Tính năng Audit Log đang được phát triển. Hệ thống đã ghi nhận các
+              hoạt động nhưng chưa có API để hiển thị.
+            </p>
+            <button
+              className="btn-primary"
+              onClick={() => navigate("/admin/dashboard")}
+              style={{ marginTop: "24px" }}
+            >
+              ← Quay về Dashboard
             </button>
-          </div>
-
-          {/* Filters */}
-          <div className="audit-filters">
-            <div className="search-box">
-              <span className="search-icon">🔍</span>
-              <input
-                type="text"
-                placeholder="Search by user, action or details..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                className="search-input"
-              />
-            </div>
-
-            <div className="filter-group">
-              <label className="filter-label">Action</label>
-              <select
-                value={actionFilter}
-                onChange={(e) => setActionFilter(e.target.value)}
-                className="filter-select"
-              >
-                <option>All actions</option>
-                <option>CREATE</option>
-                <option>UPDATE</option>
-                <option>DELETE</option>
-                <option>LOGIN</option>
-                <option>LOGOUT</option>
-              </select>
-            </div>
-
-            <div className="filter-group">
-              <label className="filter-label">Entity</label>
-              <select
-                value={entityFilter}
-                onChange={(e) => setEntityFilter(e.target.value)}
-                className="filter-select"
-              >
-                <option>All entities</option>
-                {uniqueEntities.map((entity) => (
-                  <option key={entity}>{entity}</option>
-                ))}
-              </select>
-            </div>
-
-            <div className="filter-group">
-              <label className="filter-label">From</label>
-              <input
-                type="date"
-                value={dateFrom}
-                onChange={(e) => setDateFrom(e.target.value)}
-                className="filter-date"
-              />
-            </div>
-
-            <div className="filter-group">
-              <label className="filter-label">To</label>
-              <input
-                type="date"
-                value={dateTo}
-                onChange={(e) => setDateTo(e.target.value)}
-                className="filter-date"
-              />
-            </div>
-          </div>
-
-          {/* Audit Log Table */}
-          <div className="audit-table-container">
-            <table className="audit-table">
-              <thead>
-                <tr>
-                  <th className="table-header">ID</th>
-                  <th className="table-header">Timestamp</th>
-                  <th className="table-header">User</th>
-                  <th className="table-header">Action</th>
-                  <th className="table-header">Entity</th>
-                  <th className="table-header">Details</th>
-                </tr>
-              </thead>
-              <tbody>
-                {filteredLogs.length === 0 ? (
-                  <tr>
-                    <td
-                      colSpan="6"
-                      style={{
-                        textAlign: "center",
-                        padding: "40px",
-                        color: "#666",
-                      }}
-                    >
-                      No audit logs found
-                    </td>
-                  </tr>
-                ) : (
-                  filteredLogs.map((log) => (
-                    <tr key={log.id} className="table-row">
-                      <td className="table-cell">{log.id}</td>
-                      <td className="table-cell timestamp-cell">
-                        {formatTimestamp(log.timestamp)}
-                      </td>
-                      <td className="table-cell">
-                        <div className="user-cell">
-                          <div className="user-avatar-small">
-                            {(log.userEmail || log.userName || "?")
-                              .charAt(0)
-                              .toUpperCase()}
-                          </div>
-                          <span>{log.userEmail || log.userName || "-"}</span>
-                        </div>
-                      </td>
-                      <td className="table-cell">
-                        <span
-                          className={`action-badge ${getActionClass(log.actionType)}`}
-                        >
-                          {log.actionType}
-                        </span>
-                      </td>
-                      <td className="table-cell">
-                        <span className="entity-badge">{log.entity}</span>
-                      </td>
-                      <td className="table-cell details-cell">{log.details}</td>
-                    </tr>
-                  ))
-                )}
-              </tbody>
-            </table>
-          </div>
-
-          {/* Pagination */}
-          <div className="pagination">
-            <span className="pagination-info">
-              Showing {filteredLogs.length} of {auditLogs.length} entries
-            </span>
-            <div className="pagination-controls">
-              <button className="pagination-btn" disabled>
-                ← Previous
-              </button>
-              <button className="pagination-btn active">1</button>
-              <button className="pagination-btn">2</button>
-              <button className="pagination-btn">3</button>
-              <button className="pagination-btn">Next →</button>
-            </div>
           </div>
         </div>
       </div>

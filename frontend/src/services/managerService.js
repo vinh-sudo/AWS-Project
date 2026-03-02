@@ -99,13 +99,115 @@ const managerService = {
     }
   },
 
-  // ===================== ORDERS (for planning) =====================
-  // NOTE: Backend chưa có endpoint /api/manager/orders cho role MANAGER.
-  // Orders chỉ có ở /api/admin/orders (yêu cầu ADMIN role).
-  // Khi backend tạo endpoint này, uncomment và sửa lại.
-  getOrders: async (/* status = null */) => {
-    // Trả về mảng rỗng vì backend chưa có endpoint cho manager xem orders
-    return [];
+  // ===================== STATISTICS =====================
+
+  /**
+   * Get production overview (TODAY/WEEK/MONTH)
+   * GET /api/manager/statistics/production-overview
+   * @param {string} range - 'TODAY' | 'WEEK' | 'MONTH'
+   */
+  getProductionOverview: async (range = "TODAY") => {
+    try {
+      const response = await api.get(
+        "/api/manager/statistics/production-overview",
+        {
+          params: { range },
+        },
+      );
+      return response.data;
+    } catch (error) {
+      console.error("Error fetching production overview:", error);
+      throw error;
+    }
+  },
+
+  /**
+   * Get OEE trend over a date range
+   * GET /api/manager/statistics/oee-trend
+   */
+  getOeeTrend: async (from, to) => {
+    try {
+      const response = await api.get("/api/manager/statistics/oee-trend", {
+        params: { from, to },
+      });
+      return response.data;
+    } catch (error) {
+      console.error("Error fetching OEE trend:", error);
+      throw error;
+    }
+  },
+
+  /**
+   * Compare production lines over a date range
+   * GET /api/manager/statistics/line-comparison
+   */
+  getLineComparison: async (from, to) => {
+    try {
+      const response = await api.get(
+        "/api/manager/statistics/line-comparison",
+        {
+          params: { from, to },
+        },
+      );
+      return response.data;
+    } catch (error) {
+      console.error("Error fetching line comparison:", error);
+      throw error;
+    }
+  },
+
+  /**
+   * Get yield trend over a date range
+   * GET /api/manager/statistics/yield-trend
+   */
+  getYieldTrend: async (from, to) => {
+    try {
+      const response = await api.get("/api/manager/statistics/yield-trend", {
+        params: { from, to },
+      });
+      return response.data;
+    } catch (error) {
+      console.error("Error fetching yield trend:", error);
+      throw error;
+    }
+  },
+
+  /**
+   * Get schedule adherence stats over a date range
+   * GET /api/manager/statistics/schedule-adherence
+   */
+  getScheduleAdherence: async (from, to) => {
+    try {
+      const response = await api.get(
+        "/api/manager/statistics/schedule-adherence",
+        {
+          params: { from, to },
+        },
+      );
+      return response.data;
+    } catch (error) {
+      console.error("Error fetching schedule adherence:", error);
+      throw error;
+    }
+  },
+
+  /**
+   * Get incident summary stats over a date range
+   * GET /api/manager/statistics/incident-summary
+   */
+  getIncidentSummary: async (from, to) => {
+    try {
+      const response = await api.get(
+        "/api/manager/statistics/incident-summary",
+        {
+          params: { from, to },
+        },
+      );
+      return response.data;
+    } catch (error) {
+      console.error("Error fetching incident summary:", error);
+      throw error;
+    }
   },
 };
 

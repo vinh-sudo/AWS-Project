@@ -24,19 +24,18 @@ api.interceptors.request.use(
   },
 );
 
-// Add response interceptor to handle 401 & 403 (token expired / invalid / no auth)
-// Backend returns 403 (not 401) when SecurityContext is missing because
-// Spring Security's default AuthenticationEntryPoint is Http403ForbiddenEntryPoint.
+// Add response interceptor to handle 401 (token expired / invalid)
 api.interceptors.response.use(
   (response) => response,
   async (error) => {
     const originalRequest = error.config;
     const status = error.response?.status;
 
-    // Handle both 401 and 403 as auth failures
-    // Skip if this is the logout request itself or auth endpoints
+    // CHỈ logout khi 401 (Unauthorized = token hết hạn/invalid)
+    // KHÔNG logout khi 403 (Forbidden = user đã login nhưng không có quyền endpoint đó)
+    // 403 chỉ có nghĩa là role không đủ quyền, KHÔNG phải token sai
     if (
-      (status === 401 || status === 403) &&
+      status === 401 &&
       !originalRequest._retry &&
       !originalRequest.url?.includes("/api/auth/")
     ) {

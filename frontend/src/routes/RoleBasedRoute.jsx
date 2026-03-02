@@ -36,7 +36,7 @@ const RoleBasedRoute = ({ allowedRoles, children }) => {
 export const getRoleDefaultPath = (role) => {
   switch (role?.toUpperCase()) {
     case "ADMIN":
-      return "/admin/approval";
+      return "/admin/dashboard";
     case "MANAGER":
       return "/manager/dashboard";
     case "PRODUCTION_PLANNER":
