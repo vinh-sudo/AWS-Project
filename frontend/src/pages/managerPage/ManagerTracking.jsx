@@ -23,15 +23,27 @@ const ManagerTracking = () => {
     setLoading(true);
     setError(null);
     try {
-      const [ganttRes, oeeRes, delaysRes] = await Promise.all([
+      // Use Promise.allSettled so one failing API doesn't block the rest
+      const [ganttRes, oeeRes, delaysRes] = await Promise.allSettled([
         managerService.getGantt(selectedDate),
         managerService.getOEE(selectedDate),
         managerService.getDelays(),
       ]);
 
-      setGanttData(ganttRes || []);
-      setOeeData(oeeRes || []);
-      setDelays(delaysRes || []);
+      setGanttData(ganttRes.status === "fulfilled" ? ganttRes.value || [] : []);
+      setOeeData(oeeRes.status === "fulfilled" ? oeeRes.value || [] : []);
+      setDelays(delaysRes.status === "fulfilled" ? delaysRes.value || [] : []);
+
+      // Collect partial errors
+      const errors = [ganttRes, oeeRes, delaysRes]
+        .filter((r) => r.status === "rejected")
+        .map((r) => r.reason?.message || "Unknown error");
+      if (errors.length > 0) {
+        console.error("Partial tracking errors:", errors);
+        if (errors.length === 3) {
+          setError("Unable to load data. Please try again later.");
+        }
+      }
     } catch (error) {
       console.error("Error fetching tracking data:", error);
       setError("Unable to load data. Please try again later.");

@@ -107,13 +107,18 @@ const managerService = {
    * @param {string} range - 'TODAY' | 'WEEK' | 'MONTH'
    */
   getProductionOverview: async (range = "TODAY") => {
-    const response = await api.get(
-      "/api/manager/statistics/production-overview",
-      {
-        params: { range },
-      },
-    );
-    return response.data;
+    try {
+      const response = await api.get(
+        "/api/manager/statistics/production-overview",
+        {
+          params: { range },
+        },
+      );
+      return response.data;
+    } catch (error) {
+      console.error("Error fetching production overview:", error);
+      throw error;
+    }
   },
 
   /**
@@ -121,10 +126,15 @@ const managerService = {
    * GET /api/manager/statistics/oee-trend
    */
   getOeeTrend: async (from, to) => {
-    const response = await api.get("/api/manager/statistics/oee-trend", {
-      params: { from, to },
-    });
-    return response.data;
+    try {
+      const response = await api.get("/api/manager/statistics/oee-trend", {
+        params: { from, to },
+      });
+      return response.data;
+    } catch (error) {
+      console.error("Error fetching OEE trend:", error);
+      throw error;
+    }
   },
 
   /**
@@ -132,10 +142,18 @@ const managerService = {
    * GET /api/manager/statistics/line-comparison
    */
   getLineComparison: async (from, to) => {
-    const response = await api.get("/api/manager/statistics/line-comparison", {
-      params: { from, to },
-    });
-    return response.data;
+    try {
+      const response = await api.get(
+        "/api/manager/statistics/line-comparison",
+        {
+          params: { from, to },
+        },
+      );
+      return response.data;
+    } catch (error) {
+      console.error("Error fetching line comparison:", error);
+      throw error;
+    }
   },
 
   /**
@@ -143,10 +161,15 @@ const managerService = {
    * GET /api/manager/statistics/yield-trend
    */
   getYieldTrend: async (from, to) => {
-    const response = await api.get("/api/manager/statistics/yield-trend", {
-      params: { from, to },
-    });
-    return response.data;
+    try {
+      const response = await api.get("/api/manager/statistics/yield-trend", {
+        params: { from, to },
+      });
+      return response.data;
+    } catch (error) {
+      console.error("Error fetching yield trend:", error);
+      throw error;
+    }
   },
 
   /**
@@ -154,13 +177,18 @@ const managerService = {
    * GET /api/manager/statistics/schedule-adherence
    */
   getScheduleAdherence: async (from, to) => {
-    const response = await api.get(
-      "/api/manager/statistics/schedule-adherence",
-      {
-        params: { from, to },
-      },
-    );
-    return response.data;
+    try {
+      const response = await api.get(
+        "/api/manager/statistics/schedule-adherence",
+        {
+          params: { from, to },
+        },
+      );
+      return response.data;
+    } catch (error) {
+      console.error("Error fetching schedule adherence:", error);
+      throw error;
+    }
   },
 
   /**
@@ -168,10 +196,18 @@ const managerService = {
    * GET /api/manager/statistics/incident-summary
    */
   getIncidentSummary: async (from, to) => {
-    const response = await api.get("/api/manager/statistics/incident-summary", {
-      params: { from, to },
-    });
-    return response.data;
+    try {
+      const response = await api.get(
+        "/api/manager/statistics/incident-summary",
+        {
+          params: { from, to },
+        },
+      );
+      return response.data;
+    } catch (error) {
+      console.error("Error fetching incident summary:", error);
+      throw error;
+    }
   },
 };
 

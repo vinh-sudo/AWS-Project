@@ -25,11 +25,13 @@ const ManagerDashboard = () => {
   const [linesOverview, setLinesOverview] = useState([]);
   const [oeeData, setOeeData] = useState([]);
   const [delays, setDelays] = useState([]);
+  const [productionOverview, setProductionOverview] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [selectedDate, setSelectedDate] = useState(
     new Date().toISOString().split("T")[0],
   );
+  const [overviewRange, setOverviewRange] = useState("TODAY");
   const [showUserDropdown, setShowUserDropdown] = useState(false);
 
   const currentUser = authService.getCurrentUser();
@@ -63,15 +65,33 @@ const ManagerDashboard = () => {
     setLoading(true);
     setError(null);
     try {
-      const [linesRes, oeeRes, delaysRes] = await Promise.all([
+      // Use Promise.allSettled so one failing API doesn't block the rest
+      const [linesRes, oeeRes, delaysRes, prodRes] = await Promise.allSettled([
         managerService.getLinesOverview(),
         managerService.getOEE(selectedDate),
         managerService.getDelays(),
+        managerService.getProductionOverview(overviewRange),
       ]);
 
-      setLinesOverview(linesRes || []);
-      setOeeData(oeeRes || []);
-      setDelays(delaysRes || []);
+      setLinesOverview(
+        linesRes.status === "fulfilled" ? linesRes.value || [] : [],
+      );
+      setOeeData(oeeRes.status === "fulfilled" ? oeeRes.value || [] : []);
+      setDelays(delaysRes.status === "fulfilled" ? delaysRes.value || [] : []);
+      setProductionOverview(
+        prodRes.status === "fulfilled" ? prodRes.value || null : null,
+      );
+
+      // Collect partial errors
+      const errors = [linesRes, oeeRes, delaysRes, prodRes]
+        .filter((r) => r.status === "rejected")
+        .map((r) => r.reason?.message || "Unknown error");
+      if (errors.length > 0) {
+        console.error("Partial dashboard errors:", errors);
+        if (errors.length === 4) {
+          setError("Data loading failed. Please try again later.");
+        }
+      }
     } catch (error) {
       console.error("Error fetching dashboard data:", error);
       setError("Data loading failed. Please try again later.");
@@ -82,7 +102,7 @@ const ManagerDashboard = () => {
 
   useEffect(() => {
     fetchDashboardData();
-  }, [selectedDate]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [selectedDate, overviewRange]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const getStatusClass = (status) => {
     switch (status?.toUpperCase()) {
@@ -361,6 +381,41 @@ const ManagerDashboard = () => {
 
               <div className="kpi-card kpi-green">
                 <div className="kpi-card-top">
+                  <span className="kpi-label">Achievement Rate</span>
+                  <div className="kpi-icon">🎯</div>
+                </div>
+                <span className="kpi-value">
+                  {productionOverview
+                    ? (productionOverview.achievementRate * 100).toFixed(1)
+                    : 0}
+                  %
+                </span>
+                <span className="kpi-subtitle">
+                  Good: {productionOverview?.totalGood?.toLocaleString() || 0} /
+                  Target:{" "}
+                  {productionOverview?.totalTarget?.toLocaleString() || 0}
+                </span>
+              </div>
+
+              <div className="kpi-card kpi-orange">
+                <div className="kpi-card-top">
+                  <span className="kpi-label">Reject Rate</span>
+                  <div className="kpi-icon">⚠️</div>
+                </div>
+                <span className="kpi-value">
+                  {productionOverview
+                    ? (productionOverview.rejectRate * 100).toFixed(1)
+                    : 0}
+                  %
+                </span>
+                <span className="kpi-subtitle">
+                  Rejected:{" "}
+                  {productionOverview?.totalReject?.toLocaleString() || 0} units
+                </span>
+              </div>
+
+              <div className="kpi-card kpi-purple">
+                <div className="kpi-card-top">
                   <span className="kpi-label">Average OEE</span>
                   <div className="kpi-icon">📈</div>
                 </div>
@@ -368,29 +423,6 @@ const ManagerDashboard = () => {
                 <span className="kpi-subtitle">
                   Overall equipment effectiveness
                 </span>
-              </div>
-
-              <div className="kpi-card kpi-orange">
-                <div className="kpi-card-top">
-                  <span className="kpi-label">Critical Delays</span>
-                  <div className="kpi-icon">⚠️</div>
-                </div>
-                <span className="kpi-value">{criticalDelays}</span>
-                <span className="kpi-subtitle">Schedules at high risk</span>
-              </div>
-
-              <div className="kpi-card kpi-purple">
-                <div className="kpi-card-top">
-                  <span className="kpi-label">Operating Hours</span>
-                  <div className="kpi-icon">⏰</div>
-                </div>
-                <span className="kpi-value">
-                  {linesOverview
-                    .reduce((sum, l) => sum + (l.busyHours || 0), 0)
-                    .toFixed(1)}
-                  h
-                </span>
-                <span className="kpi-subtitle">Total hours today</span>
               </div>
             </div>
           </section>
@@ -408,8 +440,24 @@ const ManagerDashboard = () => {
                   <span className="card-subtitle">Avg. OEE {averageOEE}%</span>
                 </div>
                 <div className="chart-filter-group">
-                  <button className="chart-filter-btn active">Daily</button>
-                  <button className="chart-filter-btn">Weekly</button>
+                  <button
+                    className={`chart-filter-btn ${overviewRange === "TODAY" ? "active" : ""}`}
+                    onClick={() => setOverviewRange("TODAY")}
+                  >
+                    Daily
+                  </button>
+                  <button
+                    className={`chart-filter-btn ${overviewRange === "WEEK" ? "active" : ""}`}
+                    onClick={() => setOverviewRange("WEEK")}
+                  >
+                    Weekly
+                  </button>
+                  <button
+                    className={`chart-filter-btn ${overviewRange === "MONTH" ? "active" : ""}`}
+                    onClick={() => setOverviewRange("MONTH")}
+                  >
+                    Monthly
+                  </button>
                 </div>
               </div>
               <div className="card-content chart-content">

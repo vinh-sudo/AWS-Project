@@ -36,6 +36,11 @@ const ManagerSidebar = () => {
       icon: "🏭",
       label: "Line Management",
     },
+    {
+      path: "/manager/reports",
+      icon: "📈",
+      label: "Reports",
+    },
   ];
 
   return (

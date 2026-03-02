@@ -21,6 +21,7 @@ import ManagerDashboard from "./pages/managerPage/ManagerDashboard";
 import ManagerPlanning from "./pages/managerPage/ManagerPlanning";
 import ManagerTracking from "./pages/managerPage/ManagerTracking";
 import ManagerLines from "./pages/managerPage/ManagerLines";
+import ManagerReports from "./pages/managerPage/ManagerReports";
 // Planner imports
 import PlannerAssignment from "./pages/plannerPage/PlannerAssignment";
 import PlannerScheduling from "./pages/plannerPage/PlannerScheduling";
@@ -112,6 +113,14 @@ function App() {
             element={
               <RoleBasedRoute allowedRoles={["MANAGER"]}>
                 <ManagerLines />
+              </RoleBasedRoute>
+            }
+          />
+          <Route
+            path="/manager/reports"
+            element={
+              <RoleBasedRoute allowedRoles={["MANAGER"]}>
+                <ManagerReports />
               </RoleBasedRoute>
             }
           />

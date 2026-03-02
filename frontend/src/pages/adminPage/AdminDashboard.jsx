@@ -401,7 +401,10 @@ const AdminDashboard = () => {
                     </div>
                     <div className="activity-meta">
                       <span className="activity-entity">
-                        Pending: {stats.pendingOrders} | In Progress: {stats.inProgressOrders} | Completed: {stats.completedOrders} | Cancelled: {stats.cancelledOrders}
+                        Pending: {stats.pendingOrders} | In Progress:{" "}
+                        {stats.inProgressOrders} | Completed:{" "}
+                        {stats.completedOrders} | Cancelled:{" "}
+                        {stats.cancelledOrders}
                       </span>
                     </div>
                   </div>
@@ -409,11 +412,16 @@ const AdminDashboard = () => {
                 <div className="activity-item">
                   <div className="activity-info">
                     <div className="activity-action">
-                      Production Lines: <strong>{stats.activeLines}/{stats.totalLines}</strong> active
+                      Production Lines:{" "}
+                      <strong>
+                        {stats.activeLines}/{stats.totalLines}
+                      </strong>{" "}
+                      active
                     </div>
                     <div className="activity-meta">
                       <span className="activity-entity">
-                        Machines: {stats.activeMachines}/{stats.totalMachines} active
+                        Machines: {stats.activeMachines}/{stats.totalMachines}{" "}
+                        active
                       </span>
                     </div>
                   </div>
@@ -425,7 +433,8 @@ const AdminDashboard = () => {
                     </div>
                     <div className="activity-meta">
                       <span className="activity-entity">
-                        Active: {stats.activeUsers} | Blocked: {stats.blockedUsers}
+                        Active: {stats.activeUsers} | Blocked:{" "}
+                        {stats.blockedUsers}
                       </span>
                     </div>
                   </div>

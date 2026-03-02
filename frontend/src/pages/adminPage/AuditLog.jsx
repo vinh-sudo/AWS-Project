@@ -140,12 +140,16 @@ const AuditLog = () => {
             }}
           >
             <span style={{ fontSize: "48px", marginBottom: "16px" }}>🔒</span>
-            <h3 style={{ fontSize: "20px", color: "#333", marginBottom: "8px" }}>
+            <h3
+              style={{ fontSize: "20px", color: "#333", marginBottom: "8px" }}
+            >
               Audit Log - Coming Soon
             </h3>
-            <p style={{ fontSize: "14px", maxWidth: "400px", lineHeight: "1.6" }}>
-              Tính năng Audit Log đang được phát triển. Hệ thống đã ghi nhận
-              các hoạt động nhưng chưa có API để hiển thị.
+            <p
+              style={{ fontSize: "14px", maxWidth: "400px", lineHeight: "1.6" }}
+            >
+              Tính năng Audit Log đang được phát triển. Hệ thống đã ghi nhận các
+              hoạt động nhưng chưa có API để hiển thị.
             </p>
             <button
               className="btn-primary"
