@@ -408,9 +408,9 @@ const AdminOrders = () => {
               <span className="stat-number">{stats.inProduction}</span>
               <span className="stat-label">In Production</span>
             </div>
-            <div className="stat-card hold">
-              <span className="stat-number">{stats.onHold}</span>
-              <span className="stat-label">On Hold</span>
+            <div className="stat-card completed">
+              <span className="stat-number">{stats.completed}</span>
+              <span className="stat-label">Completed</span>
             </div>
             <div className="stat-card cancelled">
               <span className="stat-number">{stats.cancelled}</span>
@@ -556,7 +556,7 @@ const AdminOrders = () => {
                           )}
 
                           {/* Delete (only for Draft/Cancelled) */}
-                          {["DRAFT", "CANCELLED"].includes(order.status) && (
+                          {["Draft", "Cancelled"].includes(order.status) && (
                             <button
                               className="btn-action btn-delete"
                               onClick={() => handleDeleteOrder(order.id)}

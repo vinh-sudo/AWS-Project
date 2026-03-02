@@ -191,7 +191,17 @@ const ManagerDashboard = () => {
         {/* Top Header Bar */}
         <div className="top-header-bar">
           <div className="search-box">
-            <svg className="search-icon-svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <svg
+              className="search-icon-svg"
+              width="18"
+              height="18"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            >
               <circle cx="11" cy="11" r="8" />
               <line x1="21" y1="21" x2="16.65" y2="16.65" />
             </svg>
@@ -199,21 +209,22 @@ const ManagerDashboard = () => {
           </div>
           <div className="header-actions">
             <button className="header-icon-btn" title="Notifications">
-              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+              <svg
+                width="20"
+                height="20"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="1.8"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              >
                 <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9" />
                 <path d="M13.73 21a2 2 0 0 1-3.46 0" />
               </svg>
               {criticalDelays > 0 && <span className="notification-dot" />}
             </button>
-<<<<<<< HEAD
             <NotificationBell />
-=======
-            <button className="header-icon-btn" title="Messages">
-              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
-                <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
-              </svg>
-              <span className="notification-dot" />
-            </button>
             <div className="header-avatar-wrapper">
               <div
                 className="header-avatar"
@@ -239,23 +250,68 @@ const ManagerDashboard = () => {
                     </div>
                   </div>
                   <div className="user-dropdown-divider" />
-                  <button className="user-dropdown-item" onClick={() => navigate("/manager/dashboard")}>
-                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+                  <button
+                    className="user-dropdown-item"
+                    onClick={() => navigate("/manager/dashboard")}
+                  >
+                    <svg
+                      width="16"
+                      height="16"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth="2"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                    >
+                      <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
+                      <circle cx="12" cy="7" r="4" />
+                    </svg>
                     My Profile
                   </button>
-                  <button className="user-dropdown-item" onClick={() => navigate("/manager/dashboard")}>
-                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+                  <button
+                    className="user-dropdown-item"
+                    onClick={() => navigate("/manager/dashboard")}
+                  >
+                    <svg
+                      width="16"
+                      height="16"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth="2"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                    >
+                      <circle cx="12" cy="12" r="3" />
+                      <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z" />
+                    </svg>
                     Settings
                   </button>
                   <div className="user-dropdown-divider" />
-                  <button className="user-dropdown-item logout" onClick={handleLogout}>
-                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+                  <button
+                    className="user-dropdown-item logout"
+                    onClick={handleLogout}
+                  >
+                    <svg
+                      width="16"
+                      height="16"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth="2"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                    >
+                      <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" />
+                      <polyline points="16 17 21 12 16 7" />
+                      <line x1="21" y1="12" x2="9" y2="12" />
+                    </svg>
                     Logout
                   </button>
                 </div>
               )}
             </div>
->>>>>>> 0f98da1753375d26c70f50a974923011005f49ed
           </div>
         </div>
 
@@ -300,11 +356,7 @@ const ManagerDashboard = () => {
                 <span className="kpi-value">
                   {okLines}/{totalLines}
                 </span>
-<<<<<<< HEAD
-                <span className="kpi-label">Lines OK</span>
-=======
                 <span className="kpi-subtitle">Active production lines</span>
->>>>>>> 0f98da1753375d26c70f50a974923011005f49ed
               </div>
 
               <div className="kpi-card kpi-green">
@@ -313,7 +365,9 @@ const ManagerDashboard = () => {
                   <div className="kpi-icon">📈</div>
                 </div>
                 <span className="kpi-value">{averageOEE}%</span>
-                <span className="kpi-subtitle">Overall equipment effectiveness</span>
+                <span className="kpi-subtitle">
+                  Overall equipment effectiveness
+                </span>
               </div>
 
               <div className="kpi-card kpi-orange">
@@ -333,7 +387,8 @@ const ManagerDashboard = () => {
                 <span className="kpi-value">
                   {linesOverview
                     .reduce((sum, l) => sum + (l.busyHours || 0), 0)
-                    .toFixed(1)}h
+                    .toFixed(1)}
+                  h
                 </span>
                 <span className="kpi-subtitle">Total hours today</span>
               </div>
@@ -350,9 +405,7 @@ const ManagerDashboard = () => {
                     <span className="card-icon blue">📊</span>
                     OEE Breakdown by Line
                   </h2>
-                  <span className="card-subtitle">
-                    Avg. OEE {averageOEE}%
-                  </span>
+                  <span className="card-subtitle">Avg. OEE {averageOEE}%</span>
                 </div>
                 <div className="chart-filter-group">
                   <button className="chart-filter-btn active">Daily</button>
@@ -552,7 +605,9 @@ const ManagerDashboard = () => {
                     <span className="card-icon blue">🏭</span>
                     Lines Overview
                   </h2>
-                  <span className="card-subtitle">Operating status of production lines</span>
+                  <span className="card-subtitle">
+                    Operating status of production lines
+                  </span>
                 </div>
                 <span className="card-header-badge">{totalLines} Lines</span>
               </div>
@@ -608,7 +663,8 @@ const ManagerDashboard = () => {
                                   ((line.busyHours || 0) /
                                     (line.availableHours || 1)) *
                                   100
-                                ).toFixed(0)}%
+                                ).toFixed(0)}
+                                %
                               </span>
                             </div>
                           </td>
@@ -628,10 +684,14 @@ const ManagerDashboard = () => {
                     <span className="card-icon orange">⚠️</span>
                     Delay Alerts
                   </h2>
-                  <span className="card-subtitle">Schedules at risk of delay</span>
+                  <span className="card-subtitle">
+                    Schedules at risk of delay
+                  </span>
                 </div>
                 {delays.length > 0 && (
-                  <span className="card-header-badge">{delays.length} Alerts</span>
+                  <span className="card-header-badge">
+                    {delays.length} Alerts
+                  </span>
                 )}
               </div>
               <div className="card-content">

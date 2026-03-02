@@ -95,41 +95,23 @@ const AdminApproval = () => {
 
   const getStatusClass = (status) => {
     switch (status) {
-      case "DRAFT":
+      case "Draft":
         return "status-draft";
-      case "CONFIRMED":
+      case "Confirmed":
         return "status-confirmed";
-      case "CANCELLED":
+      case "Cancelled":
         return "status-rejected";
-      case "IN_PRODUCTION":
+      case "In Production":
         return "status-production";
-      case "COMPLETED":
+      case "Completed":
         return "status-completed";
-      case "ON_HOLD":
-        return "status-scheduled";
       default:
         return "";
     }
   };
 
-  const getStatusDisplay = (status) => {
-    switch (status) {
-      case "DRAFT":
-        return "Draft";
-      case "CONFIRMED":
-        return "Confirmed";
-      case "CANCELLED":
-        return "Cancelled";
-      case "IN_PRODUCTION":
-        return "In Production";
-      case "COMPLETED":
-        return "Completed";
-      case "ON_HOLD":
-        return "On Hold";
-      default:
-        return status;
-    }
-  };
+  // Backend already returns display-friendly status strings
+  const getStatusDisplay = (status) => status || "Unknown";
 
   const getPriorityClass = (priority) => {
     switch (priority) {
@@ -146,11 +128,11 @@ const AdminApproval = () => {
     }
   };
 
-  // Filter using backend status enum values
-  const draftOrders = orders.filter((o) => o.status === "DRAFT");
-  const confirmedOrders = orders.filter((o) => o.status === "CONFIRMED");
-  const cancelledOrders = orders.filter((o) => o.status === "CANCELLED");
-  const allProcessedOrders = orders.filter((o) => o.status !== "DRAFT");
+  // Filter using backend status values (Title Case)
+  const draftOrders = orders.filter((o) => o.status === "Draft");
+  const confirmedOrders = orders.filter((o) => o.status === "Confirmed");
+  const cancelledOrders = orders.filter((o) => o.status === "Cancelled");
+  const allProcessedOrders = orders.filter((o) => o.status !== "Draft");
 
   const filteredOrders =
     activeTab === "draft"
@@ -396,13 +378,13 @@ const AdminApproval = () => {
                     </div>
                   )}
 
-                  {order.status === "CANCELLED" && (
+                  {order.status === "Cancelled" && (
                     <div className="rejection-reason">
                       <span>❌ Đơn hàng đã bị hủy</span>
                     </div>
                   )}
 
-                  {order.status === "CONFIRMED" && (
+                  {order.status === "Confirmed" && (
                     <div className="approval-info">
                       <span>✅ Đã xác nhận</span>
                       <span>

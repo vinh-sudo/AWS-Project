@@ -98,6 +98,81 @@ const managerService = {
       throw error;
     }
   },
+
+  // ===================== STATISTICS =====================
+
+  /**
+   * Get production overview (TODAY/WEEK/MONTH)
+   * GET /api/manager/statistics/production-overview
+   * @param {string} range - 'TODAY' | 'WEEK' | 'MONTH'
+   */
+  getProductionOverview: async (range = "TODAY") => {
+    const response = await api.get(
+      "/api/manager/statistics/production-overview",
+      {
+        params: { range },
+      },
+    );
+    return response.data;
+  },
+
+  /**
+   * Get OEE trend over a date range
+   * GET /api/manager/statistics/oee-trend
+   */
+  getOeeTrend: async (from, to) => {
+    const response = await api.get("/api/manager/statistics/oee-trend", {
+      params: { from, to },
+    });
+    return response.data;
+  },
+
+  /**
+   * Compare production lines over a date range
+   * GET /api/manager/statistics/line-comparison
+   */
+  getLineComparison: async (from, to) => {
+    const response = await api.get("/api/manager/statistics/line-comparison", {
+      params: { from, to },
+    });
+    return response.data;
+  },
+
+  /**
+   * Get yield trend over a date range
+   * GET /api/manager/statistics/yield-trend
+   */
+  getYieldTrend: async (from, to) => {
+    const response = await api.get("/api/manager/statistics/yield-trend", {
+      params: { from, to },
+    });
+    return response.data;
+  },
+
+  /**
+   * Get schedule adherence stats over a date range
+   * GET /api/manager/statistics/schedule-adherence
+   */
+  getScheduleAdherence: async (from, to) => {
+    const response = await api.get(
+      "/api/manager/statistics/schedule-adherence",
+      {
+        params: { from, to },
+      },
+    );
+    return response.data;
+  },
+
+  /**
+   * Get incident summary stats over a date range
+   * GET /api/manager/statistics/incident-summary
+   */
+  getIncidentSummary: async (from, to) => {
+    const response = await api.get("/api/manager/statistics/incident-summary", {
+      params: { from, to },
+    });
+    return response.data;
+  },
 };
 
 export default managerService;

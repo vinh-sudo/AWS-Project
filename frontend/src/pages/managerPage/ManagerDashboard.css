@@ -146,6 +146,7 @@
         opacity: 0;
         transform: translateY(-6px);
     }
+
     to {
         opacity: 1;
         transform: translateY(0);
@@ -727,7 +728,6 @@
     font-weight: 600;
 }
 
-<<<<<<< HEAD
 .status-ok {
     background: rgba(76, 175, 80, 0.15);
     color: #2e7d32;
@@ -743,8 +743,6 @@
     color: #c62828;
 }
 
-/* Capacity Bar */
-=======
 .status-badge::before {
     content: '';
     width: 6px;
@@ -786,7 +784,6 @@
     gap: 10px;
 }
 
->>>>>>> 0f98da1753375d26c70f50a974923011005f49ed
 .capacity-bar {
     width: 100px;
     height: 8px;

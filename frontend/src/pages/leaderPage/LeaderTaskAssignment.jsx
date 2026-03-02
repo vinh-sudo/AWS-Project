@@ -1,22 +1,24 @@
 // ============================================================================
-// NOTE: Backend chưa có controller/endpoint cho Leader.
-// Trang này sử dụng 100% dữ liệu mock từ localStorage (ims_leader_notes).
-// Khi backend tạo LeaderController, refactor để gọi API thực.
+// LeaderInternalNotes — Notes stored in localStorage (no backend API for notes)
+// Schedule list loaded from backend LeaderController: GET /api/leader/schedules
 // ============================================================================
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useDispatch } from "react-redux";
 import { logout } from "../../redux";
 import NotificationBell from "../../components/NotificationBell/NotificationBell";
+import authService from "../../services/authService";
+import leaderService from "../../services/leaderService";
 import imsLogo from "../../assets/ims2.jpg";
 import "./LeaderTaskAssignment.css";
 
 const LeaderInternalNotes = () => {
   const navigate = useNavigate();
 
-  // Current leader info
-  const currentLeaderName = "John Leader";
-  const currentTeam = "SMT Line 1";
+  // Current leader info from auth
+  const currentUser = authService.getCurrentUser();
+  const currentLeaderName = currentUser?.fullName || "Leader";
+  const currentTeam = "Production Line";
 
   // Internal notes for internal task assignment tracking
   const [notes, setNotes] = useState(() => {
@@ -66,11 +68,20 @@ const LeaderInternalNotes = () => {
     content: "",
   });
 
-  // Load schedules for dropdown
-  const [schedules] = useState(() => {
-    const saved = localStorage.getItem("ims_schedules");
-    return saved ? JSON.parse(saved) : [];
-  });
+  // Load schedules from API for dropdown
+  const [schedules, setSchedules] = useState([]);
+
+  useEffect(() => {
+    const fetchSchedules = async () => {
+      try {
+        const data = await leaderService.getMySchedules();
+        setSchedules(data || []);
+      } catch (err) {
+        console.error("Error loading schedules:", err);
+      }
+    };
+    fetchSchedules();
+  }, []);
 
   // Save notes to localStorage
   const saveNotes = (updatedNotes) => {
@@ -109,13 +120,11 @@ const LeaderInternalNotes = () => {
 
   const handleScheduleChange = (e) => {
     const scheduleId = e.target.value;
-    const schedule = schedules.find((s) => s.id === scheduleId);
+    const schedule = schedules.find((s) => String(s.scheduleId) === scheduleId);
     setNewNote({
       ...newNote,
       scheduleId: scheduleId,
-      scheduleInfo: schedule
-        ? `${schedule.orderId} - ${schedule.orderName}`
-        : "",
+      scheduleInfo: schedule?.orderInfo || "",
     });
   };
 
@@ -343,8 +352,11 @@ const LeaderInternalNotes = () => {
                 >
                   <option value="">-- Không liên kết --</option>
                   {schedules.map((schedule) => (
-                    <option key={schedule.id} value={schedule.id}>
-                      {schedule.id} - {schedule.orderId} - {schedule.orderName}
+                    <option
+                      key={schedule.scheduleId}
+                      value={schedule.scheduleId}
+                    >
+                      SCH-{schedule.scheduleId} - {schedule.orderInfo || "N/A"}
                     </option>
                   ))}
                 </select>

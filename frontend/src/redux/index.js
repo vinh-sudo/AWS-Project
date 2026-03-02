@@ -1,7 +1,7 @@
 // Redux Store
 export { store } from "./store";
 
-// Auth Slice
+// Auth Slice — the only slice connected to a real backend API
 export {
   login,
   logout,
@@ -13,89 +13,6 @@ export {
   selectError,
 } from "./slices/authSlice";
 
-// Task Slice
-export {
-  addTask,
-  updateTaskStatus,
-  deleteTask,
-  startTask,
-  completeTask,
-  updateTask,
-  selectAllTasks,
-  selectTasksByEmployee,
-  selectTasksByStatus,
-  selectTasksLoading,
-} from "./slices/taskSlice";
-
-// User Slice
-export {
-  addUser,
-  updateUser,
-  deleteUser,
-  toggleUserStatus,
-  addEmployee,
-  updateEmployee,
-  deleteEmployee,
-  selectAllUsers,
-  selectAllEmployees,
-  selectUsersByRole,
-  selectActiveUsers,
-  selectUsersLoading,
-} from "./slices/userSlice";
-
-// Schedule Slice
-export {
-  addSchedule,
-  updateSchedule,
-  deleteSchedule,
-  addOrder,
-  updateOrderStatus,
-  deleteOrder,
-  selectAllSchedules,
-  selectAllProductionLines,
-  selectAllOrders,
-  selectSchedulesByLine,
-  selectOrdersByStatus,
-  selectSchedulesLoading,
-} from "./slices/scheduleSlice";
-
-// Order Slice
-export {
-  fetchOrders,
-  createOrder,
-  updateOrder,
-  deleteOrder as removeOrder,
-  setSelectedOrder,
-  clearSelectedOrder,
-  setFilters as setOrderFilters,
-  clearFilters as clearOrderFilters,
-  clearError as clearOrderError,
-  selectOrders,
-  selectSelectedOrder,
-  selectOrdersLoading,
-  selectOrdersError,
-  selectOrderFilters,
-  selectFilteredOrders,
-} from "./slices/orderSlice";
-
-// Line Slice
-export {
-  fetchLines,
-  createLine,
-  updateLine,
-  updateLineStatus,
-  deleteLine,
-  addMachine,
-  setSelectedLine,
-  clearSelectedLine,
-  setLineFilters,
-  clearLineFilters,
-  clearLineError,
-  selectLines,
-  selectSelectedLine,
-  selectLinesLoading,
-  selectLinesError,
-  selectLineFilters,
-  selectFilteredLines,
-  selectLinesSummary,
-} from "./slices/lineSlice";
+// NOTE: lineSlice, orderSlice, scheduleSlice, taskSlice, userSlice are
+// unused by any component. All pages call service files directly.
+// These slice files are kept for reference but not re-exported.

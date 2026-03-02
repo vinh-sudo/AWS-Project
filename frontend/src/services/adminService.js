@@ -185,33 +185,92 @@ const deleteUser = async (/* id */) => null;
 const updateUserStatus = async (/* id, status */) => null;
 const getUsersByRole = async (/* role */) => [];
 
+// ==================== ADMIN STATISTICS ====================
+
+/**
+ * Get order overview (count by status)
+ * GET /api/admin/statistics/order-overview
+ * @returns {Promise<{totalOrders: number, countByStatus: Object}>}
+ */
+const getOrderOverview = async () => {
+  const response = await api.get("/api/admin/statistics/order-overview");
+  return response.data;
+};
+
+/**
+ * Get order trend over a date range
+ * GET /api/admin/statistics/order-trend
+ * @param {string} from - ISO date (YYYY-MM-DD)
+ * @param {string} to - ISO date (YYYY-MM-DD)
+ * @param {string} groupBy - 'day' | 'week' | 'month'
+ */
+const getOrderTrend = async (from, to, groupBy = "day") => {
+  const response = await api.get("/api/admin/statistics/order-trend", {
+    params: { from, to, groupBy },
+  });
+  return response.data;
+};
+
+/**
+ * Get revenue summary for a date range
+ * GET /api/admin/statistics/revenue-summary
+ */
+const getRevenueSummary = async (from, to) => {
+  const response = await api.get("/api/admin/statistics/revenue-summary", {
+    params: { from, to },
+  });
+  return response.data;
+};
+
+/**
+ * Get system overview (users, lines, machines counts)
+ * GET /api/admin/statistics/system-overview
+ * @returns {Promise<{totalUsers, activeUsers, totalEmployees, totalLines, activeLines, totalMachines, activeMachines}>}
+ */
+const getSystemOverview = async () => {
+  const response = await api.get("/api/admin/statistics/system-overview");
+  return response.data;
+};
+
 // ==================== DASHBOARD STATS ====================
 
 /**
- * Get dashboard statistics (aggregated from multiple sources)
+ * Get dashboard statistics (aggregated from real statistics endpoints)
  */
 const getDashboardStats = async () => {
   try {
-    // Only /api/admin/orders exists in backend.
-    // /api/admin/users and /api/admin/audit-logs do NOT exist yet.
-    const ordersResponse = await api
-      .get("/api/admin/orders")
-      .catch(() => ({ data: [] }));
+    const [orderOverview, systemOverview] = await Promise.all([
+      api
+        .get("/api/admin/statistics/order-overview")
+        .catch(() => ({ data: null })),
+      api
+        .get("/api/admin/statistics/system-overview")
+        .catch(() => ({ data: null })),
+    ]);
 
-    const orders = ordersResponse.data || [];
+    const orderData = orderOverview.data;
+    const sysData = systemOverview.data;
+
+    const countByStatus = orderData?.countByStatus || {};
 
     return {
-      totalUsers: 0,
-      activeUsers: 0,
-      blockedUsers: 0,
-      totalOrders: orders.length,
-      pendingOrders: orders.filter(
-        (o) => o.status === "DRAFT" || o.status === "CONFIRMED",
-      ).length,
-      completedOrders: orders.filter((o) => o.status === "COMPLETED").length,
-      inProgressOrders: orders.filter((o) => o.status === "IN_PRODUCTION")
-        .length,
-      cancelledOrders: orders.filter((o) => o.status === "CANCELLED").length,
+      totalUsers: sysData?.totalUsers || 0,
+      activeUsers: sysData?.activeUsers || 0,
+      blockedUsers: Math.max(
+        0,
+        (sysData?.totalUsers || 0) - (sysData?.activeUsers || 0),
+      ),
+      totalOrders: orderData?.totalOrders || 0,
+      pendingOrders:
+        (countByStatus.DRAFT || 0) + (countByStatus.CONFIRMED || 0),
+      completedOrders: countByStatus.COMPLETED || 0,
+      inProgressOrders: countByStatus.IN_PRODUCTION || 0,
+      cancelledOrders: countByStatus.CANCELLED || 0,
+      // System info
+      totalLines: sysData?.totalLines || 0,
+      activeLines: sysData?.activeLines || 0,
+      totalMachines: sysData?.totalMachines || 0,
+      activeMachines: sysData?.activeMachines || 0,
       recentActivities: [],
     };
   } catch (error) {
@@ -240,6 +299,11 @@ const adminService = {
   getMyOrders,
   // File Upload
   uploadOrderFile,
+  // Statistics
+  getOrderOverview,
+  getOrderTrend,
+  getRevenueSummary,
+  getSystemOverview,
   // Audit Logs
   getAuditLogs,
   getAuditLogsByUser,

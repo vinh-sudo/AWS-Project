@@ -27,9 +27,7 @@ import "./adminUser.css";
 const AdminDashboard = () => {
   const navigate = useNavigate();
   const currentUser = authService.getCurrentUser();
-  const [showProductionModal, setShowProductionModal] = useState(false);
   const [showActivityModal, setShowActivityModal] = useState(false);
-  const [selectedStatus, setSelectedStatus] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
@@ -43,10 +41,11 @@ const AdminDashboard = () => {
     completedOrders: 0,
     inProgressOrders: 0,
     cancelledOrders: 0,
+    totalLines: 0,
+    activeLines: 0,
+    totalMachines: 0,
+    activeMachines: 0,
   });
-
-  // Recent activities
-  const [recentActivities, setRecentActivities] = useState([]);
 
   // Fetch dashboard data on mount
   useEffect(() => {
@@ -67,8 +66,11 @@ const AdminDashboard = () => {
         completedOrders: data.completedOrders || 0,
         inProgressOrders: data.inProgressOrders || 0,
         cancelledOrders: data.cancelledOrders || 0,
+        totalLines: data.totalLines || 0,
+        activeLines: data.activeLines || 0,
+        totalMachines: data.totalMachines || 0,
+        activeMachines: data.activeMachines || 0,
       });
-      setRecentActivities(data.recentActivities || []);
     } catch (err) {
       console.error("Error fetching dashboard data:", err);
       setError(err.response?.data?.message || "Failed to load dashboard data");
@@ -77,46 +79,27 @@ const AdminDashboard = () => {
     }
   };
 
-  // Mock data for production line status (keep as mock for now since no API)
-  const [productionLines] = useState([
-    { id: 1, name: "Line A", status: "Running", efficiency: 92, output: 450 },
-    { id: 2, name: "Line B", status: "Running", efficiency: 88, output: 420 },
-    { id: 3, name: "Line C", status: "Maintenance", efficiency: 0, output: 0 },
-    { id: 4, name: "Line D", status: "Running", efficiency: 85, output: 380 },
-    { id: 5, name: "Line E", status: "Running", efficiency: 90, output: 440 },
-    { id: 6, name: "Line F", status: "Idle", efficiency: 0, output: 0 },
-  ]);
-
-  // Data for Pie Chart (Production Line Status)
+  // Production line data derived from real API stats
   const pieChartData = [
     {
-      name: "Running",
-      value: productionLines.filter((l) => l.status === "Running").length,
+      name: "Active Lines",
+      value: stats.activeLines,
       color: "#4CAF50",
     },
     {
-      name: "Maintenance",
-      value: productionLines.filter((l) => l.status === "Maintenance").length,
-      color: "#FF9800",
-    },
-    {
-      name: "Idle",
-      value: productionLines.filter((l) => l.status === "Idle").length,
+      name: "Inactive Lines",
+      value: Math.max(0, stats.totalLines - stats.activeLines),
       color: "#9E9E9E",
     },
   ];
 
-  // Data for Bar Chart (Activities by Entity)
-  const activityByEntity = recentActivities.reduce((acc, activity) => {
-    const entityKey = activity.entity || "unknown";
-    acc[entityKey] = (acc[entityKey] || 0) + 1;
-    return acc;
-  }, {});
-
-  const barChartData = Object.keys(activityByEntity).map((entity) => ({
-    entity: entity,
-    count: activityByEntity[entity],
-  }));
+  // Data for Bar Chart (Order Status Distribution from real stats)
+  const barChartData = [
+    { status: "Pending", count: stats.pendingOrders },
+    { status: "In Progress", count: stats.inProgressOrders },
+    { status: "Completed", count: stats.completedOrders },
+    { status: "Cancelled", count: stats.cancelledOrders },
+  ];
 
   const COLORS = ["#5ec8c4", "#f195b3", "#9E9E9E"];
 
@@ -125,37 +108,6 @@ const AdminDashboard = () => {
   const handleLogout = async () => {
     await dispatch(logout());
     navigate("/login");
-  };
-
-  const getStatusClass = (status) => {
-    switch (status) {
-      case "Running":
-        return "status-running";
-      case "Maintenance":
-        return "status-maintenance";
-      case "Idle":
-        return "status-idle";
-      default:
-        return "";
-    }
-  };
-
-  // Handle click on pie chart slice
-  const handlePieClick = (data) => {
-    setSelectedStatus(data.name);
-    setShowProductionModal(true);
-  };
-
-  // Get filtered production lines based on selected status
-  const getFilteredProductionLines = () => {
-    if (!selectedStatus) return productionLines;
-    return productionLines.filter((line) => line.status === selectedStatus);
-  };
-
-  // Close modal and reset selected status
-  const closeProductionModal = () => {
-    setShowProductionModal(false);
-    setSelectedStatus(null);
   };
 
   return (
@@ -279,20 +231,12 @@ const AdminDashboard = () => {
                   <div className="stat-icon">🏭</div>
                   <div className="stat-info">
                     <div className="stat-value">
-                      {
-                        productionLines.filter((l) => l.status === "Running")
-                          .length
-                      }
-                      /{productionLines.length}
+                      {stats.activeLines}/{stats.totalLines}
                     </div>
                     <div className="stat-label">Production Lines</div>
                     <div className="stat-detail">
                       <span className="stat-machines">
-                        {
-                          productionLines.filter((l) => l.status === "Running")
-                            .length
-                        }{" "}
-                        Lines Active
+                        {stats.activeMachines}/{stats.totalMachines} Machines
                       </span>
                     </div>
                   </div>
@@ -317,8 +261,7 @@ const AdminDashboard = () => {
                 {/* Production Line Status - Pie Chart */}
                 <div className="dashboard-card chart-card">
                   <div className="card-header">
-                    <h3 className="card-title">Production Line Status</h3>
-                    <span className="click-hint">Click on chart to filter</span>
+                    <h3 className="card-title">Production Lines Overview</h3>
                   </div>
                   <div className="card-body chart-container">
                     <ResponsiveContainer width="100%" height={280}>
@@ -332,15 +275,9 @@ const AdminDashboard = () => {
                           paddingAngle={5}
                           dataKey="value"
                           label={({ name, value }) => `${name}: ${value}`}
-                          onClick={handlePieClick}
-                          style={{ cursor: "pointer" }}
                         >
                           {pieChartData.map((entry, index) => (
-                            <Cell
-                              key={`cell-${index}`}
-                              fill={entry.color}
-                              style={{ cursor: "pointer" }}
-                            />
+                            <Cell key={`cell-${index}`} fill={entry.color} />
                           ))}
                         </Pie>
                         <Tooltip />
@@ -348,48 +285,31 @@ const AdminDashboard = () => {
                       </PieChart>
                     </ResponsiveContainer>
                     <div className="chart-legend-custom">
-                      <div
-                        className="legend-item clickable"
-                        onClick={() => handlePieClick({ name: "Running" })}
-                      >
+                      <div className="legend-item">
                         <span
                           className="legend-color"
                           style={{ background: "#4CAF50" }}
                         ></span>
-                        <span>Running ({pieChartData[0].value})</span>
+                        <span>Active ({stats.activeLines})</span>
                       </div>
-                      <div
-                        className="legend-item clickable"
-                        onClick={() => handlePieClick({ name: "Maintenance" })}
-                      >
-                        <span
-                          className="legend-color"
-                          style={{ background: "#FF9800" }}
-                        ></span>
-                        <span>Maintenance ({pieChartData[1].value})</span>
-                      </div>
-                      <div
-                        className="legend-item clickable"
-                        onClick={() => handlePieClick({ name: "Idle" })}
-                      >
+                      <div className="legend-item">
                         <span
                           className="legend-color"
                           style={{ background: "#9E9E9E" }}
                         ></span>
-                        <span>Idle ({pieChartData[2].value})</span>
+                        <span>
+                          Inactive (
+                          {Math.max(0, stats.totalLines - stats.activeLines)})
+                        </span>
                       </div>
                     </div>
                   </div>
                 </div>
 
-                {/* Recent Activities - Bar Chart */}
-                <div
-                  className="dashboard-card chart-card"
-                  onClick={() => setShowActivityModal(true)}
-                >
+                {/* Order Status Distribution - Bar Chart */}
+                <div className="dashboard-card chart-card">
                   <div className="card-header">
-                    <h3 className="card-title">Activities by Entity</h3>
-                    <span className="click-hint">Click to view details</span>
+                    <h3 className="card-title">Order Status Distribution</h3>
                   </div>
                   <div className="card-body chart-container">
                     <ResponsiveContainer width="100%" height={280}>
@@ -398,7 +318,7 @@ const AdminDashboard = () => {
                           strokeDasharray="3 3"
                           stroke="rgba(94, 200, 196, 0.2)"
                         />
-                        <XAxis dataKey="entity" tick={{ fontSize: 12 }} />
+                        <XAxis dataKey="status" tick={{ fontSize: 12 }} />
                         <YAxis tick={{ fontSize: 12 }} />
                         <Tooltip
                           contentStyle={{
@@ -456,88 +376,7 @@ const AdminDashboard = () => {
         </div>
       </div>
 
-      {/* Production Line Modal */}
-      {showProductionModal && (
-        <div className="modal-overlay" onClick={closeProductionModal}>
-          <div className="modal-container" onClick={(e) => e.stopPropagation()}>
-            <div className="modal-header">
-              <h2 className="modal-title">
-                {selectedStatus
-                  ? `${selectedStatus} Lines`
-                  : "Production Line Status Details"}
-              </h2>
-              <button className="close-button" onClick={closeProductionModal}>
-                ✕
-              </button>
-            </div>
-            <div className="modal-body">
-              {selectedStatus && (
-                <div className="filter-info">
-                  <span
-                    className={`status-filter-badge ${getStatusClass(
-                      selectedStatus,
-                    )}`}
-                  >
-                    Showing: {selectedStatus}
-                  </span>
-                  <button
-                    className="clear-filter-btn"
-                    onClick={() => setSelectedStatus(null)}
-                  >
-                    Show All
-                  </button>
-                </div>
-              )}
-              {getFilteredProductionLines().length > 0 ? (
-                <table className="dashboard-table modal-table">
-                  <thead>
-                    <tr>
-                      <th>Line</th>
-                      <th>Status</th>
-                      <th>Efficiency</th>
-                      <th>Output</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {getFilteredProductionLines().map((line) => (
-                      <tr key={line.id}>
-                        <td>{line.name}</td>
-                        <td>
-                          <span
-                            className={`line-status ${getStatusClass(
-                              line.status,
-                            )}`}
-                          >
-                            {line.status}
-                          </span>
-                        </td>
-                        <td>
-                          <div className="efficiency-bar">
-                            <div
-                              className="efficiency-fill"
-                              style={{ width: `${line.efficiency}%` }}
-                            ></div>
-                            <span className="efficiency-text">
-                              {line.efficiency}%
-                            </span>
-                          </div>
-                        </td>
-                        <td>{line.output} units</td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              ) : (
-                <div className="no-data-message">
-                  No production lines with status "{selectedStatus}"
-                </div>
-              )}
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Recent Activities Modal */}
+      {/* Order Summary Modal */}
       {showActivityModal && (
         <div
           className="modal-overlay"
@@ -545,7 +384,7 @@ const AdminDashboard = () => {
         >
           <div className="modal-container" onClick={(e) => e.stopPropagation()}>
             <div className="modal-header">
-              <h2 className="modal-title">Recent Activities</h2>
+              <h2 className="modal-title">System Overview</h2>
               <button
                 className="close-button"
                 onClick={() => setShowActivityModal(false)}
@@ -555,38 +394,48 @@ const AdminDashboard = () => {
             </div>
             <div className="modal-body">
               <div className="activity-list">
-                {recentActivities.map((activity) => (
-                  <div key={activity.id} className="activity-item">
-                    <div className="activity-avatar">
-                      {(activity.userEmail || activity.user || "U")
-                        .charAt(0)
-                        .toUpperCase()}
+                <div className="activity-item">
+                  <div className="activity-info">
+                    <div className="activity-action">
+                      Total Orders: <strong>{stats.totalOrders}</strong>
                     </div>
-                    <div className="activity-info">
-                      <div className="activity-action">
-                        <strong>{activity.userEmail || activity.user}</strong>{" "}
-                        {activity.actionType || activity.action}
-                      </div>
-                      <div className="activity-meta">
-                        <span className="activity-entity">
-                          {activity.entity}
-                        </span>
-                        <span className="activity-time">
-                          {activity.time ||
-                            (activity.timestamp
-                              ? new Date(activity.timestamp).toLocaleString()
-                              : "")}
-                        </span>
-                      </div>
+                    <div className="activity-meta">
+                      <span className="activity-entity">
+                        Pending: {stats.pendingOrders} | In Progress: {stats.inProgressOrders} | Completed: {stats.completedOrders} | Cancelled: {stats.cancelledOrders}
+                      </span>
                     </div>
                   </div>
-                ))}
+                </div>
+                <div className="activity-item">
+                  <div className="activity-info">
+                    <div className="activity-action">
+                      Production Lines: <strong>{stats.activeLines}/{stats.totalLines}</strong> active
+                    </div>
+                    <div className="activity-meta">
+                      <span className="activity-entity">
+                        Machines: {stats.activeMachines}/{stats.totalMachines} active
+                      </span>
+                    </div>
+                  </div>
+                </div>
+                <div className="activity-item">
+                  <div className="activity-info">
+                    <div className="activity-action">
+                      Users: <strong>{stats.totalUsers}</strong> total
+                    </div>
+                    <div className="activity-meta">
+                      <span className="activity-entity">
+                        Active: {stats.activeUsers} | Blocked: {stats.blockedUsers}
+                      </span>
+                    </div>
+                  </div>
+                </div>
               </div>
               <button
                 className="btn-primary view-all-modal-btn"
-                onClick={() => navigate("/admin/audit-log")}
+                onClick={() => navigate("/admin/orders")}
               >
-                View All in Audit Log
+                View All Orders
               </button>
             </div>
           </div>
