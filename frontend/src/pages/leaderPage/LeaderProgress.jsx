@@ -14,6 +14,7 @@ import { logout } from "../../redux";
 import NotificationBell from "../../components/NotificationBell/NotificationBell";
 import authService from "../../services/authService";
 import leaderService from "../../services/leaderService";
+import scheduleService from "../../services/scheduleService";
 import imsLogo from "../../assets/ims2.jpg";
 import "./LeaderProgress.css";
 
@@ -73,20 +74,59 @@ const LeaderProgress = () => {
     notes: "",
   });
 
-  // Fetch data from API
+  // Detect specific error types for user-friendly messages
+  const getErrorMessage = (error) => {
+    const status = error?.response?.status;
+    const message = error?.response?.data?.message || "";
+
+    if (status === 404 && message.toLowerCase().includes("assignment")) {
+      return "NOT_ASSIGNED";
+    }
+    if (status === 404) {
+      return "NOT_ASSIGNED"; // Leader chưa được gán line
+    }
+    if (status === 403) {
+      return "Bạn không có quyền truy cập trang này.";
+    }
+    if (status === 401) {
+      return "Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại.";
+    }
+    return message || "Không thể tải dữ liệu. Vui lòng thử lại.";
+  };
+
+  // Fetch data from API — use Promise.allSettled so one failure doesn't block everything
   const fetchData = useCallback(async () => {
     setLoading(true);
     setError(null);
     try {
-      const [dashboardRes, schedulesRes] = await Promise.all([
+      const [dashboardRes, schedulesRes] = await Promise.allSettled([
         leaderService.getDashboard(),
         leaderService.getMySchedules(),
       ]);
-      setDashboard(dashboardRes);
-      setSchedules(schedulesRes || []);
+
+      setDashboard(
+        dashboardRes.status === "fulfilled" ? dashboardRes.value : null,
+      );
+      setSchedules(
+        schedulesRes.status === "fulfilled" ? schedulesRes.value || [] : [],
+      );
+
+      const rejections = [dashboardRes, schedulesRes].filter(
+        (r) => r.status === "rejected",
+      );
+      if (rejections.length > 0) {
+        const errorMsg = getErrorMessage(rejections[0].reason);
+        if (errorMsg === "NOT_ASSIGNED") {
+          setError("NOT_ASSIGNED");
+        } else if (rejections.length === 2) {
+          setError(errorMsg);
+        } else {
+          console.warn("Partial leader data errors:", rejections);
+        }
+      }
     } catch (err) {
       console.error("Error fetching leader data:", err);
-      setError(err.response?.data?.message || "Không thể tải dữ liệu");
+      setError(getErrorMessage(err));
     } finally {
       setLoading(false);
     }
@@ -96,28 +136,39 @@ const LeaderProgress = () => {
     fetchData();
   }, [fetchData]);
 
+  // Pause / Resume schedule
+  const handlePauseSchedule = async (scheduleId) => {
+    try {
+      await scheduleService.pauseSchedule(scheduleId);
+      alert("⏸️ Đã tạm dừng lịch sản xuất!");
+      fetchData();
+    } catch (err) {
+      alert(`❌ Lỗi: ${err.response?.data?.message || "Không thể tạm dừng"}`);
+    }
+  };
+
+  const handleResumeSchedule = async (scheduleId) => {
+    try {
+      await scheduleService.resumeSchedule(scheduleId);
+      alert("▶️ Đã tiếp tục lịch sản xuất!");
+      fetchData();
+    } catch (err) {
+      alert(`❌ Lỗi: ${err.response?.data?.message || "Không thể tiếp tục"}`);
+    }
+  };
+
   // Filter based on active tab
+  // Backend status values: SCHEDULED, RUNNING, PAUSED, COMPLETED
   const getFilteredSchedules = () => {
     switch (activeTab) {
       case "scheduled":
-        return schedules.filter(
-          (s) => s.status === "SCHEDULED" || s.status === "Scheduled",
-        );
+        return schedules.filter((s) => s.status === "SCHEDULED");
       case "inProgress":
-        return schedules.filter(
-          (s) =>
-            s.status === "ACTIVE" ||
-            s.status === "IN_PROGRESS" ||
-            s.status === "In Production",
-        );
+        return schedules.filter((s) => s.status === "RUNNING");
       case "completed":
-        return schedules.filter(
-          (s) => s.status === "COMPLETED" || s.status === "Completed",
-        );
+        return schedules.filter((s) => s.status === "COMPLETED");
       case "onHold":
-        return schedules.filter(
-          (s) => s.status === "PAUSED" || s.status === "On Hold",
-        );
+        return schedules.filter((s) => s.status === "PAUSED");
       default:
         return schedules;
     }
@@ -212,40 +263,46 @@ const LeaderProgress = () => {
   const getStatusClass = (status) => {
     switch (status) {
       case "SCHEDULED":
-      case "Scheduled":
         return "status-scheduled";
-      case "ACTIVE":
-      case "IN_PROGRESS":
-      case "In Production":
+      case "RUNNING":
         return "status-production";
       case "COMPLETED":
-      case "Completed":
         return "status-completed";
       case "PAUSED":
-      case "On Hold":
         return "status-hold";
       default:
         return "";
     }
   };
 
+  const getStatusLabel = (status) => {
+    switch (status) {
+      case "SCHEDULED":
+        return "Chờ SX";
+      case "RUNNING":
+        return "Đang chạy";
+      case "COMPLETED":
+        return "Hoàn thành";
+      case "PAUSED":
+        return "Tạm dừng";
+      default:
+        return status;
+    }
+  };
+
   const filteredSchedules = getFilteredSchedules();
   const scheduledCount = schedules.filter(
-    (s) => s.status === "SCHEDULED" || s.status === "Scheduled",
+    (s) => s.status === "SCHEDULED",
   ).length;
   const inProgressCount = schedules.filter(
-    (s) =>
-      s.status === "ACTIVE" ||
-      s.status === "IN_PROGRESS" ||
-      s.status === "In Production",
+    (s) => s.status === "RUNNING",
   ).length;
   const completedCount = schedules.filter(
-    (s) => s.status === "COMPLETED" || s.status === "Completed",
+    (s) => s.status === "COMPLETED",
   ).length;
-  const onHoldCount = schedules.filter(
-    (s) => s.status === "PAUSED" || s.status === "On Hold",
-  ).length;
+  const onHoldCount = schedules.filter((s) => s.status === "PAUSED").length;
   const totalIncidents = dashboard?.unresolvedIncidentCount || 0;
+  const recentIncidents = dashboard?.recentIncidents || [];
 
   return (
     <div className="leader-progress-container">
@@ -370,7 +427,29 @@ const LeaderProgress = () => {
             <p>Đang tải dữ liệu...</p>
           </div>
         )}
-        {error && (
+        {error && error === "NOT_ASSIGNED" && (
+          <div className="empty-state not-assigned-state">
+            <span>📋</span>
+            <h3>Chưa được phân công dây chuyền</h3>
+            <p>
+              Tài khoản của bạn chưa được gán vào dây chuyền sản xuất nào. Vui
+              lòng liên hệ <strong>Quản lý (Manager)</strong> để được phân công
+              vào dây chuyền.
+            </p>
+            <div className="not-assigned-info">
+              <p>
+                👤 Tên: <strong>{currentLeaderName}</strong>
+              </p>
+              <p>
+                🔑 Mã NV: <strong>{currentUser?.employeeCode || "N/A"}</strong>
+              </p>
+            </div>
+            <button className="btn-update" onClick={fetchData}>
+              🔄 Kiểm tra lại
+            </button>
+          </div>
+        )}
+        {error && error !== "NOT_ASSIGNED" && (
           <div className="empty-state">
             <span>⚠️</span>
             <p>{error}</p>
@@ -429,7 +508,7 @@ const LeaderProgress = () => {
                     <span
                       className={`status-badge ${getStatusClass(schedule.status)}`}
                     >
-                      {schedule.status}
+                      {getStatusLabel(schedule.status)}
                     </span>
                   </div>
 
@@ -454,10 +533,8 @@ const LeaderProgress = () => {
                     </div>
                   </div>
 
-                  {/* Actions */}
-                  {(schedule.status === "ACTIVE" ||
-                    schedule.status === "IN_PROGRESS" ||
-                    schedule.status === "In Production") && (
+                  {/* Actions for RUNNING schedules */}
+                  {schedule.status === "RUNNING" && (
                     <div className="task-actions">
                       <button
                         className="btn-update"
@@ -471,11 +548,36 @@ const LeaderProgress = () => {
                       >
                         ⚠️ Báo cáo sự cố
                       </button>
+                      <button
+                        className="btn-pause"
+                        onClick={() => handlePauseSchedule(schedule.scheduleId)}
+                      >
+                        ⏸️ Tạm dừng
+                      </button>
                     </div>
                   )}
 
-                  {(schedule.status === "COMPLETED" ||
-                    schedule.status === "Completed") && (
+                  {/* Actions for PAUSED schedules */}
+                  {schedule.status === "PAUSED" && (
+                    <div className="task-actions">
+                      <button
+                        className="btn-resume"
+                        onClick={() =>
+                          handleResumeSchedule(schedule.scheduleId)
+                        }
+                      >
+                        ▶️ Tiếp tục
+                      </button>
+                      <button
+                        className="btn-incident"
+                        onClick={() => openIncidentModal(schedule)}
+                      >
+                        ⚠️ Báo cáo sự cố
+                      </button>
+                    </div>
+                  )}
+
+                  {schedule.status === "COMPLETED" && (
                     <div className="completed-info">
                       <span>✅ Hoàn thành</span>
                     </div>
@@ -483,6 +585,41 @@ const LeaderProgress = () => {
                 </div>
               ))
             )}
+          </div>
+        )}
+
+        {/* Recent Incidents Section */}
+        {!loading && recentIncidents.length > 0 && (
+          <div className="incidents-section">
+            <h2 className="section-title">
+              ⚠️ Sự cố gần đây ({recentIncidents.length})
+            </h2>
+            <div className="incidents-grid">
+              {recentIncidents.map((incident) => (
+                <div
+                  key={incident.incidentId}
+                  className={`incident-card severity-${(incident.severity || "").toLowerCase()}`}
+                >
+                  <div className="incident-header">
+                    <span className="incident-type">
+                      {incidentTypeLabels[incident.incidentType] ||
+                        incident.incidentType}
+                    </span>
+                    <span
+                      className={`severity-badge severity-${(incident.severity || "").toLowerCase()}`}
+                    >
+                      {incident.severity}
+                    </span>
+                  </div>
+                  <div className="incident-time">
+                    🕐{" "}
+                    {incident.timestamp
+                      ? new Date(incident.timestamp).toLocaleString("vi-VN")
+                      : "—"}
+                  </div>
+                </div>
+              ))}
+            </div>
           </div>
         )}
       </main>
