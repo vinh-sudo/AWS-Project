@@ -121,10 +121,16 @@ export const authService = {
       const response = await api.post("/api/auth/register", registerData);
       return response.data;
     } catch (error) {
+      const data = error.response?.data;
+      // Handle field-level validation errors from backend
+      if (data?.fieldErrors && typeof data.fieldErrors === "object") {
+        const details = Object.entries(data.fieldErrors)
+          .map(([field, msg]) => `${field}: ${msg}`)
+          .join("\n");
+        throw new Error(details);
+      }
       const errorMessage =
-        error.response?.data?.message ||
-        error.response?.data?.error ||
-        "Registration failed";
+        data?.message || data?.error || "Registration failed";
       throw new Error(
         typeof errorMessage === "string" ? errorMessage : "Registration failed",
       );

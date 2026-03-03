@@ -33,7 +33,7 @@ const UsersAdmin = () => {
     firstName: "",
     lastName: "",
     phoneNumber: "",
-    role: "admin",
+    role: "ADMIN",
     status: true,
   });
 
@@ -81,7 +81,7 @@ const UsersAdmin = () => {
       alert("User created successfully!");
     } catch (err) {
       console.error("Error creating user:", err);
-      alert(err.message || "Failed to create user");
+      alert("Failed to create user:\n" + (err.message || "Unknown error"));
     } finally {
       setActionLoading(false);
     }
@@ -102,7 +102,7 @@ const UsersAdmin = () => {
       firstName: "",
       lastName: "",
       phoneNumber: "",
-      role: "admin",
+      role: "ADMIN",
       status: true,
     });
   };
@@ -125,7 +125,7 @@ const UsersAdmin = () => {
       firstName: user.firstName || "",
       lastName: user.lastName || "",
       phoneNumber: user.phoneNumber || "",
-      role: user.role?.toLowerCase() || "admin",
+      role: user.role?.toUpperCase() || "ADMIN",
       status: user.status === "active",
     });
     setShowEditUser(true);
@@ -328,9 +328,9 @@ const UsersAdmin = () => {
                 onChange={(e) => handleChange("role", e.target.value)}
                 className="form-select"
               >
-                <option value="admin">Admin</option>
-                <option value="manager">Manager</option>
-                <option value="worker">Worker</option>
+                <option value="ADMIN">Admin</option>
+                <option value="MANAGER">Manager</option>
+                <option value="LINE_LEADER">Line Leader</option>
               </select>
             </div>
           </div>
@@ -482,9 +482,9 @@ const UsersAdmin = () => {
                 className="role-select"
               >
                 <option>All roles</option>
-                <option value="admin">Admin</option>
-                <option value="manager">Manager</option>
-                <option value="worker">Worker</option>
+                <option value="ADMIN">Admin</option>
+                <option value="MANAGER">Manager</option>
+                <option value="LINE_LEADER">Line Leader</option>
               </select>
             </div>
           </div>{" "}
@@ -649,9 +649,9 @@ const UsersAdmin = () => {
                   onChange={(e) => handleChange("role", e.target.value)}
                   className="form-select"
                 >
-                  <option value="admin">Admin</option>
-                  <option value="manager">Manager</option>
-                  <option value="worker">Worker</option>
+                  <option value="ADMIN">Admin</option>
+                  <option value="MANAGER">Manager</option>
+                  <option value="LINE_LEADER">Line Leader</option>
                 </select>
               </div>
 
