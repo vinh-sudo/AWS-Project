@@ -5,12 +5,11 @@ import be.backend.exception.BusinessException;
 public enum Role {
     ADMIN,
     MANAGER,
-    LINE_LEADER,
-    PRODUCTION_PLANNER;
+    LINE_LEADER;
     
     // Helper method: check role có cần Employee không
     public boolean requiresEmployee() {
-        return this != ADMIN;
+        return true;
     }
     
     // Helper method: convert từ String (an toàn)
@@ -25,7 +24,7 @@ public enum Role {
             return Role.valueOf(normalized);
         } catch (IllegalArgumentException e) {
              throw new BusinessException("Invalid role: " + role + 
-            ". Valid roles: ADMIN, MANAGER, LINE_LEADER, PRODUCTION_PLANNER");
+            ". Valid roles: ADMIN, MANAGER, LINE_LEADER");
         }
     }
 }
