@@ -174,16 +174,52 @@ const getAuditLogsByAction = async (/* actionType */) => [];
 const getAuditLogsByEntity = async (/* entity */) => [];
 
 // ==================== USER MANAGEMENT ====================
-// NOTE: Backend chưa có endpoint /api/admin/users.
-// Khi backend tạo endpoint này, uncomment và sửa lại.
+// Backend endpoints: /api/admin/accounts
 
-const getAllUsers = async () => [];
-const getUserById = async (/* id */) => null;
-const createUser = async (/* userData */) => null;
-const updateUser = async (/* id, userData */) => null;
-const deleteUser = async (/* id */) => null;
-const updateUserStatus = async (/* id, status */) => null;
-const getUsersByRole = async (/* role */) => [];
+/**
+ * Get accounts with optional filters (paginated)
+ * GET /api/admin/accounts?role=&search=&page=&size=
+ * @param {Object} params - { role, search, page, size }
+ * @returns {Promise<{content: AccountSummaryResponse[], totalElements, totalPages, number, size}>}
+ */
+const getAccounts = async (params = {}) => {
+  const response = await api.get("/api/admin/accounts", { params });
+  return response.data;
+};
+
+/**
+ * Update account role
+ * PUT /api/admin/accounts/{id}/role
+ * @param {number} id - Account ID
+ * @param {string} role - New role (e.g. "MANAGER", "LINE_LEADER")
+ * @returns {Promise<AccountSummaryResponse>}
+ */
+const updateAccountRole = async (id, role) => {
+  const response = await api.put(`/api/admin/accounts/${id}/role`, { role });
+  return response.data;
+};
+
+/**
+ * Lock an account
+ * PUT /api/admin/accounts/{id}/lock
+ * @param {number} id - Account ID
+ * @returns {Promise<AccountSummaryResponse>}
+ */
+const lockAccount = async (id) => {
+  const response = await api.put(`/api/admin/accounts/${id}/lock`);
+  return response.data;
+};
+
+/**
+ * Unlock an account
+ * PUT /api/admin/accounts/{id}/unlock
+ * @param {number} id - Account ID
+ * @returns {Promise<AccountSummaryResponse>}
+ */
+const unlockAccount = async (id) => {
+  const response = await api.put(`/api/admin/accounts/${id}/unlock`);
+  return response.data;
+};
 
 // ==================== ADMIN STATISTICS ====================
 
@@ -309,14 +345,11 @@ const adminService = {
   getAuditLogsByUser,
   getAuditLogsByAction,
   getAuditLogsByEntity,
-  // Users
-  getAllUsers,
-  getUserById,
-  createUser,
-  updateUser,
-  deleteUser,
-  updateUserStatus,
-  getUsersByRole,
+  // Accounts (User Management)
+  getAccounts,
+  updateAccountRole,
+  lockAccount,
+  unlockAccount,
   // Dashboard
   getDashboardStats,
 };

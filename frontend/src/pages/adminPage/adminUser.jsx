@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import { useDispatch } from "react-redux";
 import { logout } from "../../redux";
@@ -17,14 +17,15 @@ const UsersAdmin = () => {
 
   const [users, setUsers] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [initialLoad, setInitialLoad] = useState(true);
   const [error, setError] = useState(null);
   const [actionLoading, setActionLoading] = useState(false);
 
   const [searchTerm, setSearchTerm] = useState("");
+  const [debouncedSearch, setDebouncedSearch] = useState("");
   const [roleFilter, setRoleFilter] = useState("All roles");
   const [showCreateUser, setShowCreateUser] = useState(false);
   const [showEditUser, setShowEditUser] = useState(false);
-  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [selectedUser, setSelectedUser] = useState(null);
   const [formData, setFormData] = useState({
     username: "",
@@ -33,27 +34,75 @@ const UsersAdmin = () => {
     firstName: "",
     lastName: "",
     phoneNumber: "",
-    role: "ADMIN",
+    role: "MANAGER",
+    employeeCode: "",
     status: true,
   });
 
-  // Fetch users on mount
+  // Pagination state
+  const [currentPage, setCurrentPage] = useState(0);
+  const [totalPages, setTotalPages] = useState(0);
+  const [totalElements, setTotalElements] = useState(0);
+  const pageSize = 10;
+
+  // Debounce search input (500ms)
+  const searchTimerRef = useRef(null);
+  const handleSearchChange = (e) => {
+    const value = e.target.value;
+    setSearchTerm(value);
+    if (searchTimerRef.current) clearTimeout(searchTimerRef.current);
+    searchTimerRef.current = setTimeout(() => {
+      setDebouncedSearch(value);
+      setCurrentPage(0);
+    }, 500);
+  };
+
+  const handleRoleFilterChange = (e) => {
+    setRoleFilter(e.target.value);
+    setCurrentPage(0);
+  };
+
+  // Fetch users when page, role filter, or debounced search changes
   useEffect(() => {
     fetchUsers();
+  }, [currentPage, roleFilter, debouncedSearch]);
+
+  // Cleanup debounce timer
+  useEffect(() => {
+    return () => {
+      if (searchTimerRef.current) clearTimeout(searchTimerRef.current);
+    };
   }, []);
 
   const fetchUsers = async () => {
     try {
       setLoading(true);
       setError(null);
-      const data = await adminService.getAllUsers();
-      // getAllUsers() returns [] since backend has no /api/admin/users endpoint yet
-      setUsers(Array.isArray(data) ? data : []);
+      const params = {
+        page: currentPage,
+        size: pageSize,
+      };
+      if (roleFilter && roleFilter !== "All roles") {
+        params.role = roleFilter;
+      }
+      if (debouncedSearch && debouncedSearch.trim()) {
+        params.search = debouncedSearch.trim();
+      }
+      const data = await adminService.getAccounts(params);
+      // Spring Page response: { content, totalElements, totalPages, number, size }
+      setUsers(Array.isArray(data.content) ? data.content : []);
+      setTotalPages(data.totalPages || 0);
+      setTotalElements(data.totalElements || 0);
     } catch (err) {
       console.error("Error fetching users:", err);
-      setError(err.response?.data?.message || "Failed to load users");
+      setError(
+        err.response?.data?.message ||
+          err.response?.data ||
+          "Failed to load users",
+      );
     } finally {
       setLoading(false);
+      setInitialLoad(false);
     }
   };
 
@@ -73,6 +122,7 @@ const UsersAdmin = () => {
         email: formData.email,
         phoneNumber: formData.phoneNumber || undefined,
         role: formData.role,
+        employeeCode: formData.employeeCode || undefined,
       };
       await authService.register(registerData);
       resetForm();
@@ -81,7 +131,12 @@ const UsersAdmin = () => {
       alert("User created successfully!");
     } catch (err) {
       console.error("Error creating user:", err);
-      alert("Failed to create user:\n" + (err.message || "Unknown error"));
+      const msg =
+        err.response?.data?.message ||
+        err.response?.data ||
+        err.message ||
+        "Unknown error";
+      alert("Failed to create user:\n" + msg);
     } finally {
       setActionLoading(false);
     }
@@ -102,34 +157,26 @@ const UsersAdmin = () => {
       firstName: "",
       lastName: "",
       phoneNumber: "",
-      role: "ADMIN",
+      role: "MANAGER",
+      employeeCode: "",
       status: true,
     });
   };
 
-  // Edit user handlers
+  // Edit user handlers - Update role
   const handleEditClick = (user) => {
-    // NOTE: Backend chưa có endpoint /api/admin/users/{id} (PUT) để edit user.
-    // Hiện tại chỉ hiển thị form nhưng save sẽ không hoạt động.
-    alert(
-      "Edit user is not available yet. Backend does not have user update endpoint.",
-    );
-    return;
-    // Uncomment when backend adds PUT /api/admin/users/{id}
-    /*
     setSelectedUser(user);
     setFormData({
       username: user.username || "",
-      email: user.email || "",
+      email: "",
       password: "",
-      firstName: user.firstName || "",
-      lastName: user.lastName || "",
-      phoneNumber: user.phoneNumber || "",
-      role: user.role?.toUpperCase() || "ADMIN",
+      firstName: "",
+      lastName: "",
+      phoneNumber: "",
+      role: user.role?.toUpperCase() || "MANAGER",
       status: user.status === "active",
     });
     setShowEditUser(true);
-    */
   };
 
   const handleEditSave = async () => {
@@ -137,25 +184,20 @@ const UsersAdmin = () => {
 
     try {
       setActionLoading(true);
-      const userData = {
-        firstName: formData.firstName,
-        lastName: formData.lastName,
-        email: formData.email,
-        phoneNumber: formData.phoneNumber,
-        role: formData.role,
-      };
 
-      // Only include password if it was changed
-      if (formData.password) {
-        userData.password = formData.password;
+      // Update role if changed
+      if (formData.role !== selectedUser.role) {
+        await adminService.updateAccountRole(selectedUser.id, formData.role);
       }
 
-      await adminService.updateUser(selectedUser.id, userData);
-
-      // Update status if changed
-      const newStatus = formData.status ? "active" : "blocked";
-      if (newStatus !== selectedUser.status) {
-        await adminService.updateUserStatus(selectedUser.id, newStatus);
+      // Update lock/unlock status if changed
+      const currentlyActive = selectedUser.status === "active";
+      if (formData.status !== currentlyActive) {
+        if (formData.status) {
+          await adminService.unlockAccount(selectedUser.id);
+        } else {
+          await adminService.lockAccount(selectedUser.id);
+        }
       }
 
       resetForm();
@@ -165,47 +207,38 @@ const UsersAdmin = () => {
       alert("User updated successfully!");
     } catch (err) {
       console.error("Error updating user:", err);
-      alert(err.response?.data?.message || "Failed to update user");
+      alert(
+        err.response?.data?.message ||
+          err.response?.data ||
+          "Failed to update user",
+      );
     } finally {
       setActionLoading(false);
     }
   };
 
-  // Delete user handlers
-  const handleDeleteClick = (user) => {
-    // NOTE: Backend chưa có endpoint /api/admin/users/{id} (DELETE).
-    alert(
-      "Delete user is not available yet. Backend does not have user delete endpoint.",
-    );
-    return;
-    // Uncomment when backend adds DELETE /api/admin/users/{id}
-    /*
-    setSelectedUser(user);
-    setShowDeleteConfirm(true);
-    */
-  };
-
-  const handleDeleteConfirm = async () => {
-    if (!selectedUser) return;
-
+  // Lock/Unlock handlers
+  const handleToggleLock = async (user) => {
     try {
       setActionLoading(true);
-      await adminService.deleteUser(selectedUser.id);
-      setShowDeleteConfirm(false);
-      setSelectedUser(null);
+      if (user.status === "active") {
+        await adminService.lockAccount(user.id);
+        alert(`Account "${user.username}" has been locked.`);
+      } else {
+        await adminService.unlockAccount(user.id);
+        alert(`Account "${user.username}" has been unlocked.`);
+      }
       fetchUsers();
-      alert("User deleted successfully!");
     } catch (err) {
-      console.error("Error deleting user:", err);
-      alert(err.response?.data?.message || "Failed to delete user");
+      console.error("Error toggling lock:", err);
+      alert(
+        err.response?.data?.message ||
+          err.response?.data ||
+          "Failed to update account status",
+      );
     } finally {
       setActionLoading(false);
     }
-  };
-
-  const handleDeleteCancel = () => {
-    setShowDeleteConfirm(false);
-    setSelectedUser(null);
   };
 
   const dispatch = useDispatch();
@@ -215,17 +248,7 @@ const UsersAdmin = () => {
     navigate("/login");
   };
 
-  // Filter users
-  const filteredUsers = users.filter((user) => {
-    const matchesSearch =
-      (user.username?.toLowerCase() || "").includes(searchTerm.toLowerCase()) ||
-      (user.email?.toLowerCase() || "").includes(searchTerm.toLowerCase()) ||
-      (user.fullName?.toLowerCase() || "").includes(searchTerm.toLowerCase());
-    const matchesRole = roleFilter === "All roles" || user.role === roleFilter;
-    return matchesSearch && matchesRole;
-  });
-
-  if (loading) {
+  if (initialLoad && loading) {
     return (
       <div className="page-loading">
         <div className="loading-card">
@@ -332,6 +355,19 @@ const UsersAdmin = () => {
                 <option value="MANAGER">Manager</option>
                 <option value="LINE_LEADER">Line Leader</option>
               </select>
+            </div>
+
+            <div className="form-group">
+              <label className="form-label">
+                Employee Code (auto-generated if empty)
+              </label>
+              <input
+                type="text"
+                placeholder="e.g. EMP001 (optional)"
+                value={formData.employeeCode}
+                onChange={(e) => handleChange("employeeCode", e.target.value)}
+                className="form-input"
+              />
             </div>
           </div>
 
@@ -468,9 +504,9 @@ const UsersAdmin = () => {
               <span className="search-icon">🔍</span>
               <input
                 type="text"
-                placeholder="Search users..."
+                placeholder="Search by username or employee code..."
                 value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
+                onChange={handleSearchChange}
                 className="search-input"
               />
             </div>{" "}
@@ -478,7 +514,7 @@ const UsersAdmin = () => {
               <label className="role-label">Role</label>
               <select
                 value={roleFilter}
-                onChange={(e) => setRoleFilter(e.target.value)}
+                onChange={handleRoleFilterChange}
                 className="role-select"
               >
                 <option>All roles</option>
@@ -488,76 +524,156 @@ const UsersAdmin = () => {
               </select>
             </div>
           </div>{" "}
-          <table className="users-table">
-            <thead>
-              <tr>
-                <th className="table-header">Username</th>
-                <th className="table-header">Full Name</th>
-                <th className="table-header">Email</th>
-                <th className="table-header">Role</th>
-                <th className="table-header">Status</th>
-                <th className="table-header">Actions</th>
-              </tr>
-            </thead>
-            <tbody>
-              {filteredUsers.length === 0 ? (
+          <div style={{ position: "relative" }}>
+            {loading && !initialLoad && (
+              <div
+                style={{
+                  position: "absolute",
+                  top: 0,
+                  left: 0,
+                  right: 0,
+                  bottom: 0,
+                  background: "rgba(255,255,255,0.7)",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  zIndex: 10,
+                  borderRadius: "8px",
+                }}
+              >
+                <span style={{ fontSize: "16px", color: "#555" }}>
+                  Loading...
+                </span>
+              </div>
+            )}
+            <table className="users-table">
+              <thead>
                 <tr>
-                  <td
-                    colSpan="6"
-                    style={{
-                      textAlign: "center",
-                      padding: "40px",
-                      color: "#666",
-                    }}
-                  >
-                    No users found
-                  </td>
+                  <th className="table-header">Username</th>
+                  <th className="table-header">Employee Code</th>
+                  <th className="table-header">Role</th>
+                  <th className="table-header">Status</th>
+                  <th className="table-header">Last Login</th>
+                  <th className="table-header">Actions</th>
                 </tr>
-              ) : (
-                filteredUsers.map((user) => (
-                  <tr key={user.id} className="table-row">
-                    <td className="table-cell">{user.username}</td>
-                    <td className="table-cell">{user.fullName || "-"}</td>
-                    <td className="table-cell">{user.email || "-"}</td>
-                    <td className="table-cell">{user.role}</td>
-                    <td className="table-cell">
-                      <span
-                        className={
-                          user.status === "active"
-                            ? "status-active"
-                            : "status-blocked"
-                        }
-                      >
-                        {user.status === "active" ? "Active" : "Blocked"}
-                      </span>
-                    </td>
-                    <td className="table-cell">
-                      <button
-                        className="action-button"
-                        onClick={() => handleEditClick(user)}
-                        title="Edit user"
-                        disabled={actionLoading}
-                      >
-                        ✏️
-                      </button>
-                      <button
-                        className="action-button delete"
-                        onClick={() => handleDeleteClick(user)}
-                        title="Delete user"
-                        disabled={actionLoading}
-                      >
-                        🗑️
-                      </button>
+              </thead>
+              <tbody>
+                {users.length === 0 ? (
+                  <tr>
+                    <td
+                      colSpan="6"
+                      style={{
+                        textAlign: "center",
+                        padding: "40px",
+                        color: "#666",
+                      }}
+                    >
+                      No users found
                     </td>
                   </tr>
-                ))
-              )}
-            </tbody>
-          </table>
+                ) : (
+                  users.map((user) => (
+                    <tr key={user.id} className="table-row">
+                      <td className="table-cell">{user.username}</td>
+                      <td className="table-cell">{user.employeeCode || "-"}</td>
+                      <td className="table-cell">{user.role}</td>
+                      <td className="table-cell">
+                        <span
+                          className={
+                            user.status === "active"
+                              ? "status-active"
+                              : "status-blocked"
+                          }
+                        >
+                          {user.status === "active" ? "Active" : "Locked"}
+                        </span>
+                      </td>
+                      <td className="table-cell">
+                        {user.lastLogin
+                          ? new Date(user.lastLogin).toLocaleString()
+                          : "-"}
+                      </td>
+                      <td className="table-cell">
+                        <button
+                          className="action-button"
+                          onClick={() => handleEditClick(user)}
+                          title="Edit role & status"
+                          disabled={actionLoading}
+                        >
+                          ✏️
+                        </button>
+                        <button
+                          className={`action-button ${user.status === "active" ? "delete" : ""}`}
+                          onClick={() => handleToggleLock(user)}
+                          title={
+                            user.status === "active"
+                              ? "Lock account"
+                              : "Unlock account"
+                          }
+                          disabled={actionLoading}
+                        >
+                          {user.status === "active" ? "🔒" : "🔓"}
+                        </button>
+                      </td>
+                    </tr>
+                  ))
+                )}
+              </tbody>
+            </table>
+
+            {/* Pagination */}
+            {totalPages > 1 && (
+              <div
+                className="pagination"
+                style={{
+                  display: "flex",
+                  justifyContent: "center",
+                  alignItems: "center",
+                  gap: "8px",
+                  marginTop: "20px",
+                  padding: "16px 0",
+                }}
+              >
+                <button
+                  onClick={() => setCurrentPage((p) => Math.max(0, p - 1))}
+                  disabled={currentPage === 0}
+                  style={{
+                    padding: "8px 16px",
+                    borderRadius: "6px",
+                    border: "1px solid #ddd",
+                    background: currentPage === 0 ? "#f5f5f5" : "#fff",
+                    cursor: currentPage === 0 ? "not-allowed" : "pointer",
+                  }}
+                >
+                  ← Previous
+                </button>
+                <span style={{ padding: "0 12px", color: "#555" }}>
+                  Page {currentPage + 1} of {totalPages} ({totalElements} users)
+                </span>
+                <button
+                  onClick={() =>
+                    setCurrentPage((p) => Math.min(totalPages - 1, p + 1))
+                  }
+                  disabled={currentPage >= totalPages - 1}
+                  style={{
+                    padding: "8px 16px",
+                    borderRadius: "6px",
+                    border: "1px solid #ddd",
+                    background:
+                      currentPage >= totalPages - 1 ? "#f5f5f5" : "#fff",
+                    cursor:
+                      currentPage >= totalPages - 1 ? "not-allowed" : "pointer",
+                  }}
+                >
+                  Next →
+                </button>
+              </div>
+            )}
+          </div>
         </div>
       </div>
 
-      {/* Edit User Modal */}
+      {/* Edit User Modal - Role & Status */}
       {showEditUser && (
         <div className="modal-overlay">
           <div className="modal">
@@ -573,7 +689,6 @@ const UsersAdmin = () => {
                 <label className="form-label">Username</label>
                 <input
                   type="text"
-                  placeholder="Enter username"
                   value={formData.username}
                   disabled
                   className="form-input"
@@ -581,64 +696,14 @@ const UsersAdmin = () => {
                 />
               </div>
 
-              <div
-                className="form-row"
-                style={{ display: "flex", gap: "16px" }}
-              >
-                <div className="form-group" style={{ flex: 1 }}>
-                  <label className="form-label">First Name</label>
-                  <input
-                    type="text"
-                    placeholder="Enter first name"
-                    value={formData.firstName}
-                    onChange={(e) => handleChange("firstName", e.target.value)}
-                    className="form-input"
-                  />
-                </div>
-                <div className="form-group" style={{ flex: 1 }}>
-                  <label className="form-label">Last Name</label>
-                  <input
-                    type="text"
-                    placeholder="Enter last name"
-                    value={formData.lastName}
-                    onChange={(e) => handleChange("lastName", e.target.value)}
-                    className="form-input"
-                  />
-                </div>
-              </div>
-
               <div className="form-group">
-                <label className="form-label">Email</label>
-                <input
-                  type="email"
-                  placeholder="Enter email"
-                  value={formData.email}
-                  onChange={(e) => handleChange("email", e.target.value)}
-                  className="form-input"
-                />
-              </div>
-
-              <div className="form-group">
-                <label className="form-label">Phone Number</label>
+                <label className="form-label">Employee Code</label>
                 <input
                   type="text"
-                  placeholder="Enter phone number"
-                  value={formData.phoneNumber}
-                  onChange={(e) => handleChange("phoneNumber", e.target.value)}
+                  value={selectedUser?.employeeCode || "-"}
+                  disabled
                   className="form-input"
-                />
-              </div>
-
-              <div className="form-group">
-                <label className="form-label">
-                  New Password (leave blank to keep current)
-                </label>
-                <input
-                  type="password"
-                  placeholder="Enter new password"
-                  value={formData.password}
-                  onChange={(e) => handleChange("password", e.target.value)}
-                  className="form-input"
+                  style={{ background: "#f5f5f5", cursor: "not-allowed" }}
                 />
               </div>
 
@@ -648,11 +713,22 @@ const UsersAdmin = () => {
                   value={formData.role}
                   onChange={(e) => handleChange("role", e.target.value)}
                   className="form-select"
+                  disabled={selectedUser?.role === "ADMIN"}
                 >
-                  <option value="ADMIN">Admin</option>
                   <option value="MANAGER">Manager</option>
                   <option value="LINE_LEADER">Line Leader</option>
                 </select>
+                {selectedUser?.role === "ADMIN" && (
+                  <small
+                    style={{
+                      color: "#999",
+                      marginTop: "4px",
+                      display: "block",
+                    }}
+                  >
+                    Cannot change role of an Admin account
+                  </small>
+                )}
               </div>
 
               <div className="form-group">
@@ -668,7 +744,7 @@ const UsersAdmin = () => {
                     className={`toggle-button ${!formData.status ? "active" : ""}`}
                     onClick={() => handleChange("status", false)}
                   >
-                    Blocked
+                    Locked
                   </button>
                 </div>
               </div>
@@ -688,45 +764,6 @@ const UsersAdmin = () => {
                 disabled={actionLoading}
               >
                 {actionLoading ? "Updating..." : "Update"}
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Delete Confirmation Modal */}
-      {showDeleteConfirm && selectedUser && (
-        <div className="modal-overlay">
-          <div className="modal delete-modal">
-            <div className="modal-header">
-              <h2 className="modal-title">Confirm Delete</h2>
-              <button className="close-button" onClick={handleDeleteCancel}>
-                ✕
-              </button>
-            </div>
-
-            <div className="modal-body">
-              <p className="delete-message">
-                Are you sure you want to delete user{" "}
-                <strong>{selectedUser.username}</strong>?
-              </p>
-              <p className="delete-warning">This action cannot be undone.</p>
-            </div>
-
-            <div className="modal-footer">
-              <button
-                className="btn-cancel"
-                onClick={handleDeleteCancel}
-                disabled={actionLoading}
-              >
-                Cancel
-              </button>
-              <button
-                className="btn-delete"
-                onClick={handleDeleteConfirm}
-                disabled={actionLoading}
-              >
-                {actionLoading ? "Deleting..." : "Delete"}
               </button>
             </div>
           </div>
