@@ -43,7 +43,7 @@ aws:
 
 jwt:
   secret: myVeryVeryVeryVeryVeryVerySecretKey1234567890
-  expiration: 900000
+  expiration: 1800000
   refresh-expiration: 14400000
 
 logging:
