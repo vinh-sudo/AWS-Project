@@ -30,14 +30,13 @@ const ManagerPlanning = () => {
     setLoading(true);
     setError(null);
     try {
-      const [plansRes, linesRes, ordersRes] = await Promise.all([
-        managerService.getPlans(),
+      const [plansRes, linesRes] = await Promise.all([
+        managerService.getAllPlans(),
         managerService.getLinesOverview(),
-        managerService.getOrders(),
       ]);
       setPlans(plansRes || []);
       setLinesOverview(linesRes || []);
-      setOrders(ordersRes || []);
+      setOrders([]);
     } catch (err) {
       console.error("Error fetching data:", err);
       setError("Unable to load data. Please try again later.");
@@ -68,7 +67,7 @@ const ManagerPlanning = () => {
       lines: prev.lines.map((line) =>
         line.lineId === lineId
           ? { ...line, plannedQty: parseInt(qty) || 0 }
-          : line
+          : line,
       ),
     }));
   };
@@ -123,24 +122,34 @@ const ManagerPlanning = () => {
 
   const getDecisionClass = (decision) => {
     switch (decision?.toUpperCase()) {
-      case "CONFIRMED": return "decision-confirmed";
-      case "DRAFT": case "PENDING": return "decision-pending";
-      case "CANCELLED": return "decision-cancelled";
-      default: return "decision-pending";
+      case "CONFIRMED":
+        return "decision-confirmed";
+      case "DRAFT":
+      case "PENDING":
+        return "decision-pending";
+      case "CANCELLED":
+        return "decision-cancelled";
+      default:
+        return "decision-pending";
     }
   };
 
   const getPriorityClass = (priority) => {
     switch (priority?.toUpperCase()) {
-      case "HIGH": return "priority-high";
-      case "MEDIUM": return "priority-medium";
-      case "LOW": return "priority-low";
-      default: return "";
+      case "HIGH":
+        return "priority-high";
+      case "MEDIUM":
+        return "priority-medium";
+      case "LOW":
+        return "priority-low";
+      default:
+        return "";
     }
   };
 
   const getLoadClass = (line) => {
-    const utilization = ((line.busyHours || 0) / (line.availableHours || 8)) * 100;
+    const utilization =
+      ((line.busyHours || 0) / (line.availableHours || 8)) * 100;
     if (utilization >= 80) return "load-high";
     if (utilization >= 50) return "load-mid";
     return "load-low";
@@ -148,7 +157,7 @@ const ManagerPlanning = () => {
 
   const awaitingOrders = useMemo(() => {
     return (orders || []).filter(
-      (o) => o.status === "APPROVED" || o.status === "NEW"
+      (o) => o.status === "APPROVED" || o.status === "NEW",
     );
   }, [orders]);
 
@@ -179,7 +188,7 @@ const ManagerPlanning = () => {
     const result = {};
     Object.entries(plansByOrder).forEach(([orderId, orderPlans]) => {
       const filtered = orderPlans.filter(
-        (p) => p.decision?.toUpperCase() === filterStatus.toUpperCase()
+        (p) => p.decision?.toUpperCase() === filterStatus.toUpperCase(),
       );
       if (filtered.length > 0) result[orderId] = filtered;
     });
@@ -189,7 +198,7 @@ const ManagerPlanning = () => {
   const totalPlanGroups = Object.keys(filteredPlansByOrder).length;
   const confirmedCount = plans.filter((p) => p.decision === "CONFIRMED").length;
   const pendingCount = plans.filter(
-    (p) => p.decision === "DRAFT" || p.decision === "PENDING"
+    (p) => p.decision === "DRAFT" || p.decision === "PENDING",
   ).length;
 
   const totalPlanned = selectedOrder
@@ -231,15 +240,24 @@ const ManagerPlanning = () => {
                 <option value="CANCELLED">Cancelled</option>
               </select>
             </div>
-            <div className="pp-toolbar-right" style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+            <div
+              className="pp-toolbar-right"
+              style={{ display: "flex", alignItems: "center", gap: "8px" }}
+            >
               <span className="pp-badge">{totalPlanGroups} groups</span>
               {confirmedCount > 0 && (
-                <span className="pp-decision decision-confirmed" style={{ fontSize: "11px" }}>
+                <span
+                  className="pp-decision decision-confirmed"
+                  style={{ fontSize: "11px" }}
+                >
                   {confirmedCount} confirmed
                 </span>
               )}
               {pendingCount > 0 && (
-                <span className="pp-decision decision-pending" style={{ fontSize: "11px" }}>
+                <span
+                  className="pp-decision decision-pending"
+                  style={{ fontSize: "11px" }}
+                >
                   {pendingCount} pending
                 </span>
               )}
@@ -250,7 +268,16 @@ const ManagerPlanning = () => {
             <section className="pp-panel pp-orders">
               <div className="pp-panel-header">
                 <h2 className="pp-panel-title">
-                  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <svg
+                    width="15"
+                    height="15"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="2"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  >
                     <path d="M21 16V8a2 2 0 00-1-1.73l-7-4a2 2 0 00-2 0l-7 4A2 2 0 003 8v8a2 2 0 001 1.73l7 4a2 2 0 002 0l7-4A2 2 0 0021 16z" />
                     <polyline points="3.27 6.96 12 12.01 20.73 6.96" />
                     <line x1="12" y1="22.08" x2="12" y2="12" />
@@ -268,11 +295,24 @@ const ManagerPlanning = () => {
               ) : filteredOrders.length === 0 ? (
                 <div className="pp-empty">
                   <div className="pp-empty-icon">
-                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+                    <svg
+                      width="20"
+                      height="20"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth="1.5"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                    >
                       <path d="M21 16V8a2 2 0 00-1-1.73l-7-4a2 2 0 00-2 0l-7 4A2 2 0 003 8v8a2 2 0 001 1.73l7 4a2 2 0 002 0l7-4A2 2 0 0021 16z" />
                     </svg>
                   </div>
-                  <span>{searchTerm ? "No matching orders" : "No orders awaiting planning"}</span>
+                  <span>
+                    {searchTerm
+                      ? "No matching orders"
+                      : "No orders awaiting planning"}
+                  </span>
                 </div>
               ) : (
                 <div className="pp-table-wrap">
@@ -298,7 +338,9 @@ const ManagerPlanning = () => {
                             {(order.quantity || 0).toLocaleString()}
                           </td>
                           <td>
-                            <span className={`pp-priority ${getPriorityClass(order.priority)}`}>
+                            <span
+                              className={`pp-priority ${getPriorityClass(order.priority)}`}
+                            >
                               {order.priority}
                             </span>
                           </td>
@@ -323,8 +365,21 @@ const ManagerPlanning = () => {
             <aside className="pp-panel pp-lines">
               <div className="pp-panel-header">
                 <h2 className="pp-panel-title">
-                  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                    <path d="M2 20h.01" /><path d="M7 20v-4" /><path d="M12 20v-8" /><path d="M17 20V8" /><path d="M22 4v16" />
+                  <svg
+                    width="15"
+                    height="15"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="2"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  >
+                    <path d="M2 20h.01" />
+                    <path d="M7 20v-4" />
+                    <path d="M12 20v-8" />
+                    <path d="M17 20V8" />
+                    <path d="M22 4v16" />
                   </svg>
                   Lines
                 </h2>
@@ -346,11 +401,15 @@ const ManagerPlanning = () => {
                       <div className="pp-line-item">
                         <div className="pp-line-info">
                           <span className="pp-line-name">{line.lineName}</span>
-                          <span className={`ln-status ${
-                            line.status?.toLowerCase() === "running" ? "ln-st-running"
-                            : line.status?.toLowerCase() === "idle" ? "ln-st-idle"
-                            : "ln-st-maintenance"
-                          }`}>
+                          <span
+                            className={`ln-status ${
+                              line.status?.toLowerCase() === "running"
+                                ? "ln-st-running"
+                                : line.status?.toLowerCase() === "idle"
+                                  ? "ln-st-idle"
+                                  : "ln-st-maintenance"
+                            }`}
+                          >
                             {line.status || "N/A"}
                           </span>
                         </div>
@@ -365,12 +424,15 @@ const ManagerPlanning = () => {
                               />
                             </div>
                             <span className="pp-cap-text">
-                              {line.busyHours || 0}h / {line.availableHours || 8}h capacity
+                              {line.busyHours || 0}h /{" "}
+                              {line.availableHours || 8}h capacity
                             </span>
                           </div>
                         )}
                       </div>
-                      {idx < linesOverview.length - 1 && <div className="pp-line-divider" />}
+                      {idx < linesOverview.length - 1 && (
+                        <div className="pp-line-divider" />
+                      )}
                     </React.Fragment>
                   ))}
                 </div>
@@ -381,7 +443,16 @@ const ManagerPlanning = () => {
           <section className="pp-panel pp-plans-section">
             <div className="pp-panel-header">
               <h2 className="pp-panel-title">
-                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <svg
+                  width="15"
+                  height="15"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                >
                   <path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z" />
                   <polyline points="14 2 14 8 20 8" />
                   <line x1="16" y1="13" x2="8" y2="13" />
@@ -398,7 +469,14 @@ const ManagerPlanning = () => {
               </div>
             ) : Object.keys(filteredPlansByOrder).length === 0 ? (
               <div className="pp-empty">
-                <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="#ccc" strokeWidth="1.5">
+                <svg
+                  width="40"
+                  height="40"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="#ccc"
+                  strokeWidth="1.5"
+                >
                   <path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z" />
                   <polyline points="14 2 14 8 20 8" />
                 </svg>
@@ -406,93 +484,121 @@ const ManagerPlanning = () => {
               </div>
             ) : (
               <div className="pp-plans-list">
-                {Object.entries(filteredPlansByOrder).map(([orderId, orderPlans]) => (
-                  <div key={orderId} className="pp-plan-group">
-                    <div className="pp-plan-group-header">
-                      <div className="pp-plan-group-info">
-                        <h3>Order #{orderId}</h3>
-                        <span className="pp-badge-sm">
-                          {orderPlans.length} {orderPlans.length === 1 ? "line" : "lines"}
-                        </span>
+                {Object.entries(filteredPlansByOrder).map(
+                  ([orderId, orderPlans]) => (
+                    <div key={orderId} className="pp-plan-group">
+                      <div className="pp-plan-group-header">
+                        <div className="pp-plan-group-info">
+                          <h3>Order #{orderId}</h3>
+                          <span className="pp-badge-sm">
+                            {orderPlans.length}{" "}
+                            {orderPlans.length === 1 ? "line" : "lines"}
+                          </span>
+                        </div>
+                        <div className="pp-plan-actions">
+                          {orderPlans.some(
+                            (p) =>
+                              p.decision === "DRAFT" ||
+                              p.decision === "PENDING",
+                          ) && (
+                            <>
+                              <button
+                                className="pp-btn-confirm"
+                                onClick={() =>
+                                  handleConfirmPlan(parseInt(orderId))
+                                }
+                              >
+                                ✓ Confirm
+                              </button>
+                              <button
+                                className="pp-btn-cancel"
+                                onClick={() =>
+                                  handleCancelPlan(parseInt(orderId))
+                                }
+                              >
+                                ✕ Cancel
+                              </button>
+                            </>
+                          )}
+                        </div>
                       </div>
-                      <div className="pp-plan-actions">
-                        {orderPlans.some(
-                          (p) => p.decision === "DRAFT" || p.decision === "PENDING"
-                        ) && (
-                          <>
-                            <button
-                              className="pp-btn-confirm"
-                              onClick={() => handleConfirmPlan(parseInt(orderId))}
-                            >
-                              ✓ Confirm
-                            </button>
-                            <button
-                              className="pp-btn-cancel"
-                              onClick={() => handleCancelPlan(parseInt(orderId))}
-                            >
-                              ✕ Cancel
-                            </button>
-                          </>
-                        )}
-                      </div>
-                    </div>
 
-                    <table className="pp-table pp-table-compact">
-                      <thead>
-                        <tr>
-                          <th>Plan Name</th>
-                          <th>Line</th>
-                          <th>Quantity</th>
-                          <th>Start</th>
-                          <th>End</th>
-                          <th>Hours</th>
-                          <th>Status</th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {orderPlans.map((plan) => (
-                          <tr key={plan.id || plan.planId}>
-                            <td>{plan.planName || "—"}</td>
-                            <td className="pp-cell-id">
-                              {plan.lineName || `Line ${plan.lineId}`}
-                            </td>
-                            <td className="pp-cell-num">
-                              {(plan.plannedQuantity || 0).toLocaleString()}
-                            </td>
-                            <td className="pp-cell-muted">{plan.startDate}</td>
-                            <td className="pp-cell-muted">{plan.endDate}</td>
-                            <td className="pp-cell-muted">
-                              {(plan.estimatedHours || 0).toFixed(1)}h
-                            </td>
-                            <td>
-                              <span className={`pp-decision ${getDecisionClass(plan.decision)}`}>
-                                {plan.decision}
-                              </span>
-                            </td>
+                      <table className="pp-table pp-table-compact">
+                        <thead>
+                          <tr>
+                            <th>Plan Name</th>
+                            <th>Line</th>
+                            <th>Quantity</th>
+                            <th>Start</th>
+                            <th>End</th>
+                            <th>Hours</th>
+                            <th>Status</th>
                           </tr>
-                        ))}
-                      </tbody>
-                    </table>
+                        </thead>
+                        <tbody>
+                          {orderPlans.map((plan) => (
+                            <tr key={plan.id || plan.planId}>
+                              <td>{plan.planName || "—"}</td>
+                              <td className="pp-cell-id">
+                                {plan.lineName || `Line ${plan.lineId}`}
+                              </td>
+                              <td className="pp-cell-num">
+                                {(plan.plannedQuantity || 0).toLocaleString()}
+                              </td>
+                              <td className="pp-cell-muted">
+                                {plan.startDate}
+                              </td>
+                              <td className="pp-cell-muted">{plan.endDate}</td>
+                              <td className="pp-cell-muted">
+                                {(plan.estimatedHours || 0).toFixed(1)}h
+                              </td>
+                              <td>
+                                <span
+                                  className={`pp-decision ${getDecisionClass(plan.decision)}`}
+                                >
+                                  {plan.decision}
+                                </span>
+                              </td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
 
-                    {orderPlans[0]?.note && (
-                      <div className="pp-plan-note">
-                        <strong>Note:</strong> {orderPlans[0].note}
-                      </div>
-                    )}
-                  </div>
-                ))}
+                      {orderPlans[0]?.note && (
+                        <div className="pp-plan-note">
+                          <strong>Note:</strong> {orderPlans[0].note}
+                        </div>
+                      )}
+                    </div>
+                  ),
+                )}
               </div>
             )}
           </section>
         </div>
 
         {showCreateModal && selectedOrder && (
-          <div className="modal-overlay" onClick={() => setShowCreateModal(false)}>
+          <div
+            className="modal-overlay"
+            onClick={() => setShowCreateModal(false)}
+          >
             <div className="modal-content" onClick={(e) => e.stopPropagation()}>
               <div className="modal-header">
                 <h2>Create Plan for Order #{selectedOrder.id}</h2>
-                <button className="modal-close" onClick={() => setShowCreateModal(false)}>
-                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <button
+                  className="modal-close"
+                  onClick={() => setShowCreateModal(false)}
+                >
+                  <svg
+                    width="18"
+                    height="18"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="2"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  >
                     <line x1="18" y1="6" x2="6" y2="18" />
                     <line x1="6" y1="6" x2="18" y2="18" />
                   </svg>
@@ -503,15 +609,21 @@ const ManagerPlanning = () => {
                 <div className="order-summary">
                   <div className="summary-item">
                     <span className="summary-label">Customer</span>
-                    <span className="summary-value">{selectedOrder.customerName}</span>
+                    <span className="summary-value">
+                      {selectedOrder.customerName}
+                    </span>
                   </div>
                   <div className="summary-item">
                     <span className="summary-label">Product</span>
-                    <span className="summary-value">{selectedOrder.productType}</span>
+                    <span className="summary-value">
+                      {selectedOrder.productType}
+                    </span>
                   </div>
                   <div className="summary-item">
                     <span className="summary-label">Deadline</span>
-                    <span className="summary-value">{selectedOrder.deadline}</span>
+                    <span className="summary-value">
+                      {selectedOrder.deadline}
+                    </span>
                   </div>
                   <div className="summary-item highlight">
                     <span className="summary-label">Total Quantity</span>
@@ -527,7 +639,10 @@ const ManagerPlanning = () => {
                     type="text"
                     value={planForm.planName}
                     onChange={(e) =>
-                      setPlanForm((prev) => ({ ...prev, planName: e.target.value }))
+                      setPlanForm((prev) => ({
+                        ...prev,
+                        planName: e.target.value,
+                      }))
                     }
                     className="form-input"
                     placeholder="Enter plan name..."
@@ -541,7 +656,10 @@ const ManagerPlanning = () => {
                       type="date"
                       value={planForm.startDate}
                       onChange={(e) =>
-                        setPlanForm((prev) => ({ ...prev, startDate: e.target.value }))
+                        setPlanForm((prev) => ({
+                          ...prev,
+                          startDate: e.target.value,
+                        }))
                       }
                       className="form-input"
                     />
@@ -552,7 +670,10 @@ const ManagerPlanning = () => {
                       type="text"
                       value={planForm.note}
                       onChange={(e) =>
-                        setPlanForm((prev) => ({ ...prev, note: e.target.value }))
+                        setPlanForm((prev) => ({
+                          ...prev,
+                          note: e.target.value,
+                        }))
                       }
                       className="form-input"
                       placeholder="Brief note…"
@@ -563,7 +684,9 @@ const ManagerPlanning = () => {
                 <div className="line-allocation">
                   <h3>
                     Allocate to Lines
-                    <span className="alloc-hint">Distribute quantity across lines</span>
+                    <span className="alloc-hint">
+                      Distribute quantity across lines
+                    </span>
                   </h3>
                   {planForm.lines.length === 0 ? (
                     <div className="pp-empty">
@@ -574,13 +697,17 @@ const ManagerPlanning = () => {
                       {planForm.lines.map((line) => (
                         <div key={line.lineId} className="allocation-item">
                           <div className="allocation-line-info">
-                            <span className="allocation-line-name">{line.lineName}</span>
+                            <span className="allocation-line-name">
+                              {line.lineName}
+                            </span>
                           </div>
                           <input
                             type="number"
                             min="0"
                             value={line.plannedQty}
-                            onChange={(e) => handleLineQtyChange(line.lineId, e.target.value)}
+                            onChange={(e) =>
+                              handleLineQtyChange(line.lineId, e.target.value)
+                            }
                             className="allocation-input"
                             placeholder="0"
                           />
@@ -621,7 +748,10 @@ const ManagerPlanning = () => {
               </div>
 
               <div className="modal-footer">
-                <button className="btn-secondary" onClick={() => setShowCreateModal(false)}>
+                <button
+                  className="btn-secondary"
+                  onClick={() => setShowCreateModal(false)}
+                >
                   Cancel
                 </button>
                 <button
