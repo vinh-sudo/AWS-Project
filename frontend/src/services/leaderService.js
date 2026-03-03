@@ -13,8 +13,13 @@ const leaderService = {
    *     unresolvedIncidentCount, recentIncidents[] }
    */
   getDashboard: async () => {
-    const response = await api.get("/api/leader/dashboard");
-    return response.data;
+    try {
+      const response = await api.get("/api/leader/dashboard");
+      return response.data;
+    } catch (error) {
+      console.error("Error fetching leader dashboard:", error);
+      throw error;
+    }
   },
 
   /**
@@ -24,8 +29,13 @@ const leaderService = {
    *   [{ scheduleId, orderInfo, status, startTime, endTime }]
    */
   getMySchedules: async () => {
-    const response = await api.get("/api/leader/schedules");
-    return response.data;
+    try {
+      const response = await api.get("/api/leader/schedules");
+      return response.data;
+    } catch (error) {
+      console.error("Error fetching leader schedules:", error);
+      throw error;
+    }
   },
 
   /**
@@ -36,8 +46,13 @@ const leaderService = {
    *   { scheduleId, percentage, scheduleStatus, message }
    */
   updateProgress: async (data) => {
-    const response = await api.put("/api/leader/progress", data);
-    return response.data;
+    try {
+      const response = await api.put("/api/leader/progress", data);
+      return response.data;
+    } catch (error) {
+      console.error("Error updating progress:", error);
+      throw error;
+    }
   },
 
   /**
@@ -50,8 +65,13 @@ const leaderService = {
    *     rejectQuantity, targetQuantity, message }
    */
   submitReport: async (data) => {
-    const response = await api.post("/api/leader/report", data);
-    return response.data;
+    try {
+      const response = await api.post("/api/leader/report", data);
+      return response.data;
+    } catch (error) {
+      console.error("Error submitting shift report:", error);
+      throw error;
+    }
   },
 
   /**
@@ -62,7 +82,12 @@ const leaderService = {
    * @returns {Promise<void>}
    */
   reportIncident: async (data) => {
-    await api.post("/api/leader/incident", data);
+    try {
+      await api.post("/api/leader/incident", data);
+    } catch (error) {
+      console.error("Error reporting incident:", error);
+      throw error;
+    }
   },
 };
 

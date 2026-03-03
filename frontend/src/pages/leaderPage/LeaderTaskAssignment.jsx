@@ -70,14 +70,19 @@ const LeaderInternalNotes = () => {
 
   // Load schedules from API for dropdown
   const [schedules, setSchedules] = useState([]);
+  const [scheduleError, setScheduleError] = useState(null);
 
   useEffect(() => {
     const fetchSchedules = async () => {
       try {
         const data = await leaderService.getMySchedules();
         setSchedules(data || []);
+        setScheduleError(null);
       } catch (err) {
         console.error("Error loading schedules:", err);
+        if (err.response?.status === 404) {
+          setScheduleError("NOT_ASSIGNED");
+        }
       }
     };
     fetchSchedules();
@@ -229,6 +234,24 @@ const LeaderInternalNotes = () => {
             </div>
           </div>
         </header>
+
+        {/* Not assigned warning */}
+        {scheduleError === "NOT_ASSIGNED" && (
+          <div
+            className="info-box"
+            style={{ borderLeftColor: "#f59e0b", background: "#fffbeb" }}
+          >
+            <span className="info-icon">⚠️</span>
+            <div className="info-content">
+              <strong>Chưa được phân công dây chuyền</strong>
+              <p>
+                Tài khoản của bạn chưa được gán vào dây chuyền sản xuất nào.
+                Danh sách lịch sản xuất sẽ trống cho đến khi bạn được Quản lý
+                phân công vào dây chuyền.
+              </p>
+            </div>
+          </div>
+        )}
 
         {/* Info Box */}
         <div className="info-box">
