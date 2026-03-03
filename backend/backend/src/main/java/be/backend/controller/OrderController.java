@@ -81,6 +81,7 @@ public class OrderController {
     // ==================== QUERIES ====================
 
     @GetMapping
+    @PreAuthorize("hasAnyRole('ADMIN','MANAGER')")
     public ResponseEntity<List<OrderResponse>> getAllOrders() {
         return ResponseEntity.ok(orderService.getAllOrders());
     }
