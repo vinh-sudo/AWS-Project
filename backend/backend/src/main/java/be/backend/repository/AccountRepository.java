@@ -9,6 +9,10 @@ import org.springframework.stereotype.Repository;
 import java.util.Collection;
 import java.util.Optional;
 
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.repository.query.Param;
+
 @Repository
 public interface AccountRepository extends JpaRepository<Account,Integer> {
 
@@ -25,4 +29,16 @@ public interface AccountRepository extends JpaRepository<Account,Integer> {
     Optional<Account> findByUsername(String username);
 
     Optional<Account> findByRoleIgnoreCase(String role);
+
+    @Query(value = "SELECT a FROM Account a" +
+            " LEFT JOIN FETCH a.employee e" +
+            " WHERE (:role IS NULL OR UPPER(a.role) = UPPER(:role))" +
+            "   AND (:search IS NULL OR LOWER(a.username) LIKE LOWER(CONCAT('%', :search, '%')))",
+            countQuery = "SELECT COUNT(a) FROM Account a" +
+            " WHERE (:role IS NULL OR UPPER(a.role) = UPPER(:role))" +
+            "   AND (:search IS NULL OR LOWER(a.username) LIKE LOWER(CONCAT('%', :search, '%')))")
+    Page<Account> findAllWithFilters(@Param("role") String role,
+                                      @Param("search") String search,
+                                      Pageable pageable);
 }
+
