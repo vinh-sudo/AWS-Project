@@ -1,4 +1,3 @@
-
 .admin-sidebar {
   width: 260px;
   min-height: 100vh;
@@ -82,4 +81,255 @@
 .nav-item.logout:hover {
   background: rgba(241, 149, 179, 0.15);
   color: #e57399;
+}
+
+/* ===== Admin Sidebar — matches Manager Sidebar style ===== */
+
+.as-sidebar {
+  width: 260px;
+  min-height: 100vh;
+  background: linear-gradient(180deg, #ffffff 0%, #f8fafc 100%);
+  border-right: 1px solid #e8ecf1;
+  display: flex;
+  flex-direction: column;
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  transition: background 0.3s ease;
+}
+
+/* ---- Brand / User Info ---- */
+.as-brand {
+  padding: 24px 20px 20px;
+  border-bottom: 1px solid #e8ecf1;
+}
+
+.as-brand-left {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.as-avatar {
+  width: 42px;
+  height: 42px;
+  border-radius: 12px;
+  background: linear-gradient(135deg, #4a6cf7 0%, #6a5af7 100%);
+  color: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 15px;
+  font-weight: 700;
+  letter-spacing: 0.5px;
+  flex-shrink: 0;
+  box-shadow: 0 4px 12px rgba(74, 108, 247, 0.3);
+}
+
+.as-brand-info {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.as-brand-name {
+  font-size: 15px;
+  font-weight: 700;
+  color: #1a1a2e;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.as-brand-role {
+  font-size: 12px;
+  color: #8a92a6;
+  font-weight: 500;
+}
+
+/* ---- Navigation ---- */
+.as-nav {
+  flex: 1;
+  padding: 16px 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.as-nav-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 11px 16px;
+  border-radius: 10px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  color: #64748b;
+  font-size: 14px;
+  font-weight: 500;
+  text-decoration: none;
+  border: none;
+  background: none;
+  width: 100%;
+  text-align: left;
+  position: relative;
+}
+
+.as-nav-item:hover {
+  background: #f1f5f9;
+  color: #4a6cf7;
+}
+
+.as-nav-item:hover .as-nav-icon svg {
+  stroke: #4a6cf7;
+}
+
+/* Active state */
+.as-nav-item.as-active {
+  background: linear-gradient(135deg, rgba(74, 108, 247, 0.08) 0%, rgba(106, 90, 247, 0.08) 100%);
+  color: #4a6cf7;
+  font-weight: 600;
+}
+
+.as-nav-item.as-active::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 3px;
+  height: 20px;
+  background: linear-gradient(180deg, #4a6cf7, #6a5af7);
+  border-radius: 0 4px 4px 0;
+}
+
+.as-nav-item.as-active .as-nav-icon svg {
+  stroke: #4a6cf7;
+}
+
+/* Nav icon */
+.as-nav-icon {
+  width: 22px;
+  height: 22px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.as-nav-icon svg {
+  stroke: #64748b;
+  transition: stroke 0.2s ease;
+}
+
+.as-nav-label {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* ---- Bottom / Logout ---- */
+.as-bottom {
+  padding: 12px;
+  margin-top: auto;
+}
+
+.as-divider {
+  height: 1px;
+  background: #e8ecf1;
+  margin-bottom: 12px;
+}
+
+.as-logout {
+  color: #ef4444 !important;
+}
+
+.as-logout:hover {
+  background: rgba(239, 68, 68, 0.08) !important;
+  color: #dc2626 !important;
+}
+
+.as-logout .as-nav-icon svg {
+  stroke: #ef4444 !important;
+}
+
+.as-logout:hover .as-nav-icon svg {
+  stroke: #dc2626 !important;
+}
+
+/* ---- Dark Mode Support ---- */
+.dark-mode .as-sidebar {
+  background: linear-gradient(180deg, #1a1a2e 0%, #16162a 100%);
+  border-right-color: #2a2a4a;
+}
+
+.dark-mode .as-brand {
+  border-bottom-color: #2a2a4a;
+}
+
+.dark-mode .as-brand-name {
+  color: #e0e0e0;
+}
+
+.dark-mode .as-brand-role {
+  color: #7a7a9a;
+}
+
+.dark-mode .as-nav-item {
+  color: #9a9ab0;
+}
+
+.dark-mode .as-nav-item:hover {
+  background: rgba(74, 108, 247, 0.1);
+  color: #7b93f7;
+}
+
+.dark-mode .as-nav-item.as-active {
+  background: rgba(74, 108, 247, 0.15);
+  color: #7b93f7;
+}
+
+.dark-mode .as-nav-icon svg {
+  stroke: #9a9ab0;
+}
+
+.dark-mode .as-nav-item:hover .as-nav-icon svg,
+.dark-mode .as-nav-item.as-active .as-nav-icon svg {
+  stroke: #7b93f7;
+}
+
+.dark-mode .as-divider {
+  background: #2a2a4a;
+}
+
+/* ---- Responsive ---- */
+@media (max-width: 768px) {
+  .as-sidebar {
+    width: 72px;
+    overflow: hidden;
+  }
+
+  .as-brand-info,
+  .as-nav-label {
+    display: none;
+  }
+
+  .as-brand {
+    padding: 16px 12px;
+    justify-content: center;
+  }
+
+  .as-brand-left {
+    justify-content: center;
+  }
+
+  .as-nav-item {
+    justify-content: center;
+    padding: 12px;
+  }
+
+  .as-nav-item.as-active::before {
+    display: none;
+  }
 }
