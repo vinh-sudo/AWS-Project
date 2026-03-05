@@ -3,23 +3,18 @@ import { useNavigate } from "react-router-dom";
 import { useDispatch } from "react-redux";
 import { logout } from "../../redux";
 import NotificationBell from "../../components/NotificationBell/NotificationBell";
+import AdminSidebar from "../../components/AdminSidebar/AdminSidebar";
 import authService from "../../services/authService";
 import adminService from "../../services/adminService";
-import imsLogo from "../../assets/ims2.jpg";
-import dashboardIcon from "../../assets/dashboard.jpg";
-import userIcon from "../../assets/user.jpg";
-import auditIcon from "../../assets/auditlog.jpg";
 import "./adminUser.css";
 
 const AuditLog = () => {
   const navigate = useNavigate();
   const currentUser = authService.getCurrentUser();
 
-  // Audit logs state
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
-  // Fetch audit logs on mount (no backend API yet — resolves immediately)
   useEffect(() => {
     fetchAuditLogs();
   }, []);
@@ -28,7 +23,6 @@ const AuditLog = () => {
     try {
       setLoading(true);
       setError(null);
-      // No backend API available — getAuditLogs returns []
       await adminService.getAuditLogs();
     } catch (err) {
       console.error("Error fetching audit logs:", err);
@@ -38,19 +32,10 @@ const AuditLog = () => {
     }
   };
 
-  const dispatch = useDispatch();
-
-  const handleLogout = async () => {
-    await dispatch(logout());
-    navigate("/login");
-  };
-
   if (loading) {
     return (
       <div className="page-loading">
         <div className="loading-card">
-          <img src={imsLogo} alt="Logo" className="loading-logo" />
-          <h2 className="loading-title">IMS Admin</h2>
           <div className="loading-dots">
             <div className="dot"></div>
             <div className="dot"></div>
@@ -64,55 +49,7 @@ const AuditLog = () => {
 
   return (
     <div className="admin-container">
-      <div className="admin-sidebar">
-        <div className="sidebar-header">
-          <img src={imsLogo} alt="Logo" className="sidebar-logo" />
-          <div className="sidebar-title">IMS Admin</div>
-        </div>
-
-        <nav className="sidebar-nav">
-          <div
-            className="nav-item"
-            onClick={() => navigate("/admin/dashboard")}
-          >
-            <img src={dashboardIcon} alt="Dashboard" className="nav-icon-img" />
-            <span>Dashboard</span>
-          </div>
-          <div className="nav-item" onClick={() => navigate("/admin/approval")}>
-            <span className="nav-icon">✅</span>
-            <span>Task Approval</span>
-          </div>
-          <div className="nav-item" onClick={() => navigate("/admin/orders")}>
-            <span className="nav-icon">📦</span>
-            <span>Order Management</span>
-          </div>
-          <div className="nav-item" onClick={() => navigate("/admin")}>
-            <img src={userIcon} alt="Users" className="nav-icon-img" />
-            <span>User Management</span>
-          </div>
-          <div
-            className="nav-item"
-            onClick={() => navigate("/admin/assignments")}
-          >
-            <span className="nav-icon">🔗</span>
-            <span>Leader Assignment</span>
-          </div>
-          <div
-            className="nav-item active"
-            onClick={() => navigate("/admin/audit-log")}
-          >
-            <img src={auditIcon} alt="Audit Log" className="nav-icon-img" />
-            <span>Audit Log</span>
-          </div>
-        </nav>
-
-        <div className="logout-item">
-          <div className="nav-item logout" onClick={handleLogout}>
-            <span className="nav-icon">🚪</span>
-            <span>Logout</span>
-          </div>
-        </div>
-      </div>
+      <AdminSidebar />
 
       <div className="admin-main">
         <header className="admin-header">
@@ -134,7 +71,6 @@ const AuditLog = () => {
             <h2 className="content-title">System Activity Logs</h2>
           </div>
 
-          {/* No backend API available */}
           <div
             style={{
               display: "flex",
@@ -147,14 +83,10 @@ const AuditLog = () => {
             }}
           >
             <span style={{ fontSize: "48px", marginBottom: "16px" }}>🔒</span>
-            <h3
-              style={{ fontSize: "20px", color: "#333", marginBottom: "8px" }}
-            >
+            <h3 style={{ fontSize: "20px", color: "#333", marginBottom: "8px" }}>
               Audit Log - Coming Soon
             </h3>
-            <p
-              style={{ fontSize: "14px", maxWidth: "400px", lineHeight: "1.6" }}
-            >
+            <p style={{ fontSize: "14px", maxWidth: "400px", lineHeight: "1.6" }}>
               Tính năng Audit Log đang được phát triển. Hệ thống đã ghi nhận các
               hoạt động nhưng chưa có API để hiển thị.
             </p>

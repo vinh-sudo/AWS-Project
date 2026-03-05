@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { useDispatch } from "react-redux";
 import { logout } from "../../redux";
 import NotificationBell from "../../components/NotificationBell/NotificationBell";
+import AdminSidebar from "../../components/AdminSidebar/AdminSidebar";
 import {
   PieChart,
   Pie,
@@ -18,10 +19,6 @@ import {
 } from "recharts";
 import authService from "../../services/authService";
 import adminService from "../../services/adminService";
-import imsLogo from "../../assets/ims2.jpg";
-import dashboardIcon from "../../assets/dashboard.jpg";
-import userIcon from "../../assets/user.jpg";
-import auditIcon from "../../assets/auditlog.jpg";
 import "./adminUser.css";
 
 const AdminDashboard = () => {
@@ -31,7 +28,6 @@ const AdminDashboard = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
-  // Dashboard statistics
   const [stats, setStats] = useState({
     totalUsers: 0,
     activeUsers: 0,
@@ -47,7 +43,6 @@ const AdminDashboard = () => {
     activeMachines: 0,
   });
 
-  // Fetch dashboard data on mount
   useEffect(() => {
     fetchDashboardData();
   }, []);
@@ -79,21 +74,11 @@ const AdminDashboard = () => {
     }
   };
 
-  // Production line data derived from real API stats
   const pieChartData = [
-    {
-      name: "Active Lines",
-      value: stats.activeLines,
-      color: "#4CAF50",
-    },
-    {
-      name: "Inactive Lines",
-      value: Math.max(0, stats.totalLines - stats.activeLines),
-      color: "#9E9E9E",
-    },
+    { name: "Active Lines", value: stats.activeLines, color: "#4CAF50" },
+    { name: "Inactive Lines", value: Math.max(0, stats.totalLines - stats.activeLines), color: "#9E9E9E" },
   ];
 
-  // Data for Bar Chart (Order Status Distribution from real stats)
   const barChartData = [
     { status: "Pending", count: stats.pendingOrders },
     { status: "In Progress", count: stats.inProgressOrders },
@@ -103,64 +88,9 @@ const AdminDashboard = () => {
 
   const COLORS = ["#5ec8c4", "#f195b3", "#9E9E9E"];
 
-  const dispatch = useDispatch();
-
-  const handleLogout = async () => {
-    await dispatch(logout());
-    navigate("/login");
-  };
-
   return (
     <div className="admin-container">
-      <div className="admin-sidebar">
-        <div className="sidebar-header">
-          <img src={imsLogo} alt="Logo" className="sidebar-logo" />
-          <div className="sidebar-title">IMS ADMIN</div>
-        </div>
-
-        <nav className="sidebar-nav">
-          <div
-            className="nav-item active"
-            onClick={() => navigate("/admin/dashboard")}
-          >
-            <img src={dashboardIcon} alt="Dashboard" className="nav-icon-img" />
-            <span>Dashboard</span>
-          </div>
-          <div className="nav-item" onClick={() => navigate("/admin/approval")}>
-            <span className="nav-icon">✅</span>
-            <span>Task Approval</span>
-          </div>
-          <div className="nav-item" onClick={() => navigate("/admin/orders")}>
-            <span className="nav-icon">📦</span>
-            <span>Order Management</span>
-          </div>
-          <div className="nav-item" onClick={() => navigate("/admin")}>
-            <img src={userIcon} alt="Users" className="nav-icon-img" />
-            <span>User Management</span>
-          </div>
-          <div
-            className="nav-item"
-            onClick={() => navigate("/admin/assignments")}
-          >
-            <span className="nav-icon">🔗</span>
-            <span>Leader Assignment</span>
-          </div>
-          <div
-            className="nav-item"
-            onClick={() => navigate("/admin/audit-log")}
-          >
-            <img src={auditIcon} alt="Audit Log" className="nav-icon-img" />
-            <span>Audit Log</span>
-          </div>
-        </nav>
-
-        <div className="logout-item">
-          <div className="nav-item logout" onClick={handleLogout}>
-            <span className="nav-icon">🚪</span>
-            <span>Logout</span>
-          </div>
-        </div>
-      </div>
+      <AdminSidebar />
 
       <div className="admin-main">
         <header className="admin-header">
@@ -200,7 +130,6 @@ const AdminDashboard = () => {
             </div>
           ) : (
             <>
-              {/* Stats Cards */}
               <div className="stats-grid">
                 <div className="stat-card stat-users">
                   <div className="stat-icon">👥</div>
@@ -208,12 +137,8 @@ const AdminDashboard = () => {
                     <div className="stat-value">{stats.totalUsers}</div>
                     <div className="stat-label">Total Users</div>
                     <div className="stat-detail">
-                      <span className="stat-active">
-                        {stats.activeUsers} Active
-                      </span>
-                      <span className="stat-blocked">
-                        {stats.blockedUsers} Blocked
-                      </span>
+                      <span className="stat-active">{stats.activeUsers} Active</span>
+                      <span className="stat-blocked">{stats.blockedUsers} Blocked</span>
                     </div>
                   </div>
                 </div>
@@ -224,12 +149,8 @@ const AdminDashboard = () => {
                     <div className="stat-value">{stats.totalOrders}</div>
                     <div className="stat-label">Total Orders</div>
                     <div className="stat-detail">
-                      <span className="stat-pending">
-                        {stats.pendingOrders} Pending
-                      </span>
-                      <span className="stat-progress">
-                        {stats.inProgressOrders} In Progress
-                      </span>
+                      <span className="stat-pending">{stats.pendingOrders} Pending</span>
+                      <span className="stat-progress">{stats.inProgressOrders} In Progress</span>
                     </div>
                   </div>
                 </div>
@@ -237,14 +158,10 @@ const AdminDashboard = () => {
                 <div className="stat-card stat-production">
                   <div className="stat-icon">🏭</div>
                   <div className="stat-info">
-                    <div className="stat-value">
-                      {stats.activeLines}/{stats.totalLines}
-                    </div>
+                    <div className="stat-value">{stats.activeLines}/{stats.totalLines}</div>
                     <div className="stat-label">Production Lines</div>
                     <div className="stat-detail">
-                      <span className="stat-machines">
-                        {stats.activeMachines}/{stats.totalMachines} Machines
-                      </span>
+                      <span className="stat-machines">{stats.activeMachines}/{stats.totalMachines} Machines</span>
                     </div>
                   </div>
                 </div>
@@ -255,17 +172,13 @@ const AdminDashboard = () => {
                     <div className="stat-value">{stats.completedOrders}</div>
                     <div className="stat-label">Completed Orders</div>
                     <div className="stat-detail">
-                      <span className="stat-output">
-                        {stats.cancelledOrders} cancelled
-                      </span>
+                      <span className="stat-output">{stats.cancelledOrders} cancelled</span>
                     </div>
                   </div>
                 </div>
               </div>
 
-              {/* Main Dashboard Content - Charts */}
               <div className="dashboard-grid">
-                {/* Production Line Status - Pie Chart */}
                 <div className="dashboard-card chart-card">
                   <div className="card-header">
                     <h3 className="card-title">Production Lines Overview</h3>
@@ -293,27 +206,17 @@ const AdminDashboard = () => {
                     </ResponsiveContainer>
                     <div className="chart-legend-custom">
                       <div className="legend-item">
-                        <span
-                          className="legend-color"
-                          style={{ background: "#4CAF50" }}
-                        ></span>
+                        <span className="legend-color" style={{ background: "#4CAF50" }}></span>
                         <span>Active ({stats.activeLines})</span>
                       </div>
                       <div className="legend-item">
-                        <span
-                          className="legend-color"
-                          style={{ background: "#9E9E9E" }}
-                        ></span>
-                        <span>
-                          Inactive (
-                          {Math.max(0, stats.totalLines - stats.activeLines)})
-                        </span>
+                        <span className="legend-color" style={{ background: "#9E9E9E" }}></span>
+                        <span>Inactive ({Math.max(0, stats.totalLines - stats.activeLines)})</span>
                       </div>
                     </div>
                   </div>
                 </div>
 
-                {/* Order Status Distribution - Bar Chart */}
                 <div className="dashboard-card chart-card">
                   <div className="card-header">
                     <h3 className="card-title">Order Status Distribution</h3>
@@ -321,10 +224,7 @@ const AdminDashboard = () => {
                   <div className="card-body chart-container">
                     <ResponsiveContainer width="100%" height={280}>
                       <BarChart data={barChartData}>
-                        <CartesianGrid
-                          strokeDasharray="3 3"
-                          stroke="rgba(94, 200, 196, 0.2)"
-                        />
+                        <CartesianGrid strokeDasharray="3 3" stroke="rgba(94, 200, 196, 0.2)" />
                         <XAxis dataKey="status" tick={{ fontSize: 12 }} />
                         <YAxis tick={{ fontSize: 12 }} />
                         <Tooltip
@@ -335,20 +235,9 @@ const AdminDashboard = () => {
                             boxShadow: "0 4px 15px rgba(0,0,0,0.1)",
                           }}
                         />
-                        <Bar
-                          dataKey="count"
-                          fill="url(#colorGradient)"
-                          radius={[10, 10, 0, 0]}
-                          name="Activities"
-                        />
+                        <Bar dataKey="count" fill="url(#colorGradient)" radius={[10, 10, 0, 0]} name="Activities" />
                         <defs>
-                          <linearGradient
-                            id="colorGradient"
-                            x1="0"
-                            y1="0"
-                            x2="0"
-                            y2="1"
-                          >
+                          <linearGradient id="colorGradient" x1="0" y1="0" x2="0" y2="1">
                             <stop offset="0%" stopColor="#5ec8c4" />
                             <stop offset="100%" stopColor="#f195b3" />
                           </linearGradient>
@@ -359,7 +248,6 @@ const AdminDashboard = () => {
                 </div>
               </div>
 
-              {/* Quick Stats */}
               <div className="quick-stats">
                 <div className="quick-stat-item">
                   <div className="quick-stat-label">Pending Orders</div>
@@ -367,15 +255,11 @@ const AdminDashboard = () => {
                 </div>
                 <div className="quick-stat-item">
                   <div className="quick-stat-label">Completed Orders</div>
-                  <div className="quick-stat-value">
-                    {stats.completedOrders}
-                  </div>
+                  <div className="quick-stat-value">{stats.completedOrders}</div>
                 </div>
                 <div className="quick-stat-item">
                   <div className="quick-stat-label">In Progress</div>
-                  <div className="quick-stat-value">
-                    {stats.inProgressOrders}
-                  </div>
+                  <div className="quick-stat-value">{stats.inProgressOrders}</div>
                 </div>
               </div>
             </>
@@ -383,74 +267,43 @@ const AdminDashboard = () => {
         </div>
       </div>
 
-      {/* Order Summary Modal */}
       {showActivityModal && (
-        <div
-          className="modal-overlay"
-          onClick={() => setShowActivityModal(false)}
-        >
+        <div className="modal-overlay" onClick={() => setShowActivityModal(false)}>
           <div className="modal-container" onClick={(e) => e.stopPropagation()}>
             <div className="modal-header">
               <h2 className="modal-title">System Overview</h2>
-              <button
-                className="close-button"
-                onClick={() => setShowActivityModal(false)}
-              >
-                ✕
-              </button>
+              <button className="close-button" onClick={() => setShowActivityModal(false)}>✕</button>
             </div>
             <div className="modal-body">
               <div className="activity-list">
                 <div className="activity-item">
                   <div className="activity-info">
-                    <div className="activity-action">
-                      Total Orders: <strong>{stats.totalOrders}</strong>
-                    </div>
+                    <div className="activity-action">Total Orders: <strong>{stats.totalOrders}</strong></div>
                     <div className="activity-meta">
                       <span className="activity-entity">
-                        Pending: {stats.pendingOrders} | In Progress:{" "}
-                        {stats.inProgressOrders} | Completed:{" "}
-                        {stats.completedOrders} | Cancelled:{" "}
-                        {stats.cancelledOrders}
+                        Pending: {stats.pendingOrders} | In Progress: {stats.inProgressOrders} | Completed: {stats.completedOrders} | Cancelled: {stats.cancelledOrders}
                       </span>
                     </div>
                   </div>
                 </div>
                 <div className="activity-item">
                   <div className="activity-info">
-                    <div className="activity-action">
-                      Production Lines:{" "}
-                      <strong>
-                        {stats.activeLines}/{stats.totalLines}
-                      </strong>{" "}
-                      active
-                    </div>
+                    <div className="activity-action">Production Lines: <strong>{stats.activeLines}/{stats.totalLines}</strong> active</div>
                     <div className="activity-meta">
-                      <span className="activity-entity">
-                        Machines: {stats.activeMachines}/{stats.totalMachines}{" "}
-                        active
-                      </span>
+                      <span className="activity-entity">Machines: {stats.activeMachines}/{stats.totalMachines} active</span>
                     </div>
                   </div>
                 </div>
                 <div className="activity-item">
                   <div className="activity-info">
-                    <div className="activity-action">
-                      Users: <strong>{stats.totalUsers}</strong> total
-                    </div>
+                    <div className="activity-action">Users: <strong>{stats.totalUsers}</strong> total</div>
                     <div className="activity-meta">
-                      <span className="activity-entity">
-                        Active: {stats.activeUsers} | Blocked:{" "}
-                        {stats.blockedUsers}
-                      </span>
+                      <span className="activity-entity">Active: {stats.activeUsers} | Blocked: {stats.blockedUsers}</span>
                     </div>
                   </div>
                 </div>
               </div>
-              <button
-                className="btn-primary view-all-modal-btn"
-                onClick={() => navigate("/admin/orders")}
-              >
+              <button className="btn-primary view-all-modal-btn" onClick={() => navigate("/admin/orders")}>
                 View All Orders
               </button>
             </div>
