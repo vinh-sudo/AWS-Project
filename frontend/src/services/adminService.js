@@ -315,6 +315,30 @@ const getDashboardStats = async () => {
   }
 };
 
+// ==================== LEADER-LINE ASSIGNMENTS ====================
+
+const getAssignments = async () => {
+  const response = await api.get("/api/admin/assignments");
+  return response.data;
+};
+
+const getAvailableLeaders = async () => {
+  const response = await api.get("/api/admin/assignments/available-leaders");
+  return response.data;
+};
+
+const assignLeaderToLine = async (assignmentData) => {
+  const response = await api.post("/api/admin/assignments", assignmentData);
+  return response.data;
+};
+
+const unassignLeader = async (assignmentId) => {
+  const response = await api.put(
+    `/api/admin/assignments/${assignmentId}/unassign`,
+  );
+  return response.data;
+};
+
 const adminService = {
   // Orders
   getAllOrders,
@@ -350,6 +374,11 @@ const adminService = {
   updateAccountRole,
   lockAccount,
   unlockAccount,
+  // Leader-Line Assignments
+  getAssignments,
+  getAvailableLeaders,
+  assignLeaderToLine,
+  unassignLeader,
   // Dashboard
   getDashboardStats,
 };

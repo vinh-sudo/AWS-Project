@@ -140,6 +140,13 @@ const AdminDashboard = () => {
           </div>
           <div
             className="nav-item"
+            onClick={() => navigate("/admin/assignments")}
+          >
+            <span className="nav-icon">🔗</span>
+            <span>Leader Assignment</span>
+          </div>
+          <div
+            className="nav-item"
             onClick={() => navigate("/admin/audit-log")}
           >
             <img src={auditIcon} alt="Audit Log" className="nav-icon-img" />

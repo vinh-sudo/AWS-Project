@@ -130,12 +130,20 @@
     cursor: pointer;
     transition: all 0.3s;
     white-space: nowrap;
+    display: flex;
+    align-items: center;
+    gap: 4px;
 }
 
-.quick-action-btn:hover {
+.quick-action-btn:hover:not(:disabled) {
     background: linear-gradient(135deg, rgba(94, 200, 196, 0.1) 0%, rgba(241, 149, 179, 0.1) 100%);
     border-color: #5ec8c4;
     color: #5ec8c4;
+}
+
+.quick-action-btn:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
 }
 
 /* Messages Area */
@@ -155,12 +163,12 @@
     max-width: 90%;
 }
 
-.message.user {
+.message.user-message {
     flex-direction: row-reverse;
     align-self: flex-end;
 }
 
-.message.bot {
+.message.bot-message {
     align-self: flex-start;
 }
 
@@ -182,7 +190,7 @@
     gap: 4px;
 }
 
-.message.user .message-content {
+.message.user-message .message-content {
     align-items: flex-end;
 }
 
@@ -192,16 +200,17 @@
     font-size: 0.9rem;
     line-height: 1.5;
     white-space: pre-wrap;
+    word-break: break-word;
 }
 
-.message.bot .message-text {
+.message.bot-message .message-text {
     background: white;
     color: #333;
     border: 1px solid #e8e8e8;
     border-bottom-left-radius: 4px;
 }
 
-.message.user .message-text {
+.message.user-message .message-text {
     background: linear-gradient(135deg, #5ec8c4 0%, #f195b3 100%);
     color: white;
     border-bottom-right-radius: 4px;
@@ -211,6 +220,32 @@
     font-size: 0.7rem;
     color: #999;
     padding: 0 8px;
+}
+
+/* Suggested Questions */
+.message-suggestions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    margin-top: 6px;
+    padding: 0 4px;
+}
+
+.suggestion-btn {
+    padding: 5px 10px;
+    background: #f0f7f7;
+    border: 1px solid #5ec8c4;
+    border-radius: 14px;
+    font-size: 0.72rem;
+    color: #5ec8c4;
+    cursor: pointer;
+    transition: all 0.2s;
+    text-align: left;
+}
+
+.suggestion-btn:hover {
+    background: #5ec8c4;
+    color: white;
 }
 
 /* Typing Indicator */
@@ -258,7 +293,7 @@
 /* Input Area */
 .copilot-input-container {
     display: flex;
-    align-items: flex-end;
+    align-items: center;
     gap: 10px;
     padding: 15px;
     background: white;
@@ -271,8 +306,6 @@
     border: 1px solid #e0e0e0;
     border-radius: 25px;
     font-size: 0.9rem;
-    resize: none;
-    max-height: 100px;
     font-family: inherit;
     transition: all 0.3s;
 }
@@ -285,6 +318,11 @@
 
 .copilot-input::placeholder {
     color: #aaa;
+}
+
+.copilot-input:disabled {
+    background: #f5f5f5;
+    cursor: not-allowed;
 }
 
 .copilot-send-btn {
