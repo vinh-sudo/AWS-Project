@@ -13,7 +13,6 @@ import RoleBasedRoute, { getRoleDefaultPath } from "./routes/RoleBasedRoute";
 // Admin imports
 import AdminPage from "./pages/adminPage/adminUser";
 import AdminDashboard from "./pages/adminPage/AdminDashboard";
-import AdminApproval from "./pages/adminPage/AdminApproval";
 import AdminOrders from "./pages/adminPage/AdminOrders";
 import AuditLog from "./pages/adminPage/AuditLog";
 // Manager imports
@@ -137,18 +136,18 @@ function App() {
             }
           />
           <Route
-            path="/admin/dashboard"
+            path="/admin/users"
             element={
               <RoleBasedRoute allowedRoles={["ADMIN"]}>
-                <AdminDashboard />
+                <AdminPage />
               </RoleBasedRoute>
             }
           />
           <Route
-            path="/admin/approval"
+            path="/admin/dashboard"
             element={
               <RoleBasedRoute allowedRoles={["ADMIN"]}>
-                <AdminApproval />
+                <AdminDashboard />
               </RoleBasedRoute>
             }
           />
