@@ -30,13 +30,15 @@ public interface AccountRepository extends JpaRepository<Account,Integer> {
 
     Optional<Account> findByRoleIgnoreCase(String role);
 
-    @Query(value = "SELECT a FROM Account a" +
-            " LEFT JOIN FETCH a.employee e" +
-            " WHERE (:role IS NULL OR UPPER(a.role) = UPPER(:role))" +
-            "   AND (:search IS NULL OR LOWER(a.username) LIKE LOWER(CONCAT('%', :search, '%')))",
-            countQuery = "SELECT COUNT(a) FROM Account a" +
-            " WHERE (:role IS NULL OR UPPER(a.role) = UPPER(:role))" +
-            "   AND (:search IS NULL OR LOWER(a.username) LIKE LOWER(CONCAT('%', :search, '%')))")
+    @Query(value = "SELECT a.* FROM accounts a" +
+            " LEFT JOIN employee e ON e.employee_id = a.employee_id" +
+            " WHERE (:role IS NULL OR UPPER(a.role::text) = UPPER(:role))" +
+            "   AND (:search IS NULL OR LOWER(a.username::text) LIKE LOWER('%' || :search || '%'))" +
+            " ORDER BY a.created_at DESC",
+            countQuery = "SELECT COUNT(*) FROM accounts a" +
+            " WHERE (:role IS NULL OR UPPER(a.role::text) = UPPER(:role))" +
+            "   AND (:search IS NULL OR LOWER(a.username::text) LIKE LOWER('%' || :search || '%'))",
+            nativeQuery = true)
     Page<Account> findAllWithFilters(@Param("role") String role,
                                       @Param("search") String search,
                                       Pageable pageable);
