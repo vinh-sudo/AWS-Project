@@ -19,7 +19,7 @@ public class AINotificationService {
             prompt.append("You are an AI assistant that writes alert notifications for production systems. \n");
             prompt.append("Based on the production health summary below, write a short alert title and body in English. ");
             prompt.append("The title should be concise (max ~10 words). The body should be 2-4 sentences, highlighting severity, affected lines, and key actions. ");
-            prompt.append("Return the result in this exact JSON format without any extra text: {\\"title\\": \\\"...\\\", \\"body\\": \\\"...\\\"}.\\n\\n");
+            prompt.append("Return the result in this exact JSON format without any extra text: {\"title\": \"...\", \"body\": \"...\"}.\\n\\n");
 
             prompt.append("PRODUCTION HEALTH SUMMARY:\n");
             prompt.append("- Overall status: ").append(summary.getOverallStatus()).append("\n");
@@ -53,7 +53,7 @@ public class AINotificationService {
             prompt.append("You are an AI assistant that writes alert notifications for production systems. \n");
             prompt.append("Based on the root cause analysis below, write a short alert title and body in English. ");
             prompt.append("The title should be concise (max ~10 words). The body should be 2-4 sentences, explaining the main cause, key evidence, and urgent actions. ");
-            prompt.append("Return the result in this exact JSON format without any extra text: {\\"title\\": \\\"...\\\", \\"body\\": \\\"...\\\"}.\\n\\n");
+            prompt.append("Return the result in this exact JSON format without any extra text: {\"title\": \"...\", \"body\": \"...\"}.\n\n");
 
             prompt.append("ROOT CAUSE ANALYSIS:\n");
             prompt.append("- Primary root cause: ").append(rootCause.getPrimaryRootCause()).append("\n");

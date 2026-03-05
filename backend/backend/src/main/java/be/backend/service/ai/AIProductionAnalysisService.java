@@ -583,12 +583,5 @@ public class AIProductionAnalysisService {
     /**
      * Internal class to hold root cause analysis results
      */
-    private static class RootCauseResult {
-        String primaryCause;
-        String confidence;
-        List<String> contributingFactors;
-        List<String> evidencePoints;
-        List<String> immediateActions;
-        List<String> preventiveActions;
-    }
+   
 }
