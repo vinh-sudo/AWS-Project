@@ -24,7 +24,15 @@ public class ManagerStatisticsService {
 
     public ProductionOverviewResponse getProductionOverview(String range) {
         DateRange dr = DateRange.fromRange(range);
+        return getProductionOverviewForRange(dr);
+    }
 
+    public ProductionOverviewResponse getTodayStatistics() {
+        DateRange today = DateRange.fromRange("today");
+        return getProductionOverviewForRange(today);
+    }
+
+    private ProductionOverviewResponse getProductionOverviewForRange(DateRange dr) {
         ProductionSummaryProjection data = reportRepo.getProductionSummary(
                 dr.getFrom(), dr.getTo());
 

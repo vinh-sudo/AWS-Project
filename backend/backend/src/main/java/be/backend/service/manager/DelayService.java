@@ -81,4 +81,8 @@ public class DelayService {
 
         return result;
     }
+
+    public List<DelayResponse> getTodayDelay() {
+        return detect();
+    }
 }

@@ -82,6 +82,10 @@ public class OeeService {
         return result;
     }
 
+    public List<OeeLineResponse> getTodayOee() {
+        return calculate(LocalDate.now());
+    }
+
     private double round(double v) {
         return Math.round(v * 1000.0) / 1000.0;
     }
