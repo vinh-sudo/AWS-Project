@@ -18,10 +18,12 @@ const AdminOrders = () => {
   // Orders state
   const [orders, setOrders] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [initialLoad, setInitialLoad] = useState(true);
   const [error, setError] = useState(null);
 
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
+  const [showDetailModal, setShowDetailModal] = useState(false);
   const [showConfirmModal, setShowConfirmModal] = useState(false);
   const [confirmAction, setConfirmAction] = useState({
     type: "",
@@ -37,9 +39,15 @@ const AdminOrders = () => {
     quantity: "",
     deadline: "",
     priority: "Medium",
+    items: [],
   });
 
   const [editingOrder, setEditingOrder] = useState(null);
+  const [detailOrder, setDetailOrder] = useState(null);
+
+  // File upload state
+  const [uploadedFiles, setUploadedFiles] = useState([]);
+  const [uploadLoading, setUploadLoading] = useState(false);
 
   // Fetch orders on mount
   useEffect(() => {
@@ -51,12 +59,17 @@ const AdminOrders = () => {
       setLoading(true);
       setError(null);
       const data = await adminService.getAllOrders();
-      setOrders(data);
+      setOrders(Array.isArray(data) ? data : []);
     } catch (err) {
       console.error("Error fetching orders:", err);
-      setError(err.response?.data?.message || "Failed to load orders");
+      setError(
+        err.response?.data?.message ||
+          err.response?.data ||
+          "Failed to load orders",
+      );
     } finally {
       setLoading(false);
+      setInitialLoad(false);
     }
   };
 
@@ -79,6 +92,13 @@ const AdminOrders = () => {
           ? new Date(formData.deadline).toISOString()
           : null,
         priority: formData.priority,
+        items: formData.items
+          .filter((item) => item.productName && item.quantity)
+          .map((item) => ({
+            productName: item.productName,
+            quantity: parseInt(item.quantity),
+            price: item.price ? parseFloat(item.price) : null,
+          })),
       };
       await adminService.createOrder(orderData);
       setShowCreateModal(false);
@@ -87,13 +107,34 @@ const AdminOrders = () => {
       alert("Đơn hàng đã được tạo thành công!");
     } catch (err) {
       console.error("Error creating order:", err);
-      alert(err.response?.data?.message || "Failed to create order");
+      alert(
+        err.response?.data?.message ||
+          err.response?.data ||
+          "Failed to create order",
+      );
     } finally {
       setActionLoading(false);
     }
   };
 
-  // Confirm order (Draft -> Confirmed) — removed: orders don't need approval
+  // Confirm order (Draft -> Confirmed)
+  const handleConfirmOrder = async (orderId) => {
+    try {
+      setActionLoading(true);
+      await adminService.confirmOrder(orderId);
+      fetchOrders();
+      alert("Đơn hàng đã được xác nhận!");
+    } catch (err) {
+      console.error("Error confirming order:", err);
+      alert(
+        err.response?.data?.message ||
+          err.response?.data ||
+          "Failed to confirm order",
+      );
+    } finally {
+      setActionLoading(false);
+    }
+  };
 
   // Start production (Confirmed -> In Production)
   const handleStartProduction = async (orderId) => {
@@ -104,7 +145,11 @@ const AdminOrders = () => {
       alert("Đã bắt đầu sản xuất!");
     } catch (err) {
       console.error("Error starting production:", err);
-      alert(err.response?.data?.message || "Failed to start production");
+      alert(
+        err.response?.data?.message ||
+          err.response?.data ||
+          "Failed to start production",
+      );
     } finally {
       setActionLoading(false);
     }
@@ -119,7 +164,11 @@ const AdminOrders = () => {
       alert("Đơn hàng đã hoàn thành!");
     } catch (err) {
       console.error("Error completing order:", err);
-      alert(err.response?.data?.message || "Failed to complete order");
+      alert(
+        err.response?.data?.message ||
+          err.response?.data ||
+          "Failed to complete order",
+      );
     } finally {
       setActionLoading(false);
     }
@@ -149,11 +198,25 @@ const AdminOrders = () => {
       } else if (type === "delete") {
         await adminService.deleteOrder(orderId);
         alert("Đơn hàng đã bị xóa!");
+      } else if (type === "stop") {
+        const res = await adminService.stopOrder(orderId);
+        alert(
+          `Đã dừng sản xuất đơn hàng #${orderId}. Lịch trình bị hủy: ${res.cancelledSchedules || 0}, đã dừng: ${res.stoppedSchedules || 0}`,
+        );
+      } else if (type === "resume") {
+        const res = await adminService.resumeOrder(orderId);
+        alert(
+          `Đã tiếp tục sản xuất đơn hàng #${orderId}. Lịch trình được khôi phục: ${res.resumedSchedules || 0}`,
+        );
       }
       fetchOrders();
     } catch (err) {
       console.error(`Error ${type} order:`, err);
-      alert(err.response?.data?.message || `Failed to ${type} order`);
+      alert(
+        err.response?.data?.message ||
+          err.response?.data ||
+          `Failed to ${type} order`,
+      );
     } finally {
       setActionLoading(false);
       setShowConfirmModal(false);
@@ -161,8 +224,12 @@ const AdminOrders = () => {
     }
   };
 
-  // Edit order
+  // Edit order (only Draft/Confirmed)
   const handleEditOrder = (order) => {
+    if (!["Draft", "Confirmed"].includes(order.status)) {
+      alert("Chỉ có thể sửa đơn hàng ở trạng thái Draft hoặc Confirmed.");
+      return;
+    }
     setEditingOrder(order);
     setFormData({
       customerName: order.customerName,
@@ -170,6 +237,14 @@ const AdminOrders = () => {
       quantity: order.quantity?.toString() || "",
       deadline: order.deadline ? order.deadline.split("T")[0] : "",
       priority: order.priority || "Medium",
+      items:
+        order.items && order.items.length > 0
+          ? order.items.map((item) => ({
+              productName: item.productName || "",
+              quantity: item.quantity?.toString() || "",
+              price: item.price?.toString() || "",
+            }))
+          : [],
     });
     setShowEditModal(true);
   };
@@ -186,6 +261,13 @@ const AdminOrders = () => {
           ? new Date(formData.deadline).toISOString()
           : null,
         priority: formData.priority,
+        items: formData.items
+          .filter((item) => item.productName && item.quantity)
+          .map((item) => ({
+            productName: item.productName,
+            quantity: parseInt(item.quantity),
+            price: item.price ? parseFloat(item.price) : null,
+          })),
       };
       await adminService.updateOrder(editingOrder.id, orderData);
       setShowEditModal(false);
@@ -195,10 +277,91 @@ const AdminOrders = () => {
       alert("Đơn hàng đã được cập nhật!");
     } catch (err) {
       console.error("Error updating order:", err);
-      alert(err.response?.data?.message || "Failed to update order");
+      alert(
+        err.response?.data?.message ||
+          err.response?.data ||
+          "Failed to update order",
+      );
     } finally {
       setActionLoading(false);
     }
+  };
+
+  // Stop order (In Production -> STOPPED)
+  const handleStopOrder = (orderId) => {
+    setConfirmAction({ type: "stop", orderId });
+    setShowConfirmModal(true);
+  };
+
+  // Resume order (STOPPED -> In Production)
+  const handleResumeOrder = (orderId) => {
+    setConfirmAction({ type: "resume", orderId });
+    setShowConfirmModal(true);
+  };
+
+  // View order detail
+  const handleViewDetail = async (orderId) => {
+    try {
+      const detail = await adminService.getOrderById(orderId);
+      setDetailOrder(detail);
+      setUploadedFiles([]);
+      setShowDetailModal(true);
+    } catch (err) {
+      console.error("Error fetching order detail:", err);
+      alert(
+        err.response?.data?.message ||
+          err.response?.data ||
+          "Failed to load order details",
+      );
+    }
+  };
+
+  // Upload file for order
+  const handleFileUpload = async (e) => {
+    const files = Array.from(e.target.files);
+    if (!files.length || !detailOrder) return;
+
+    setUploadLoading(true);
+    const results = [];
+    for (const file of files) {
+      try {
+        const res = await adminService.uploadOrderFile(detailOrder.id, file);
+        results.push(res);
+      } catch (err) {
+        console.error(`Error uploading ${file.name}:`, err);
+        alert(
+          `Upload thất bại: ${file.name}. ${err.response?.data?.message || err.response?.data || "Lỗi không xác định"}`,
+        );
+      }
+    }
+    if (results.length > 0) {
+      setUploadedFiles((prev) => [...prev, ...results]);
+      alert(`Đã upload thành công ${results.length} file!`);
+    }
+    setUploadLoading(false);
+    // Reset input
+    e.target.value = null;
+  };
+
+  // Order items helpers
+  const addItem = () => {
+    setFormData({
+      ...formData,
+      items: [...formData.items, { productName: "", quantity: "", price: "" }],
+    });
+  };
+
+  const removeItem = (index) => {
+    setFormData({
+      ...formData,
+      items: formData.items.filter((_, i) => i !== index),
+    });
+  };
+
+  const updateItem = (index, field, value) => {
+    const newItems = [...formData.items];
+    newItems[index] = { ...newItems[index], [field]: value };
+    setFormData({ ...formData, items: newItems });
   };
 
   const resetForm = () => {
@@ -208,6 +371,7 @@ const AdminOrders = () => {
       quantity: "",
       deadline: "",
       priority: "Medium",
+      items: [],
     });
   };
 
@@ -223,12 +387,15 @@ const AdminOrders = () => {
         return "status-completed";
       case "Cancelled":
         return "status-cancelled";
+      case "STOPPED":
+        return "status-hold";
       default:
         return "";
     }
   };
 
   const getStatusDisplay = (status) => {
+    if (status === "STOPPED") return "Stopped";
     return status || "Unknown";
   };
 
@@ -253,6 +420,14 @@ const AdminOrders = () => {
     return new Date(dateString).toLocaleDateString("vi-VN");
   };
 
+  const formatCurrency = (value) => {
+    if (value == null) return "-";
+    return new Intl.NumberFormat("vi-VN", {
+      style: "currency",
+      currency: "VND",
+    }).format(value);
+  };
+
   // Filter orders
   const filteredOrders = orders.filter((order) => {
     const matchSearch =
@@ -269,11 +444,106 @@ const AdminOrders = () => {
     draft: orders.filter((o) => o.status === "Draft").length,
     confirmed: orders.filter((o) => o.status === "Confirmed").length,
     inProduction: orders.filter((o) => o.status === "In Production").length,
+    stopped: orders.filter((o) => o.status === "STOPPED").length,
     completed: orders.filter((o) => o.status === "Completed").length,
     cancelled: orders.filter((o) => o.status === "Cancelled").length,
   };
 
-  if (loading) {
+  // Order items form component
+  const renderItemsForm = () => (
+    <div className="form-group">
+      <label
+        className="form-label"
+        style={{
+          display: "flex",
+          justifyContent: "space-between",
+          alignItems: "center",
+        }}
+      >
+        <span>Order Items</span>
+        <button
+          type="button"
+          onClick={addItem}
+          style={{
+            background: "linear-gradient(135deg, #5ec8c4 0%, #f195b3 100%)",
+            color: "white",
+            border: "none",
+            padding: "6px 14px",
+            borderRadius: "12px",
+            fontSize: "12px",
+            fontWeight: "600",
+            cursor: "pointer",
+          }}
+        >
+          + Add Item
+        </button>
+      </label>
+      {formData.items.length === 0 && (
+        <p style={{ color: "#999", fontSize: "13px", margin: "8px 0" }}>
+          No items added. Click "Add Item" to add products.
+        </p>
+      )}
+      {formData.items.map((item, index) => (
+        <div
+          key={index}
+          style={{
+            display: "flex",
+            gap: "10px",
+            alignItems: "center",
+            marginBottom: "10px",
+            padding: "12px",
+            background: "rgba(94, 200, 196, 0.05)",
+            borderRadius: "12px",
+          }}
+        >
+          <input
+            type="text"
+            className="form-input"
+            placeholder="Product name"
+            value={item.productName}
+            onChange={(e) => updateItem(index, "productName", e.target.value)}
+            style={{ flex: 2 }}
+          />
+          <input
+            type="number"
+            className="form-input"
+            placeholder="Qty"
+            value={item.quantity}
+            onChange={(e) => updateItem(index, "quantity", e.target.value)}
+            style={{ flex: 1 }}
+            min="1"
+          />
+          <input
+            type="number"
+            className="form-input"
+            placeholder="Price"
+            value={item.price}
+            onChange={(e) => updateItem(index, "price", e.target.value)}
+            style={{ flex: 1 }}
+            min="0"
+            step="0.01"
+          />
+          <button
+            type="button"
+            onClick={() => removeItem(index)}
+            style={{
+              background: "rgba(255, 77, 79, 0.1)",
+              border: "none",
+              color: "#ff4d4f",
+              padding: "8px",
+              borderRadius: "8px",
+              cursor: "pointer",
+              fontSize: "14px",
+            }}
+          >
+            ✕
+          </button>
+        </div>
+      ))}
+    </div>
+  );
+
+  if (initialLoad && loading) {
     return (
       <div className="page-loading">
         <div className="loading-card">
@@ -408,6 +678,10 @@ const AdminOrders = () => {
               <span className="stat-number">{stats.inProduction}</span>
               <span className="stat-label">In Production</span>
             </div>
+            <div className="stat-card hold">
+              <span className="stat-number">{stats.stopped}</span>
+              <span className="stat-label">Stopped</span>
+            </div>
             <div className="stat-card completed">
               <span className="stat-number">{stats.completed}</span>
               <span className="stat-label">Completed</span>
@@ -440,6 +714,7 @@ const AdminOrders = () => {
                 <option value="Draft">Draft</option>
                 <option value="Confirmed">Confirmed</option>
                 <option value="In Production">In Production</option>
+                <option value="STOPPED">Stopped</option>
                 <option value="Completed">Completed</option>
                 <option value="Cancelled">Cancelled</option>
               </select>
@@ -464,6 +739,8 @@ const AdminOrders = () => {
                   <th>Deadline</th>
                   <th>Priority</th>
                   <th>Status</th>
+                  <th>Created By</th>
+                  <th>Total Price</th>
                   <th>Created</th>
                   <th>Actions</th>
                 </tr>
@@ -472,7 +749,7 @@ const AdminOrders = () => {
                 {filteredOrders.length === 0 ? (
                   <tr>
                     <td
-                      colSpan="9"
+                      colSpan="11"
                       style={{
                         textAlign: "center",
                         padding: "40px",
@@ -504,18 +781,48 @@ const AdminOrders = () => {
                           {getStatusDisplay(order.status)}
                         </span>
                       </td>
+                      <td>{order.createdByName || "—"}</td>
+                      <td>
+                        {order.totalPrice != null
+                          ? formatCurrency(order.totalPrice)
+                          : "—"}
+                      </td>
                       <td>{formatDate(order.createdAt)}</td>
                       <td>
                         <div className="action-buttons">
-                          {/* Edit */}
+                          {/* View Detail */}
                           <button
-                            className="btn-action btn-edit"
-                            onClick={() => handleEditOrder(order)}
-                            title="Edit"
+                            className="btn-action btn-view"
+                            onClick={() => handleViewDetail(order.id)}
+                            title="View Detail"
                             disabled={actionLoading}
                           >
-                            ✏️
+                            👁️
                           </button>
+
+                          {/* Edit (only for Draft/Confirmed) */}
+                          {["Draft", "Confirmed"].includes(order.status) && (
+                            <button
+                              className="btn-action btn-edit"
+                              onClick={() => handleEditOrder(order)}
+                              title="Edit"
+                              disabled={actionLoading}
+                            >
+                              ✏️
+                            </button>
+                          )}
+
+                          {/* Confirm (only for Draft) */}
+                          {order.status === "Draft" && (
+                            <button
+                              className="btn-action btn-confirm"
+                              onClick={() => handleConfirmOrder(order.id)}
+                              title="Confirm Order"
+                              disabled={actionLoading}
+                            >
+                              ✅
+                            </button>
+                          )}
 
                           {/* Start Production (only for Confirmed) */}
                           {order.status === "Confirmed" && (
@@ -541,8 +848,32 @@ const AdminOrders = () => {
                             </button>
                           )}
 
-                          {/* Cancel (not for Completed/Cancelled) */}
-                          {!["Completed", "Cancelled"].includes(
+                          {/* Stop (only for In Production) */}
+                          {order.status === "In Production" && (
+                            <button
+                              className="btn-action btn-stop"
+                              onClick={() => handleStopOrder(order.id)}
+                              title="Stop Production"
+                              disabled={actionLoading}
+                            >
+                              ⏹️
+                            </button>
+                          )}
+
+                          {/* Resume (only for STOPPED) */}
+                          {order.status === "STOPPED" && (
+                            <button
+                              className="btn-action btn-resume"
+                              onClick={() => handleResumeOrder(order.id)}
+                              title="Resume Production"
+                              disabled={actionLoading}
+                            >
+                              🔄
+                            </button>
+                          )}
+
+                          {/* Cancel (not for Completed/Cancelled/STOPPED) */}
+                          {!["Completed", "Cancelled", "STOPPED"].includes(
                             order.status,
                           ) && (
                             <button
@@ -655,6 +986,7 @@ const AdminOrders = () => {
                   <option value="Urgent">Urgent</option>
                 </select>
               </div>
+              {renderItemsForm()}
             </div>
             <div className="modal-footer">
               <button
@@ -751,6 +1083,7 @@ const AdminOrders = () => {
                   <option value="Urgent">Urgent</option>
                 </select>
               </div>
+              {renderItemsForm()}
             </div>
             <div className="modal-footer">
               <button
@@ -772,6 +1105,204 @@ const AdminOrders = () => {
         </div>
       )}
 
+      {/* Detail Order Modal */}
+      {showDetailModal && detailOrder && (
+        <div className="modal-overlay">
+          <div className="modal modal-large">
+            <div className="modal-header">
+              <h2>📋 Order Detail #{detailOrder.id}</h2>
+              <button
+                className="close-button"
+                onClick={() => setShowDetailModal(false)}
+              >
+                ✕
+              </button>
+            </div>
+            <div className="modal-body">
+              <div className="detail-grid">
+                <div className="detail-row">
+                  <span className="detail-label">Customer:</span>
+                  <span className="detail-value">
+                    {detailOrder.customerName}
+                  </span>
+                </div>
+                <div className="detail-row">
+                  <span className="detail-label">Product Type:</span>
+                  <span className="detail-value">
+                    {detailOrder.productType}
+                  </span>
+                </div>
+                <div className="detail-row">
+                  <span className="detail-label">Quantity:</span>
+                  <span className="detail-value">
+                    {detailOrder.quantity?.toLocaleString()}
+                  </span>
+                </div>
+                <div className="detail-row">
+                  <span className="detail-label">Deadline:</span>
+                  <span className="detail-value">
+                    {formatDate(detailOrder.deadline)}
+                  </span>
+                </div>
+                <div className="detail-row">
+                  <span className="detail-label">Priority:</span>
+                  <span
+                    className={`priority-badge ${getPriorityClass(detailOrder.priority)}`}
+                  >
+                    {detailOrder.priority}
+                  </span>
+                </div>
+                <div className="detail-row">
+                  <span className="detail-label">Status:</span>
+                  <span
+                    className={`status-badge ${getStatusClass(detailOrder.status)}`}
+                  >
+                    {getStatusDisplay(detailOrder.status)}
+                  </span>
+                </div>
+                <div className="detail-row">
+                  <span className="detail-label">Created By:</span>
+                  <span className="detail-value">
+                    {detailOrder.createdByName || "—"}
+                  </span>
+                </div>
+                <div className="detail-row">
+                  <span className="detail-label">Total Price:</span>
+                  <span className="detail-value">
+                    {detailOrder.totalPrice != null
+                      ? formatCurrency(detailOrder.totalPrice)
+                      : "—"}
+                  </span>
+                </div>
+                <div className="detail-row">
+                  <span className="detail-label">Created At:</span>
+                  <span className="detail-value">
+                    {formatDate(detailOrder.createdAt)}
+                  </span>
+                </div>
+                <div className="detail-row">
+                  <span className="detail-label">Updated At:</span>
+                  <span className="detail-value">
+                    {formatDate(detailOrder.updatedAt)}
+                  </span>
+                </div>
+              </div>
+
+              {/* Order Items */}
+              {detailOrder.items && detailOrder.items.length > 0 && (
+                <div className="detail-items-section">
+                  <h3>📦 Order Items ({detailOrder.items.length})</h3>
+                  <table className="data-table items-table">
+                    <thead>
+                      <tr>
+                        <th>#</th>
+                        <th>Product Name</th>
+                        <th>Quantity</th>
+                        <th>Price</th>
+                        <th>Subtotal</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {detailOrder.items.map((item, idx) => (
+                        <tr key={item.id || idx}>
+                          <td>{idx + 1}</td>
+                          <td>{item.productName}</td>
+                          <td>{item.quantity?.toLocaleString()}</td>
+                          <td>{formatCurrency(item.price)}</td>
+                          <td>
+                            {formatCurrency(
+                              (item.quantity || 0) * (item.price || 0),
+                            )}
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              )}
+
+              {/* File Upload Section */}
+              <div className="detail-items-section">
+                <h3>📎 Files (SOP / BOM)</h3>
+
+                {/* Uploaded files list */}
+                {uploadedFiles.length > 0 && (
+                  <div className="uploaded-files-list">
+                    {uploadedFiles.map((file, idx) => (
+                      <div key={file.id || idx} className="uploaded-file-item">
+                        <span className="file-icon">📄</span>
+                        <div className="file-info">
+                          <a
+                            href={file.url}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="file-name-link"
+                          >
+                            {file.fileName}
+                          </a>
+                          <span className="file-meta">
+                            Uploaded:{" "}
+                            {file.uploadedAt
+                              ? new Date(file.uploadedAt).toLocaleString(
+                                  "vi-VN",
+                                )
+                              : "—"}
+                          </span>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+
+                {uploadedFiles.length === 0 && (
+                  <p
+                    style={{ color: "#999", fontSize: "13px", margin: "8px 0" }}
+                  >
+                    Chưa có file nào được upload trong phiên này.
+                  </p>
+                )}
+
+                {/* Upload button */}
+                <div className="file-upload-area">
+                  <label
+                    className="btn-upload-file"
+                    htmlFor="order-file-upload"
+                  >
+                    {uploadLoading ? (
+                      <>
+                        <span className="spinner-small"></span>
+                        Đang upload...
+                      </>
+                    ) : (
+                      <>📤 Upload File</>
+                    )}
+                  </label>
+                  <input
+                    id="order-file-upload"
+                    type="file"
+                    multiple
+                    onChange={handleFileUpload}
+                    disabled={uploadLoading}
+                    style={{ display: "none" }}
+                  />
+                  <span className="upload-hint">
+                    Hỗ trợ nhiều file. Click để chọn file SOP/BOM.
+                  </span>
+                </div>
+              </div>
+            </div>
+            <div className="modal-footer">
+              <button
+                className="btn-cancel"
+                onClick={() => setShowDetailModal(false)}
+              >
+                Close
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Confirm Action Modal */}
       {showConfirmModal && (
         <div className="modal-overlay">
@@ -780,6 +1311,8 @@ const AdminOrders = () => {
               <h2>
                 {confirmAction.type === "cancel" && "⚠️ Cancel Order"}
                 {confirmAction.type === "delete" && "🗑️ Delete Order"}
+                {confirmAction.type === "stop" && "⏹️ Stop Production"}
+                {confirmAction.type === "resume" && "🔄 Resume Production"}
               </h2>
             </div>
             <div className="modal-body">
@@ -788,6 +1321,10 @@ const AdminOrders = () => {
                   `Are you sure you want to cancel order #${confirmAction.orderId}? This action cannot be undone.`}
                 {confirmAction.type === "delete" &&
                   `Are you sure you want to permanently delete order #${confirmAction.orderId}?`}
+                {confirmAction.type === "stop" &&
+                  `Are you sure you want to stop production for order #${confirmAction.orderId}? Related schedules will be stopped.`}
+                {confirmAction.type === "resume" &&
+                  `Are you sure you want to resume production for order #${confirmAction.orderId}? Stopped schedules will be resumed.`}
               </p>
             </div>
             <div className="modal-footer">
