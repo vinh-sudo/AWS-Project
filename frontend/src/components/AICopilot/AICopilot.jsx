@@ -1,4 +1,5 @@
-import { useState, useRef, useEffect } from "react";
+import { useState, useRef, useEffect, useCallback } from "react";
+import aiService from "../../services/aiService";
 import "./AICopilot.css";
 
 function AICopilot({ isOpen, onClose }) {
@@ -6,12 +7,16 @@ function AICopilot({ isOpen, onClose }) {
     {
       id: 1,
       type: "bot",
-      text: "Hello! I'm your AI Production Copilot. How can I help you today?",
-      time: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
+      text: "Xin chào! Tôi là AI Production Copilot. Tôi có thể giúp bạn phân tích sản xuất, kiểm tra tình trạng dây chuyền, hoặc trả lời các câu hỏi về hoạt động sản xuất.",
+      time: new Date().toLocaleTimeString([], {
+        hour: "2-digit",
+        minute: "2-digit",
+      }),
     },
   ]);
   const [inputValue, setInputValue] = useState("");
   const [isTyping, setIsTyping] = useState(false);
+  const [sessionId] = useState(() => crypto.randomUUID());
   const messagesEndRef = useRef(null);
 
   const scrollToBottom = () => {
@@ -22,53 +27,156 @@ function AICopilot({ isOpen, onClose }) {
     scrollToBottom();
   }, [messages]);
 
-  const handleSendMessage = async () => {
-    if (!inputValue.trim()) return;
+  const addBotMessage = useCallback((text, suggestions = []) => {
+    setMessages((prev) => [
+      ...prev,
+      {
+        id: Date.now() + 1,
+        type: "bot",
+        text,
+        time: new Date().toLocaleTimeString([], {
+          hour: "2-digit",
+          minute: "2-digit",
+        }),
+        suggestions,
+      },
+    ]);
+  }, []);
 
+  const handleSendMessage = async () => {
+    if (!inputValue.trim() || isTyping) return;
+
+    const userText = inputValue.trim();
     const userMessage = {
       id: Date.now(),
       type: "user",
-      text: inputValue,
-      time: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
+      text: userText,
+      time: new Date().toLocaleTimeString([], {
+        hour: "2-digit",
+        minute: "2-digit",
+      }),
     };
 
     setMessages((prev) => [...prev, userMessage]);
     setInputValue("");
     setIsTyping(true);
 
-    // Simulate AI response
-    setTimeout(() => {
-      const botResponse = {
-        id: Date.now() + 1,
-        type: "bot",
-        text: getAIResponse(inputValue),
-        time: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
-      };
-      setMessages((prev) => [...prev, botResponse]);
+    try {
+      const data = await aiService.chat(userText, sessionId);
+      addBotMessage(
+        data.response || "Không có phản hồi từ AI.",
+        data.suggestedQuestions || [],
+      );
+    } catch {
+      addBotMessage(
+        "Xin lỗi, hiện tại không thể kết nối đến AI. Vui lòng thử lại sau.",
+      );
+    } finally {
       setIsTyping(false);
-    }, 1000);
+    }
   };
 
-  const getAIResponse = (input) => {
-    const lowerInput = input.toLowerCase();
-    
-    if (lowerInput.includes("production") || lowerInput.includes("schedule")) {
-      return "I can help you with production scheduling. Would you like me to show you the current production status or help you create a new schedule?";
+  const handleQuickStatus = async () => {
+    if (isTyping) return;
+    setMessages((prev) => [
+      ...prev,
+      {
+        id: Date.now(),
+        type: "user",
+        text: "📊 Tình trạng sản xuất nhanh",
+        time: new Date().toLocaleTimeString([], {
+          hour: "2-digit",
+          minute: "2-digit",
+        }),
+      },
+    ]);
+    setIsTyping(true);
+
+    try {
+      const data = await aiService.getQuickStatus();
+      addBotMessage(
+        data.response || "Không có dữ liệu.",
+        data.suggestedQuestions || [],
+      );
+    } catch {
+      addBotMessage("Không thể lấy tình trạng sản xuất. Vui lòng thử lại.");
+    } finally {
+      setIsTyping(false);
     }
-    if (lowerInput.includes("order") || lowerInput.includes("orders")) {
-      return "I can assist with order management. You can view pending orders, track order progress, or create new orders through the Planner dashboard.";
+  };
+
+  const handleProductionHealth = async () => {
+    if (isTyping) return;
+    setMessages((prev) => [
+      ...prev,
+      {
+        id: Date.now(),
+        type: "user",
+        text: "🏭 Kiểm tra sức khỏe sản xuất",
+        time: new Date().toLocaleTimeString([], {
+          hour: "2-digit",
+          minute: "2-digit",
+        }),
+      },
+    ]);
+    setIsTyping(true);
+
+    try {
+      const data = await aiService.getProductionHealth();
+      const statusEmoji =
+        data.overallStatus === "STABLE"
+          ? "✅"
+          : data.overallStatus === "WARNING"
+            ? "⚠️"
+            : "🔴";
+      let text = `${statusEmoji} **Trạng thái:** ${data.overallStatus}\n`;
+      if (data.mainIssue) text += `\n📌 **Vấn đề chính:** ${data.mainIssue}`;
+      if (data.criticalLines?.length > 0)
+        text += `\n\n🚨 **Dây chuyền cần chú ý:**\n${data.criticalLines.map((l) => `• ${l}`).join("\n")}`;
+      if (data.recommendations?.length > 0)
+        text += `\n\n💡 **Khuyến nghị:**\n${data.recommendations.map((r) => `• ${r}`).join("\n")}`;
+      addBotMessage(text);
+    } catch {
+      addBotMessage("Không thể lấy dữ liệu sức khỏe sản xuất.");
+    } finally {
+      setIsTyping(false);
     }
-    if (lowerInput.includes("report") || lowerInput.includes("analytics")) {
-      return "For reports and analytics, you can access the Reports section. I can help you generate production reports, efficiency metrics, or custom analytics.";
+  };
+
+  const handleRootCause = async () => {
+    if (isTyping) return;
+    setMessages((prev) => [
+      ...prev,
+      {
+        id: Date.now(),
+        type: "user",
+        text: "🔍 Phân tích nguyên nhân gốc",
+        time: new Date().toLocaleTimeString([], {
+          hour: "2-digit",
+          minute: "2-digit",
+        }),
+      },
+    ]);
+    setIsTyping(true);
+
+    try {
+      const data = await aiService.getRootCauseAnalysis();
+      let text = `🔍 **Nguyên nhân chính:** ${data.primaryRootCause}\n`;
+      text += `📊 **Độ tin cậy:** ${data.confidence}`;
+      if (data.contributingFactors?.length > 0)
+        text += `\n\n📋 **Yếu tố liên quan:**\n${data.contributingFactors.map((f) => `• ${f}`).join("\n")}`;
+      if (data.evidencePoints?.length > 0)
+        text += `\n\n📄 **Bằng chứng:**\n${data.evidencePoints.map((e) => `• ${e}`).join("\n")}`;
+      if (data.immediateActions?.length > 0)
+        text += `\n\n⚡ **Hành động ngay:**\n${data.immediateActions.map((a) => `• ${a}`).join("\n")}`;
+      if (data.preventiveActions?.length > 0)
+        text += `\n\n🛡️ **Phòng ngừa:**\n${data.preventiveActions.map((a) => `• ${a}`).join("\n")}`;
+      addBotMessage(text);
+    } catch {
+      addBotMessage("Không thể thực hiện phân tích nguyên nhân gốc.");
+    } finally {
+      setIsTyping(false);
     }
-    if (lowerInput.includes("task") || lowerInput.includes("assignment")) {
-      return "Task management is available in the Planner Assignment section. You can assign tasks to team members, track progress, and manage deadlines.";
-    }
-    if (lowerInput.includes("help") || lowerInput.includes("what can you do")) {
-      return "I can help you with:\n• Production scheduling and planning\n• Order management and tracking\n• Task assignments and progress\n• Reports and analytics\n• System navigation\n\nJust ask me anything!";
-    }
-    
-    return "I understand you're asking about: \"" + input + "\". Let me help you with that. Could you provide more details about what you'd like to accomplish?";
   };
 
   const handleKeyPress = (e) => {
@@ -78,12 +186,26 @@ function AICopilot({ isOpen, onClose }) {
     }
   };
 
+  const handleSuggestionClick = (question) => {
+    setInputValue(question);
+  };
+
   const quickActions = [
-    { icon: "📊", label: "View Reports" },
-    { icon: "📋", label: "Check Orders" },
-    { icon: "📅", label: "Schedule" },
-    { icon: "❓", label: "Help" },
+    { icon: "📊", label: "Trạng thái nhanh", action: handleQuickStatus },
+    { icon: "🏭", label: "Sức khỏe SX", action: handleProductionHealth },
+    { icon: "🔍", label: "Phân tích nguyên nhân", action: handleRootCause },
   ];
+
+  const formatMessage = (text) => {
+    if (!text) return text;
+    const parts = text.split(/(\*\*[^*]+\*\*)/g);
+    return parts.map((part, i) => {
+      if (part.startsWith("**") && part.endsWith("**")) {
+        return <strong key={i}>{part.slice(2, -2)}</strong>;
+      }
+      return part;
+    });
+  };
 
   if (!isOpen) return null;
 
@@ -107,6 +229,21 @@ function AICopilot({ isOpen, onClose }) {
           </button>
         </div>
 
+        {/* Quick Actions */}
+        <div className="copilot-quick-actions">
+          {quickActions.map((action, index) => (
+            <button
+              key={index}
+              className="quick-action-btn"
+              onClick={action.action}
+              disabled={isTyping}
+            >
+              <span>{action.icon}</span>
+              <span>{action.label}</span>
+            </button>
+          ))}
+        </div>
+
         {/* Messages Area */}
         <div className="copilot-messages">
           {messages.map((message) => (
@@ -118,7 +255,27 @@ function AICopilot({ isOpen, onClose }) {
                 <div className="message-avatar">🤖</div>
               )}
               <div className="message-content">
-                <p>{message.text}</p>
+                <div className="message-text">
+                  {message.text.split("\n").map((line, i) => (
+                    <span key={i}>
+                      {formatMessage(line)}
+                      {i < message.text.split("\n").length - 1 && <br />}
+                    </span>
+                  ))}
+                </div>
+                {message.suggestions?.length > 0 && (
+                  <div className="message-suggestions">
+                    {message.suggestions.map((q, i) => (
+                      <button
+                        key={i}
+                        className="suggestion-btn"
+                        onClick={() => handleSuggestionClick(q)}
+                      >
+                        {q}
+                      </button>
+                    ))}
+                  </div>
+                )}
                 <span className="message-time">{message.time}</span>
               </div>
             </div>
@@ -126,47 +283,40 @@ function AICopilot({ isOpen, onClose }) {
           {isTyping && (
             <div className="message bot-message">
               <div className="message-avatar">🤖</div>
-              <div className="message-content typing">
-                <span className="typing-dot"></span>
-                <span className="typing-dot"></span>
-                <span className="typing-dot"></span>
+              <div className="message-content">
+                <div className="typing-indicator">
+                  <span></span>
+                  <span></span>
+                  <span></span>
+                </div>
               </div>
             </div>
           )}
           <div ref={messagesEndRef} />
         </div>
 
-        {/* Quick Actions */}
-        <div className="copilot-quick-actions">
-          {quickActions.map((action, index) => (
-            <button
-              key={index}
-              className="quick-action-btn"
-              onClick={() => setInputValue(action.label)}
-            >
-              <span>{action.icon}</span>
-              <span>{action.label}</span>
-            </button>
-          ))}
-        </div>
-
         {/* Input Area */}
-        <div className="copilot-input">
+        <div className="copilot-input-container">
           <input
+            className="copilot-input"
             type="text"
-            placeholder="Ask me anything..."
+            placeholder="Hỏi về sản xuất..."
             value={inputValue}
             onChange={(e) => setInputValue(e.target.value)}
-            onKeyPress={handleKeyPress}
+            onKeyDown={handleKeyPress}
+            disabled={isTyping}
           />
           <button
-            className="send-btn"
+            className="copilot-send-btn"
             onClick={handleSendMessage}
-            disabled={!inputValue.trim()}
+            disabled={!inputValue.trim() || isTyping}
           >
             ➤
           </button>
         </div>
+
+        {/* Footer */}
+        <div className="copilot-footer">Powered by AI • GPT-4o-mini</div>
       </div>
     </div>
   );

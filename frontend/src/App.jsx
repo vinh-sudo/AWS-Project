@@ -14,6 +14,7 @@ import RoleBasedRoute, { getRoleDefaultPath } from "./routes/RoleBasedRoute";
 import AdminPage from "./pages/adminPage/adminUser";
 import AdminDashboard from "./pages/adminPage/AdminDashboard";
 import AdminOrders from "./pages/adminPage/AdminOrders";
+import AdminAssignment from "./pages/adminPage/AdminAssignment";
 import AuditLog from "./pages/adminPage/AuditLog";
 // Manager imports
 import ManagerDashboard from "./pages/managerPage/ManagerDashboard";
@@ -164,6 +165,14 @@ function App() {
             element={
               <RoleBasedRoute allowedRoles={["ADMIN"]}>
                 <AuditLog />
+              </RoleBasedRoute>
+            }
+          />
+          <Route
+            path="/admin/assignments"
+            element={
+              <RoleBasedRoute allowedRoles={["ADMIN"]}>
+                <AdminAssignment />
               </RoleBasedRoute>
             }
           />
