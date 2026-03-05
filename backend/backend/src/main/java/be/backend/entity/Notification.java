@@ -60,5 +60,4 @@ public class Notification {
 
     @Column(name = "url", length = Integer.MAX_VALUE)
     private String url;
-
 }

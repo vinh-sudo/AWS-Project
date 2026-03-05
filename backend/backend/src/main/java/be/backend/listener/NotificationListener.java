@@ -9,6 +9,7 @@ import org.springframework.context.event.EventListener;
 import org.springframework.stereotype.Component;
 
 import java.util.Map;
+
 @Component
 @RequiredArgsConstructor
 public class NotificationListener {
@@ -22,7 +23,6 @@ public class NotificationListener {
     public void onUserCreated(AccountEvent.UserCreatedEvent e) {
         notifyUser(e.user(),
                 "Welcome",
-                "account-created.html",
                 Map.of("name", e.user().getFirstName()),
                 "INFO",
                 "ACCOUNT",
@@ -34,7 +34,6 @@ public class NotificationListener {
     public void onPasswordReset(AccountEvent.PasswordResetEvent e) {
         notifyUser(e.user(),
                 "Password reset",
-                "password-reset.html",
                 Map.of(),
                 "WARN",
                 "ACCOUNT",
@@ -46,7 +45,6 @@ public class NotificationListener {
     public void onRoleChanged(AccountEvent.RoleChangedEvent e) {
         notifyUser(e.account().getUser(),
                 "Role changed",
-                "role-changed.html",
                 Map.of("role", e.account().getRole()),
                 "INFO",
                 "ACCOUNT",
@@ -58,7 +56,6 @@ public class NotificationListener {
     public void onAccountLocked(AccountEvent.AccountLockedEvent e) {
         notifyUser(e.account().getUser(),
                 "Account locked",
-                "account-locked.html",
                 Map.of(),
                 "WARN",
                 "ACCOUNT",
@@ -67,7 +64,6 @@ public class NotificationListener {
 
         notifyRole("ADMIN",
                 "User locked",
-                "admin-user-locked.html",
                 Map.of("username", e.account().getUsername()),
                 "WARN",
                 "ACCOUNT",
@@ -79,21 +75,24 @@ public class NotificationListener {
 
     @EventListener
     public void onAssigned(EmployeeEvent.EmployeeAssignedToLineEvent e) {
-        notifyUser(e.employee().getUser(),
+        Map<String, Object> payload = Map.of(
+                "line", e.line().getLineName()
+        );
+        notifyUser(
+                e.employee().getUser(),
                 "Assigned to line",
-                "employee-assigned.html",
-                Map.of("line", e.line().getLineName()),
+                payload,
                 "INFO",
                 "LINE",
                 e.line().getId(),
-                "/my-line");
+                "/my-line"
+        );
     }
 
     @EventListener
     public void onRemoved(EmployeeEvent.EmployeeRemovedFromLineEvent e) {
         notifyUser(e.employee().getUser(),
                 "Removed from line",
-                "employee-removed.html",
                 Map.of("line", e.line().getLineName()),
                 "WARN",
                 "LINE",
@@ -102,7 +101,6 @@ public class NotificationListener {
 
         notifyRole("MANAGER",
                 "Employee removed",
-                "manager-employee-removed.html",
                 Map.of(
                         "employee", e.employee().getEmployeeCode(),
                         "line", e.line().getLineName()
@@ -117,48 +115,50 @@ public class NotificationListener {
 
     @EventListener
     public void onScheduleAssigned(ProductionScheduleEvent.ScheduleAssignedToLineEvent e) {
-
         var line = e.line();
         var leader = line.getLineLeaderAssignment().getLeader();
 
-        notifyUser(leader.getUser(),
-                "New Schedule",
-                "schedule-assigned.html",
-                Map.of(
-                        "line", line.getLineName(),
-                        "scheduleId", e.schedule().getId(),
-                        "start", e.schedule().getStartTime()
-                ),
+        Map<String, Object> payload = Map.of(
+                "lineName", line.getLineName(),
+                "scheduleId", e.schedule().getId(),
+                "startTime", e.schedule().getStartTime()
+        );
+        notifyUser(
+                leader.getUser(),
+                "New schedule",
+                payload,
                 "INFO",
                 "SCHEDULE",
                 e.schedule().getId(),
-                "/leader/schedules/" + e.schedule().getId());
+                "/leader/schedules/" + e.schedule().getId()
+        );
     }
 
     // ===================== REPORT =====================
 
     @EventListener
     public void onDailyReport(ReportEvent.DailyReportSubmittedEvent e) {
-        notifyRole("MANAGER",
+        Map<String, Object> payload = Map.of(
+                "line", e.report().getLine().getLineName(),
+                "good", e.report().getGoodQuantity(),
+                "reject", e.report().getRejectQuantity(),
+                "target", e.report().getTargetQuantity()
+        );
+        notifyRole(
+                "LINE_LEADER",
                 "Daily report",
-                "daily-report.html",
-                Map.of(
-                        "line", e.report().getLine().getLineName(),
-                        "good", e.report().getGoodQuantity(),
-                        "reject", e.report().getRejectQuantity(),
-                        "target", e.report().getTargetQuantity()
-                ),
+                payload,
                 "INFO",
                 "REPORT",
                 e.report().getId(),
-                "/reports/" + e.report().getId());
+                "/reports/" + e.report().getId()
+        );
     }
 
     @EventListener
     public void onLowKpi(ReportEvent.LowKpiEvent e) {
         notifyRole("MANAGER",
                 "Low KPI",
-                "kpi-low.html",
                 Map.of(
                         "line", e.report().getLine().getLineName(),
                         "good", e.report().getGoodQuantity(),
@@ -176,18 +176,17 @@ public class NotificationListener {
     @EventListener
     public void onOrderCreated(OrderEvent.OrderCreatedEvent e) {
         var o = e.order();
-
-        notifyRoleTemplate(
-                "SALES",
+        Map<String, Object> payload = Map.of(
+                "orderId", o.getId(),
+                "customer", o.getCustomerName(),
+                "product", o.getProductType(),
+                "quantity", o.getQuantity(),
+                "deadline", o.getDeadline()
+        );
+        notifyRole(
+                "ADMIN",
                 "New order created",
-                "order-created",
-                Map.of(
-                        "orderId", o.getId(),
-                        "customer", o.getCustomerName(),
-                        "product", o.getProductType(),
-                        "quantity", o.getQuantity(),
-                        "deadline", o.getDeadline()
-                ),
+                payload,
                 "INFO",
                 "ORDER",
                 o.getId(),
@@ -199,10 +198,9 @@ public class NotificationListener {
     public void onOrderReleased(OrderEvent.OrderReleasedToProductionEvent e) {
         var o = e.order();
 
-        notifyRoleTemplate(
-                "PLANNER",
+        notifyRole(
+                "ADMIN",
                 "Order released to production",
-                "order-released",
                 Map.of(
                         "orderId", o.getId(),
                         "customer", o.getCustomerName(),
@@ -220,10 +218,9 @@ public class NotificationListener {
     public void onOrderLate(OrderEvent.OrderLateEvent e) {
         var o = e.order();
 
-        notifyRoleTemplate(
+        notifyRole(
                 "MANAGER",
                 "Order is late",
-                "order-late",
                 Map.of(
                         "orderId", o.getId(),
                         "customer", o.getCustomerName(),
@@ -240,10 +237,9 @@ public class NotificationListener {
     public void onOrderCompleted(OrderEvent.OrderCompletedEvent e) {
         var o = e.order();
 
-        notifyRoleTemplate(
-                "SALES",
+        notifyRole(
+                "LINE_LEADER",
                 "Order completed",
-                "order-completed",
                 Map.of(
                         "orderId", o.getId(),
                         "customer", o.getCustomerName(),
@@ -261,24 +257,22 @@ public class NotificationListener {
 
     private void notifyUser(User user,
                             String title,
-                            String template,
-                            Map<String, Object> data,
-                            String severity,
-                            String type,
+                            Map<String, Object> payload,
+                            String level,
+                            String sourceType,
                             Integer sourceId,
                             String url) {
 
-        notificationService.notifyFromTemplate(
-                user, title, template, data, severity, type, sourceId, url
+        notificationService.notifyStructured(
+                user, title, payload, level, sourceType, sourceId, url
         );
     }
 
     private void notifyRole(String role,
                             String title,
-                            String template,
-                            Map<String, Object> data,
-                            String severity,
-                            String type,
+                            Map<String, Object> payload,
+                            String level,
+                            String sourceType,
                             Integer sourceId,
                             String url) {
 
@@ -286,22 +280,9 @@ public class NotificationListener {
                 .stream()
                 .map(Account::getUser)
                 .forEach(u ->
-                        notificationService.notifyFromTemplate(
-                                u, title, template, data, severity, type, sourceId, url
+                        notificationService.notifyStructured(
+                                u, title, payload, level, sourceType, sourceId, url
                         )
                 );
-    }
-
-
-    private void notifyRoleTemplate(String role,
-                                    String title,
-                                    String template,
-                                    Map<String, Object> data,
-                                    String severity,
-                                    String type,
-                                    Integer sourceId,
-                                    String url) {
-
-        notifyRole(role, title, template, data, severity, type, sourceId, url);
     }
 }

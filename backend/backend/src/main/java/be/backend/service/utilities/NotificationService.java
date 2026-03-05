@@ -5,8 +5,6 @@ import be.backend.entity.User;
 import be.backend.repository.NotificationRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
-import org.thymeleaf.TemplateEngine;
-import org.thymeleaf.context.Context;
 
 import java.time.OffsetDateTime;
 import java.util.Map;
@@ -16,27 +14,25 @@ import java.util.Map;
 public class NotificationService {
 
     private final NotificationRepository repo;
-    private final TemplateEngine templateEngine;
 
-    public void notifyFromTemplate(
+    /**
+     * Create a notification using existing schema (no extra fields).
+     * Frontend can distinguish notifications by title, level, sourceType, etc.
+     */
+    public void notifyStructured(
             User user,
             String title,
-            String templateName,
-            Map<String, Object> data,
+            Map<String, Object> payload,
             String level,
             String sourceType,
             Integer sourceId,
             String url
     ) {
-        Context ctx = new Context();
-        ctx.setVariables(data);
-
-        String html = templateEngine.process("notifications/" + templateName, ctx);
-
         Notification n = new Notification();
         n.setUser(user);
         n.setTitle(title);
-        n.setMessage(html);
+        // For now, keep message as simple text; you can enrich it later if needed
+        n.setMessage(title);
         n.setLevel(level);
         n.setSourceType(sourceType);
         n.setSourceId(sourceId);
