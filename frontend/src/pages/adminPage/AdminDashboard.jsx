@@ -1,7 +1,5 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
-import { useDispatch } from "react-redux";
-import { logout } from "../../redux";
 import NotificationBell from "../../components/NotificationBell/NotificationBell";
 import AdminSidebar from "../../components/AdminSidebar/AdminSidebar";
 import {
@@ -16,17 +14,19 @@ import {
   Tooltip,
   Legend,
   ResponsiveContainer,
+  AreaChart,
+  Area,
 } from "recharts";
 import authService from "../../services/authService";
 import adminService from "../../services/adminService";
-import "./adminUser.css";
+import "./AdminDashboard.css";
 
 const AdminDashboard = () => {
   const navigate = useNavigate();
   const currentUser = authService.getCurrentUser();
-  const [showActivityModal, setShowActivityModal] = useState(false);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [lastUpdated, setLastUpdated] = useState(null);
 
   const [stats, setStats] = useState({
     totalUsers: 0,
@@ -43,11 +43,10 @@ const AdminDashboard = () => {
     activeMachines: 0,
   });
 
-  useEffect(() => {
-    fetchDashboardData();
-  }, []);
+  const [recentOrders, setRecentOrders] = useState([]);
+  const [recentActivities, setRecentActivities] = useState([]);
 
-  const fetchDashboardData = async () => {
+  const fetchDashboardData = useCallback(async () => {
     try {
       setLoading(true);
       setError(null);
@@ -66,250 +65,631 @@ const AdminDashboard = () => {
         totalMachines: data.totalMachines || 0,
         activeMachines: data.activeMachines || 0,
       });
+
+      try {
+        const orders = await adminService.getRecentOrders?.();
+        setRecentOrders(Array.isArray(orders) ? orders.slice(0, 5) : []);
+      } catch {
+        setRecentOrders([]);
+      }
+
+      try {
+        const activities = await adminService.getRecentActivities?.();
+        setRecentActivities(
+          Array.isArray(activities) ? activities.slice(0, 6) : []
+        );
+      } catch {
+        setRecentActivities([]);
+      }
+
+      setLastUpdated(new Date());
     } catch (err) {
       console.error("Error fetching dashboard data:", err);
       setError(err.response?.data?.message || "Failed to load dashboard data");
     } finally {
       setLoading(false);
     }
+  }, []);
+
+  useEffect(() => {
+    fetchDashboardData();
+    const interval = setInterval(fetchDashboardData, 60000);
+    return () => clearInterval(interval);
+  }, [fetchDashboardData]);
+
+  // Computed metrics
+  const efficiencyRate =
+    stats.totalOrders > 0
+      ? ((stats.completedOrders / stats.totalOrders) * 100).toFixed(1)
+      : 0;
+
+  const lineUtilization =
+    stats.totalLines > 0
+      ? ((stats.activeLines / stats.totalLines) * 100).toFixed(1)
+      : 0;
+
+  const machineUtilization =
+    stats.totalMachines > 0
+      ? ((stats.activeMachines / stats.totalMachines) * 100).toFixed(1)
+      : 0;
+
+  // Chart data
+  const orderStatusData = [
+    { name: "Pending", value: stats.pendingOrders, color: "#f59e0b" },
+    { name: "In Progress", value: stats.inProgressOrders, color: "#3b82f6" },
+    { name: "Completed", value: stats.completedOrders, color: "#10b981" },
+    { name: "Cancelled", value: stats.cancelledOrders, color: "#ef4444" },
+  ];
+
+  const productionData = [
+    { name: "Lines Active", value: stats.activeLines, color: "#10b981" },
+    {
+      name: "Lines Inactive",
+      value: Math.max(0, stats.totalLines - stats.activeLines),
+      color: "#e2e8f0",
+    },
+  ];
+
+  const barData = [
+    { status: "Pending", count: stats.pendingOrders, fill: "#f59e0b" },
+    { status: "In Progress", count: stats.inProgressOrders, fill: "#3b82f6" },
+    { status: "Completed", count: stats.completedOrders, fill: "#10b981" },
+    { status: "Cancelled", count: stats.cancelledOrders, fill: "#ef4444" },
+  ];
+
+  const getGreeting = () => {
+    const hour = new Date().getHours();
+    if (hour < 12) return "Good Morning";
+    if (hour < 18) return "Good Afternoon";
+    return "Good Evening";
   };
 
-  const pieChartData = [
-    { name: "Active Lines", value: stats.activeLines, color: "#4CAF50" },
-    { name: "Inactive Lines", value: Math.max(0, stats.totalLines - stats.activeLines), color: "#9E9E9E" },
-  ];
+  const getStatusBadgeClass = (status) => {
+    switch (status?.toLowerCase()) {
+      case "pending":
+        return "badge-pending";
+      case "in_progress":
+      case "in progress":
+        return "badge-progress";
+      case "completed":
+        return "badge-completed";
+      case "cancelled":
+        return "badge-cancelled";
+      default:
+        return "badge-default";
+    }
+  };
 
-  const barChartData = [
-    { status: "Pending", count: stats.pendingOrders },
-    { status: "In Progress", count: stats.inProgressOrders },
-    { status: "Completed", count: stats.completedOrders },
-    { status: "Cancelled", count: stats.cancelledOrders },
-  ];
+  const getUserInitial = () => {
+    const name = currentUser?.fullName || "Admin";
+    return name.charAt(0).toUpperCase();
+  };
 
-  const COLORS = ["#5ec8c4", "#f195b3", "#9E9E9E"];
+  if (loading) {
+    return (
+      <div className="admin-container">
+        <AdminSidebar />
+        <div className="admin-main">
+          <div className="dash-loading">
+            <div className="dash-loading-card">
+              <div className="dash-spinner"></div>
+              <p className="dash-loading-text">Loading dashboard...</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="admin-container">
       <AdminSidebar />
 
       <div className="admin-main">
-        <header className="admin-header">
-          <h1 className="header-title">Dashboard</h1>
-          <div className="header-actions">
-            <NotificationBell />
-            <div className="user-menu">
-              <div className="user-avatar"></div>
-              <span className="user-name">
-                {currentUser?.fullName || "Admin"}
-              </span>
-              <span className="dropdown-icon">▼</span>
+        {/* ===== Gradient Header ===== */}
+        <header className="dash-header">
+          <div className="dash-header-left">
+            <div className="dash-header-avatar">{getUserInitial()}</div>
+            <div>
+              <h1 className="dash-title">
+                {getGreeting()},{" "}
+                {currentUser?.fullName?.split(" ")[0] || "Admin"} 👋
+              </h1>
+              <p className="dash-subtitle">
+                Here's what's happening with your production system
+                {lastUpdated && (
+                  <span className="dash-last-updated">
+                    {" "}
+                    · Updated{" "}
+                    {lastUpdated.toLocaleTimeString([], {
+                      hour: "2-digit",
+                      minute: "2-digit",
+                    })}
+                  </span>
+                )}
+              </p>
             </div>
+          </div>
+          <div className="dash-header-right">
+            <button
+              className="dash-refresh-btn"
+              onClick={fetchDashboardData}
+              title="Refresh data"
+            >
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <polyline points="23 4 23 10 17 10" />
+                <polyline points="1 20 1 14 7 14" />
+                <path d="M3.51 9a9 9 0 0114.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0020.49 15" />
+              </svg>
+            </button>
+            <NotificationBell />
           </div>
         </header>
 
-        <div className="admin-content dashboard-content">
-          {loading ? (
-            <div className="loading-container">
-              <div className="loading-skeleton">
-                <div className="skeleton-icon"></div>
-                <div className="loading-dots">
-                  <div className="dot"></div>
-                  <div className="dot"></div>
-                  <div className="dot"></div>
-                </div>
-                <p className="loading-text">Loading dashboard data...</p>
-              </div>
+        <div className="dash-content">
+          {error && (
+            <div className="dash-error">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <circle cx="12" cy="12" r="10" />
+                <line x1="12" y1="8" x2="12" y2="12" />
+                <line x1="12" y1="16" x2="12.01" y2="16" />
+              </svg>
+              <span>{error}</span>
+              <button onClick={fetchDashboardData}>Retry</button>
             </div>
-          ) : error ? (
-            <div className="error-container">
-              <div className="error-icon">⚠️</div>
-              <p className="error-message">{error}</p>
-              <button className="btn-primary" onClick={fetchDashboardData}>
-                Retry
-              </button>
-            </div>
-          ) : (
-            <>
-              <div className="stats-grid">
-                <div className="stat-card stat-users">
-                  <div className="stat-icon">👥</div>
-                  <div className="stat-info">
-                    <div className="stat-value">{stats.totalUsers}</div>
-                    <div className="stat-label">Total Users</div>
-                    <div className="stat-detail">
-                      <span className="stat-active">{stats.activeUsers} Active</span>
-                      <span className="stat-blocked">{stats.blockedUsers} Blocked</span>
-                    </div>
-                  </div>
-                </div>
-
-                <div className="stat-card stat-orders">
-                  <div className="stat-icon">📦</div>
-                  <div className="stat-info">
-                    <div className="stat-value">{stats.totalOrders}</div>
-                    <div className="stat-label">Total Orders</div>
-                    <div className="stat-detail">
-                      <span className="stat-pending">{stats.pendingOrders} Pending</span>
-                      <span className="stat-progress">{stats.inProgressOrders} In Progress</span>
-                    </div>
-                  </div>
-                </div>
-
-                <div className="stat-card stat-production">
-                  <div className="stat-icon">🏭</div>
-                  <div className="stat-info">
-                    <div className="stat-value">{stats.activeLines}/{stats.totalLines}</div>
-                    <div className="stat-label">Production Lines</div>
-                    <div className="stat-detail">
-                      <span className="stat-machines">{stats.activeMachines}/{stats.totalMachines} Machines</span>
-                    </div>
-                  </div>
-                </div>
-
-                <div className="stat-card stat-efficiency">
-                  <div className="stat-icon">📊</div>
-                  <div className="stat-info">
-                    <div className="stat-value">{stats.completedOrders}</div>
-                    <div className="stat-label">Completed Orders</div>
-                    <div className="stat-detail">
-                      <span className="stat-output">{stats.cancelledOrders} cancelled</span>
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-              <div className="dashboard-grid">
-                <div className="dashboard-card chart-card">
-                  <div className="card-header">
-                    <h3 className="card-title">Production Lines Overview</h3>
-                  </div>
-                  <div className="card-body chart-container">
-                    <ResponsiveContainer width="100%" height={280}>
-                      <PieChart>
-                        <Pie
-                          data={pieChartData}
-                          cx="50%"
-                          cy="50%"
-                          innerRadius={60}
-                          outerRadius={100}
-                          paddingAngle={5}
-                          dataKey="value"
-                          label={({ name, value }) => `${name}: ${value}`}
-                        >
-                          {pieChartData.map((entry, index) => (
-                            <Cell key={`cell-${index}`} fill={entry.color} />
-                          ))}
-                        </Pie>
-                        <Tooltip />
-                        <Legend />
-                      </PieChart>
-                    </ResponsiveContainer>
-                    <div className="chart-legend-custom">
-                      <div className="legend-item">
-                        <span className="legend-color" style={{ background: "#4CAF50" }}></span>
-                        <span>Active ({stats.activeLines})</span>
-                      </div>
-                      <div className="legend-item">
-                        <span className="legend-color" style={{ background: "#9E9E9E" }}></span>
-                        <span>Inactive ({Math.max(0, stats.totalLines - stats.activeLines)})</span>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-
-                <div className="dashboard-card chart-card">
-                  <div className="card-header">
-                    <h3 className="card-title">Order Status Distribution</h3>
-                  </div>
-                  <div className="card-body chart-container">
-                    <ResponsiveContainer width="100%" height={280}>
-                      <BarChart data={barChartData}>
-                        <CartesianGrid strokeDasharray="3 3" stroke="rgba(94, 200, 196, 0.2)" />
-                        <XAxis dataKey="status" tick={{ fontSize: 12 }} />
-                        <YAxis tick={{ fontSize: 12 }} />
-                        <Tooltip
-                          contentStyle={{
-                            background: "white",
-                            border: "none",
-                            borderRadius: "10px",
-                            boxShadow: "0 4px 15px rgba(0,0,0,0.1)",
-                          }}
-                        />
-                        <Bar dataKey="count" fill="url(#colorGradient)" radius={[10, 10, 0, 0]} name="Activities" />
-                        <defs>
-                          <linearGradient id="colorGradient" x1="0" y1="0" x2="0" y2="1">
-                            <stop offset="0%" stopColor="#5ec8c4" />
-                            <stop offset="100%" stopColor="#f195b3" />
-                          </linearGradient>
-                        </defs>
-                      </BarChart>
-                    </ResponsiveContainer>
-                  </div>
-                </div>
-              </div>
-
-              <div className="quick-stats">
-                <div className="quick-stat-item">
-                  <div className="quick-stat-label">Pending Orders</div>
-                  <div className="quick-stat-value">{stats.pendingOrders}</div>
-                </div>
-                <div className="quick-stat-item">
-                  <div className="quick-stat-label">Completed Orders</div>
-                  <div className="quick-stat-value">{stats.completedOrders}</div>
-                </div>
-                <div className="quick-stat-item">
-                  <div className="quick-stat-label">In Progress</div>
-                  <div className="quick-stat-value">{stats.inProgressOrders}</div>
-                </div>
-              </div>
-            </>
           )}
-        </div>
-      </div>
 
-      {showActivityModal && (
-        <div className="modal-overlay" onClick={() => setShowActivityModal(false)}>
-          <div className="modal-container" onClick={(e) => e.stopPropagation()}>
-            <div className="modal-header">
-              <h2 className="modal-title">System Overview</h2>
-              <button className="close-button" onClick={() => setShowActivityModal(false)}>✕</button>
+          {/* ===== Stat Cards ===== */}
+          <div className="dash-stats">
+            {/* Total Users */}
+            <div className="dash-stat-card">
+              <div className="dash-stat-header">
+                <div className="dash-stat-icon dash-icon-users">
+                  <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8">
+                    <path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2" />
+                    <circle cx="9" cy="7" r="4" />
+                    <path d="M23 21v-2a4 4 0 00-3-3.87" />
+                    <path d="M16 3.13a4 4 0 010 7.75" />
+                  </svg>
+                </div>
+                <span className="dash-stat-badge dash-badge-blue">
+                  {stats.activeUsers} active
+                </span>
+              </div>
+              <div className="dash-stat-value">{stats.totalUsers}</div>
+              <div className="dash-stat-label">Total Users</div>
+              <div className="dash-stat-bar">
+                <div
+                  className="dash-stat-bar-fill dash-bar-blue"
+                  style={{
+                    width: stats.totalUsers > 0
+                      ? `${(stats.activeUsers / stats.totalUsers) * 100}%`
+                      : "0%",
+                  }}
+                />
+              </div>
             </div>
-            <div className="modal-body">
-              <div className="activity-list">
-                <div className="activity-item">
-                  <div className="activity-info">
-                    <div className="activity-action">Total Orders: <strong>{stats.totalOrders}</strong></div>
-                    <div className="activity-meta">
-                      <span className="activity-entity">
-                        Pending: {stats.pendingOrders} | In Progress: {stats.inProgressOrders} | Completed: {stats.completedOrders} | Cancelled: {stats.cancelledOrders}
-                      </span>
-                    </div>
-                  </div>
+
+            {/* Total Orders */}
+            <div className="dash-stat-card">
+              <div className="dash-stat-header">
+                <div className="dash-stat-icon dash-icon-orders">
+                  <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8">
+                    <path d="M6 2L3 6v14a2 2 0 002 2h14a2 2 0 002-2V6l-3-4z" />
+                    <line x1="3" y1="6" x2="21" y2="6" />
+                    <path d="M16 10a4 4 0 01-8 0" />
+                  </svg>
                 </div>
-                <div className="activity-item">
-                  <div className="activity-info">
-                    <div className="activity-action">Production Lines: <strong>{stats.activeLines}/{stats.totalLines}</strong> active</div>
-                    <div className="activity-meta">
-                      <span className="activity-entity">Machines: {stats.activeMachines}/{stats.totalMachines} active</span>
-                    </div>
-                  </div>
+                <span className="dash-stat-badge dash-badge-amber">
+                  {stats.pendingOrders} pending
+                </span>
+              </div>
+              <div className="dash-stat-value">{stats.totalOrders}</div>
+              <div className="dash-stat-label">Total Orders</div>
+              <div className="dash-stat-bar">
+                <div
+                  className="dash-stat-bar-fill dash-bar-amber"
+                  style={{
+                    width: stats.totalOrders > 0
+                      ? `${(stats.completedOrders / stats.totalOrders) * 100}%`
+                      : "0%",
+                  }}
+                />
+              </div>
+            </div>
+
+            {/* Production Lines */}
+            <div className="dash-stat-card">
+              <div className="dash-stat-header">
+                <div className="dash-stat-icon dash-icon-lines">
+                  <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8">
+                    <path d="M2 20h.01" />
+                    <path d="M7 20v-4" />
+                    <path d="M12 20v-8" />
+                    <path d="M17 20V8" />
+                    <path d="M22 4v16" />
+                  </svg>
                 </div>
-                <div className="activity-item">
-                  <div className="activity-info">
-                    <div className="activity-action">Users: <strong>{stats.totalUsers}</strong> total</div>
-                    <div className="activity-meta">
-                      <span className="activity-entity">Active: {stats.activeUsers} | Blocked: {stats.blockedUsers}</span>
+                <span className="dash-stat-badge dash-badge-green">
+                  {lineUtilization}% util
+                </span>
+              </div>
+              <div className="dash-stat-value">
+                {stats.activeLines}
+                <span className="dash-stat-total">/{stats.totalLines}</span>
+              </div>
+              <div className="dash-stat-label">Active Lines</div>
+              <div className="dash-stat-bar">
+                <div
+                  className="dash-stat-bar-fill dash-bar-green"
+                  style={{ width: `${lineUtilization}%` }}
+                />
+              </div>
+            </div>
+
+            {/* Efficiency */}
+            <div className="dash-stat-card">
+              <div className="dash-stat-header">
+                <div className="dash-stat-icon dash-icon-efficiency">
+                  <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8">
+                    <polyline points="22 12 18 12 15 21 9 3 6 12 2 12" />
+                  </svg>
+                </div>
+                <span className="dash-stat-badge dash-badge-purple">
+                  {stats.completedOrders} done
+                </span>
+              </div>
+              <div className="dash-stat-value">{efficiencyRate}%</div>
+              <div className="dash-stat-label">Completion Rate</div>
+              <div className="dash-stat-bar">
+                <div
+                  className="dash-stat-bar-fill dash-bar-purple"
+                  style={{ width: `${efficiencyRate}%` }}
+                />
+              </div>
+            </div>
+          </div>
+
+          {/* ===== Quick Actions ===== */}
+          <div className="dash-quick-actions">
+            <button className="dash-quick-btn" onClick={() => navigate("/admin/orders")}>
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <path d="M6 2L3 6v14a2 2 0 002 2h14a2 2 0 002-2V6l-3-4z" />
+                <line x1="3" y1="6" x2="21" y2="6" />
+              </svg>
+              Manage Orders
+            </button>
+            <button className="dash-quick-btn" onClick={() => navigate("/admin/users")}>
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2" />
+                <circle cx="9" cy="7" r="4" />
+              </svg>
+              Manage Users
+            </button>
+            <button className="dash-quick-btn" onClick={() => navigate("/admin/assignments")}>
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <rect x="3" y="3" width="18" height="18" rx="2" ry="2" />
+                <line x1="3" y1="9" x2="21" y2="9" />
+                <line x1="9" y1="21" x2="9" y2="9" />
+              </svg>
+              Assignments
+            </button>
+            <button className="dash-quick-btn" onClick={() => navigate("/admin/audit-log")}>
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z" />
+                <polyline points="14 2 14 8 20 8" />
+                <line x1="16" y1="13" x2="8" y2="13" />
+                <line x1="16" y1="17" x2="8" y2="17" />
+              </svg>
+              Audit Log
+            </button>
+          </div>
+
+          {/* ===== Charts Row ===== */}
+          <div className="dash-charts">
+            {/* Order Status Bar Chart */}
+            <div className="dash-card">
+              <div className="dash-card-header">
+                <h3 className="dash-card-title">
+                  <span className="dash-card-title-icon icon-chart">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+                      <line x1="18" y1="20" x2="18" y2="10" />
+                      <line x1="12" y1="20" x2="12" y2="4" />
+                      <line x1="6" y1="20" x2="6" y2="14" />
+                    </svg>
+                  </span>
+                  Order Status Distribution
+                </h3>
+                <button
+                  className="dash-card-action"
+                  onClick={() => navigate("/admin/orders")}
+                >
+                  View All →
+                </button>
+              </div>
+              <div className="dash-card-body">
+                <ResponsiveContainer width="100%" height={280}>
+                  <BarChart data={barData} barCategoryGap="25%">
+                    <defs>
+                      <linearGradient id="barPending" x1="0" y1="0" x2="0" y2="1">
+                        <stop offset="0%" stopColor="#f59e0b" stopOpacity={1} />
+                        <stop offset="100%" stopColor="#fbbf24" stopOpacity={0.8} />
+                      </linearGradient>
+                      <linearGradient id="barProgress" x1="0" y1="0" x2="0" y2="1">
+                        <stop offset="0%" stopColor="#3b82f6" stopOpacity={1} />
+                        <stop offset="100%" stopColor="#60a5fa" stopOpacity={0.8} />
+                      </linearGradient>
+                      <linearGradient id="barCompleted" x1="0" y1="0" x2="0" y2="1">
+                        <stop offset="0%" stopColor="#10b981" stopOpacity={1} />
+                        <stop offset="100%" stopColor="#34d399" stopOpacity={0.8} />
+                      </linearGradient>
+                      <linearGradient id="barCancelled" x1="0" y1="0" x2="0" y2="1">
+                        <stop offset="0%" stopColor="#ef4444" stopOpacity={1} />
+                        <stop offset="100%" stopColor="#f87171" stopOpacity={0.8} />
+                      </linearGradient>
+                    </defs>
+                    <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" vertical={false} />
+                    <XAxis
+                      dataKey="status"
+                      tick={{ fontSize: 12, fill: "#94a3b8", fontWeight: 500 }}
+                      axisLine={false}
+                      tickLine={false}
+                    />
+                    <YAxis
+                      tick={{ fontSize: 12, fill: "#94a3b8" }}
+                      axisLine={false}
+                      tickLine={false}
+                    />
+                    <Tooltip
+                      contentStyle={{
+                        background: "#fff",
+                        border: "none",
+                        borderRadius: "12px",
+                        boxShadow: "0 8px 30px rgba(0,0,0,0.12)",
+                        padding: "12px 16px",
+                      }}
+                      cursor={{ fill: "rgba(99, 102, 241, 0.04)" }}
+                    />
+                    <Bar dataKey="count" radius={[10, 10, 0, 0]} name="Orders">
+                      {barData.map((entry, index) => {
+                        const gradients = ["url(#barPending)", "url(#barProgress)", "url(#barCompleted)", "url(#barCancelled)"];
+                        return <Cell key={`cell-${index}`} fill={gradients[index]} />;
+                      })}
+                    </Bar>
+                  </BarChart>
+                </ResponsiveContainer>
+                <div className="dash-chart-legend">
+                  {orderStatusData.map((item) => (
+                    <div key={item.name} className="dash-legend-item">
+                      <span className="dash-legend-dot" style={{ background: item.color }}></span>
+                      {item.name}: {item.value}
                     </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+
+            {/* Production Lines Pie Chart */}
+            <div className="dash-card">
+              <div className="dash-card-header">
+                <h3 className="dash-card-title">
+                  <span className="dash-card-title-icon icon-pie">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+                      <path d="M21.21 15.89A10 10 0 118 2.83" />
+                      <path d="M22 12A10 10 0 0012 2v10z" />
+                    </svg>
+                  </span>
+                  Production Overview
+                </h3>
+              </div>
+              <div className="dash-card-body">
+                <ResponsiveContainer width="100%" height={220}>
+                  <PieChart>
+                    <defs>
+                      <linearGradient id="pieActive" x1="0" y1="0" x2="1" y2="1">
+                        <stop offset="0%" stopColor="#10b981" />
+                        <stop offset="100%" stopColor="#34d399" />
+                      </linearGradient>
+                    </defs>
+                    <Pie
+                      data={productionData}
+                      cx="50%"
+                      cy="50%"
+                      innerRadius={58}
+                      outerRadius={88}
+                      paddingAngle={4}
+                      dataKey="value"
+                      strokeWidth={0}
+                    >
+                      {productionData.map((entry, index) => (
+                        <Cell
+                          key={`cell-${index}`}
+                          fill={index === 0 ? "url(#pieActive)" : entry.color}
+                        />
+                      ))}
+                    </Pie>
+                    <Tooltip
+                      contentStyle={{
+                        background: "#fff",
+                        border: "none",
+                        borderRadius: "12px",
+                        boxShadow: "0 8px 30px rgba(0,0,0,0.12)",
+                        padding: "10px 14px",
+                      }}
+                    />
+                  </PieChart>
+                </ResponsiveContainer>
+                {/* Center label */}
+                <div className="dash-pie-center">
+                  <span className="dash-pie-value">{lineUtilization}%</span>
+                  <span className="dash-pie-label">Utilization</span>
+                </div>
+                {/* Machine stats */}
+                <div className="dash-machine-stats">
+                  <div className="dash-machine-item">
+                    <span className="dash-dot dash-dot-green"></span>
+                    <span>
+                      Machines: {stats.activeMachines}/{stats.totalMachines} (
+                      {machineUtilization}%)
+                    </span>
+                  </div>
+                  <div className="dash-machine-item">
+                    <span className="dash-dot dash-dot-gray"></span>
+                    <span>
+                      Idle: {stats.totalMachines - stats.activeMachines}
+                    </span>
                   </div>
                 </div>
               </div>
-              <button className="btn-primary view-all-modal-btn" onClick={() => navigate("/admin/orders")}>
-                View All Orders
-              </button>
+            </div>
+          </div>
+
+          {/* ===== Bottom Row: Recent Orders + Activities ===== */}
+          <div className="dash-bottom-row">
+            {/* Recent Orders */}
+            <div className="dash-card">
+              <div className="dash-card-header">
+                <h3 className="dash-card-title">
+                  <span className="dash-card-title-icon icon-orders">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+                      <path d="M6 2L3 6v14a2 2 0 002 2h14a2 2 0 002-2V6l-3-4z" />
+                      <line x1="3" y1="6" x2="21" y2="6" />
+                    </svg>
+                  </span>
+                  Recent Orders
+                </h3>
+                <button
+                  className="dash-card-action"
+                  onClick={() => navigate("/admin/orders")}
+                >
+                  View All →
+                </button>
+              </div>
+              <div className="dash-card-body">
+                {recentOrders.length > 0 ? (
+                  <table className="dash-table">
+                    <thead>
+                      <tr>
+                        <th>Order ID</th>
+                        <th>Product</th>
+                        <th>Status</th>
+                        <th>Quantity</th>
+                        <th>Date</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {recentOrders.map((order, idx) => (
+                        <tr key={order.id || idx}>
+                          <td className="dash-table-id">
+                            #{order.id || idx + 1}
+                          </td>
+                          <td>{order.productName || order.product || "-"}</td>
+                          <td>
+                            <span
+                              className={`dash-badge ${getStatusBadgeClass(
+                                order.status
+                              )}`}
+                            >
+                              {order.status || "-"}
+                            </span>
+                          </td>
+                          <td>{order.quantity || "-"}</td>
+                          <td className="dash-table-date">
+                            {order.createdAt
+                              ? new Date(order.createdAt).toLocaleDateString()
+                              : "-"}
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                ) : (
+                  <div className="dash-empty">
+                    <div className="dash-empty-icon">
+                      <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#94a3b8" strokeWidth="1.5">
+                        <path d="M6 2L3 6v14a2 2 0 002 2h14a2 2 0 002-2V6l-3-4z" />
+                        <line x1="3" y1="6" x2="21" y2="6" />
+                        <path d="M16 10a4 4 0 01-8 0" />
+                      </svg>
+                    </div>
+                    <p>No recent orders to display</p>
+                    <button
+                      className="dash-empty-btn"
+                      onClick={() => navigate("/admin/orders")}
+                    >
+                      Go to Orders
+                    </button>
+                  </div>
+                )}
+              </div>
+            </div>
+
+            {/* Recent Activities */}
+            <div className="dash-card">
+              <div className="dash-card-header">
+                <h3 className="dash-card-title">
+                  <span className="dash-card-title-icon icon-activity">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+                      <polyline points="22 12 18 12 15 21 9 3 6 12 2 12" />
+                    </svg>
+                  </span>
+                  Recent Activities
+                </h3>
+                <button
+                  className="dash-card-action"
+                  onClick={() => navigate("/admin/audit-log")}
+                >
+                  View All →
+                </button>
+              </div>
+              <div className="dash-card-body">
+                {recentActivities.length > 0 ? (
+                  <div className="dash-activity-list">
+                    {recentActivities.map((activity, idx) => (
+                      <div key={idx} className="dash-activity-item">
+                        <div className="dash-activity-dot"></div>
+                        <div className="dash-activity-content">
+                          <p className="dash-activity-text">
+                            {activity.action || activity.description || "-"}
+                          </p>
+                          <span className="dash-activity-time">
+                            {activity.createdAt
+                              ? new Date(activity.createdAt).toLocaleString(
+                                  [],
+                                  {
+                                    month: "short",
+                                    day: "numeric",
+                                    hour: "2-digit",
+                                    minute: "2-digit",
+                                  }
+                                )
+                              : "-"}
+                          </span>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <div className="dash-empty">
+                    <div className="dash-empty-icon">
+                      <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#94a3b8" strokeWidth="1.5">
+                        <polyline points="22 12 18 12 15 21 9 3 6 12 2 12" />
+                      </svg>
+                    </div>
+                    <p>No recent activities</p>
+                    <button
+                      className="dash-empty-btn"
+                      onClick={() => navigate("/admin/audit-log")}
+                    >
+                      View Audit Log
+                    </button>
+                  </div>
+                )}
+              </div>
             </div>
           </div>
         </div>
-      )}
+      </div>
     </div>
   );
 };
