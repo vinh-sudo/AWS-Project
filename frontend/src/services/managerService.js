@@ -209,6 +209,12 @@ const managerService = {
       throw error;
     }
   },
+
+  // ===================== ORDERS =====================
+  getAllOrders: async () => {
+    const response = await api.get("/api/admin/orders");
+    return response.data;
+  },
 };
 
 export default managerService;
