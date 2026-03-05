@@ -164,10 +164,11 @@ public class SchedulerService {
         machine.setRuntimeStatus("RUNNING");
         machineRepo.save(machine);
 
-        // 3. Log
         IncidentLog log = new IncidentLog();
         log.setSchedule(schedule);
+        log.setLine(schedule.getPlan().getLine()); 
         log.setIncidentType("RESUME");
+        log.setSeverity("LOW"); 
         log.setDescription("Resumed by " + account.getUser().getLastName());
         log.setTimestamp(OffsetDateTime.now());
         incidentRepo.save(log);
