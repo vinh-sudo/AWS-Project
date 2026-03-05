@@ -30,6 +30,7 @@ import LeaderProgress from "./pages/leaderPage/LeaderProgress";
 import LeaderTaskAssignment from "./pages/leaderPage/LeaderTaskAssignment";
 import Dashboard from "./pages/dashboardPage/Dashboard";
 import AICopilot from "./components/AICopilot/AICopilot";
+import AuthGuard from "./components/AuthGuard/AuthGuard";
 import "./App.css";
 
 /**
@@ -52,6 +53,7 @@ function App() {
 
   return (
     <BrowserRouter>
+      <AuthGuard />
       <Routes>
         <Route element={<DraftLayout />}>
           {/* Public routes - redirect to dashboard if already authenticated */}

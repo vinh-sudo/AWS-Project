@@ -1,4 +1,5 @@
 import axios from "axios";
+import { isTokenExpired } from "../utils/tokenUtils";
 
 const API_BASE_URL = import.meta.env.VITE_API_URL || "http://localhost:8080";
 
@@ -41,23 +42,46 @@ api.interceptors.response.use(
     ) {
       originalRequest._retry = true;
 
-      // Clear all auth data from localStorage
-      localStorage.removeItem("accessToken");
-      localStorage.removeItem("refreshToken");
-      localStorage.removeItem("user");
-      localStorage.removeItem("isAuthenticated");
+      // Check if the refresh token is also expired
+      const refreshToken = localStorage.getItem("refreshToken");
+      if (!refreshToken || isTokenExpired(refreshToken, 0)) {
+        // Refresh token expired → force logout
+        localStorage.removeItem("accessToken");
+        localStorage.removeItem("refreshToken");
+        localStorage.removeItem("user");
+        localStorage.removeItem("isAuthenticated");
 
-      // Only redirect if not already on login/auth pages
-      const publicPaths = [
-        "/login",
-        "/forgot-password",
-        "/otp-verification",
-        "/reset-password",
-      ];
-      if (
-        !publicPaths.some((path) => window.location.pathname.startsWith(path))
-      ) {
-        window.location.href = "/login";
+        // Only redirect if not already on login/auth pages
+        const publicPaths = [
+          "/login",
+          "/forgot-password",
+          "/otp-verification",
+          "/reset-password",
+        ];
+        if (
+          !publicPaths.some((path) => window.location.pathname.startsWith(path))
+        ) {
+          window.location.href = "/login";
+        }
+      } else {
+        // Access token expired but refresh token is still valid
+        // Since there is no /api/auth/refresh endpoint, clear session and redirect
+        localStorage.removeItem("accessToken");
+        localStorage.removeItem("refreshToken");
+        localStorage.removeItem("user");
+        localStorage.removeItem("isAuthenticated");
+
+        const publicPaths = [
+          "/login",
+          "/forgot-password",
+          "/otp-verification",
+          "/reset-password",
+        ];
+        if (
+          !publicPaths.some((path) => window.location.pathname.startsWith(path))
+        ) {
+          window.location.href = "/login";
+        }
       }
     }
 
