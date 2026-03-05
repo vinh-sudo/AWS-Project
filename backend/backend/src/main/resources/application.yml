@@ -45,6 +45,14 @@ jwt:
   secret: myVeryVeryVeryVeryVeryVerySecretKey1234567890
   expiration: 900000
   refresh-expiration: 14400000
+ai:
+  provider: openai
+  openai:
+    api-key: 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
+    url: https://api.openai.com/v1/chat/completions
+    model: gpt-4o-mini
+    max-tokens: 500
+    temperature: 0.3
 
 logging:
   level:
