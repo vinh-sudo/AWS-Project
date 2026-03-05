@@ -1,19 +1,13 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { useDispatch } from "react-redux";
-import { logout } from "../../redux";
 import NotificationBell from "../../components/NotificationBell/NotificationBell";
+import AdminSidebar from "../../components/AdminSidebar/AdminSidebar";
 import authService from "../../services/authService";
 import adminService from "../../services/adminService";
-import imsLogo from "../../assets/ims2.jpg";
-import dashboardIcon from "../../assets/dashboard.jpg";
-import userIcon from "../../assets/user.jpg";
-import auditIcon from "../../assets/auditlog.jpg";
 import "./AdminAssignment.css";
 
 const AdminAssignment = () => {
   const navigate = useNavigate();
-  const dispatch = useDispatch();
   const currentUser = authService.getCurrentUser();
 
   const [assignments, setAssignments] = useState([]);
@@ -25,11 +19,6 @@ const AdminAssignment = () => {
   // Assign modal
   const [showAssignModal, setShowAssignModal] = useState(false);
   const [assignForm, setAssignForm] = useState({ lineId: "", leaderId: "" });
-
-  const handleLogout = async () => {
-    await dispatch(logout());
-    navigate("/login");
-  };
 
   useEffect(() => {
     fetchData();
@@ -88,55 +77,7 @@ const AdminAssignment = () => {
 
   return (
     <div className="admin-container">
-      <div className="admin-sidebar">
-        <div className="sidebar-header">
-          <img src={imsLogo} alt="Logo" className="sidebar-logo" />
-          <div className="sidebar-title">IMS ADMIN</div>
-        </div>
-
-        <nav className="sidebar-nav">
-          <div
-            className="nav-item"
-            onClick={() => navigate("/admin/dashboard")}
-          >
-            <img src={dashboardIcon} alt="Dashboard" className="nav-icon-img" />
-            <span>Dashboard</span>
-          </div>
-          <div className="nav-item" onClick={() => navigate("/admin/approval")}>
-            <span className="nav-icon">✅</span>
-            <span>Task Approval</span>
-          </div>
-          <div className="nav-item" onClick={() => navigate("/admin/orders")}>
-            <span className="nav-icon">📦</span>
-            <span>Order Management</span>
-          </div>
-          <div className="nav-item" onClick={() => navigate("/admin")}>
-            <img src={userIcon} alt="Users" className="nav-icon-img" />
-            <span>User Management</span>
-          </div>
-          <div
-            className="nav-item active"
-            onClick={() => navigate("/admin/assignments")}
-          >
-            <span className="nav-icon">🔗</span>
-            <span>Leader Assignment</span>
-          </div>
-          <div
-            className="nav-item"
-            onClick={() => navigate("/admin/audit-log")}
-          >
-            <img src={auditIcon} alt="Audit Log" className="nav-icon-img" />
-            <span>Audit Log</span>
-          </div>
-        </nav>
-
-        <div className="logout-item">
-          <div className="nav-item logout" onClick={handleLogout}>
-            <span className="nav-icon">🚪</span>
-            <span>Logout</span>
-          </div>
-        </div>
-      </div>
+      <AdminSidebar />
 
       <div className="admin-main">
         <header className="admin-header">

@@ -2405,3 +2405,83 @@
     border-radius: 50%;
     animation: spin 0.8s linear infinite;
 }
+
+/* File Drop Area - Create Order */
+.file-drop-area {
+    border: 2px dashed #d9d9d9;
+    border-radius: 12px;
+    padding: 20px;
+    text-align: center;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 4px;
+}
+
+.file-drop-area:hover {
+    border-color: #5ec8c4;
+    background: rgba(94, 200, 196, 0.04);
+}
+
+.file-drop-icon {
+    font-size: 24px;
+}
+
+.file-drop-text {
+    font-size: 14px;
+    font-weight: 500;
+    color: #333;
+}
+
+.file-drop-hint {
+    font-size: 12px;
+    color: #999;
+}
+
+.pending-files-list {
+    margin-top: 10px;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.pending-file-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 12px;
+    background: rgba(94, 200, 196, 0.06);
+    border-radius: 8px;
+    font-size: 13px;
+}
+
+.pending-file-name {
+    flex: 1;
+    color: #333;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.pending-file-size {
+    color: #999;
+    font-size: 11px;
+    white-space: nowrap;
+}
+
+.pending-file-remove {
+    background: none;
+    border: none;
+    color: #ff4d4f;
+    cursor: pointer;
+    font-size: 14px;
+    padding: 2px 6px;
+    border-radius: 4px;
+    transition: background 0.2s;
+}
+
+.pending-file-remove:hover {
+    background: rgba(255, 77, 79, 0.1);
+}
