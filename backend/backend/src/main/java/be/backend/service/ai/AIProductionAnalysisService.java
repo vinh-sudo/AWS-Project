@@ -424,123 +424,101 @@ public class AIProductionAnalysisService {
     }
 
     /**
-     * Internal class to hold root cause analysis results
+     * AI Executive Summary for Production Health
+     * Uses the existing logic-based production health summary and asks the LLM
+     * to rewrite it as a short, manager-friendly English explanation.
      */
-    private static class RootCauseResult {
-        String primaryCause;
-        String confidence;
-        List<String> contributingFactors;
-        List<String> evidencePoints;
-        List<String> immediateActions;
-        List<String> preventiveActions;
-    }
-
     public String getProductionHealthAiSummary() {
-        try {
-            // Use logic-based summary from ProductionAnalysisService via data + same rules implicitly
-            var delayData = delayService.getTodayDelay();
-            var oeeData = oeeService.getTodayOee();
-            var stats = statisticsService.getTodayStatistics();
+        // 1. Get core health summary from existing logic
+        AIProductionSummaryResponse summary = analyzeProduction();
 
-            // Reuse parse logic to get a structured AIProductionSummaryResponse from model
-            String prompt = buildPrompt(delayData, oeeData, stats);
-            String aiRawResponse = openAIClient.ask(prompt);
-            AIProductionSummaryResponse summary = parseResponse(aiRawResponse, delayData, oeeData);
+        StringBuilder prompt = new StringBuilder();
+        prompt.append("You are an AI assistant for a manufacturing production manager. ");
+        prompt.append("Rewrite the following technical production health summary into a short, clear English executive summary. ");
+        prompt.append("Use at most 2 short paragraphs. Focus on what is going well, what is going wrong, and what actions the manager should consider next. \n\n");
 
-            StringBuilder promptSummary = new StringBuilder();
-            promptSummary.append("You are an AI assistant for production managers. \n");
-            promptSummary.append("Based on the structured health summary below, write a short executive summary in clear English (3-6 sentences). ");
-            promptSummary.append("Focus on overall status, main issues, critical lines, and key recommended actions. Avoid repeating raw labels, explain them naturally.\\n\\n");
+        prompt.append("PRODUCTION HEALTH SUMMARY (INPUT DATA):\n");
+        prompt.append("- Overall status: ").append(summary.getOverallStatus()).append("\n");
+        prompt.append("- Main issue: ").append(summary.getMainIssue()).append("\n");
 
-            promptSummary.append("PRODUCTION HEALTH SUMMARY:\n");
-            promptSummary.append("- Overall status: ").append(summary.getOverallStatus()).append("\n");
-            promptSummary.append("- Main issue: ").append(summary.getMainIssue()).append("\n");
-
-            promptSummary.append("- Critical lines: ");
-            if (summary.getCriticalLines() == null || summary.getCriticalLines().isEmpty()) {
-                promptSummary.append("None\n");
-            } else {
-                promptSummary.append(String.join(", ", summary.getCriticalLines())).append("\n");
-            }
-
-            promptSummary.append("- Recommendations:\n");
-            if (summary.getRecommendations() != null && !summary.getRecommendations().isEmpty()) {
-                summary.getRecommendations().forEach(rec ->
-                    promptSummary.append("  - ").append(rec).append("\n")
-                );
-            } else {
-                promptSummary.append("  - No specific recommendations available\n");
-            }
-
-            promptSummary.append("\nWrite the summary as if you are briefing a production manager who has limited time.\n");
-
-            return openAIClient.ask(promptSummary.toString());
-        } catch (Exception e) {
-            log.error("Error generating AI executive summary for production health", e);
-            return "Unable to generate AI executive summary at the moment. Please refer to the structured production health data instead.";
+        prompt.append("- Critical lines: ");
+        if (summary.getCriticalLines() == null || summary.getCriticalLines().isEmpty()) {
+            prompt.append("None");
+        } else {
+            prompt.append(String.join(", ", summary.getCriticalLines()));
         }
+        prompt.append("\n");
+
+        prompt.append("- Recommendations: ");
+        if (summary.getRecommendations() == null || summary.getRecommendations().isEmpty()) {
+            prompt.append("None");
+        } else {
+            prompt.append(String.join(" | ", summary.getRecommendations()));
+        }
+        prompt.append("\n\n");
+
+        prompt.append("TASK: Based on the input data above, write a concise executive summary in English for a production manager. ");
+        prompt.append("Do not expose bullet labels like 'Overall status' or 'Recommendations'. Instead, explain them naturally in prose. ");
+        prompt.append("Avoid technical jargon when possible and keep the tone practical.");
+
+        return openAIClient.ask(prompt.toString());
     }
 
-    public String getRootCauseAiSummary() {
-        try {
-            var delayData = delayService.getTodayDelay();
-            var oeeData = oeeService.getTodayOee();
-            var stats = statisticsService.getTodayStatistics();
+    /**
+     * AI Explanation for Root Cause Analysis
+     * Uses the existing rule-based root cause analysis result and asks the LLM
+     * to explain it in simple English for non-technical stakeholders.
+     */
+    public String getRootCauseAiExplanation() {
+        // 1. Get core root cause analysis from existing logic
+        AIRootCauseAnalysisResponse rootCause = performRootCauseAnalysis();
 
-            RootCauseResult analysis = analyzeRootCause(delayData, oeeData, stats);
+        StringBuilder prompt = new StringBuilder();
+        prompt.append("You are an AI assistant for a manufacturing production manager. ");
+        prompt.append("Explain the following root cause analysis in simple, non-technical English. ");
+        prompt.append("Use 1-2 short paragraphs. Focus on: (1) why the system believes this is the main cause, (2) what should be done immediately, and (3) what to prevent in the future.\n\n");
 
-            StringBuilder prompt = new StringBuilder();
-            prompt.append("You are an AI assistant for production managers. \n");
-            prompt.append("Based on the structured root cause analysis below, write a short explanation in clear English (3-6 sentences). ");
-            prompt.append("Clearly explain the main root cause, why you think so, the most important evidence, and what immediate and preventive actions should be prioritized.\\n\\n");
+        prompt.append("ROOT CAUSE ANALYSIS (INPUT DATA):\n");
+        prompt.append("- Primary root cause: ").append(rootCause.getPrimaryRootCause()).append("\n");
+        prompt.append("- Confidence: ").append(rootCause.getConfidence()).append("\n");
 
-            prompt.append("ROOT CAUSE ANALYSIS:\n");
-            prompt.append("- Primary root cause: ").append(analysis.primaryCause).append("\n");
-            prompt.append("- Confidence: ").append(analysis.confidence).append("\n");
-
-            prompt.append("- Contributing factors:\n");
-            if (analysis.contributingFactors != null && !analysis.contributingFactors.isEmpty()) {
-                analysis.contributingFactors.forEach(f ->
-                    prompt.append("  - ").append(f).append("\n")
-                );
-            } else {
-                prompt.append("  - None listed\n");
-            }
-
-            prompt.append("- Evidence points:\n");
-            if (analysis.evidencePoints != null && !analysis.evidencePoints.isEmpty()) {
-                analysis.evidencePoints.forEach(e ->
-                    prompt.append("  - ").append(e).append("\n")
-                );
-            } else {
-                prompt.append("  - None listed\n");
-            }
-
-            prompt.append("- Immediate actions:\n");
-            if (analysis.immediateActions != null && !analysis.immediateActions.isEmpty()) {
-                analysis.immediateActions.forEach(a ->
-                    prompt.append("  - ").append(a).append("\n")
-                );
-            } else {
-                prompt.append("  - None listed\n");
-            }
-
-            prompt.append("- Preventive actions:\n");
-            if (analysis.preventiveActions != null && !analysis.preventiveActions.isEmpty()) {
-                analysis.preventiveActions.forEach(a ->
-                    prompt.append("  - ").append(a).append("\n")
-                );
-            } else {
-                prompt.append("  - None listed\n");
-            }
-
-            prompt.append("\nWrite the explanation as if you are briefing a production manager about what went wrong and what to do next.\n");
-
-            return openAIClient.ask(prompt.toString());
-        } catch (Exception e) {
-            log.error("Error generating AI summary for root cause analysis", e);
-            return "Unable to generate AI root cause summary at the moment. Please refer to the structured root cause analysis data instead.";
+        prompt.append("- Contributing factors: ");
+        if (rootCause.getContributingFactors() == null || rootCause.getContributingFactors().isEmpty()) {
+            prompt.append("None");
+        } else {
+            prompt.append(String.join(" | ", rootCause.getContributingFactors()));
         }
+        prompt.append("\n");
+
+        prompt.append("- Evidence points: ");
+        if (rootCause.getEvidencePoints() == null || rootCause.getEvidencePoints().isEmpty()) {
+            prompt.append("None");
+        } else {
+            prompt.append(String.join(" | ", rootCause.getEvidencePoints()));
+        }
+        prompt.append("\n");
+
+        prompt.append("- Immediate actions: ");
+        if (rootCause.getImmediateActions() == null || rootCause.getImmediateActions().isEmpty()) {
+            prompt.append("None");
+        } else {
+            prompt.append(String.join(" | ", rootCause.getImmediateActions()));
+        }
+        prompt.append("\n");
+
+        prompt.append("- Preventive actions: ");
+        if (rootCause.getPreventiveActions() == null || rootCause.getPreventiveActions().isEmpty()) {
+            prompt.append("None");
+        } else {
+            prompt.append(String.join(" | ", rootCause.getPreventiveActions()));
+        }
+        prompt.append("\n\n");
+
+        prompt.append("TASK: Using the input data above, explain in clear English why this seems to be the main root cause, ");
+        prompt.append("what immediate countermeasures the manager should take, and what long-term prevention actions are recommended. ");
+        prompt.append("Do not repeat the bullet labels. Write it as a short explanation for a non-technical manager.");
+
+        return openAIClient.ask(prompt.toString());
     }
 
     private List<String> detectCriticalLinesFromData(List<DelayResponse> delays, List<OeeLineResponse> oeeData) {
@@ -583,5 +561,13 @@ public class AIProductionAnalysisService {
     /**
      * Internal class to hold root cause analysis results
      */
-   
+    private static class RootCauseResult {
+        String primaryCause;
+        String confidence;
+        List<String> contributingFactors;
+        List<String> evidencePoints;
+        List<String> immediateActions;
+        List<String> preventiveActions;
+    }
+
 }

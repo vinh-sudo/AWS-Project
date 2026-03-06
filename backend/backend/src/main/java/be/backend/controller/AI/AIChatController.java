@@ -18,25 +18,14 @@ public class AIChatController {
 
     private final AIChatService aiChatService;
 
-    /**
-     * 💬 AI Chat Endpoint - Interactive conversation
-     * User can ask questions and get intelligent responses
-     *
-     * Examples:
-     * - "Tình trạng sản xuất hiện tại như thế nào?"
-     * - "Tại sao Line A bị chậm?"
-     * - "Làm thế nào để cải thiện OEE?"
-     */
+
     @PostMapping("/chat")
     @PreAuthorize("hasRole('ADMIN') or hasRole('MANAGER') or hasRole('LEADER')")
     public AIChatResponse chat(@RequestBody AIChatRequest request) {
         return aiChatService.processChat(request);
     }
 
-    /**
-     * 📊 Quick Production Status Query
-     * Pre-built query for quick status check
-     */
+
     @GetMapping("/quick-status")
     @PreAuthorize("hasRole('ADMIN') or hasRole('MANAGER') or hasRole('LEADER')")
     public AIChatResponse getQuickStatus() {
