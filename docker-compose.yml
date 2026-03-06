@@ -1,61 +1,12 @@
-services:
-  postgres:
-    image: postgres:15
-    container_name: postgres-db
-    restart: always
-    environment:
-      POSTGRES_DB: ${POSTGRES_DB}
-      POSTGRES_USER: ${POSTGRES_USER}
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
-    volumes:
-      - pgdata:/var/lib/postgresql/data
+version: "3.9"
 
-  redis:
-    image: redis:7
-    container_name: redis-cache
-    command: redis-server --requirepass ${REDIS_PASSWORD}
+services:
 
   backend:
     build: ./backend/backend
     container_name: spring-backend
-    depends_on:
-      - postgres
-      - redis
+    restart: always
     ports:
       - "8080:8080"
-    environment:
-      # DB
-      SPRING_DATASOURCE_URL: ${SPRING_DATASOURCE_URL}
-      SPRING_DATASOURCE_USERNAME: ${SPRING_DATASOURCE_USERNAME}
-      SPRING_DATASOURCE_PASSWORD: ${SPRING_DATASOURCE_PASSWORD}
-
-      # Flyway
-      SPRING_FLYWAY_URL: ${FLYWAY_URL}
-      SPRING_FLYWAY_USER: ${FLYWAY_USER}
-      SPRING_FLYWAY_PASSWORD: ${FLYWAY_PASSWORD}
-
-      # Redis
-      SPRING_REDIS_HOST: ${REDIS_HOST}
-      SPRING_REDIS_PORT: ${REDIS_PORT}
-      SPRING_REDIS_PASSWORD: ${REDIS_PASSWORD}
-
-      # AWS
-      # S3
-      AWS_S3_ACCESS_KEY: ${AWS_S3_ACCESS_KEY}
-      AWS_S3_SECRET_KEY: ${AWS_S3_SECRET_KEY}
-      AWS_S3_REGION: ${AWS_S3_REGION}
-      AWS_S3_BUCKET: ${AWS_S3_BUCKET}
-
-      # SES
-      AWS_SES_ACCESS_KEY: ${AWS_SES_ACCESS_KEY}
-      AWS_SES_SECRET_KEY: ${AWS_SES_SECRET_KEY}
-      AWS_SES_REGION: ${AWS_SES_REGION}
-      SES_FROM_EMAIL: ${SES_FROM_EMAIL}
-
-  frontend:
-    build: ./frontend
-    ports:
-      - "3000:80"
-
-volumes:
-  pgdata:
+    env_file:
+      - .env
