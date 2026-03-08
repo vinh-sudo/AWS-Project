@@ -3,18 +3,73 @@
 // Schedule list loaded from backend LeaderController: GET /api/leader/schedules
 // ============================================================================
 import React, { useState, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
-import { useDispatch } from "react-redux";
-import { logout } from "../../redux";
 import NotificationBell from "../../components/NotificationBell/NotificationBell";
+import LeaderSidebar from "../../components/LeaderSidebar/LeaderSidebar";
 import authService from "../../services/authService";
 import leaderService from "../../services/leaderService";
-import imsLogo from "../../assets/ims2.jpg";
 import "./LeaderTaskAssignment.css";
 
-const LeaderInternalNotes = () => {
-  const navigate = useNavigate();
+/* ===== SVG Icon helpers ===== */
+const IC = {
+  fileText: (
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z" />
+      <polyline points="14 2 14 8 20 8" /><line x1="16" y1="13" x2="8" y2="13" /><line x1="16" y1="17" x2="8" y2="17" />
+    </svg>
+  ),
+  plus: (
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M12 5v14M5 12h14" />
+    </svg>
+  ),
+  edit: (
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7" />
+      <path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z" />
+    </svg>
+  ),
+  trash: (
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <polyline points="3 6 5 6 21 6" /><path d="M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2" />
+    </svg>
+  ),
+  close: (
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" />
+    </svg>
+  ),
+  package: (
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <line x1="16.5" y1="9.4" x2="7.5" y2="4.21" />
+      <path d="M21 16V8a2 2 0 00-1-1.73l-7-4a2 2 0 00-2 0l-7 4A2 2 0 002 8v8a2 2 0 001 1.73l7 4a2 2 0 002 0l7-4A2 2 0 0021 16z" />
+      <polyline points="3.27 6.96 12 12.01 20.73 6.96" /><line x1="12" y1="22.08" x2="12" y2="12" />
+    </svg>
+  ),
+  clock: (
+    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <circle cx="12" cy="12" r="10" /><polyline points="12 6 12 12 16 14" />
+    </svg>
+  ),
+  lightbulb: (
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M9 18h6M10 22h4M12 2a7 7 0 00-4 12.7V17h8v-2.3A7 7 0 0012 2z" />
+    </svg>
+  ),
+  alertTriangle: (
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z" />
+      <line x1="12" y1="9" x2="12" y2="13" /><line x1="12" y1="17" x2="12.01" y2="17" />
+    </svg>
+  ),
+  inbox: (
+    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+      <polyline points="22 12 16 12 14 15 10 15 8 12 2 12" />
+      <path d="M5.45 5.11L2 12v6a2 2 0 002 2h16a2 2 0 002-2v-6l-3.45-6.89A2 2 0 0016.76 4H7.24a2 2 0 00-1.79 1.11z" />
+    </svg>
+  ),
+};
 
+const LeaderInternalNotes = () => {
   // Current leader info from auth
   const currentUser = authService.getCurrentUser();
   const currentLeaderName = currentUser?.fullName || "Leader";
@@ -94,13 +149,6 @@ const LeaderInternalNotes = () => {
     setNotes(updatedNotes);
   };
 
-  const dispatch = useDispatch();
-
-  const handleLogout = async () => {
-    await dispatch(logout());
-    navigate("/login");
-  };
-
   const openCreateModal = () => {
     setEditingNote(null);
     setNewNote({
@@ -142,20 +190,14 @@ const LeaderInternalNotes = () => {
     const now = new Date().toISOString().replace("T", " ").slice(0, 16);
 
     if (editingNote) {
-      // Update existing note
       const updatedNotes = notes.map((n) =>
         n.id === editingNote.id
-          ? {
-              ...n,
-              ...newNote,
-              updatedAt: now,
-            }
+          ? { ...n, ...newNote, updatedAt: now }
           : n,
       );
       saveNotes(updatedNotes);
       alert("✅ Đã cập nhật ghi chú!");
     } else {
-      // Create new note
       const note = {
         id: `NOTE-${Date.now()}`,
         ...newNote,
@@ -168,12 +210,7 @@ const LeaderInternalNotes = () => {
 
     setShowCreateModal(false);
     setEditingNote(null);
-    setNewNote({
-      scheduleId: "",
-      scheduleInfo: "",
-      title: "",
-      content: "",
-    });
+    setNewNote({ scheduleId: "", scheduleInfo: "", title: "", content: "" });
   };
 
   const handleDeleteNote = (noteId) => {
@@ -184,65 +221,41 @@ const LeaderInternalNotes = () => {
     }
   };
 
+  // ─── RENDER ─────────────────────────────────────────────────────────
   return (
-    <div className="leader-assignment-container">
-      {/* Sidebar */}
-      <aside className="leader-sidebar">
-        <div className="sidebar-header">
-          <img src={imsLogo} alt="IMS Logo" className="sidebar-logo" />
-          <span className="sidebar-title">IMS Leader</span>
-        </div>
+    <div className="ln-layout">
+      <LeaderSidebar />
 
-        <nav className="sidebar-nav">
-          <div
-            className="nav-item"
-            onClick={() => navigate("/leader/progress")}
-          >
-            <span className="nav-icon">📊</span>
-            <span>Progress Update</span>
+      <main className="ln-content">
+        {/* ── Header ────────────────────────────────── */}
+        <header className="ln-header">
+          <div className="ln-header-left">
+            <h1 className="ln-header-title">
+              {IC.fileText}
+              Ghi chú nội bộ
+            </h1>
+            <p className="ln-header-subtitle">
+              Quản lý ghi chú phân công và lưu ý kỹ thuật cho đội sản xuất
+            </p>
           </div>
-          <div className="nav-item active">
-            <span className="nav-icon">📋</span>
-            <span>Internal Notes</span>
-          </div>
-        </nav>
-
-        <div className="sidebar-footer">
-          <div className="nav-item logout" onClick={handleLogout}>
-            <span className="nav-icon">🚪</span>
-            <span>Logout</span>
-          </div>
-        </div>
-      </aside>
-
-      {/* Main Content */}
-      <main className="leader-main">
-        {/* Header */}
-        <header className="leader-header">
-          <div className="header-left">
-            <h1>📋 Ghi chú nội bộ</h1>
-            <p>Quản lý ghi chú phân công và lưu ý kỹ thuật cho đội sản xuất</p>
-          </div>
-          <div className="header-right">
-            <button className="btn-create" onClick={openCreateModal}>
-              + Tạo ghi chú mới
+          <div className="ln-header-right">
+            <button className="ln-btn-create" onClick={openCreateModal}>
+              {IC.plus}
+              Tạo ghi chú mới
             </button>
             <NotificationBell />
-            <div className="user-info">
-              <span className="user-name">{currentLeaderName}</span>
-              <span className="user-role">Leader - {currentTeam}</span>
+            <div className="ln-user-info">
+              <span className="ln-user-name">{currentLeaderName}</span>
+              <span className="ln-user-role">Leader · {currentTeam}</span>
             </div>
           </div>
         </header>
 
-        {/* Not assigned warning */}
+        {/* ── Not assigned warning ──────────────────── */}
         {scheduleError === "NOT_ASSIGNED" && (
-          <div
-            className="info-box"
-            style={{ borderLeftColor: "#f59e0b", background: "#fffbeb" }}
-          >
-            <span className="info-icon">⚠️</span>
-            <div className="info-content">
+          <div className="ln-info-box warning">
+            <div className="ln-info-icon">{IC.alertTriangle}</div>
+            <div className="ln-info-content">
               <strong>Chưa được phân công dây chuyền</strong>
               <p>
                 Tài khoản của bạn chưa được gán vào dây chuyền sản xuất nào.
@@ -253,10 +266,10 @@ const LeaderInternalNotes = () => {
           </div>
         )}
 
-        {/* Info Box */}
-        <div className="info-box">
-          <span className="info-icon">💡</span>
-          <div className="info-content">
+        {/* ── Info Box ──────────────────────────────── */}
+        <div className="ln-info-box">
+          <div className="ln-info-icon">{IC.lightbulb}</div>
+          <div className="ln-info-content">
             <strong>Ghi chú nội bộ</strong>
             <p>
               Sử dụng trang này để ghi chú phân công công việc nội bộ, lưu ý kỹ
@@ -267,77 +280,82 @@ const LeaderInternalNotes = () => {
           </div>
         </div>
 
-        {/* Stats */}
-        <div className="stats-row">
-          <div className="stat-card">
-            <span className="stat-number">{notes.length}</span>
-            <span className="stat-label">Tổng ghi chú</span>
+        {/* ── Summary Strip ─────────────────────────── */}
+        <div className="ln-summary-strip">
+          <div className="ln-summary-card accent-cyan">
+            <span className="ln-summary-value">{notes.length}</span>
+            <span className="ln-summary-label">Tổng ghi chú</span>
           </div>
-          <div className="stat-card">
-            <span className="stat-number">
+          <div className="ln-summary-card accent-blue">
+            <span className="ln-summary-value">
               {notes.filter((n) => n.scheduleId).length}
             </span>
-            <span className="stat-label">Gắn với lịch sản xuất</span>
+            <span className="ln-summary-label">Gắn với lịch sản xuất</span>
           </div>
-          <div className="stat-card">
-            <span className="stat-number">
+          <div className="ln-summary-card accent-emerald">
+            <span className="ln-summary-value">
               {new Set(notes.map((n) => n.scheduleId).filter(Boolean)).size}
             </span>
-            <span className="stat-label">Lịch sản xuất liên quan</span>
+            <span className="ln-summary-label">Lịch sản xuất liên quan</span>
           </div>
         </div>
 
-        {/* Notes List */}
-        <div className="notes-list">
+        {/* ── Notes List ────────────────────────────── */}
+        <div className="ln-notes-list">
           {notes.length === 0 ? (
-            <div className="empty-state">
-              <span>📝</span>
-              <p>Chưa có ghi chú nào</p>
-              <button className="btn-create-empty" onClick={openCreateModal}>
+            <div className="ln-empty-state">
+              <div className="ln-empty-icon">{IC.inbox}</div>
+              <p className="ln-empty-title">Chưa có ghi chú nào</p>
+              <p className="ln-empty-text">Tạo ghi chú đầu tiên để bắt đầu.</p>
+              <button className="ln-empty-btn" onClick={openCreateModal}>
                 Tạo ghi chú đầu tiên
               </button>
             </div>
           ) : (
             notes.map((note) => (
-              <div key={note.id} className="note-card">
-                <div className="note-header">
-                  <h3 className="note-title">{note.title}</h3>
-                  <div className="note-actions">
+              <div key={note.id} className="ln-note-card">
+                {/* Header */}
+                <div className="ln-note-header">
+                  <h3 className="ln-note-title">{note.title}</h3>
+                  <div className="ln-note-actions">
                     <button
-                      className="btn-edit"
+                      className="ln-note-action-btn"
                       onClick={() => openEditModal(note)}
                       title="Chỉnh sửa"
                     >
-                      ✏️
+                      {IC.edit}
                     </button>
                     <button
-                      className="btn-delete"
+                      className="ln-note-action-btn delete"
                       onClick={() => handleDeleteNote(note.id)}
                       title="Xóa"
                     >
-                      🗑️
+                      {IC.trash}
                     </button>
                   </div>
                 </div>
 
+                {/* Schedule tag */}
                 {note.scheduleInfo && (
-                  <div className="note-schedule">
-                    <span className="schedule-icon">📦</span>
+                  <div className="ln-note-schedule">
+                    {IC.package}
                     <span>{note.scheduleInfo}</span>
                   </div>
                 )}
 
-                <div className="note-content">
+                {/* Content */}
+                <div className="ln-note-content">
                   {note.content.split("\n").map((line, index) => (
                     <p key={index}>{line}</p>
                   ))}
                 </div>
 
-                <div className="note-footer">
-                  <span className="note-time">
-                    📅 Tạo: {note.createdAt}
+                {/* Footer */}
+                <div className="ln-note-footer">
+                  <span className="ln-note-time">
+                    {IC.clock} Tạo: {note.createdAt}
                     {note.updatedAt !== note.createdAt && (
-                      <> | Cập nhật: {note.updatedAt}</>
+                      <> &nbsp;|&nbsp; Cập nhật: {note.updatedAt}</>
                     )}
                   </span>
                 </div>
@@ -347,80 +365,69 @@ const LeaderInternalNotes = () => {
         </div>
       </main>
 
-      {/* Create/Edit Note Modal */}
+      {/* ══════════════════════════════════════════════
+          CREATE / EDIT NOTE MODAL
+         ══════════════════════════════════════════════ */}
       {showCreateModal && (
-        <div
-          className="modal-overlay"
-          onClick={() => setShowCreateModal(false)}
-        >
-          <div className="modal-content" onClick={(e) => e.stopPropagation()}>
-            <div className="modal-header">
+        <div className="ln-modal-overlay" onClick={() => setShowCreateModal(false)}>
+          <div className="ln-modal" onClick={(e) => e.stopPropagation()}>
+            <div className="ln-modal-header">
               <h2>
-                {editingNote ? "✏️ Chỉnh sửa ghi chú" : "📝 Tạo ghi chú mới"}
+                {editingNote ? IC.edit : IC.fileText}
+                {editingNote ? " Chỉnh sửa ghi chú" : " Tạo ghi chú mới"}
               </h2>
-              <button
-                className="modal-close"
-                onClick={() => setShowCreateModal(false)}
-              >
-                ×
+              <button className="ln-modal-close" onClick={() => setShowCreateModal(false)}>
+                {IC.close}
               </button>
             </div>
-            <div className="modal-body">
-              <div className="form-group">
+            <div className="ln-modal-body">
+              <div className="ln-form-group">
                 <label>Liên kết với lịch sản xuất (tùy chọn)</label>
                 <select
                   value={newNote.scheduleId}
                   onChange={handleScheduleChange}
-                  className="form-select"
+                  className="ln-form-select"
                 >
                   <option value="">-- Không liên kết --</option>
                   {schedules.map((schedule) => (
-                    <option
-                      key={schedule.scheduleId}
-                      value={schedule.scheduleId}
-                    >
+                    <option key={schedule.scheduleId} value={schedule.scheduleId}>
                       SCH-{schedule.scheduleId} - {schedule.orderInfo || "N/A"}
                     </option>
                   ))}
                 </select>
               </div>
 
-              <div className="form-group">
+              <div className="ln-form-group">
                 <label>Tiêu đề *</label>
                 <input
                   type="text"
                   value={newNote.title}
-                  onChange={(e) =>
-                    setNewNote({ ...newNote, title: e.target.value })
-                  }
+                  onChange={(e) => setNewNote({ ...newNote, title: e.target.value })}
                   placeholder="Ví dụ: Phân công ca sáng, Lưu ý kỹ thuật..."
-                  className="form-input"
+                  className="ln-form-input"
                 />
               </div>
 
-              <div className="form-group">
+              <div className="ln-form-group">
                 <label>Nội dung *</label>
                 <textarea
                   value={newNote.content}
-                  onChange={(e) =>
-                    setNewNote({ ...newNote, content: e.target.value })
-                  }
+                  onChange={(e) => setNewNote({ ...newNote, content: e.target.value })}
                   placeholder="Nhập nội dung ghi chú..."
-                  className="form-textarea"
+                  className="ln-form-textarea"
                   rows={8}
                 />
               </div>
 
-              <div className="quick-templates">
+              <div className="ln-quick-templates">
                 <label>Mẫu nhanh:</label>
-                <div className="template-buttons">
+                <div className="ln-template-buttons">
                   <button
                     onClick={() =>
                       setNewNote({
                         ...newNote,
                         title: "Phân công ca sáng",
-                        content:
-                          "- Người 1: Nhiệm vụ A\n- Người 2: Nhiệm vụ B\n- Người 3: Nhiệm vụ C",
+                        content: "- Người 1: Nhiệm vụ A\n- Người 2: Nhiệm vụ B\n- Người 3: Nhiệm vụ C",
                       })
                     }
                   >
@@ -442,8 +449,7 @@ const LeaderInternalNotes = () => {
                       setNewNote({
                         ...newNote,
                         title: "Checklist cuối ca",
-                        content:
-                          "1. Kiểm tra số lượng\n2. Vệ sinh máy\n3. Ghi log\n4. Bàn giao ca",
+                        content: "1. Kiểm tra số lượng\n2. Vệ sinh máy\n3. Ghi log\n4. Bàn giao ca",
                       })
                     }
                   >
@@ -452,14 +458,11 @@ const LeaderInternalNotes = () => {
                 </div>
               </div>
             </div>
-            <div className="modal-actions">
-              <button
-                className="btn-cancel"
-                onClick={() => setShowCreateModal(false)}
-              >
+            <div className="ln-modal-footer">
+              <button className="ln-btn-cancel" onClick={() => setShowCreateModal(false)}>
                 Hủy
               </button>
-              <button className="btn-save" onClick={handleSaveNote}>
+              <button className="ln-btn-confirm" onClick={handleSaveNote}>
                 {editingNote ? "Cập nhật" : "Tạo ghi chú"}
               </button>
             </div>
