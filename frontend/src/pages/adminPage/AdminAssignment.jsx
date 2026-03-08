@@ -5,6 +5,7 @@ import AdminSidebar from "../../components/AdminSidebar/AdminSidebar";
 import authService from "../../services/authService";
 import adminService from "../../services/adminService";
 import "./AdminAssignment.css";
+import "./AdminDashboard.css";
 
 const AdminAssignment = () => {
   const navigate = useNavigate();
@@ -80,17 +81,18 @@ const AdminAssignment = () => {
       <AdminSidebar />
 
       <div className="admin-main">
-        <header className="admin-header">
-          <h1 className="header-title">Leader Assignment</h1>
-          <div className="header-actions">
-            <NotificationBell />
-            <div className="user-menu">
-              <div className="user-avatar"></div>
-              <span className="user-name">
-                {currentUser?.fullName || "Admin"}
-              </span>
-              <span className="dropdown-icon">▼</span>
+        <header className="dash-header">
+          <div className="dash-header-left">
+            <div className="dash-header-avatar">
+              {(currentUser?.fullName || "A").charAt(0).toUpperCase()}
             </div>
+            <div>
+              <h1 className="dash-title">Leader Assignment</h1>
+              <p className="dash-subtitle">Assign line leaders to production lines</p>
+            </div>
+          </div>
+          <div className="dash-header-right">
+            <NotificationBell />
           </div>
         </header>
 

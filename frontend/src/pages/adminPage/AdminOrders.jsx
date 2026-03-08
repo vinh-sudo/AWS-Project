@@ -1,17 +1,83 @@
-import React, { useState, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
-import { useDispatch } from "react-redux";
-import { logout } from "../../redux";
+import React, { useState, useEffect, useCallback, useMemo, useRef } from "react";
 import NotificationBell from "../../components/NotificationBell/NotificationBell";
 import AdminSidebar from "../../components/AdminSidebar/AdminSidebar";
 import authService from "../../services/authService";
 import adminService from "../../services/adminService";
 import "./AdminOrders.css";
+import "./AdminDashboard.css";
 
+/* ===== SVG Icon Components ===== */
+const I = {
+  search: <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>,
+  plus: <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 5v14M5 12h14"/></svg>,
+  refresh: <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0114.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0020.49 15"/></svg>,
+  eye: <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>,
+  edit: <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>,
+  check: <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"/></svg>,
+  play: <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor"><polygon points="5 3 19 12 5 21 5 3"/></svg>,
+  checkCircle: <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M22 11.08V12a10 10 0 11-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>,
+  stop: <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor"><rect x="4" y="4" width="16" height="16" rx="2"/></svg>,
+  rotateCw: <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 11-2.12-9.36L23 10"/></svg>,
+  xCircle: <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg>,
+  trash: <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2"/></svg>,
+  close: <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>,
+  upload: <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>,
+  file: <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>,
+  minus: <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><line x1="5" y1="12" x2="19" y2="12"/></svg>,
+  package: <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="16.5" y1="9.4" x2="7.5" y2="4.21"/><path d="M21 16V8a2 2 0 00-1-1.73l-7-4a2 2 0 00-2 0l-7 4A2 2 0 002 8v8a2 2 0 001 1.73l7 4a2 2 0 002 0l7-4A2 2 0 0021 16z"/><polyline points="3.27 6.96 12 12.01 20.73 6.96"/><line x1="12" y1="22.08" x2="12" y2="12"/></svg>,
+  layers: <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polygon points="12 2 2 7 12 12 22 7 12 2"/><polyline points="2 17 12 22 22 17"/><polyline points="2 12 12 17 22 12"/></svg>,
+  zap: <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>,
+  alertTriangle: <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>,
+  checkSmall: <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"/></svg>,
+};
+
+/* ===== Helpers ===== */
+const getStatusKey = (status) => {
+  switch (status) {
+    case "Draft": return "draft";
+    case "Confirmed": return "confirmed";
+    case "In Production": return "production";
+    case "Completed": return "completed";
+    case "Cancelled": return "cancelled";
+    case "STOPPED": return "stopped";
+    default: return "draft";
+  }
+};
+
+const getStatusDisplay = (status) => (status === "STOPPED" ? "Stopped" : status || "Unknown");
+
+const getPriorityKey = (priority) => {
+  switch (priority?.toUpperCase()) {
+    case "URGENT": case "CRITICAL": return "critical";
+    case "HIGH": return "high";
+    case "MEDIUM": return "medium";
+    case "LOW": return "low";
+    default: return "medium";
+  }
+};
+
+const formatDate = (d) => (d ? new Date(d).toLocaleDateString("vi-VN") : "—");
+const formatCurrency = (v) =>
+  v != null ? new Intl.NumberFormat("vi-VN", { style: "currency", currency: "VND" }).format(v) : "—";
+
+/* Timeline step order for progress stepper */
+const TIMELINE_STEPS = ["Draft", "Confirmed", "In Production", "Completed"];
+
+const getTimelineState = (orderStatus, stepLabel) => {
+  const statusIdx = TIMELINE_STEPS.indexOf(orderStatus === "STOPPED" ? "In Production" : orderStatus);
+  const stepIdx = TIMELINE_STEPS.indexOf(stepLabel);
+  if (stepIdx < 0 || statusIdx < 0) return "";
+  if (stepIdx < statusIdx) return "done";
+  if (stepIdx === statusIdx) return "current";
+  return "";
+};
+
+/* ===== Component ===== */
 const AdminOrders = () => {
-  const navigate = useNavigate();
   const currentUser = authService.getCurrentUser();
+  const searchRef = useRef(null);
 
+  /* --- state --- */
   const [orders, setOrders] = useState([]);
   const [loading, setLoading] = useState(true);
   const [initialLoad, setInitialLoad] = useState(true);
@@ -21,21 +87,14 @@ const AdminOrders = () => {
   const [showEditModal, setShowEditModal] = useState(false);
   const [showDetailModal, setShowDetailModal] = useState(false);
   const [showConfirmModal, setShowConfirmModal] = useState(false);
-  const [confirmAction, setConfirmAction] = useState({
-    type: "",
-    orderId: null,
-  });
+  const [confirmAction, setConfirmAction] = useState({ type: "", orderId: null });
+
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState("All");
   const [actionLoading, setActionLoading] = useState(false);
 
   const [formData, setFormData] = useState({
-    customerName: "",
-    productType: "",
-    quantity: "",
-    deadline: "",
-    priority: "Medium",
-    items: [],
+    customerName: "", productType: "", quantity: "", deadline: "", priority: "Medium", items: [],
   });
 
   const [editingOrder, setEditingOrder] = useState(null);
@@ -45,11 +104,8 @@ const AdminOrders = () => {
   const [uploadLoading, setUploadLoading] = useState(false);
   const [pendingFiles, setPendingFiles] = useState([]);
 
-  useEffect(() => {
-    fetchOrders();
-  }, []);
-
-  const fetchOrders = async () => {
+  /* --- data --- */
+  const fetchOrders = useCallback(async () => {
     try {
       setLoading(true);
       setError(null);
@@ -57,164 +113,125 @@ const AdminOrders = () => {
       setOrders(Array.isArray(data) ? data : []);
     } catch (err) {
       console.error("Error fetching orders:", err);
-      setError(
-        err.response?.data?.message ||
-          err.response?.data ||
-          "Failed to load orders",
-      );
+      setError(err.response?.data?.message || err.response?.data || "Failed to load orders");
     } finally {
       setLoading(false);
       setInitialLoad(false);
     }
-  };
+  }, []);
 
-  const dispatch = useDispatch();
-  const handleLogout = async () => {
-    await dispatch(logout());
-    navigate("/login");
-  };
+  useEffect(() => { fetchOrders(); }, [fetchOrders]);
 
+  /* --- keyboard shortcuts --- */
+  useEffect(() => {
+    const handleKeyDown = (e) => {
+      // Don't trigger inside inputs/textareas
+      const tag = e.target.tagName;
+      const isInput = tag === "INPUT" || tag === "TEXTAREA" || tag === "SELECT";
+
+      if (e.key === "/" && !isInput) {
+        e.preventDefault();
+        searchRef.current?.focus();
+      }
+      if (e.key === "n" && !isInput && !e.metaKey && !e.ctrlKey) {
+        e.preventDefault();
+        setShowCreateModal(true);
+      }
+      if (e.key === "Escape") {
+        if (showDetailModal) setShowDetailModal(false);
+        else if (showCreateModal) { setShowCreateModal(false); resetForm(); }
+        else if (showEditModal) { setShowEditModal(false); resetForm(); }
+        else if (showConfirmModal) setShowConfirmModal(false);
+      }
+    };
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [showDetailModal, showCreateModal, showEditModal, showConfirmModal]);
+
+  /* --- computed --- */
+  const filteredOrders = useMemo(() =>
+    orders.filter((o) => {
+      const s = searchTerm.toLowerCase();
+      const matchSearch = o.customerName?.toLowerCase().includes(s) || o.productType?.toLowerCase().includes(s) || o.id?.toString().includes(searchTerm);
+      const matchStatus = statusFilter === "All" || o.status === statusFilter;
+      return matchSearch && matchStatus;
+    }), [orders, searchTerm, statusFilter]);
+
+  const stats = useMemo(() => ({
+    total: orders.length,
+    draft: orders.filter((o) => o.status === "Draft").length,
+    confirmed: orders.filter((o) => o.status === "Confirmed").length,
+    inProduction: orders.filter((o) => o.status === "In Production").length,
+    stopped: orders.filter((o) => o.status === "STOPPED").length,
+    completed: orders.filter((o) => o.status === "Completed").length,
+    cancelled: orders.filter((o) => o.status === "Cancelled").length,
+  }), [orders]);
+
+  /* --- form helpers --- */
+  const resetForm = () => {
+    setFormData({ customerName: "", productType: "", quantity: "", deadline: "", priority: "Medium", items: [] });
+    setPendingFiles([]);
+  };
+  const addItem = () => setFormData({ ...formData, items: [...formData.items, { productName: "", quantity: "", price: "" }] });
+  const removeItem = (i) => setFormData({ ...formData, items: formData.items.filter((_, idx) => idx !== i) });
+  const updateItem = (i, field, val) => {
+    const items = [...formData.items];
+    items[i] = { ...items[i], [field]: val };
+    setFormData({ ...formData, items });
+  };
+  const setField = (field, val) => setFormData((p) => ({ ...p, [field]: val }));
+
+  const buildOrderPayload = () => ({
+    customerName: formData.customerName,
+    productType: formData.productType,
+    quantity: parseInt(formData.quantity),
+    deadline: formData.deadline ? new Date(formData.deadline).toISOString() : null,
+    priority: formData.priority,
+    items: formData.items.filter((it) => it.productName && it.quantity).map((it) => ({
+      productName: it.productName, quantity: parseInt(it.quantity), price: it.price ? parseFloat(it.price) : null,
+    })),
+  });
+
+  /* --- actions --- */
   const handleCreateOrder = async () => {
     try {
       setActionLoading(true);
-      const orderData = {
-        customerName: formData.customerName,
-        productType: formData.productType,
-        quantity: parseInt(formData.quantity),
-        deadline: formData.deadline
-          ? new Date(formData.deadline).toISOString()
-          : null,
-        priority: formData.priority,
-        items: formData.items
-          .filter((item) => item.productName && item.quantity)
-          .map((item) => ({
-            productName: item.productName,
-            quantity: parseInt(item.quantity),
-            price: item.price ? parseFloat(item.price) : null,
-          })),
-      };
-      const createdOrder = await adminService.createOrder(orderData);
-      const orderId = createdOrder?.id;
-
-      // Upload pending files if any
+      const created = await adminService.createOrder(buildOrderPayload());
+      const orderId = created?.id;
       if (orderId && pendingFiles.length > 0) {
-        let uploadSuccess = 0;
-        for (const file of pendingFiles) {
-          try {
-            await adminService.uploadOrderFile(orderId, file);
-            uploadSuccess++;
-          } catch (uploadErr) {
-            console.error(`Error uploading ${file.name}:`, uploadErr);
-          }
-        }
-        if (uploadSuccess < pendingFiles.length) {
-          alert(
-            `Đơn hàng đã tạo thành công! Upload file: ${uploadSuccess}/${pendingFiles.length} thành công.`,
-          );
-        } else {
-          alert(
-            `Đơn hàng đã được tạo thành công! Đã upload ${uploadSuccess} file.`,
-          );
-        }
-      } else {
-        alert("Đơn hàng đã được tạo thành công!");
-      }
+        let ok = 0;
+        for (const f of pendingFiles) { try { await adminService.uploadOrderFile(orderId, f); ok++; } catch (e) { console.error(e); } }
+        alert(ok < pendingFiles.length ? `Order created! Files uploaded: ${ok}/${pendingFiles.length}` : `Order created with ${ok} files!`);
+      } else { alert("Order created successfully!"); }
       setShowCreateModal(false);
       resetForm();
-      setPendingFiles([]);
       fetchOrders();
     } catch (err) {
       console.error("Error creating order:", err);
-      alert(
-        err.response?.data?.message ||
-          err.response?.data ||
-          "Failed to create order",
-      );
-    } finally {
-      setActionLoading(false);
-    }
+      alert(err.response?.data?.message || err.response?.data || "Failed to create order");
+    } finally { setActionLoading(false); }
   };
 
-  const handleConfirmOrder = async (orderId) => {
-    try {
-      setActionLoading(true);
-      await adminService.confirmOrder(orderId);
-      fetchOrders();
-      alert("Đơn hàng đã được xác nhận!");
-    } catch (err) {
-      console.error("Error confirming order:", err);
-      alert(err.response?.data?.message || "Failed to confirm order");
-    } finally {
-      setActionLoading(false);
-    }
-  };
+  const handleConfirmOrder = async (id) => { try { setActionLoading(true); await adminService.confirmOrder(id); fetchOrders(); } catch (e) { alert(e.response?.data?.message || "Failed"); } finally { setActionLoading(false); } };
+  const handleStartProduction = async (id) => { try { setActionLoading(true); await adminService.startProduction(id); fetchOrders(); } catch (e) { alert(e.response?.data?.message || "Failed"); } finally { setActionLoading(false); } };
+  const handleCompleteOrder = async (id) => { try { setActionLoading(true); await adminService.completeOrder(id); fetchOrders(); } catch (e) { alert(e.response?.data?.message || "Failed"); } finally { setActionLoading(false); } };
 
-  const handleStartProduction = async (orderId) => {
-    try {
-      setActionLoading(true);
-      await adminService.startProduction(orderId);
-      fetchOrders();
-      alert("Đã bắt đầu sản xuất!");
-    } catch (err) {
-      console.error("Error starting production:", err);
-      alert(err.response?.data?.message || "Failed to start production");
-    } finally {
-      setActionLoading(false);
-    }
-  };
-
-  const handleCompleteOrder = async (orderId) => {
-    try {
-      setActionLoading(true);
-      await adminService.completeOrder(orderId);
-      fetchOrders();
-      alert("Đơn hàng đã hoàn thành!");
-    } catch (err) {
-      console.error("Error completing order:", err);
-      alert(err.response?.data?.message || "Failed to complete order");
-    } finally {
-      setActionLoading(false);
-    }
-  };
-
-  const handleCancelOrder = (orderId) => {
-    setConfirmAction({ type: "cancel", orderId });
-    setShowConfirmModal(true);
-  };
-  const handleDeleteOrder = (orderId) => {
-    setConfirmAction({ type: "delete", orderId });
-    setShowConfirmModal(true);
-  };
+  const handleCancelOrder = (id) => { setConfirmAction({ type: "cancel", orderId: id }); setShowConfirmModal(true); };
+  const handleDeleteOrder = (id) => { setConfirmAction({ type: "delete", orderId: id }); setShowConfirmModal(true); };
+  const handleStopOrder = (id) => { setConfirmAction({ type: "stop", orderId: id }); setShowConfirmModal(true); };
+  const handleResumeOrder = (id) => { setConfirmAction({ type: "resume", orderId: id }); setShowConfirmModal(true); };
 
   const executeConfirmAction = async () => {
     const { type, orderId } = confirmAction;
     try {
       setActionLoading(true);
-      if (type === "cancel") {
-        await adminService.cancelOrder(orderId);
-        alert("Đơn hàng đã bị hủy!");
-      } else if (type === "delete") {
-        await adminService.deleteOrder(orderId);
-        alert("Đơn hàng đã bị xóa!");
-      } else if (type === "stop") {
-        const res = await adminService.stopOrder(orderId);
-        alert(
-          `Đã dừng sản xuất đơn hàng #${orderId}. Lịch trình bị hủy: ${res.cancelledSchedules || 0}, đã dừng: ${res.stoppedSchedules || 0}`,
-        );
-      } else if (type === "resume") {
-        const res = await adminService.resumeOrder(orderId);
-        alert(
-          `Đã tiếp tục sản xuất đơn hàng #${orderId}. Lịch trình được khôi phục: ${res.resumedSchedules || 0}`,
-        );
-      }
+      if (type === "cancel") { await adminService.cancelOrder(orderId); }
+      else if (type === "delete") { await adminService.deleteOrder(orderId); }
+      else if (type === "stop") { await adminService.stopOrder(orderId); }
+      else if (type === "resume") { await adminService.resumeOrder(orderId); }
       fetchOrders();
     } catch (err) {
-      console.error(`Error ${type} order:`, err);
-      alert(
-        err.response?.data?.message ||
-          err.response?.data ||
-          `Failed to ${type} order`,
-      );
+      alert(err.response?.data?.message || err.response?.data || `Failed to ${type} order`);
     } finally {
       setActionLoading(false);
       setShowConfirmModal(false);
@@ -223,25 +240,13 @@ const AdminOrders = () => {
   };
 
   const handleEditOrder = (order) => {
-    if (!["Draft", "Confirmed"].includes(order.status)) {
-      alert("Chỉ có thể sửa đơn hàng ở trạng thái Draft hoặc Confirmed.");
-      return;
-    }
+    if (!["Draft", "Confirmed"].includes(order.status)) { alert("Only Draft / Confirmed orders can be edited."); return; }
     setEditingOrder(order);
     setFormData({
-      customerName: order.customerName,
-      productType: order.productType,
-      quantity: order.quantity?.toString() || "",
-      deadline: order.deadline ? order.deadline.split("T")[0] : "",
+      customerName: order.customerName, productType: order.productType,
+      quantity: order.quantity?.toString() || "", deadline: order.deadline ? order.deadline.split("T")[0] : "",
       priority: order.priority || "Medium",
-      items:
-        order.items && order.items.length > 0
-          ? order.items.map((item) => ({
-              productName: item.productName || "",
-              quantity: item.quantity?.toString() || "",
-              price: item.price?.toString() || "",
-            }))
-          : [],
+      items: (order.items || []).map((it) => ({ productName: it.productName || "", quantity: it.quantity?.toString() || "", price: it.price?.toString() || "" })),
     });
     setShowEditModal(true);
   };
@@ -249,59 +254,18 @@ const AdminOrders = () => {
   const handleSaveEdit = async () => {
     try {
       setActionLoading(true);
-      const orderData = {
-        customerName: formData.customerName,
-        productType: formData.productType,
-        quantity: parseInt(formData.quantity),
-        deadline: formData.deadline
-          ? new Date(formData.deadline).toISOString()
-          : null,
-        priority: formData.priority,
-        items: formData.items
-          .filter((item) => item.productName && item.quantity)
-          .map((item) => ({
-            productName: item.productName,
-            quantity: parseInt(item.quantity),
-            price: item.price ? parseFloat(item.price) : null,
-          })),
-      };
-      await adminService.updateOrder(editingOrder.id, orderData);
-      setShowEditModal(false);
-      setEditingOrder(null);
-      resetForm();
-      fetchOrders();
-      alert("Đơn hàng đã được cập nhật!");
+      await adminService.updateOrder(editingOrder.id, buildOrderPayload());
+      setShowEditModal(false); setEditingOrder(null); resetForm(); fetchOrders();
     } catch (err) {
-      console.error("Error updating order:", err);
-      alert(
-        err.response?.data?.message ||
-          err.response?.data ||
-          "Failed to update order",
-      );
-    } finally {
-      setActionLoading(false);
-    }
+      alert(err.response?.data?.message || err.response?.data || "Failed to update order");
+    } finally { setActionLoading(false); }
   };
 
-  const handleStopOrder = (orderId) => {
-    setConfirmAction({ type: "stop", orderId });
-    setShowConfirmModal(true);
-  };
-  const handleResumeOrder = (orderId) => {
-    setConfirmAction({ type: "resume", orderId });
-    setShowConfirmModal(true);
-  };
-
-  const handleViewDetail = async (orderId) => {
+  const handleViewDetail = async (id) => {
     try {
-      const detail = await adminService.getOrderById(orderId);
-      setDetailOrder(detail);
-      setUploadedFiles([]);
-      setShowDetailModal(true);
-    } catch (err) {
-      console.error("Error fetching order detail:", err);
-      alert(err.response?.data?.message || "Failed to load order details");
-    }
+      const detail = await adminService.getOrderById(id);
+      setDetailOrder(detail); setUploadedFiles([]); setShowDetailModal(true);
+    } catch (err) { alert(err.response?.data?.message || "Failed to load order details"); }
   };
 
   const handleFileUpload = async (e) => {
@@ -309,604 +273,323 @@ const AdminOrders = () => {
     if (!files.length || !detailOrder) return;
     setUploadLoading(true);
     const results = [];
-    for (const file of files) {
-      try {
-        const res = await adminService.uploadOrderFile(detailOrder.id, file);
-        results.push(res);
-      } catch (err) {
-        console.error(`Error uploading ${file.name}:`, err);
-        alert(
-          `Upload thất bại: ${file.name}. ${err.response?.data?.message || "Lỗi không xác định"}`,
-        );
-      }
-    }
-    if (results.length > 0) {
-      setUploadedFiles((prev) => [...prev, ...results]);
-      alert(`Đã upload thành công ${results.length} file!`);
-    }
+    for (const f of files) { try { results.push(await adminService.uploadOrderFile(detailOrder.id, f)); } catch (err) { console.error(err); } }
+    if (results.length > 0) { setUploadedFiles((p) => [...p, ...results]); }
     setUploadLoading(false);
     e.target.value = null;
   };
 
-  const addItem = () => {
-    setFormData({
-      ...formData,
-      items: [...formData.items, { productName: "", quantity: "", price: "" }],
-    });
-  };
-  const removeItem = (index) => {
-    setFormData({
-      ...formData,
-      items: formData.items.filter((_, i) => i !== index),
-    });
-  };
-  const updateItem = (index, field, value) => {
-    const newItems = [...formData.items];
-    newItems[index] = { ...newItems[index], [field]: value };
-    setFormData({ ...formData, items: newItems });
-  };
-  const resetForm = () => {
-    setFormData({
-      customerName: "",
-      productType: "",
-      quantity: "",
-      deadline: "",
-      priority: "Medium",
-      items: [],
-    });
-    setPendingFiles([]);
-  };
-
-  const getStatusKey = (status) => {
-    switch (status) {
-      case "Draft":
-        return "status-draft";
-      case "Confirmed":
-        return "status-confirmed";
-      case "In Production":
-        return "status-production";
-      case "Completed":
-        return "status-completed";
-      case "Cancelled":
-        return "status-cancelled";
-      case "STOPPED":
-        return "status-hold";
-      default:
-        return "";
-    }
-  };
-
-  const getStatusDisplay = (status) => {
-    if (status === "STOPPED") return "Stopped";
-    return status || "Unknown";
-  };
-
-  const getPriorityKey = (priority) => {
-    switch (priority?.toUpperCase()) {
-      case "URGENT":
-      case "CRITICAL":
-        return "priority-critical";
-      case "HIGH":
-        return "priority-high";
-      case "MEDIUM":
-        return "priority-medium";
-      case "LOW":
-        return "priority-low";
-      default:
-        return "";
-    }
-  };
-
-  const formatDate = (dateString) => {
-    if (!dateString) return "-";
-    return new Date(dateString).toLocaleDateString("vi-VN");
-  };
-  const formatCurrency = (value) => {
-    if (value == null) return "-";
-    return new Intl.NumberFormat("vi-VN", {
-      style: "currency",
-      currency: "VND",
-    }).format(value);
-  };
-
-  const getUserInitial = () => {
-    const name = currentUser?.fullName || "A";
-    return name.charAt(0).toUpperCase();
-  };
-
-  const filteredOrders = orders.filter((order) => {
-    const matchSearch =
-      order.customerName?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      order.productType?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      order.id?.toString().includes(searchTerm);
-    const matchStatus = statusFilter === "All" || order.status === statusFilter;
-    return matchSearch && matchStatus;
-  });
-
-  const stats = {
-    total: orders.length,
-    draft: orders.filter((o) => o.status === "Draft").length,
-    confirmed: orders.filter((o) => o.status === "Confirmed").length,
-    inProduction: orders.filter((o) => o.status === "In Production").length,
-    stopped: orders.filter((o) => o.status === "STOPPED").length,
-    completed: orders.filter((o) => o.status === "Completed").length,
-    cancelled: orders.filter((o) => o.status === "Cancelled").length,
-  };
-
-  const getConfirmConfig = () => {
+  /* --- confirm config --- */
+  const confirmConfig = useMemo(() => {
     switch (confirmAction.type) {
-      case "cancel": return { icon: "⚠️", iconClass: "warning", title: "Cancel Order", btnClass: "ao-btn-warning", btnText: "Yes, Cancel" };
-      case "delete": return { icon: "🗑", iconClass: "danger", title: "Delete Order", btnClass: "ao-btn-danger", btnText: "Yes, Delete" };
-      case "stop": return { icon: "⏸", iconClass: "warning", title: "Stop Production", btnClass: "ao-btn-warning", btnText: "Yes, Stop" };
-      case "resume": return { icon: "▶", iconClass: "info", title: "Resume Production", btnClass: "ao-btn-save", btnText: "Yes, Resume" };
-      default: return { icon: "?", iconClass: "info", title: "Confirm", btnClass: "ao-btn-save", btnText: "Confirm" };
+      case "cancel": return { icon: "⚠️", cls: "warning", title: "Cancel Order", btnCls: "ao-btn-warning", btnText: "Yes, Cancel" };
+      case "delete": return { icon: "🗑️", cls: "danger", title: "Delete Order", btnCls: "ao-btn-danger", btnText: "Yes, Delete" };
+      case "stop": return { icon: "⏸️", cls: "warning", title: "Stop Production", btnCls: "ao-btn-warning", btnText: "Yes, Stop" };
+      case "resume": return { icon: "▶️", cls: "info", title: "Resume Production", btnCls: "ao-btn-save", btnText: "Yes, Resume" };
+      default: return { icon: "❓", cls: "info", title: "Confirm", btnCls: "ao-btn-save", btnText: "Confirm" };
     }
-  };
+  }, [confirmAction.type]);
 
-  const getConfirmMessage = () => {
+  const confirmMessage = useMemo(() => {
     const id = confirmAction.orderId;
     switch (confirmAction.type) {
-      case "cancel": return (<>Are you sure you want to cancel order <strong>#{id}</strong>? This action cannot be undone.</>);
-      case "delete": return (<>Are you sure you want to permanently delete order <strong>#{id}</strong>?</>);
-      case "stop": return (<>Are you sure you want to stop production for order <strong>#{id}</strong>? Related schedules will be stopped.</>);
-      case "resume": return (<>Are you sure you want to resume production for order <strong>#{id}</strong>? Stopped schedules will be resumed.</>);
+      case "cancel": return (<>Are you sure you want to cancel order <strong>#{id}</strong>? This cannot be undone.</>);
+      case "delete": return (<>Permanently delete order <strong>#{id}</strong>? This cannot be undone.</>);
+      case "stop": return (<>Stop production for order <strong>#{id}</strong>? Related schedules will be stopped.</>);
+      case "resume": return (<>Resume production for order <strong>#{id}</strong>? Stopped schedules will restart.</>);
       default: return "Are you sure?";
     }
-  };
+  }, [confirmAction]);
 
-  /* === SVG Icons === */
-  const Icons = {
-    search: <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>,
-    plus: <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 5v14M5 12h14"/></svg>,
-    refresh: <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21.5 2v6h-6M2.5 22v-6h6M2 11.5a10 10 0 0118.8-4.3M22 12.5a10 10 0 01-18.8 4.3"/></svg>,
-    eye: <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>,
-    edit: <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>,
-    check: <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"/></svg>,
-    play: <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><polygon points="5 3 19 12 5 21 5 3"/></svg>,
-    checkCircle: <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M22 11.08V12a10 10 0 11-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>,
-    stop: <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><rect x="4" y="4" width="16" height="16" rx="2"/></svg>,
-    rotateCw: <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 11-2.12-9.36L23 10"/></svg>,
-    xCircle: <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg>,
-    trash: <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2"/></svg>,
-    close: <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>,
-    upload: <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>,
-    package: <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="16.5" y1="9.4" x2="7.5" y2="4.21"/><path d="M21 16V8a2 2 0 00-1-1.73l-7-4a2 2 0 00-2 0l-7 4A2 2 0 002 8v8a2 2 0 001 1.73l7 4a2 2 0 002 0l7-4A2 2 0 0021 16z"/><polyline points="3.27 6.96 12 12.01 20.73 6.96"/><line x1="12" y1="22.08" x2="12" y2="12"/></svg>,
-    file: <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>,
-    minus: <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><line x1="5" y1="12" x2="19" y2="12"/></svg>,
-  };
+  /* ==============================
+     SHARED SUB-COMPONENTS
+     ============================== */
 
-  /* === Items Form === */
-  const renderItemsForm = () => (
-    <div className="form-group">
-      <label
-        className="form-label"
-        style={{
-          display: "flex",
-          justifyContent: "space-between",
-          alignItems: "center",
-        }}
-      >
-        <span>Order Items</span>
-        <button
-          type="button"
-          onClick={addItem}
-          style={{
-            background: "linear-gradient(135deg, #5ec8c4 0%, #f195b3 100%)",
-            color: "white",
-            border: "none",
-            padding: "6px 14px",
-            borderRadius: "12px",
-            fontSize: "12px",
-            fontWeight: "600",
-            cursor: "pointer",
-          }}
-        >
-          + Add Item
-        </button>
-      </label>
-      {formData.items.length === 0 && (
-        <p style={{ color: "#999", fontSize: "13px", margin: "8px 0" }}>
-          No items added. Click "Add Item" to add products.
-        </p>
-      )}
-      {formData.items.map((item, index) => (
-        <div
-          key={index}
-          style={{
-            display: "flex",
-            gap: "10px",
-            alignItems: "center",
-            marginBottom: "10px",
-            padding: "12px",
-            background: "rgba(94, 200, 196, 0.05)",
-            borderRadius: "12px",
-          }}
-        >
-          <input
-            type="text"
-            className="form-input"
-            placeholder="Product name"
-            value={item.productName}
-            onChange={(e) => updateItem(index, "productName", e.target.value)}
-            style={{ flex: 2 }}
-          />
-          <input
-            type="number"
-            className="form-input"
-            placeholder="Qty"
-            value={item.quantity}
-            onChange={(e) => updateItem(index, "quantity", e.target.value)}
-            style={{ flex: 1 }}
-            min="1"
-          />
-          <input
-            type="number"
-            className="form-input"
-            placeholder="Price"
-            value={item.price}
-            onChange={(e) => updateItem(index, "price", e.target.value)}
-            style={{ flex: 1 }}
-            min="0"
-            step="0.01"
-          />
-          <button
-            type="button"
-            onClick={() => removeItem(index)}
-            style={{
-              background: "rgba(255, 77, 79, 0.1)",
-              border: "none",
-              color: "#ff4d4f",
-              padding: "8px",
-              borderRadius: "8px",
-              cursor: "pointer",
-              fontSize: "14px",
-            }}
-          >
-            ✕
-          </button>
+  /* Items form for create/edit modals */
+  const ItemsForm = () => (
+    <div className="ao-items-section">
+      <div className="ao-items-header">
+        <span className="ao-items-title">
+          Order Items {formData.items.length > 0 && <span className="ao-items-count">{formData.items.length}</span>}
+        </span>
+        <button type="button" className="ao-btn-add-item" onClick={addItem}>{I.plus} Add Item</button>
+      </div>
+      {formData.items.length === 0 && <div className="ao-items-empty">No items yet. Click "Add Item" to add products.</div>}
+      {formData.items.map((item, idx) => (
+        <div className="ao-item-row" key={idx}>
+          <input className="ao-form-input" style={{ flex: 2 }} placeholder="Product name" value={item.productName} onChange={(e) => updateItem(idx, "productName", e.target.value)} />
+          <input className="ao-form-input" style={{ flex: 1 }} type="number" placeholder="Qty" min="1" value={item.quantity} onChange={(e) => updateItem(idx, "quantity", e.target.value)} />
+          <input className="ao-form-input" style={{ flex: 1 }} type="number" placeholder="Price" min="0" step="0.01" value={item.price} onChange={(e) => updateItem(idx, "price", e.target.value)} />
+          <button type="button" className="ao-btn-remove-item" onClick={() => removeItem(idx)}>{I.minus}</button>
         </div>
       ))}
     </div>
   );
 
-  /* === Order Form Fields (shared by Create & Edit) === */
-  const renderOrderForm = () => (
+  /* Order form fields */
+  const OrderForm = () => (
     <>
       <div className="ao-form-group">
         <label className="ao-form-label">Customer Name <span className="ao-form-required">*</span></label>
-        <input type="text" className="ao-form-input" value={formData.customerName}
-          onChange={(e) => setFormData({ ...formData, customerName: e.target.value })} placeholder="Enter customer name" />
+        <input className="ao-form-input" value={formData.customerName} onChange={(e) => setField("customerName", e.target.value)} placeholder="Enter customer name" />
       </div>
       <div className="ao-form-group">
         <label className="ao-form-label">Product Type <span className="ao-form-required">*</span></label>
-        <input type="text" className="ao-form-input" value={formData.productType}
-          onChange={(e) => setFormData({ ...formData, productType: e.target.value })} placeholder="Enter product type" />
+        <input className="ao-form-input" value={formData.productType} onChange={(e) => setField("productType", e.target.value)} placeholder="Enter product type" />
       </div>
       <div className="ao-form-row">
         <div className="ao-form-group">
           <label className="ao-form-label">Quantity <span className="ao-form-required">*</span></label>
-          <input type="number" className="ao-form-input" value={formData.quantity}
-            onChange={(e) => setFormData({ ...formData, quantity: e.target.value })} placeholder="Enter quantity" min="1" />
+          <input className="ao-form-input" type="number" min="1" value={formData.quantity} onChange={(e) => setField("quantity", e.target.value)} placeholder="Enter quantity" />
         </div>
         <div className="ao-form-group">
           <label className="ao-form-label">Deadline</label>
-          <input type="date" className="ao-form-input" value={formData.deadline}
-            onChange={(e) => setFormData({ ...formData, deadline: e.target.value })} />
+          <input className="ao-form-input" type="date" value={formData.deadline} onChange={(e) => setField("deadline", e.target.value)} />
         </div>
       </div>
       <div className="ao-form-group">
         <label className="ao-form-label">Priority</label>
-        <select className="ao-form-select" value={formData.priority}
-          onChange={(e) => setFormData({ ...formData, priority: e.target.value })}>
+        <select className="ao-form-select" value={formData.priority} onChange={(e) => setField("priority", e.target.value)}>
           <option value="Low">Low</option><option value="Medium">Medium</option>
           <option value="High">High</option><option value="Urgent">Urgent</option>
         </select>
       </div>
-      {renderItemsForm()}
+      <ItemsForm />
     </>
   );
 
-  /* === Loading Screen === */
+  /* ==============================
+     LOADING SCREEN
+     ============================== */
   if (initialLoad && loading) {
     return (
-      <div className="page-loading">
-        <div className="loading-card">
-          <div className="loading-dots">
-            <div className="dot"></div>
-            <div className="dot"></div>
-            <div className="dot"></div>
-          </div>
-          <p className="loading-text">Loading orders...</p>
+      <div className="ao-loading">
+        <div className="ao-loading-card">
+          <div className="ao-spinner" />
+          <p className="ao-loading-text">Loading orders...</p>
         </div>
       </div>
     );
   }
 
+  /* ==============================
+     FILTER CHIP DATA
+     ============================== */
+  const filterChips = [
+    { label: "All", value: "All", count: stats.total },
+    { label: "Draft", value: "Draft", count: stats.draft },
+    { label: "Confirmed", value: "Confirmed", count: stats.confirmed },
+    { label: "In Production", value: "In Production", count: stats.inProduction },
+    { label: "Stopped", value: "STOPPED", count: stats.stopped },
+    { label: "Completed", value: "Completed", count: stats.completed },
+    { label: "Cancelled", value: "Cancelled", count: stats.cancelled },
+  ];
+
+  /* ==============================
+     MAIN RENDER
+     ============================== */
   return (
     <div className="admin-container">
       <AdminSidebar />
 
       <div className="admin-main">
-        <header className="admin-header">
-          <h1 className="header-title">📦 Order Management</h1>
-          <div className="header-actions">
-            <button
-              className="header-icon-btn"
-              onClick={fetchOrders}
-              title="Refresh"
-            >
-              🔄
-            </button>
-            <NotificationBell />
-            <div className="user-menu">
-              <div className="user-avatar"></div>
-              <span className="user-name">
-                {currentUser?.fullName || "Admin"}
-              </span>
+        {/* ── Header ── */}
+        <header className="dash-header">
+          <div className="dash-header-left">
+            <div className="dash-header-avatar">{(currentUser?.fullName || "A").charAt(0).toUpperCase()}</div>
+            <div>
+              <h1 className="dash-title">Order Management</h1>
+              <p className="dash-subtitle">Track and manage production orders</p>
             </div>
+          </div>
+          <div className="dash-header-right">
+            <button className="dash-refresh-btn" onClick={fetchOrders} title="Refresh">{I.refresh}</button>
+            <NotificationBell />
           </div>
         </header>
 
-        {/* === Content === */}
+        {/* ── Content ── */}
         <div className="ao-content">
-          {/* Error Banner */}
+
+          {/* Error */}
           {error && (
-            <div
-              className="error-banner"
-              style={{
-                background: "#ffebee",
-                color: "#c62828",
-                padding: "12px 16px",
-                borderRadius: "8px",
-                marginBottom: "16px",
-                display: "flex",
-                justifyContent: "space-between",
-                alignItems: "center",
-              }}
-            >
-              <span>⚠️ {error}</span>
-              <button
-                onClick={fetchOrders}
-                style={{
-                  background: "#c62828",
-                  color: "white",
-                  border: "none",
-                  padding: "6px 12px",
-                  borderRadius: "4px",
-                  cursor: "pointer",
-                }}
-              >
-                Retry
-              </button>
+            <div className="ao-error-banner">
+              <div className="ao-error-content">
+                <div className="ao-error-icon">⚠️</div>
+                <span>{error}</span>
+              </div>
+              <button className="ao-error-retry" onClick={fetchOrders}>Retry</button>
             </div>
           )}
 
-          <div className="stats-row">
-            <div className="stat-card">
-              <span className="stat-number">{stats.total}</span>
-              <span className="stat-label">Total Orders</span>
+          {/* ── Summary Strip (4 cards) ── */}
+          <div className="ao-summary-strip">
+            {/* Total */}
+            <div className="ao-summary-card">
+              <div className="ao-summary-icon total">{I.layers}</div>
+              <div className="ao-summary-info">
+                <div className="ao-summary-number">{stats.total}</div>
+                <div className="ao-summary-label">Total Orders</div>
+              </div>
             </div>
-            <div className="stat-card draft">
-              <span className="stat-number">{stats.draft}</span>
-              <span className="stat-label">Draft</span>
+
+            {/* Active */}
+            <div className="ao-summary-card">
+              <div className="ao-summary-icon active">{I.zap}</div>
+              <div className="ao-summary-info">
+                <div className="ao-summary-number">{stats.draft + stats.confirmed + stats.inProduction}</div>
+                <div className="ao-summary-label">Active</div>
+                <div className="ao-summary-breakdown">
+                  <span className="ao-summary-tag"><span className="ao-summary-tag-dot draft" />{stats.draft} Draft</span>
+                  <span className="ao-summary-tag"><span className="ao-summary-tag-dot confirmed" />{stats.confirmed} Confirmed</span>
+                  <span className="ao-summary-tag"><span className="ao-summary-tag-dot production" />{stats.inProduction} Production</span>
+                </div>
+              </div>
             </div>
-            <div className="stat-card confirmed">
-              <span className="stat-number">{stats.confirmed}</span>
-              <span className="stat-label">Confirmed</span>
+
+            {/* Completed */}
+            <div className="ao-summary-card">
+              <div className="ao-summary-icon completed">{I.checkCircle}</div>
+              <div className="ao-summary-info">
+                <div className="ao-summary-number">{stats.completed}</div>
+                <div className="ao-summary-label">Completed</div>
+              </div>
             </div>
-            <div className="stat-card production">
-              <span className="stat-number">{stats.inProduction}</span>
-              <span className="stat-label">In Production</span>
-            </div>
-            <div className="stat-card hold">
-              <span className="stat-number">{stats.stopped}</span>
-              <span className="stat-label">Stopped</span>
-            </div>
-            <div className="stat-card completed">
-              <span className="stat-number">{stats.completed}</span>
-              <span className="stat-label">Completed</span>
-            </div>
-            <div className="stat-card cancelled">
-              <span className="stat-number">{stats.cancelled}</span>
-              <span className="stat-label">Cancelled</span>
+
+            {/* Issues */}
+            <div className="ao-summary-card">
+              <div className="ao-summary-icon issues">{I.alertTriangle}</div>
+              <div className="ao-summary-info">
+                <div className="ao-summary-number">{stats.stopped + stats.cancelled}</div>
+                <div className="ao-summary-label">Issues</div>
+                <div className="ao-summary-breakdown">
+                  <span className="ao-summary-tag"><span className="ao-summary-tag-dot stopped" />{stats.stopped} Stopped</span>
+                  <span className="ao-summary-tag"><span className="ao-summary-tag-dot cancelled" />{stats.cancelled} Cancelled</span>
+                </div>
+              </div>
             </div>
           </div>
 
-          <div className="content-header">
-            <div className="search-filter-row">
-              <div className="search-box">
-                <span className="search-icon">🔍</span>
+          {/* ── Toolbar ── */}
+          <div className="ao-toolbar">
+            <div className="ao-toolbar-top">
+              <div className="ao-search-box">
+                <span className="ao-search-icon">{I.search}</span>
                 <input
-                  type="text"
-                  placeholder="Search orders..."
+                  ref={searchRef}
+                  className="ao-search-input"
+                  placeholder="Search by customer, product, or ID..."
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
-                  className="search-input"
                 />
+                <kbd className="ao-search-shortcut">/</kbd>
               </div>
-              <select
-                className="filter-select"
-                value={statusFilter}
-                onChange={(e) => setStatusFilter(e.target.value)}
-              >
-                <option value="All">All Status</option>
-                <option value="Draft">Draft</option>
-                <option value="Confirmed">Confirmed</option>
-                <option value="In Production">In Production</option>
-                <option value="STOPPED">Stopped</option>
-                <option value="Completed">Completed</option>
-                <option value="Cancelled">Cancelled</option>
-              </select>
+              <button className="ao-btn-create" onClick={() => setShowCreateModal(true)} title="New Order (N)">
+                {I.plus} New Order
+              </button>
             </div>
-            <button
-              className="btn-primary"
-              onClick={() => setShowCreateModal(true)}
-            >
-              ➕ Create Order
-            </button>
+            <div className="ao-filter-chips">
+              {filterChips.map((chip) => (
+                <button
+                  key={chip.value}
+                  className={`ao-chip${statusFilter === chip.value ? " active" : ""}`}
+                  onClick={() => setStatusFilter(chip.value)}
+                >
+                  {chip.label}
+                  {chip.count > 0 && <span className="ao-chip-count">{chip.count}</span>}
+                </button>
+              ))}
+            </div>
           </div>
 
-          {/* Table */}
-          <div className="ao-table-wrapper">
-            <table className="ao-table">
-              <thead>
-                <tr>
-                  <th>ID</th>
-                  <th>Customer</th>
-                  <th>Product</th>
-                  <th>Quantity</th>
-                  <th>Deadline</th>
-                  <th>Priority</th>
-                  <th>Status</th>
-                  <th>Created By</th>
-                  <th>Total Price</th>
-                  <th>Created</th>
-                  <th>Actions</th>
-                </tr>
-              </thead>
-              <tbody>
-                {filteredOrders.length === 0 ? (
-                  <tr>
-                    <td
-                      colSpan="11"
-                      style={{
-                        textAlign: "center",
-                        padding: "40px",
-                        color: "#666",
-                      }}
-                    >
-                      No orders found
-                    </td>
-                  </tr>
-                ) : (
-                  filteredOrders.map((order) => (
-                    <tr key={order.id}>
-                      <td className="order-id">#{order.id}</td>
-                      <td>{order.customerName}</td>
-                      <td>{order.productType}</td>
-                      <td>{order.quantity?.toLocaleString()}</td>
-                      <td>{formatDate(order.deadline)}</td>
-                      <td>
-                        <span
-                          className={`priority-badge ${getPriorityClass(order.priority)}`}
-                        >
-                          {order.priority}
-                        </span>
-                      </td>
-                      <td>
-                        <span
-                          className={`status-badge ${getStatusClass(order.status)}`}
-                        >
-                          {getStatusDisplay(order.status)}
-                        </span>
-                      </td>
-                      <td>{order.createdByName || "—"}</td>
-                      <td>
-                        {order.totalPrice != null
-                          ? formatCurrency(order.totalPrice)
-                          : "—"}
-                      </td>
-                      <td>{formatDate(order.createdAt)}</td>
-                      <td>
-                        <div className="action-buttons">
-                          <button
-                            className="btn-action btn-view"
-                            onClick={() => handleViewDetail(order.id)}
-                            title="View Detail"
-                            disabled={actionLoading}
-                          >
-                            👁️
-                          </button>
-                          {["Draft", "Confirmed"].includes(order.status) && (
-                            <button
-                              className="btn-action btn-edit"
-                              onClick={() => handleEditOrder(order)}
-                              title="Edit"
-                              disabled={actionLoading}
-                            >
-                              ✏️
-                            </button>
-                          )}
-                          {order.status === "Draft" && (
-                            <button
-                              className="btn-action btn-confirm"
-                              onClick={() => handleConfirmOrder(order.id)}
-                              title="Confirm Order"
-                              disabled={actionLoading}
-                            >
-                              ✅
-                            </button>
-                          )}
-                          {order.status === "Confirmed" && (
-                            <button
-                              className="btn-action btn-start"
-                              onClick={() => handleStartProduction(order.id)}
-                              title="Start Production"
-                              disabled={actionLoading}
-                            >
-                              ▶️
-                            </button>
-                          )}
-                          {order.status === "In Production" && (
-                            <>
-                              <button
-                                className="btn-action btn-complete"
-                                onClick={() => handleCompleteOrder(order.id)}
-                                title="Complete Order"
-                                disabled={actionLoading}
-                              >
-                                ✔️
-                              </button>
-                              <button
-                                className="btn-action btn-stop"
-                                onClick={() => handleStopOrder(order.id)}
-                                title="Stop Production"
-                                disabled={actionLoading}
-                              >
-                                ⏹️
-                              </button>
-                            </>
-                          )}
-                          {order.status === "STOPPED" && (
-                            <button
-                              className="btn-action btn-resume"
-                              onClick={() => handleResumeOrder(order.id)}
-                              title="Resume Production"
-                              disabled={actionLoading}
-                            >
-                              🔄
-                            </button>
-                          )}
-                          {!["Completed", "Cancelled", "STOPPED"].includes(
-                            order.status,
-                          ) && (
-                            <button
-                              className="btn-action btn-cancel"
-                              onClick={() => handleCancelOrder(order.id)}
-                              title="Cancel Order"
-                              disabled={actionLoading}
-                            >
-                              ❌
-                            </button>
-                          )}
-                          {["Draft", "Cancelled"].includes(order.status) && (
-                            <button
-                              className="btn-action btn-delete"
-                              onClick={() => handleDeleteOrder(order.id)}
-                              title="Delete Order"
-                              disabled={actionLoading}
-                            >
-                              🗑️
-                            </button>
-                          )}
-                        </div>
-                      </td>
-                    </tr>
-                  ))
-                )}
-              </tbody>
-            </table>
-          </div>
+          {/* ── Order List ── */}
+          {filteredOrders.length === 0 ? (
+            <div className="ao-empty-state">
+              <div className="ao-empty-icon">{I.package}</div>
+              <p className="ao-empty-title">No orders found</p>
+              <p className="ao-empty-desc">{searchTerm || statusFilter !== "All" ? "Try adjusting your search or filter." : "Create your first order to get started."}</p>
+            </div>
+          ) : (
+            <div className="ao-order-list">
+              {/* List Header */}
+              <div className="ao-order-list-header">
+                <span>ID</span>
+                <span>Order</span>
+                <span>Quantity</span>
+                <span>Deadline</span>
+                <span>Priority</span>
+                <span>Status</span>
+                <span style={{ textAlign: "right" }}>Actions</span>
+              </div>
+
+              {/* Order Cards */}
+              {filteredOrders.map((order) => (
+                <div className="ao-order-card" key={order.id}>
+                  <span className="ao-order-id">#{order.id}</span>
+
+                  <div className="ao-order-main">
+                    <span className="ao-order-customer">{order.customerName}</span>
+                    <span className="ao-order-product">{order.productType}</span>
+                    <div className="ao-order-meta-inline">
+                      <span>{order.createdByName || "—"}</span>
+                      <span className="ao-order-meta-sep" />
+                      <span>{formatDate(order.createdAt)}</span>
+                      {order.totalPrice != null && (
+                        <>
+                          <span className="ao-order-meta-sep" />
+                          <span>{formatCurrency(order.totalPrice)}</span>
+                        </>
+                      )}
+                    </div>
+                  </div>
+
+                  <span className="ao-order-qty">{order.quantity?.toLocaleString()}</span>
+
+                  <span className="ao-order-deadline">{formatDate(order.deadline)}</span>
+
+                  <span className={`ao-priority ${getPriorityKey(order.priority)}`}>{order.priority}</span>
+
+                  <span className={`ao-status ${getStatusKey(order.status)}`}>
+                    <span className="ao-status-dot" />
+                    {getStatusDisplay(order.status)}
+                  </span>
+
+                  <div className="ao-actions">
+                    <button className="ao-action-btn view" onClick={() => handleViewDetail(order.id)} disabled={actionLoading} title="View">{I.eye}</button>
+                    {["Draft", "Confirmed"].includes(order.status) && (
+                      <button className="ao-action-btn edit" onClick={() => handleEditOrder(order)} disabled={actionLoading} title="Edit">{I.edit}</button>
+                    )}
+                    {order.status === "Draft" && (
+                      <button className="ao-action-btn confirm" onClick={() => handleConfirmOrder(order.id)} disabled={actionLoading} title="Confirm">{I.check}</button>
+                    )}
+                    {order.status === "Confirmed" && (
+                      <button className="ao-action-btn start" onClick={() => handleStartProduction(order.id)} disabled={actionLoading} title="Start">{I.play}</button>
+                    )}
+                    {order.status === "In Production" && (
+                      <>
+                        <button className="ao-action-btn complete" onClick={() => handleCompleteOrder(order.id)} disabled={actionLoading} title="Complete">{I.checkCircle}</button>
+                        <button className="ao-action-btn stop" onClick={() => handleStopOrder(order.id)} disabled={actionLoading} title="Stop">{I.stop}</button>
+                      </>
+                    )}
+                    {order.status === "STOPPED" && (
+                      <button className="ao-action-btn resume" onClick={() => handleResumeOrder(order.id)} disabled={actionLoading} title="Resume">{I.rotateCw}</button>
+                    )}
+                    {!["Completed", "Cancelled", "STOPPED"].includes(order.status) && (
+                      <button className="ao-action-btn cancel" onClick={() => handleCancelOrder(order.id)} disabled={actionLoading} title="Cancel">{I.xCircle}</button>
+                    )}
+                    {["Draft", "Cancelled"].includes(order.status) && (
+                      <button className="ao-action-btn delete" onClick={() => handleDeleteOrder(order.id)} disabled={actionLoading} title="Delete">{I.trash}</button>
+                    )}
+                  </div>
+                </div>
+              ))}
+
+              {/* List Footer */}
+              <div className="ao-list-footer">
+                <span className="ao-list-count">Showing <strong>{filteredOrders.length}</strong> of <strong>{orders.length}</strong> orders</span>
+              </div>
+            </div>
+          )}
         </div>
       </div>
 
@@ -914,156 +597,51 @@ const AdminOrders = () => {
           CREATE ORDER MODAL
           ================================ */}
       {showCreateModal && (
-        <div className="modal-overlay">
-          <div className="modal">
-            <div className="modal-header">
-              <h2>➕ Create New Order</h2>
-              <button
-                className="close-button"
-                onClick={() => setShowCreateModal(false)}
-              >
-                ✕
-              </button>
+        <div className="ao-modal-overlay">
+          <div className="ao-modal large">
+            <div className="ao-modal-header">
+              <div className="ao-modal-header-left">
+                <div className="ao-modal-icon create">{I.plus}</div>
+                <div>
+                  <h2 className="ao-modal-title">Create New Order</h2>
+                  <p className="ao-modal-subtitle">Fill in order details below</p>
+                </div>
+              </div>
+              <button className="ao-modal-close" onClick={() => { setShowCreateModal(false); resetForm(); }}>{I.close}</button>
             </div>
-            <div className="modal-body">
-              <div className="form-group">
-                <label className="form-label">Customer Name *</label>
-                <input
-                  type="text"
-                  className="form-input"
-                  value={formData.customerName}
-                  onChange={(e) =>
-                    setFormData({ ...formData, customerName: e.target.value })
-                  }
-                  placeholder="Enter customer name"
-                />
-              </div>
-              <div className="form-group">
-                <label className="form-label">Product Type *</label>
-                <input
-                  type="text"
-                  className="form-input"
-                  value={formData.productType}
-                  onChange={(e) =>
-                    setFormData({ ...formData, productType: e.target.value })
-                  }
-                  placeholder="Enter product type"
-                />
-              </div>
-              <div className="form-row">
-                <div className="form-group">
-                  <label className="form-label">Quantity *</label>
-                  <input
-                    type="number"
-                    className="form-input"
-                    value={formData.quantity}
-                    onChange={(e) =>
-                      setFormData({ ...formData, quantity: e.target.value })
-                    }
-                    placeholder="Enter quantity"
-                  />
-                </div>
-                <div className="form-group">
-                  <label className="form-label">Deadline</label>
-                  <input
-                    type="date"
-                    className="form-input"
-                    value={formData.deadline}
-                    onChange={(e) =>
-                      setFormData({ ...formData, deadline: e.target.value })
-                    }
-                  />
-                </div>
-              </div>
-              <div className="form-group">
-                <label className="form-label">Priority</label>
-                <select
-                  className="form-select"
-                  value={formData.priority}
-                  onChange={(e) =>
-                    setFormData({ ...formData, priority: e.target.value })
-                  }
-                >
-                  <option value="Low">Low</option>
-                  <option value="Medium">Medium</option>
-                  <option value="High">High</option>
-                  <option value="Urgent">Urgent</option>
-                </select>
-              </div>
-              {renderItemsForm()}
+            <div className="ao-modal-body">
+              <OrderForm />
 
-              {/* File Upload Section */}
-              <div className="form-group">
-                <label className="form-label">
-                  📎 Attach Files (SOP / BOM)
-                </label>
-                <div
-                  className="file-drop-area"
-                  onClick={() =>
-                    document.getElementById("create-order-files").click()
-                  }
-                >
-                  <span className="file-drop-icon">📤</span>
-                  <span className="file-drop-text">Click to select files</span>
-                  <span className="file-drop-hint">
-                    SOP, BOM, drawings, specs...
-                  </span>
-                  <input
-                    id="create-order-files"
-                    type="file"
-                    multiple
-                    style={{ display: "none" }}
-                    onChange={(e) => {
-                      const files = Array.from(e.target.files);
-                      if (files.length)
-                        setPendingFiles((prev) => [...prev, ...files]);
-                      e.target.value = null;
-                    }}
-                  />
+              {/* File Upload */}
+              <div className="ao-form-group">
+                <label className="ao-form-label">Attachments (SOP / BOM)</label>
+                <div className="ao-upload-area" onClick={() => document.getElementById("ao-create-files").click()}>
+                  <span className="ao-upload-area-icon">{I.upload}</span>
+                  <span className="ao-upload-area-text">Click to select files</span>
+                  <span className="ao-upload-area-hint">SOP, BOM, drawings, specs…</span>
+                  <input id="ao-create-files" type="file" multiple style={{ display: "none" }}
+                    onChange={(e) => { const f = Array.from(e.target.files); if (f.length) setPendingFiles((p) => [...p, ...f]); e.target.value = null; }} />
                 </div>
                 {pendingFiles.length > 0 && (
-                  <div className="pending-files-list">
-                    {pendingFiles.map((file, idx) => (
-                      <div key={idx} className="pending-file-item">
-                        <span className="file-icon">📄</span>
-                        <span className="pending-file-name">{file.name}</span>
-                        <span className="pending-file-size">
-                          {(file.size / 1024).toFixed(1)} KB
-                        </span>
-                        <button
-                          type="button"
-                          className="pending-file-remove"
-                          onClick={() =>
-                            setPendingFiles((prev) =>
-                              prev.filter((_, i) => i !== idx),
-                            )
-                          }
-                        >
-                          ✕
-                        </button>
+                  <div className="ao-file-list" style={{ marginTop: 10 }}>
+                    {pendingFiles.map((f, i) => (
+                      <div className="ao-file-item" key={i}>
+                        <div className="ao-file-icon">{I.file}</div>
+                        <div className="ao-file-info">
+                          <span className="ao-file-name">{f.name}</span>
+                          <span className="ao-file-meta">{(f.size / 1024).toFixed(1)} KB</span>
+                        </div>
+                        <button className="ao-file-remove" onClick={() => setPendingFiles((p) => p.filter((_, idx) => idx !== i))}>{I.minus}</button>
                       </div>
                     ))}
                   </div>
                 )}
               </div>
             </div>
-            <div className="modal-footer">
-              <button
-                className="btn-cancel"
-                onClick={() => {
-                  setShowCreateModal(false);
-                  setPendingFiles([]);
-                }}
-                disabled={actionLoading}
-              >
-                Cancel
-              </button>
-              <button
-                className="btn-save"
-                onClick={handleCreateOrder}
-                disabled={actionLoading}
-              >
-                {actionLoading ? "Creating..." : "Create Order"}
+            <div className="ao-modal-footer">
+              <button className="ao-btn-cancel" onClick={() => { setShowCreateModal(false); resetForm(); }} disabled={actionLoading}>Cancel</button>
+              <button className="ao-btn-save" onClick={handleCreateOrder} disabled={actionLoading}>
+                {actionLoading ? <><span className="ao-spinner-sm" />Creating...</> : "Create Order"}
               </button>
             </div>
           </div>
@@ -1074,95 +652,23 @@ const AdminOrders = () => {
           EDIT ORDER MODAL
           ================================ */}
       {showEditModal && (
-        <div className="modal-overlay">
-          <div className="modal">
-            <div className="modal-header">
-              <h2>✏️ Edit Order #{editingOrder?.id}</h2>
-              <button
-                className="close-button"
-                onClick={() => setShowEditModal(false)}
-              >
-                ✕
-              </button>
-            </div>
-            <div className="modal-body">
-              <div className="form-group">
-                <label className="form-label">Customer Name *</label>
-                <input
-                  type="text"
-                  className="form-input"
-                  value={formData.customerName}
-                  onChange={(e) =>
-                    setFormData({ ...formData, customerName: e.target.value })
-                  }
-                />
-              </div>
-              <div className="form-group">
-                <label className="form-label">Product Type *</label>
-                <input
-                  type="text"
-                  className="form-input"
-                  value={formData.productType}
-                  onChange={(e) =>
-                    setFormData({ ...formData, productType: e.target.value })
-                  }
-                />
-              </div>
-              <div className="form-row">
-                <div className="form-group">
-                  <label className="form-label">Quantity *</label>
-                  <input
-                    type="number"
-                    className="form-input"
-                    value={formData.quantity}
-                    onChange={(e) =>
-                      setFormData({ ...formData, quantity: e.target.value })
-                    }
-                  />
-                </div>
-                <div className="form-group">
-                  <label className="form-label">Deadline</label>
-                  <input
-                    type="date"
-                    className="form-input"
-                    value={formData.deadline}
-                    onChange={(e) =>
-                      setFormData({ ...formData, deadline: e.target.value })
-                    }
-                  />
+        <div className="ao-modal-overlay">
+          <div className="ao-modal large">
+            <div className="ao-modal-header">
+              <div className="ao-modal-header-left">
+                <div className="ao-modal-icon edit">{I.edit}</div>
+                <div>
+                  <h2 className="ao-modal-title">Edit Order #{editingOrder?.id}</h2>
+                  <p className="ao-modal-subtitle">Modify order details</p>
                 </div>
               </div>
-              <div className="form-group">
-                <label className="form-label">Priority</label>
-                <select
-                  className="form-select"
-                  value={formData.priority}
-                  onChange={(e) =>
-                    setFormData({ ...formData, priority: e.target.value })
-                  }
-                >
-                  <option value="Low">Low</option>
-                  <option value="Medium">Medium</option>
-                  <option value="High">High</option>
-                  <option value="Urgent">Urgent</option>
-                </select>
-              </div>
-              {renderItemsForm()}
+              <button className="ao-modal-close" onClick={() => { setShowEditModal(false); resetForm(); }}>{I.close}</button>
             </div>
-            <div className="modal-footer">
-              <button
-                className="btn-cancel"
-                onClick={() => setShowEditModal(false)}
-                disabled={actionLoading}
-              >
-                Cancel
-              </button>
-              <button
-                className="btn-save"
-                onClick={handleSaveEdit}
-                disabled={actionLoading}
-              >
-                {actionLoading ? "Saving..." : "Save Changes"}
+            <div className="ao-modal-body"><OrderForm /></div>
+            <div className="ao-modal-footer">
+              <button className="ao-btn-cancel" onClick={() => { setShowEditModal(false); resetForm(); }} disabled={actionLoading}>Cancel</button>
+              <button className="ao-btn-save" onClick={handleSaveEdit} disabled={actionLoading}>
+                {actionLoading ? <><span className="ao-spinner-sm" />Saving...</> : "Save Changes"}
               </button>
             </div>
           </div>
@@ -1170,116 +676,93 @@ const AdminOrders = () => {
       )}
 
       {/* ================================
-          DETAIL ORDER MODAL
+          DETAIL ORDER – SLIDE-OVER PANEL
           ================================ */}
       {showDetailModal && detailOrder && (
-        <div className="modal-overlay">
-          <div className="modal modal-large">
-            <div className="modal-header">
-              <h2>📋 Order Detail #{detailOrder.id}</h2>
-              <button
-                className="close-button"
-                onClick={() => setShowDetailModal(false)}
-              >
-                ✕
-              </button>
+        <div className="ao-slideover-overlay" onClick={() => setShowDetailModal(false)}>
+          <div className="ao-slideover" onClick={(e) => e.stopPropagation()}>
+            {/* Header */}
+            <div className="ao-slideover-header">
+              <div className="ao-slideover-header-left">
+                <div className="ao-slideover-icon">{I.package}</div>
+                <div className="ao-slideover-title-group">
+                  <h2 className="ao-slideover-title">Order #{detailOrder.id}</h2>
+                  <p className="ao-slideover-subtitle">{detailOrder.customerName} — {detailOrder.productType}</p>
+                </div>
+              </div>
+              <button className="ao-slideover-close" onClick={() => setShowDetailModal(false)} title="Close (Esc)">{I.close}</button>
             </div>
-            <div className="modal-body">
-              <div className="detail-grid">
-                <div className="detail-row">
-                  <span className="detail-label">Customer:</span>
-                  <span className="detail-value">
-                    {detailOrder.customerName}
+
+            {/* Body */}
+            <div className="ao-slideover-body">
+              {/* Progress Timeline */}
+              {!["Cancelled"].includes(detailOrder.status) && (
+                <div className="ao-timeline">
+                  {TIMELINE_STEPS.map((step, idx) => {
+                    const state = getTimelineState(detailOrder.status, step);
+                    return (
+                      <React.Fragment key={step}>
+                        {idx > 0 && <div className={`ao-timeline-line${getTimelineState(detailOrder.status, TIMELINE_STEPS[idx - 1]) === "done" && (state === "done" || state === "current") ? " done" : ""}`} />}
+                        <div className={`ao-timeline-step ${state}`}>
+                          <div className="ao-timeline-dot">
+                            {state === "done" && I.checkSmall}
+                          </div>
+                          <span className="ao-timeline-label">{step}</span>
+                        </div>
+                      </React.Fragment>
+                    );
+                  })}
+                </div>
+              )}
+
+              {detailOrder.status === "Cancelled" && (
+                <div style={{ textAlign: "center", padding: "12px 0 20px", color: "#9ca3af", fontSize: 13 }}>
+                  This order has been cancelled.
+                </div>
+              )}
+
+              {detailOrder.status === "STOPPED" && (
+                <div style={{ textAlign: "center", padding: "0 0 8px", color: "#ef4444", fontSize: 12, fontWeight: 600 }}>
+                  ⚠ Production stopped
+                </div>
+              )}
+
+              {/* Info Grid */}
+              <div className="ao-detail-grid">
+                <div className="ao-detail-item"><span className="ao-detail-label">Customer</span><span className="ao-detail-value">{detailOrder.customerName}</span></div>
+                <div className="ao-detail-item"><span className="ao-detail-label">Product Type</span><span className="ao-detail-value">{detailOrder.productType}</span></div>
+                <div className="ao-detail-item"><span className="ao-detail-label">Quantity</span><span className="ao-detail-value">{detailOrder.quantity?.toLocaleString()}</span></div>
+                <div className="ao-detail-item"><span className="ao-detail-label">Deadline</span><span className="ao-detail-value">{formatDate(detailOrder.deadline)}</span></div>
+                <div className="ao-detail-item">
+                  <span className="ao-detail-label">Priority</span>
+                  <span className={`ao-priority ${getPriorityKey(detailOrder.priority)}`}>{detailOrder.priority}</span>
+                </div>
+                <div className="ao-detail-item">
+                  <span className="ao-detail-label">Status</span>
+                  <span className={`ao-status ${getStatusKey(detailOrder.status)}`}>
+                    <span className="ao-status-dot" />{getStatusDisplay(detailOrder.status)}
                   </span>
                 </div>
-                <div className="detail-row">
-                  <span className="detail-label">Product Type:</span>
-                  <span className="detail-value">
-                    {detailOrder.productType}
-                  </span>
-                </div>
-                <div className="detail-row">
-                  <span className="detail-label">Quantity:</span>
-                  <span className="detail-value">
-                    {detailOrder.quantity?.toLocaleString()}
-                  </span>
-                </div>
-                <div className="detail-row">
-                  <span className="detail-label">Deadline:</span>
-                  <span className="detail-value">
-                    {formatDate(detailOrder.deadline)}
-                  </span>
-                </div>
-                <div className="detail-row">
-                  <span className="detail-label">Priority:</span>
-                  <span
-                    className={`priority-badge ${getPriorityClass(detailOrder.priority)}`}
-                  >
-                    {detailOrder.priority}
-                  </span>
-                </div>
-                <div className="detail-row">
-                  <span className="detail-label">Status:</span>
-                  <span
-                    className={`status-badge ${getStatusClass(detailOrder.status)}`}
-                  >
-                    {getStatusDisplay(detailOrder.status)}
-                  </span>
-                </div>
-                <div className="detail-row">
-                  <span className="detail-label">Created By:</span>
-                  <span className="detail-value">
-                    {detailOrder.createdByName || "—"}
-                  </span>
-                </div>
-                <div className="detail-row">
-                  <span className="detail-label">Total Price:</span>
-                  <span className="detail-value">
-                    {detailOrder.totalPrice != null
-                      ? formatCurrency(detailOrder.totalPrice)
-                      : "—"}
-                  </span>
-                </div>
-                <div className="detail-row">
-                  <span className="detail-label">Created At:</span>
-                  <span className="detail-value">
-                    {formatDate(detailOrder.createdAt)}
-                  </span>
-                </div>
-                <div className="detail-row">
-                  <span className="detail-label">Updated At:</span>
-                  <span className="detail-value">
-                    {formatDate(detailOrder.updatedAt)}
-                  </span>
-                </div>
+                <div className="ao-detail-item"><span className="ao-detail-label">Created By</span><span className="ao-detail-value">{detailOrder.createdByName || "—"}</span></div>
+                <div className="ao-detail-item"><span className="ao-detail-label">Total Price</span><span className="ao-detail-value">{detailOrder.totalPrice != null ? formatCurrency(detailOrder.totalPrice) : "—"}</span></div>
+                <div className="ao-detail-item"><span className="ao-detail-label">Created</span><span className="ao-detail-value">{formatDate(detailOrder.createdAt)}</span></div>
+                <div className="ao-detail-item"><span className="ao-detail-label">Updated</span><span className="ao-detail-value">{formatDate(detailOrder.updatedAt)}</span></div>
               </div>
 
               {/* Order Items */}
               {detailOrder.items && detailOrder.items.length > 0 && (
-                <div className="detail-items-section">
-                  <h3>📦 Order Items ({detailOrder.items.length})</h3>
-                  <table className="data-table items-table">
-                    <thead>
-                      <tr>
-                        <th>#</th>
-                        <th>Product Name</th>
-                        <th>Quantity</th>
-                        <th>Price</th>
-                        <th>Subtotal</th>
-                      </tr>
-                    </thead>
+                <div className="ao-detail-section">
+                  <h3 className="ao-detail-section-title"><div className="ao-detail-section-icon">{I.package}</div> Order Items ({detailOrder.items.length})</h3>
+                  <table className="ao-items-table">
+                    <thead><tr><th>#</th><th>Product</th><th>Quantity</th><th>Price</th><th>Subtotal</th></tr></thead>
                     <tbody>
-                      {detailOrder.items.map((item, idx) => (
-                        <tr key={item.id || idx}>
+                      {detailOrder.items.map((it, idx) => (
+                        <tr key={it.id || idx}>
                           <td>{idx + 1}</td>
-                          <td>{item.productName}</td>
-                          <td>{item.quantity?.toLocaleString()}</td>
-                          <td>{formatCurrency(item.price)}</td>
-                          <td>
-                            {formatCurrency(
-                              (item.quantity || 0) * (item.price || 0),
-                            )}
-                          </td>
+                          <td>{it.productName}</td>
+                          <td>{it.quantity?.toLocaleString()}</td>
+                          <td>{formatCurrency(it.price)}</td>
+                          <td>{formatCurrency((it.quantity || 0) * (it.price || 0))}</td>
                         </tr>
                       ))}
                     </tbody>
@@ -1287,119 +770,62 @@ const AdminOrders = () => {
                 </div>
               )}
 
-              <div className="detail-items-section">
-                <h3>📎 Files (SOP / BOM)</h3>
+              {/* Files */}
+              <div className="ao-detail-section">
+                <h3 className="ao-detail-section-title"><div className="ao-detail-section-icon">{I.file}</div> Files (SOP / BOM)</h3>
                 {uploadedFiles.length > 0 && (
-                  <div className="uploaded-files-list">
-                    {uploadedFiles.map((file, idx) => (
-                      <div key={file.id || idx} className="uploaded-file-item">
-                        <span className="file-icon">📄</span>
-                        <div className="file-info">
-                          <a
-                            href={file.url}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="file-name-link"
-                          >
-                            {file.fileName}
-                          </a>
-                          <span className="file-meta">
-                            Uploaded:{" "}
-                            {file.uploadedAt
-                              ? new Date(file.uploadedAt).toLocaleString(
-                                  "vi-VN",
-                                )
-                              : "—"}
-                          </span>
+                  <div className="ao-file-list">
+                    {uploadedFiles.map((f, i) => (
+                      <div className="ao-file-item" key={f.id || i}>
+                        <div className="ao-file-icon">{I.file}</div>
+                        <div className="ao-file-info">
+                          <a className="ao-file-name" href={f.url} target="_blank" rel="noopener noreferrer">{f.fileName}</a>
+                          <span className="ao-file-meta">Uploaded: {f.uploadedAt ? new Date(f.uploadedAt).toLocaleString("vi-VN") : "—"}</span>
                         </div>
                       </div>
                     ))}
                   </div>
                 )}
-                {uploadedFiles.length === 0 && (
-                  <p
-                    style={{ color: "#999", fontSize: "13px", margin: "8px 0" }}
-                  >
-                    Chưa có file nào được upload trong phiên này.
-                  </p>
-                )}
-                <div className="file-upload-area">
-                  <label
-                    className="btn-upload-file"
-                    htmlFor="order-file-upload"
-                  >
-                    {uploadLoading ? (
-                      <>
-                        <span className="spinner-small"></span>Đang upload...
-                      </>
-                    ) : (
-                      <>📤 Upload File</>
-                    )}
-                  </label>
-                  <input
-                    id="order-file-upload"
-                    type="file"
-                    multiple
-                    onChange={handleFileUpload}
-                    disabled={uploadLoading}
-                    style={{ display: "none" }}
-                  />
-                  <span className="upload-hint">
-                    Hỗ trợ nhiều file. Click để chọn file SOP/BOM.
-                  </span>
+                {uploadedFiles.length === 0 && <p className="ao-items-empty">No files uploaded in this session.</p>}
+                <div className="ao-upload-area" style={{ marginTop: 12 }} onClick={() => document.getElementById("ao-detail-files").click()}>
+                  <span className="ao-upload-area-icon">{I.upload}</span>
+                  <span className="ao-upload-area-text">{uploadLoading ? "Uploading..." : "Click to upload files"}</span>
+                  <span className="ao-upload-area-hint">SOP, BOM, drawings, specs…</span>
+                  <input id="ao-detail-files" type="file" multiple onChange={handleFileUpload} disabled={uploadLoading} style={{ display: "none" }} />
                 </div>
               </div>
             </div>
-            <div className="modal-footer">
-              <button
-                className="btn-cancel"
-                onClick={() => setShowDetailModal(false)}
-              >
-                Close
-              </button>
+
+            {/* Footer */}
+            <div className="ao-slideover-footer">
+              <button className="ao-btn-cancel" onClick={() => setShowDetailModal(false)}>Close</button>
             </div>
           </div>
         </div>
       )}
 
-      {/* Confirm Action Modal */}
+      {/* ================================
+          CONFIRM ACTION MODAL
+          ================================ */}
       {showConfirmModal && (
-        <div className="modal-overlay">
-          <div className="modal modal-confirm">
-            <div className="modal-header">
-              <h2>
-                {confirmAction.type === "cancel" && "⚠️ Cancel Order"}
-                {confirmAction.type === "delete" && "🗑️ Delete Order"}
-                {confirmAction.type === "stop" && "⏹️ Stop Production"}
-                {confirmAction.type === "resume" && "🔄 Resume Production"}
-              </h2>
+        <div className="ao-modal-overlay">
+          <div className="ao-modal confirm-modal">
+            <div className="ao-modal-header">
+              <div className="ao-modal-header-left">
+                <div className={`ao-modal-icon ${confirmConfig.cls}`}>{confirmConfig.icon}</div>
+                <h2 className="ao-modal-title">{confirmConfig.title}</h2>
+              </div>
+              <button className="ao-modal-close" onClick={() => setShowConfirmModal(false)}>{I.close}</button>
             </div>
-            <div className="modal-body">
-              <p className="confirm-message">
-                {confirmAction.type === "cancel" &&
-                  `Are you sure you want to cancel order #${confirmAction.orderId}? This action cannot be undone.`}
-                {confirmAction.type === "delete" &&
-                  `Are you sure you want to permanently delete order #${confirmAction.orderId}?`}
-                {confirmAction.type === "stop" &&
-                  `Are you sure you want to stop production for order #${confirmAction.orderId}? Related schedules will be stopped.`}
-                {confirmAction.type === "resume" &&
-                  `Are you sure you want to resume production for order #${confirmAction.orderId}? Stopped schedules will be resumed.`}
-              </p>
+            <div className="ao-modal-body">
+              <div className="ao-confirm-body">
+                <p className="ao-confirm-message">{confirmMessage}</p>
+              </div>
             </div>
-            <div className="modal-footer">
-              <button
-                className="btn-cancel"
-                onClick={() => setShowConfirmModal(false)}
-                disabled={actionLoading}
-              >
-                No, Go Back
-              </button>
-              <button
-                className={`btn-confirm-action ${confirmAction.type === "delete" ? "btn-danger" : ""}`}
-                onClick={executeConfirmAction}
-                disabled={actionLoading}
-              >
-                {actionLoading ? "Processing..." : "Yes, Proceed"}
+            <div className="ao-modal-footer center">
+              <button className="ao-btn-cancel" onClick={() => setShowConfirmModal(false)} disabled={actionLoading}>No, Go Back</button>
+              <button className={confirmConfig.btnCls} onClick={executeConfirmAction} disabled={actionLoading}>
+                {actionLoading ? <><span className="ao-spinner-sm" />Processing...</> : confirmConfig.btnText}
               </button>
             </div>
           </div>

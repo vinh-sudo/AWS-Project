@@ -1,15 +1,32 @@
-import React, { useState, useEffect, useRef, useCallback } from "react";
-import { useNavigate } from "react-router-dom";
-import { useDispatch } from "react-redux";
-import { logout } from "../../redux";
+import React, { useState, useEffect, useRef, useMemo, useCallback } from "react";
 import NotificationBell from "../../components/NotificationBell/NotificationBell";
 import AdminSidebar from "../../components/AdminSidebar/AdminSidebar";
 import authService from "../../services/authService";
 import adminService from "../../services/adminService";
 import "./adminUser.css";
 
+/* ── Helpers ── */
+const getRoleBadgeClass = (role) => {
+  switch (role?.toUpperCase()) {
+    case "ADMIN": return "admin";
+    case "MANAGER": return "manager";
+    case "LINE_LEADER": return "line-leader";
+    default: return "manager";
+  }
+};
+
+const getInitials = (username = "") =>
+  username.substring(0, 2).toUpperCase() || "U";
+
+const formatDate = (d) => {
+  if (!d) return "—";
+  const date = new Date(d);
+  return date.toLocaleDateString("en-GB", { day: "2-digit", month: "short", year: "numeric" }) +
+    " " + date.toLocaleTimeString("en-GB", { hour: "2-digit", minute: "2-digit" });
+};
+
+/* ── Component ── */
 const UsersAdmin = () => {
-  const navigate = useNavigate();
   const currentUser = authService.getCurrentUser();
 
   const [users, setUsers] = useState([]);
@@ -25,15 +42,8 @@ const UsersAdmin = () => {
   const [showEditUser, setShowEditUser] = useState(false);
   const [selectedUser, setSelectedUser] = useState(null);
   const [formData, setFormData] = useState({
-    username: "",
-    email: "",
-    password: "",
-    firstName: "",
-    lastName: "",
-    phoneNumber: "",
-    role: "MANAGER",
-    employeeCode: "",
-    status: true,
+    username: "", email: "", password: "", firstName: "", lastName: "",
+    phoneNumber: "", role: "MANAGER", employeeCode: "", status: true,
   });
 
   const [currentPage, setCurrentPage] = useState(0);
@@ -41,6 +51,7 @@ const UsersAdmin = () => {
   const [totalElements, setTotalElements] = useState(0);
   const pageSize = 10;
 
+  /* Search debounce */
   const searchTimerRef = useRef(null);
   const handleSearchChange = (e) => {
     const value = e.target.value;
@@ -56,24 +67,16 @@ const UsersAdmin = () => {
     setRoleFilter(e.target.value);
     setCurrentPage(0);
   };
+  useEffect(() => () => { if (searchTimerRef.current) clearTimeout(searchTimerRef.current); }, []);
 
-  useEffect(() => {
-    fetchUsers();
-  }, [currentPage, roleFilter, debouncedSearch]);
-
-  useEffect(() => {
-    return () => {
-      if (searchTimerRef.current) clearTimeout(searchTimerRef.current);
-    };
-  }, []);
-
-  const fetchUsers = async () => {
+  /* API */
+  const fetchUsers = useCallback(async () => {
     try {
       setLoading(true);
       setError(null);
       const params = { page: currentPage, size: pageSize };
       if (roleFilter && roleFilter !== "All roles") params.role = roleFilter;
-      if (debouncedSearch && debouncedSearch.trim()) params.search = debouncedSearch.trim();
+      if (debouncedSearch?.trim()) params.search = debouncedSearch.trim();
       const data = await adminService.getAccounts(params);
       setUsers(Array.isArray(data.content) ? data.content : []);
       setTotalPages(data.totalPages || 0);
@@ -84,54 +87,40 @@ const UsersAdmin = () => {
     } finally {
       setLoading(false);
       setInitialLoad(false);
-    }
-  };
+    }  }, [currentPage, pageSize, roleFilter, debouncedSearch]);
 
-  const handleChange = (field, value) => {
-    setFormData((prev) => ({ ...prev, [field]: value }));
-  };
+  useEffect(() => { fetchUsers(); }, [fetchUsers]);
 
+  const handleChange = (field, value) => setFormData((prev) => ({ ...prev, [field]: value }));
+
+  const resetForm = () => setFormData({
+    username: "", email: "", password: "", firstName: "", lastName: "",
+    phoneNumber: "", role: "MANAGER", employeeCode: "", status: true,
+  });
+
+  const handleCancel = () => { resetForm(); setShowCreateUser(false); setShowEditUser(false); setSelectedUser(null); };
+
+  /* Create */
   const handleSave = async () => {
     try {
       setActionLoading(true);
-      const registerData = {
-        username: formData.username,
-        password: formData.password,
-        firstName: formData.firstName,
-        lastName: formData.lastName,
+      await authService.register({
+        username: formData.username, password: formData.password,
+        firstName: formData.firstName, lastName: formData.lastName,
         email: formData.email,
         phoneNumber: formData.phoneNumber || undefined,
         role: formData.role,
         employeeCode: formData.employeeCode || undefined,
-      };
-      await authService.register(registerData);
-      resetForm();
-      setShowCreateUser(false);
-      fetchUsers();
+      });
+      resetForm(); setShowCreateUser(false); fetchUsers();
       alert("User created successfully!");
     } catch (err) {
-      console.error("Error creating user:", err);
       const msg = err.response?.data?.message || err.response?.data || err.message || "Unknown error";
       alert("Failed to create user:\n" + msg);
-    } finally {
-      setActionLoading(false);
-    }
+    } finally { setActionLoading(false); }
   };
 
-  const handleCancel = () => {
-    resetForm();
-    setShowCreateUser(false);
-    setShowEditUser(false);
-    setSelectedUser(null);
-  };
-
-  const resetForm = () => {
-    setFormData({
-      username: "", email: "", password: "", firstName: "", lastName: "",
-      phoneNumber: "", role: "MANAGER", employeeCode: "", status: true,
-    });
-  };
-
+  /* Edit */
   const handleEditClick = (user) => {
     setSelectedUser(user);
     setFormData({
@@ -145,28 +134,16 @@ const UsersAdmin = () => {
     if (!selectedUser) return;
     try {
       setActionLoading(true);
-      if (formData.role !== selectedUser.role) {
-        await adminService.updateAccountRole(selectedUser.id, formData.role);
-      }
+      if (formData.role !== selectedUser.role) await adminService.updateAccountRole(selectedUser.id, formData.role);
       const currentlyActive = selectedUser.status === "active";
       if (formData.status !== currentlyActive) {
-        if (formData.status) {
-          await adminService.unlockAccount(selectedUser.id);
-        } else {
-          await adminService.lockAccount(selectedUser.id);
-        }
+        formData.status ? await adminService.unlockAccount(selectedUser.id) : await adminService.lockAccount(selectedUser.id);
       }
-      resetForm();
-      setShowEditUser(false);
-      setSelectedUser(null);
-      fetchUsers();
+      resetForm(); setShowEditUser(false); setSelectedUser(null); fetchUsers();
       alert("User updated successfully!");
     } catch (err) {
-      console.error("Error updating user:", err);
       alert(err.response?.data?.message || err.response?.data || "Failed to update user");
-    } finally {
-      setActionLoading(false);
-    }
+    } finally { setActionLoading(false); }
   };
 
   const handleToggleLock = async (user) => {
@@ -181,21 +158,38 @@ const UsersAdmin = () => {
       }
       fetchUsers();
     } catch (err) {
-      console.error("Error toggling lock:", err);
       alert(err.response?.data?.message || err.response?.data || "Failed to update account status");
-    } finally {
-      setActionLoading(false);
-    }
+    } finally { setActionLoading(false); }
   };
 
+  /* Stats */
+  const stats = useMemo(() => {
+    const active = users.filter((u) => u.status === "active").length;
+    return { total: totalElements, active, locked: totalElements - active };
+  }, [users, totalElements]);
+  /* Pagination helpers */
+  const getPageNumbers = () => {
+    const pages = [];
+    const maxVisible = 5;
+    let start = Math.max(0, currentPage - Math.floor(maxVisible / 2));
+    let end = Math.min(totalPages, start + maxVisible);
+    if (end - start < maxVisible) start = Math.max(0, end - maxVisible);
+    for (let i = start; i < end; i++) pages.push(i);
+    return pages;
+  };
+
+  const getUserInitial = () => {
+    const name = currentUser?.fullName || "Admin";
+    return name.charAt(0).toUpperCase();
+  };
+
+  /* ── Loading Screen ── */
   if (initialLoad && loading) {
     return (
       <div className="page-loading">
         <div className="loading-card">
           <div className="loading-dots">
-            <div className="dot"></div>
-            <div className="dot"></div>
-            <div className="dot"></div>
+            <div className="dot"></div><div className="dot"></div><div className="dot"></div>
           </div>
           <p className="loading-text">Loading users...</p>
         </div>
@@ -203,108 +197,151 @@ const UsersAdmin = () => {
     );
   }
 
+  /* ── Create User Modal (Full-page) ── */
   if (showCreateUser) {
     return (
       <div className="create-user-page">
         <div className="modal">
           <div className="modal-header">
-            <h2 className="modal-title">Create User</h2>
+            <h2 className="modal-title">Create New User</h2>
             <button className="close-button" onClick={handleCancel}>✕</button>
           </div>
           <div className="modal-body">
             <div className="form-group">
-              <label className="form-label">Username *</label>
-              <input type="text" placeholder="Enter username" value={formData.username}
+              <label className="form-label">Username <span style={{ color: "#dc2626" }}>*</span></label>
+              <input type="text" placeholder="e.g. john.doe" value={formData.username}
                 onChange={(e) => handleChange("username", e.target.value)} className="form-input" />
             </div>
-            <div className="form-row" style={{ display: "flex", gap: "16px" }}>
-              <div className="form-group" style={{ flex: 1 }}>
-                <label className="form-label">First Name *</label>
-                <input type="text" placeholder="Enter first name" value={formData.firstName}
+            <div className="form-row">
+              <div className="form-group">
+                <label className="form-label">First Name <span style={{ color: "#dc2626" }}>*</span></label>
+                <input type="text" placeholder="John" value={formData.firstName}
                   onChange={(e) => handleChange("firstName", e.target.value)} className="form-input" />
               </div>
-              <div className="form-group" style={{ flex: 1 }}>
-                <label className="form-label">Last Name *</label>
-                <input type="text" placeholder="Enter last name" value={formData.lastName}
+              <div className="form-group">
+                <label className="form-label">Last Name <span style={{ color: "#dc2626" }}>*</span></label>
+                <input type="text" placeholder="Doe" value={formData.lastName}
                   onChange={(e) => handleChange("lastName", e.target.value)} className="form-input" />
               </div>
             </div>
             <div className="form-group">
-              <label className="form-label">Email *</label>
-              <input type="email" placeholder="Enter email" value={formData.email}
+              <label className="form-label">Email <span style={{ color: "#dc2626" }}>*</span></label>
+              <input type="email" placeholder="john@company.com" value={formData.email}
                 onChange={(e) => handleChange("email", e.target.value)} className="form-input" />
             </div>
             <div className="form-group">
               <label className="form-label">Phone Number</label>
-              <input type="text" placeholder="Enter phone number" value={formData.phoneNumber}
+              <input type="text" placeholder="+84 xxx xxx xxx" value={formData.phoneNumber}
                 onChange={(e) => handleChange("phoneNumber", e.target.value)} className="form-input" />
             </div>
             <div className="form-group">
-              <label className="form-label">Password *</label>
-              <input type="password" placeholder="Enter password" value={formData.password}
+              <label className="form-label">Password <span style={{ color: "#dc2626" }}>*</span></label>
+              <input type="password" placeholder="Minimum 8 characters" value={formData.password}
                 onChange={(e) => handleChange("password", e.target.value)} className="form-input" />
             </div>
-            <div className="form-group">
-              <label className="form-label">Role *</label>
-              <select value={formData.role} onChange={(e) => handleChange("role", e.target.value)} className="form-select">
-                <option value="ADMIN">Admin</option>
-                <option value="MANAGER">Manager</option>
-                <option value="LINE_LEADER">Line Leader</option>
-              </select>
-            </div>
-            <div className="form-group">
-              <label className="form-label">Employee Code (auto-generated if empty)</label>
-              <input type="text" placeholder="e.g. EMP001 (optional)" value={formData.employeeCode}
-                onChange={(e) => handleChange("employeeCode", e.target.value)} className="form-input" />
+            <div className="form-row">
+              <div className="form-group">
+                <label className="form-label">Role <span style={{ color: "#dc2626" }}>*</span></label>
+                <select value={formData.role} onChange={(e) => handleChange("role", e.target.value)} className="form-select">
+                  <option value="ADMIN">Admin</option>
+                  <option value="MANAGER">Manager</option>
+                  <option value="LINE_LEADER">Line Leader</option>
+                </select>
+              </div>
+              <div className="form-group">
+                <label className="form-label">Employee Code</label>
+                <input type="text" placeholder="Auto-generated if empty" value={formData.employeeCode}
+                  onChange={(e) => handleChange("employeeCode", e.target.value)} className="form-input" />
+                <span className="form-hint">Leave blank for auto-generation</span>
+              </div>
             </div>
           </div>
           <div className="modal-footer">
             <button className="btn-cancel" onClick={handleCancel} disabled={actionLoading}>Cancel</button>
             <button className="btn-save" onClick={handleSave} disabled={actionLoading}>
-              {actionLoading ? "Creating..." : "Save"}
+              {actionLoading ? "Creating..." : "Create User"}
             </button>
           </div>
         </div>
       </div>
-    );
-  }
-
+    );  }
+  /* ── Main Page ── */
   return (
     <div className="admin-container">
       <AdminSidebar />
 
       <div className="admin-main">
-        <header className="admin-header">
-          <h1 className="header-title">Users Admin</h1>
-          <div className="header-actions">
-            <button className="header-icon-btn" onClick={fetchUsers} title="Refresh">🔄</button>
-            <NotificationBell />
-            <div className="user-menu">
-              <div className="user-avatar"></div>
-              <span className="user-name">{currentUser?.fullName || "Admin"}</span>
-              <span className="dropdown-icon">▼</span>
+        {/* ===== Gradient Header (synced with Dashboard) ===== */}
+        <header className="dash-header">
+          <div className="dash-header-left">
+            <div className="dash-header-avatar">{getUserInitial()}</div>
+            <div>
+              <h1 className="dash-title">User Management</h1>
+              <p className="dash-subtitle">
+                Manage accounts, roles and permissions
+                <span className="dash-last-updated"> · {totalElements} users total</span>
+              </p>
             </div>
+          </div>
+          <div className="dash-header-right">
+            <button className="dash-refresh-btn" onClick={fetchUsers} title="Refresh data">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <polyline points="23 4 23 10 17 10" />
+                <polyline points="1 20 1 14 7 14" />
+                <path d="M3.51 9a9 9 0 0114.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0020.49 15" />
+              </svg>
+            </button>
+            <NotificationBell />
           </div>
         </header>
 
+        {/* Content Card */}
         <div className="admin-content">
+          {/* Error */}
           {error && (
-            <div className="error-banner" style={{
-              background: "#ffebee", color: "#c62828", padding: "12px 16px",
-              borderRadius: "8px", marginBottom: "16px", display: "flex",
-              justifyContent: "space-between", alignItems: "center",
-            }}>
+            <div className="error-banner">
               <span>⚠️ {error}</span>
-              <button onClick={fetchUsers} style={{
-                background: "#c62828", color: "white", border: "none",
-                padding: "6px 12px", borderRadius: "4px", cursor: "pointer",
-              }}>Retry</button>
+              <button className="error-banner-btn" onClick={fetchUsers}>Retry</button>
             </div>
           )}
-          <div className="content-header">
-            <h2 className="content-title">Users Management</h2>
-            <button className="btn-primary" onClick={() => setShowCreateUser(true)}>+ Create User</button>
+
+          {/* Stats Bar */}
+          <div className="users-stats-bar">
+            <div className="stat-chip">
+              <div className="stat-chip-icon total">👥</div>
+              <div className="stat-chip-info">
+                <span className="stat-chip-value">{stats.total}</span>
+                <span className="stat-chip-label">Total Users</span>
+              </div>
+            </div>
+            <div className="stat-chip">
+              <div className="stat-chip-icon active">✅</div>
+              <div className="stat-chip-info">
+                <span className="stat-chip-value">{stats.active}</span>
+                <span className="stat-chip-label">Active</span>
+              </div>
+            </div>
+            <div className="stat-chip">
+              <div className="stat-chip-icon locked">🔒</div>
+              <div className="stat-chip-info">
+                <span className="stat-chip-value">{stats.locked}</span>
+                <span className="stat-chip-label">Locked</span>
+              </div>
+            </div>
           </div>
+
+          {/* Toolbar */}
+          <div className="content-header">
+            <h2 className="content-title">
+              All Users
+              {debouncedSearch && <span style={{ fontWeight: 400, fontSize: 14, color: "#9ca3af" }}> — results for "{debouncedSearch}"</span>}
+            </h2>
+            <button className="btn-primary" onClick={() => setShowCreateUser(true)}>
+              <span>＋</span> Add User
+            </button>
+          </div>
+
+          {/* Filters */}
           <div className="filters-container">
             <div className="search-box">
               <span className="search-icon">🔍</span>
@@ -312,7 +349,7 @@ const UsersAdmin = () => {
                 value={searchTerm} onChange={handleSearchChange} className="search-input" />
             </div>
             <div className="role-filter">
-              <label className="role-label">Role</label>
+              <label className="role-label">Role:</label>
               <select value={roleFilter} onChange={handleRoleFilterChange} className="role-select">
                 <option>All roles</option>
                 <option value="ADMIN">Admin</option>
@@ -321,91 +358,108 @@ const UsersAdmin = () => {
               </select>
             </div>
           </div>
-          <div style={{ position: "relative" }}>
+
+          {/* Table */}
+          <div className="table-wrapper">
             {loading && !initialLoad && (
-              <div style={{
-                position: "absolute", top: 0, left: 0, right: 0, bottom: 0,
-                background: "rgba(255,255,255,0.7)", display: "flex",
-                alignItems: "center", justifyContent: "center", zIndex: 10, borderRadius: "8px",
-              }}>
-                <span style={{ fontSize: "16px", color: "#555" }}>Loading...</span>
+              <div className="table-loading-overlay">
+                <div className="loading-spinner"></div>
               </div>
             )}
-            <table className="users-table">
-              <thead>
-                <tr>
-                  <th className="table-header">Username</th>
-                  <th className="table-header">Employee Code</th>
-                  <th className="table-header">Role</th>
-                  <th className="table-header">Status</th>
-                  <th className="table-header">Last Login</th>
-                  <th className="table-header">Actions</th>
-                </tr>
-              </thead>
-              <tbody>
-                {users.length === 0 ? (
+
+            {users.length === 0 && !loading ? (
+              <div className="empty-state">
+                <div className="empty-state-icon">📋</div>
+                <div className="empty-state-text">No users found</div>
+                <div className="empty-state-hint">Try adjusting your search or filters</div>
+              </div>
+            ) : (
+              <table className="users-table">
+                <thead>
                   <tr>
-                    <td colSpan="6" style={{ textAlign: "center", padding: "40px", color: "#666" }}>
-                      No users found
-                    </td>
+                    <th className="table-header">User</th>
+                    <th className="table-header">Role</th>
+                    <th className="table-header">Status</th>
+                    <th className="table-header">Last Login</th>
+                    <th className="table-header" style={{ textAlign: "right" }}>Actions</th>
                   </tr>
-                ) : (
-                  users.map((user) => (
+                </thead>
+                <tbody>
+                  {users.map((user) => (
                     <tr key={user.id} className="table-row">
-                      <td className="table-cell">{user.username}</td>
-                      <td className="table-cell">{user.employeeCode || "-"}</td>
-                      <td className="table-cell">{user.role}</td>
+                      <td className="table-cell">
+                        <div className="user-info-cell">
+                          <div className="user-info-avatar">{getInitials(user.username)}</div>
+                          <div className="user-info-details">
+                            <span className="user-info-name">{user.username}</span>
+                            <span className="user-info-code">{user.employeeCode || "No code"}</span>
+                          </div>
+                        </div>
+                      </td>
+                      <td className="table-cell">
+                        <span className={`role-badge ${getRoleBadgeClass(user.role)}`}>
+                          {user.role?.replace("_", " ")}
+                        </span>
+                      </td>
                       <td className="table-cell">
                         <span className={user.status === "active" ? "status-active" : "status-blocked"}>
                           {user.status === "active" ? "Active" : "Locked"}
                         </span>
                       </td>
-                      <td className="table-cell">
-                        {user.lastLogin ? new Date(user.lastLogin).toLocaleString() : "-"}
+                      <td className="table-cell" style={{ color: "#6b7280", fontSize: 12 }}>
+                        {formatDate(user.lastLogin)}
                       </td>
                       <td className="table-cell">
-                        <button className="action-button" onClick={() => handleEditClick(user)}
-                          title="Edit role & status" disabled={actionLoading}>✏️</button>
-                        <button className={`action-button ${user.status === "active" ? "delete" : ""}`}
-                          onClick={() => handleToggleLock(user)}
-                          title={user.status === "active" ? "Lock account" : "Unlock account"}
-                          disabled={actionLoading}>
-                          {user.status === "active" ? "🔒" : "🔓"}
-                        </button>
+                        <div className="actions-cell" style={{ justifyContent: "flex-end" }}>
+                          <button className="action-button" onClick={() => handleEditClick(user)}
+                            title="Edit user" disabled={actionLoading}>
+                            ✏️
+                          </button>
+                          <button className={`action-button ${user.status === "active" ? "delete" : ""}`}
+                            onClick={() => handleToggleLock(user)}
+                            title={user.status === "active" ? "Lock account" : "Unlock account"}
+                            disabled={actionLoading}>
+                            {user.status === "active" ? "🔒" : "🔓"}
+                          </button>
+                        </div>
                       </td>
                     </tr>
-                  ))
-                )}
-              </tbody>
-            </table>
-
-            {totalPages > 1 && (
-              <div className="pagination" style={{
-                display: "flex", justifyContent: "center", alignItems: "center",
-                gap: "8px", marginTop: "20px", padding: "16px 0",
-              }}>
-                <button onClick={() => setCurrentPage((p) => Math.max(0, p - 1))} disabled={currentPage === 0}
-                  style={{ padding: "8px 16px", borderRadius: "6px", border: "1px solid #ddd",
-                    background: currentPage === 0 ? "#f5f5f5" : "#fff",
-                    cursor: currentPage === 0 ? "not-allowed" : "pointer" }}>
-                  ← Previous
-                </button>
-                <span style={{ padding: "0 12px", color: "#555" }}>
-                  Page {currentPage + 1} of {totalPages} ({totalElements} users)
-                </span>
-                <button onClick={() => setCurrentPage((p) => Math.min(totalPages - 1, p + 1))}
-                  disabled={currentPage >= totalPages - 1}
-                  style={{ padding: "8px 16px", borderRadius: "6px", border: "1px solid #ddd",
-                    background: currentPage >= totalPages - 1 ? "#f5f5f5" : "#fff",
-                    cursor: currentPage >= totalPages - 1 ? "not-allowed" : "pointer" }}>
-                  Next →
-                </button>
-              </div>
+                  ))}
+                </tbody>
+              </table>
             )}
           </div>
+
+          {/* Pagination */}
+          {totalPages > 1 && (
+            <div className="pagination">
+              <div className="pagination-info">
+                Showing <strong>{currentPage * pageSize + 1}</strong> to{" "}
+                <strong>{Math.min((currentPage + 1) * pageSize, totalElements)}</strong> of{" "}
+                <strong>{totalElements}</strong> users
+              </div>
+              <div className="pagination-controls">
+                <button className="pagination-btn" onClick={() => setCurrentPage((p) => Math.max(0, p - 1))}
+                  disabled={currentPage === 0}>
+                  ‹ Prev
+                </button>
+                {getPageNumbers().map((page) => (
+                  <button key={page} className={`pagination-btn ${page === currentPage ? "active" : ""}`}
+                    onClick={() => setCurrentPage(page)}>
+                    {page + 1}
+                  </button>
+                ))}
+                <button className="pagination-btn" onClick={() => setCurrentPage((p) => Math.min(totalPages - 1, p + 1))}
+                  disabled={currentPage >= totalPages - 1}>
+                  Next ›
+                </button>
+              </div>
+            </div>
+          )}
         </div>
       </div>
 
+      {/* Edit User Modal */}
       {showEditUser && (
         <div className="modal-overlay">
           <div className="modal">
@@ -416,13 +470,11 @@ const UsersAdmin = () => {
             <div className="modal-body">
               <div className="form-group">
                 <label className="form-label">Username</label>
-                <input type="text" value={formData.username} disabled className="form-input"
-                  style={{ background: "#f5f5f5", cursor: "not-allowed" }} />
+                <input type="text" value={formData.username} disabled className="form-input" />
               </div>
               <div className="form-group">
                 <label className="form-label">Employee Code</label>
-                <input type="text" value={selectedUser?.employeeCode || "-"} disabled className="form-input"
-                  style={{ background: "#f5f5f5", cursor: "not-allowed" }} />
+                <input type="text" value={selectedUser?.employeeCode || "—"} disabled className="form-input" />
               </div>
               <div className="form-group">
                 <label className="form-label">Role</label>
@@ -432,9 +484,7 @@ const UsersAdmin = () => {
                   <option value="LINE_LEADER">Line Leader</option>
                 </select>
                 {selectedUser?.role === "ADMIN" && (
-                  <small style={{ color: "#999", marginTop: "4px", display: "block" }}>
-                    Cannot change role of an Admin account
-                  </small>
+                  <span className="form-hint">Admin role cannot be changed</span>
                 )}
               </div>
               <div className="form-group">
@@ -450,7 +500,7 @@ const UsersAdmin = () => {
             <div className="modal-footer">
               <button className="btn-cancel" onClick={handleCancel} disabled={actionLoading}>Cancel</button>
               <button className="btn-save" onClick={handleEditSave} disabled={actionLoading}>
-                {actionLoading ? "Updating..." : "Update"}
+                {actionLoading ? "Updating..." : "Save Changes"}
               </button>
             </div>
           </div>
