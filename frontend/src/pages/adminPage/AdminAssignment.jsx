@@ -4,6 +4,7 @@ import AdminSidebar from "../../components/AdminSidebar/AdminSidebar";
 import authService from "../../services/authService";
 import adminService from "../../services/adminService";
 import "./AdminAssignment.css";
+import "./AdminDashboard.css";
 
 const TOTAL_LINES = 5;
 
@@ -118,6 +119,7 @@ const AdminAssignment = () => {
       <AdminSidebar />
 
       <div className="admin-main">
+<<<<<<< HEAD
         <header className="admin-header">
           <h1 className="header-title">Gán Leader vào Line</h1>
           <div className="header-actions">
@@ -127,7 +129,20 @@ const AdminAssignment = () => {
               <span className="user-name">
                 {currentUser?.fullName || "Admin"}
               </span>
+=======
+        <header className="dash-header">
+          <div className="dash-header-left">
+            <div className="dash-header-avatar">
+              {(currentUser?.fullName || "A").charAt(0).toUpperCase()}
+>>>>>>> b61125edceb7d7cbf1893e48420b9c1980fe130e
             </div>
+            <div>
+              <h1 className="dash-title">Leader Assignment</h1>
+              <p className="dash-subtitle">Assign line leaders to production lines</p>
+            </div>
+          </div>
+          <div className="dash-header-right">
+            <NotificationBell />
           </div>
         </header>
 

@@ -52,17 +52,18 @@ const AuditLog = () => {
       <AdminSidebar />
 
       <div className="admin-main">
-        <header className="admin-header">
-          <h1 className="header-title">Audit Log</h1>
-          <div className="header-actions">
-            <NotificationBell />
-            <div className="user-menu">
-              <div className="user-avatar"></div>
-              <span className="user-name">
-                {currentUser?.fullName || "Admin"}
-              </span>
-              <span className="dropdown-icon">▼</span>
+        <header className="dash-header">
+          <div className="dash-header-left">
+            <div className="dash-header-avatar">
+              {(currentUser?.fullName || "A").charAt(0).toUpperCase()}
             </div>
+            <div>
+              <h1 className="dash-title">Audit Log</h1>
+              <p className="dash-subtitle">System activity logs and history</p>
+            </div>
+          </div>
+          <div className="dash-header-right">
+            <NotificationBell />
           </div>
         </header>
 
