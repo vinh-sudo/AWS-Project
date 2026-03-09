@@ -6,7 +6,7 @@ import NotificationBell from "../../components/NotificationBell/NotificationBell
 import AdminSidebar from "../../components/AdminSidebar/AdminSidebar";
 import authService from "../../services/authService";
 import adminService from "../../services/adminService";
-import "./adminUser.css";
+import "./AdminOrders.css";
 
 const AdminOrders = () => {
   const navigate = useNavigate();
@@ -357,7 +357,7 @@ const AdminOrders = () => {
     setPendingFiles([]);
   };
 
-  const getStatusClass = (status) => {
+  const getStatusKey = (status) => {
     switch (status) {
       case "Draft":
         return "status-draft";
@@ -381,7 +381,7 @@ const AdminOrders = () => {
     return status || "Unknown";
   };
 
-  const getPriorityClass = (priority) => {
+  const getPriorityKey = (priority) => {
     switch (priority?.toUpperCase()) {
       case "URGENT":
       case "CRITICAL":
@@ -409,6 +409,11 @@ const AdminOrders = () => {
     }).format(value);
   };
 
+  const getUserInitial = () => {
+    const name = currentUser?.fullName || "A";
+    return name.charAt(0).toUpperCase();
+  };
+
   const filteredOrders = orders.filter((order) => {
     const matchSearch =
       order.customerName?.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -428,6 +433,49 @@ const AdminOrders = () => {
     cancelled: orders.filter((o) => o.status === "Cancelled").length,
   };
 
+  const getConfirmConfig = () => {
+    switch (confirmAction.type) {
+      case "cancel": return { icon: "⚠️", iconClass: "warning", title: "Cancel Order", btnClass: "ao-btn-warning", btnText: "Yes, Cancel" };
+      case "delete": return { icon: "🗑", iconClass: "danger", title: "Delete Order", btnClass: "ao-btn-danger", btnText: "Yes, Delete" };
+      case "stop": return { icon: "⏸", iconClass: "warning", title: "Stop Production", btnClass: "ao-btn-warning", btnText: "Yes, Stop" };
+      case "resume": return { icon: "▶", iconClass: "info", title: "Resume Production", btnClass: "ao-btn-save", btnText: "Yes, Resume" };
+      default: return { icon: "?", iconClass: "info", title: "Confirm", btnClass: "ao-btn-save", btnText: "Confirm" };
+    }
+  };
+
+  const getConfirmMessage = () => {
+    const id = confirmAction.orderId;
+    switch (confirmAction.type) {
+      case "cancel": return (<>Are you sure you want to cancel order <strong>#{id}</strong>? This action cannot be undone.</>);
+      case "delete": return (<>Are you sure you want to permanently delete order <strong>#{id}</strong>?</>);
+      case "stop": return (<>Are you sure you want to stop production for order <strong>#{id}</strong>? Related schedules will be stopped.</>);
+      case "resume": return (<>Are you sure you want to resume production for order <strong>#{id}</strong>? Stopped schedules will be resumed.</>);
+      default: return "Are you sure?";
+    }
+  };
+
+  /* === SVG Icons === */
+  const Icons = {
+    search: <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>,
+    plus: <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 5v14M5 12h14"/></svg>,
+    refresh: <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21.5 2v6h-6M2.5 22v-6h6M2 11.5a10 10 0 0118.8-4.3M22 12.5a10 10 0 01-18.8 4.3"/></svg>,
+    eye: <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>,
+    edit: <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>,
+    check: <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"/></svg>,
+    play: <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><polygon points="5 3 19 12 5 21 5 3"/></svg>,
+    checkCircle: <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M22 11.08V12a10 10 0 11-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>,
+    stop: <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><rect x="4" y="4" width="16" height="16" rx="2"/></svg>,
+    rotateCw: <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 11-2.12-9.36L23 10"/></svg>,
+    xCircle: <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg>,
+    trash: <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2"/></svg>,
+    close: <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>,
+    upload: <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>,
+    package: <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="16.5" y1="9.4" x2="7.5" y2="4.21"/><path d="M21 16V8a2 2 0 00-1-1.73l-7-4a2 2 0 00-2 0l-7 4A2 2 0 002 8v8a2 2 0 001 1.73l7 4a2 2 0 002 0l7-4A2 2 0 0021 16z"/><polyline points="3.27 6.96 12 12.01 20.73 6.96"/><line x1="12" y1="22.08" x2="12" y2="12"/></svg>,
+    file: <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>,
+    minus: <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><line x1="5" y1="12" x2="19" y2="12"/></svg>,
+  };
+
+  /* === Items Form === */
   const renderItemsForm = () => (
     <div className="form-group">
       <label
@@ -521,6 +569,44 @@ const AdminOrders = () => {
     </div>
   );
 
+  /* === Order Form Fields (shared by Create & Edit) === */
+  const renderOrderForm = () => (
+    <>
+      <div className="ao-form-group">
+        <label className="ao-form-label">Customer Name <span className="ao-form-required">*</span></label>
+        <input type="text" className="ao-form-input" value={formData.customerName}
+          onChange={(e) => setFormData({ ...formData, customerName: e.target.value })} placeholder="Enter customer name" />
+      </div>
+      <div className="ao-form-group">
+        <label className="ao-form-label">Product Type <span className="ao-form-required">*</span></label>
+        <input type="text" className="ao-form-input" value={formData.productType}
+          onChange={(e) => setFormData({ ...formData, productType: e.target.value })} placeholder="Enter product type" />
+      </div>
+      <div className="ao-form-row">
+        <div className="ao-form-group">
+          <label className="ao-form-label">Quantity <span className="ao-form-required">*</span></label>
+          <input type="number" className="ao-form-input" value={formData.quantity}
+            onChange={(e) => setFormData({ ...formData, quantity: e.target.value })} placeholder="Enter quantity" min="1" />
+        </div>
+        <div className="ao-form-group">
+          <label className="ao-form-label">Deadline</label>
+          <input type="date" className="ao-form-input" value={formData.deadline}
+            onChange={(e) => setFormData({ ...formData, deadline: e.target.value })} />
+        </div>
+      </div>
+      <div className="ao-form-group">
+        <label className="ao-form-label">Priority</label>
+        <select className="ao-form-select" value={formData.priority}
+          onChange={(e) => setFormData({ ...formData, priority: e.target.value })}>
+          <option value="Low">Low</option><option value="Medium">Medium</option>
+          <option value="High">High</option><option value="Urgent">Urgent</option>
+        </select>
+      </div>
+      {renderItemsForm()}
+    </>
+  );
+
+  /* === Loading Screen === */
   if (initialLoad && loading) {
     return (
       <div className="page-loading">
@@ -561,7 +647,9 @@ const AdminOrders = () => {
           </div>
         </header>
 
-        <div className="admin-content">
+        {/* === Content === */}
+        <div className="ao-content">
+          {/* Error Banner */}
           {error && (
             <div
               className="error-banner"
@@ -658,8 +746,9 @@ const AdminOrders = () => {
             </button>
           </div>
 
-          <div className="table-container">
-            <table className="data-table">
+          {/* Table */}
+          <div className="ao-table-wrapper">
+            <table className="ao-table">
               <thead>
                 <tr>
                   <th>ID</th>
@@ -821,7 +910,9 @@ const AdminOrders = () => {
         </div>
       </div>
 
-      {/* Create Order Modal */}
+      {/* ================================
+          CREATE ORDER MODAL
+          ================================ */}
       {showCreateModal && (
         <div className="modal-overlay">
           <div className="modal">
@@ -979,7 +1070,9 @@ const AdminOrders = () => {
         </div>
       )}
 
-      {/* Edit Order Modal */}
+      {/* ================================
+          EDIT ORDER MODAL
+          ================================ */}
       {showEditModal && (
         <div className="modal-overlay">
           <div className="modal">
@@ -1076,7 +1169,9 @@ const AdminOrders = () => {
         </div>
       )}
 
-      {/* Detail Order Modal */}
+      {/* ================================
+          DETAIL ORDER MODAL
+          ================================ */}
       {showDetailModal && detailOrder && (
         <div className="modal-overlay">
           <div className="modal modal-large">
@@ -1159,6 +1254,7 @@ const AdminOrders = () => {
                 </div>
               </div>
 
+              {/* Order Items */}
               {detailOrder.items && detailOrder.items.length > 0 && (
                 <div className="detail-items-section">
                   <h3>📦 Order Items ({detailOrder.items.length})</h3>
