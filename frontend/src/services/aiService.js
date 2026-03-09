@@ -31,6 +31,22 @@ const aiService = {
     );
     return response.data;
   },
+
+  // GET /api/production-analysis/production-health/ai-summary - Get AI-generated production health summary
+  getProductionHealthSummary: async () => {
+    const response = await api.get(
+      "/api/production-analysis/production-health/ai-summary",
+    );
+    return response.data;
+  },
+
+  // GET /api/production-analysis/root-cause-analysis/ai-summary - Get AI-generated root cause summary
+  getRootCauseSummary: async () => {
+    const response = await api.get(
+      "/api/production-analysis/root-cause-analysis/ai-summary",
+    );
+    return response.data;
+  },
 };
 
 export default aiService;

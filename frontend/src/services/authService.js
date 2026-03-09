@@ -161,15 +161,13 @@ export const authService = {
     }
   },
 
-  // Logout function
-  // NOTE: Backend /api/auth/logout always returns 403 because:
-  //   - JwtFilter skips /api/auth/* (no SecurityContext set)
-  //   - SecurityConfig requires auth for /api/auth/logout (not in permitAll)
-  // So we skip the API call entirely and just clear client-side session.
-  // Token will expire naturally (15min access, 4h refresh).
-  // TODO: Re-enable API call once backend fixes SecurityConfig to add
-  //       "/api/auth/logout" to permitAll or stops skipping it in JwtFilter.
+  // Logout function - invalidate token server-side + clear client session
   logout: async () => {
+    const accessToken = localStorage.getItem("accessToken");
+    const refreshToken = localStorage.getItem("refreshToken");
+    await api
+      .post("/api/auth/logout", { accessToken, refreshToken })
+      .catch(() => {});
     localStorage.removeItem("accessToken");
     localStorage.removeItem("refreshToken");
     localStorage.removeItem("user");

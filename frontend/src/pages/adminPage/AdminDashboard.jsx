@@ -14,8 +14,6 @@ import {
   Tooltip,
   Legend,
   ResponsiveContainer,
-  AreaChart,
-  Area,
 } from "recharts";
 import authService from "../../services/authService";
 import adminService from "../../services/adminService";
@@ -44,7 +42,7 @@ const AdminDashboard = () => {
   });
 
   const [recentOrders, setRecentOrders] = useState([]);
-  const [recentActivities, setRecentActivities] = useState([]);
+  const [upcomingDeadlines, setUpcomingDeadlines] = useState([]);
 
   const fetchDashboardData = useCallback(async () => {
     try {
@@ -67,19 +65,24 @@ const AdminDashboard = () => {
       });
 
       try {
-        const orders = await adminService.getRecentOrders?.();
-        setRecentOrders(Array.isArray(orders) ? orders.slice(0, 5) : []);
+        const allOrders = await adminService.getAllOrders();
+        const sorted = Array.isArray(allOrders)
+          ? [...allOrders]
+              .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt))
+              .slice(0, 5)
+          : [];
+        setRecentOrders(sorted);
       } catch {
         setRecentOrders([]);
       }
 
       try {
-        const activities = await adminService.getRecentActivities?.();
-        setRecentActivities(
-          Array.isArray(activities) ? activities.slice(0, 6) : []
+        const deadlines = await adminService.getUpcomingDeadlineOrders(7);
+        setUpcomingDeadlines(
+          Array.isArray(deadlines) ? deadlines.slice(0, 6) : [],
         );
       } catch {
-        setRecentActivities([]);
+        setUpcomingDeadlines([]);
       }
 
       setLastUpdated(new Date());
@@ -216,7 +219,16 @@ const AdminDashboard = () => {
               onClick={fetchDashboardData}
               title="Refresh data"
             >
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <svg
+                width="18"
+                height="18"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              >
                 <polyline points="23 4 23 10 17 10" />
                 <polyline points="1 20 1 14 7 14" />
                 <path d="M3.51 9a9 9 0 0114.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0020.49 15" />
@@ -229,7 +241,14 @@ const AdminDashboard = () => {
         <div className="dash-content">
           {error && (
             <div className="dash-error">
-              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+              <svg
+                width="20"
+                height="20"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
+              >
                 <circle cx="12" cy="12" r="10" />
                 <line x1="12" y1="8" x2="12" y2="12" />
                 <line x1="12" y1="16" x2="12.01" y2="16" />
@@ -245,7 +264,14 @@ const AdminDashboard = () => {
             <div className="dash-stat-card">
               <div className="dash-stat-header">
                 <div className="dash-stat-icon dash-icon-users">
-                  <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8">
+                  <svg
+                    width="22"
+                    height="22"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="1.8"
+                  >
                     <path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2" />
                     <circle cx="9" cy="7" r="4" />
                     <path d="M23 21v-2a4 4 0 00-3-3.87" />
@@ -262,9 +288,10 @@ const AdminDashboard = () => {
                 <div
                   className="dash-stat-bar-fill dash-bar-blue"
                   style={{
-                    width: stats.totalUsers > 0
-                      ? `${(stats.activeUsers / stats.totalUsers) * 100}%`
-                      : "0%",
+                    width:
+                      stats.totalUsers > 0
+                        ? `${(stats.activeUsers / stats.totalUsers) * 100}%`
+                        : "0%",
                   }}
                 />
               </div>
@@ -274,7 +301,14 @@ const AdminDashboard = () => {
             <div className="dash-stat-card">
               <div className="dash-stat-header">
                 <div className="dash-stat-icon dash-icon-orders">
-                  <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8">
+                  <svg
+                    width="22"
+                    height="22"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="1.8"
+                  >
                     <path d="M6 2L3 6v14a2 2 0 002 2h14a2 2 0 002-2V6l-3-4z" />
                     <line x1="3" y1="6" x2="21" y2="6" />
                     <path d="M16 10a4 4 0 01-8 0" />
@@ -290,9 +324,10 @@ const AdminDashboard = () => {
                 <div
                   className="dash-stat-bar-fill dash-bar-amber"
                   style={{
-                    width: stats.totalOrders > 0
-                      ? `${(stats.completedOrders / stats.totalOrders) * 100}%`
-                      : "0%",
+                    width:
+                      stats.totalOrders > 0
+                        ? `${(stats.completedOrders / stats.totalOrders) * 100}%`
+                        : "0%",
                   }}
                 />
               </div>
@@ -302,7 +337,14 @@ const AdminDashboard = () => {
             <div className="dash-stat-card">
               <div className="dash-stat-header">
                 <div className="dash-stat-icon dash-icon-lines">
-                  <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8">
+                  <svg
+                    width="22"
+                    height="22"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="1.8"
+                  >
                     <path d="M2 20h.01" />
                     <path d="M7 20v-4" />
                     <path d="M12 20v-8" />
@@ -331,7 +373,14 @@ const AdminDashboard = () => {
             <div className="dash-stat-card">
               <div className="dash-stat-header">
                 <div className="dash-stat-icon dash-icon-efficiency">
-                  <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8">
+                  <svg
+                    width="22"
+                    height="22"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="1.8"
+                  >
                     <polyline points="22 12 18 12 15 21 9 3 6 12 2 12" />
                   </svg>
                 </div>
@@ -352,30 +401,70 @@ const AdminDashboard = () => {
 
           {/* ===== Quick Actions ===== */}
           <div className="dash-quick-actions">
-            <button className="dash-quick-btn" onClick={() => navigate("/admin/orders")}>
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+            <button
+              className="dash-quick-btn"
+              onClick={() => navigate("/admin/orders")}
+            >
+              <svg
+                width="16"
+                height="16"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
+              >
                 <path d="M6 2L3 6v14a2 2 0 002 2h14a2 2 0 002-2V6l-3-4z" />
                 <line x1="3" y1="6" x2="21" y2="6" />
               </svg>
               Manage Orders
             </button>
-            <button className="dash-quick-btn" onClick={() => navigate("/admin/users")}>
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+            <button
+              className="dash-quick-btn"
+              onClick={() => navigate("/admin/users")}
+            >
+              <svg
+                width="16"
+                height="16"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
+              >
                 <path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2" />
                 <circle cx="9" cy="7" r="4" />
               </svg>
               Manage Users
             </button>
-            <button className="dash-quick-btn" onClick={() => navigate("/admin/assignments")}>
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+            <button
+              className="dash-quick-btn"
+              onClick={() => navigate("/admin/assignments")}
+            >
+              <svg
+                width="16"
+                height="16"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
+              >
                 <rect x="3" y="3" width="18" height="18" rx="2" ry="2" />
                 <line x1="3" y1="9" x2="21" y2="9" />
                 <line x1="9" y1="21" x2="9" y2="9" />
               </svg>
               Assignments
             </button>
-            <button className="dash-quick-btn" onClick={() => navigate("/admin/audit-log")}>
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+            <button
+              className="dash-quick-btn"
+              onClick={() => navigate("/admin/audit-log")}
+            >
+              <svg
+                width="16"
+                height="16"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
+              >
                 <path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z" />
                 <polyline points="14 2 14 8 20 8" />
                 <line x1="16" y1="13" x2="8" y2="13" />
@@ -392,7 +481,14 @@ const AdminDashboard = () => {
               <div className="dash-card-header">
                 <h3 className="dash-card-title">
                   <span className="dash-card-title-icon icon-chart">
-                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+                    <svg
+                      width="14"
+                      height="14"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth="2.5"
+                    >
                       <line x1="18" y1="20" x2="18" y2="10" />
                       <line x1="12" y1="20" x2="12" y2="4" />
                       <line x1="6" y1="20" x2="6" y2="14" />
@@ -411,24 +507,68 @@ const AdminDashboard = () => {
                 <ResponsiveContainer width="100%" height={280}>
                   <BarChart data={barData} barCategoryGap="25%">
                     <defs>
-                      <linearGradient id="barPending" x1="0" y1="0" x2="0" y2="1">
+                      <linearGradient
+                        id="barPending"
+                        x1="0"
+                        y1="0"
+                        x2="0"
+                        y2="1"
+                      >
                         <stop offset="0%" stopColor="#f59e0b" stopOpacity={1} />
-                        <stop offset="100%" stopColor="#fbbf24" stopOpacity={0.8} />
+                        <stop
+                          offset="100%"
+                          stopColor="#fbbf24"
+                          stopOpacity={0.8}
+                        />
                       </linearGradient>
-                      <linearGradient id="barProgress" x1="0" y1="0" x2="0" y2="1">
+                      <linearGradient
+                        id="barProgress"
+                        x1="0"
+                        y1="0"
+                        x2="0"
+                        y2="1"
+                      >
                         <stop offset="0%" stopColor="#3b82f6" stopOpacity={1} />
-                        <stop offset="100%" stopColor="#60a5fa" stopOpacity={0.8} />
+                        <stop
+                          offset="100%"
+                          stopColor="#60a5fa"
+                          stopOpacity={0.8}
+                        />
                       </linearGradient>
-                      <linearGradient id="barCompleted" x1="0" y1="0" x2="0" y2="1">
+                      <linearGradient
+                        id="barCompleted"
+                        x1="0"
+                        y1="0"
+                        x2="0"
+                        y2="1"
+                      >
                         <stop offset="0%" stopColor="#10b981" stopOpacity={1} />
-                        <stop offset="100%" stopColor="#34d399" stopOpacity={0.8} />
+                        <stop
+                          offset="100%"
+                          stopColor="#34d399"
+                          stopOpacity={0.8}
+                        />
                       </linearGradient>
-                      <linearGradient id="barCancelled" x1="0" y1="0" x2="0" y2="1">
+                      <linearGradient
+                        id="barCancelled"
+                        x1="0"
+                        y1="0"
+                        x2="0"
+                        y2="1"
+                      >
                         <stop offset="0%" stopColor="#ef4444" stopOpacity={1} />
-                        <stop offset="100%" stopColor="#f87171" stopOpacity={0.8} />
+                        <stop
+                          offset="100%"
+                          stopColor="#f87171"
+                          stopOpacity={0.8}
+                        />
                       </linearGradient>
                     </defs>
-                    <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" vertical={false} />
+                    <CartesianGrid
+                      strokeDasharray="3 3"
+                      stroke="#f1f5f9"
+                      vertical={false}
+                    />
                     <XAxis
                       dataKey="status"
                       tick={{ fontSize: 12, fill: "#94a3b8", fontWeight: 500 }}
@@ -452,8 +592,15 @@ const AdminDashboard = () => {
                     />
                     <Bar dataKey="count" radius={[10, 10, 0, 0]} name="Orders">
                       {barData.map((entry, index) => {
-                        const gradients = ["url(#barPending)", "url(#barProgress)", "url(#barCompleted)", "url(#barCancelled)"];
-                        return <Cell key={`cell-${index}`} fill={gradients[index]} />;
+                        const gradients = [
+                          "url(#barPending)",
+                          "url(#barProgress)",
+                          "url(#barCompleted)",
+                          "url(#barCancelled)",
+                        ];
+                        return (
+                          <Cell key={`cell-${index}`} fill={gradients[index]} />
+                        );
                       })}
                     </Bar>
                   </BarChart>
@@ -461,7 +608,10 @@ const AdminDashboard = () => {
                 <div className="dash-chart-legend">
                   {orderStatusData.map((item) => (
                     <div key={item.name} className="dash-legend-item">
-                      <span className="dash-legend-dot" style={{ background: item.color }}></span>
+                      <span
+                        className="dash-legend-dot"
+                        style={{ background: item.color }}
+                      ></span>
                       {item.name}: {item.value}
                     </div>
                   ))}
@@ -474,7 +624,14 @@ const AdminDashboard = () => {
               <div className="dash-card-header">
                 <h3 className="dash-card-title">
                   <span className="dash-card-title-icon icon-pie">
-                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+                    <svg
+                      width="14"
+                      height="14"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth="2.5"
+                    >
                       <path d="M21.21 15.89A10 10 0 118 2.83" />
                       <path d="M22 12A10 10 0 0012 2v10z" />
                     </svg>
@@ -486,7 +643,13 @@ const AdminDashboard = () => {
                 <ResponsiveContainer width="100%" height={220}>
                   <PieChart>
                     <defs>
-                      <linearGradient id="pieActive" x1="0" y1="0" x2="1" y2="1">
+                      <linearGradient
+                        id="pieActive"
+                        x1="0"
+                        y1="0"
+                        x2="1"
+                        y2="1"
+                      >
                         <stop offset="0%" stopColor="#10b981" />
                         <stop offset="100%" stopColor="#34d399" />
                       </linearGradient>
@@ -551,7 +714,14 @@ const AdminDashboard = () => {
               <div className="dash-card-header">
                 <h3 className="dash-card-title">
                   <span className="dash-card-title-icon icon-orders">
-                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+                    <svg
+                      width="14"
+                      height="14"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth="2.5"
+                    >
                       <path d="M6 2L3 6v14a2 2 0 002 2h14a2 2 0 002-2V6l-3-4z" />
                       <line x1="3" y1="6" x2="21" y2="6" />
                     </svg>
@@ -587,7 +757,7 @@ const AdminDashboard = () => {
                           <td>
                             <span
                               className={`dash-badge ${getStatusBadgeClass(
-                                order.status
+                                order.status,
                               )}`}
                             >
                               {order.status || "-"}
@@ -606,7 +776,14 @@ const AdminDashboard = () => {
                 ) : (
                   <div className="dash-empty">
                     <div className="dash-empty-icon">
-                      <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#94a3b8" strokeWidth="1.5">
+                      <svg
+                        width="28"
+                        height="28"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="#94a3b8"
+                        strokeWidth="1.5"
+                      >
                         <path d="M6 2L3 6v14a2 2 0 002 2h14a2 2 0 002-2V6l-3-4z" />
                         <line x1="3" y1="6" x2="21" y2="6" />
                         <path d="M16 10a4 4 0 01-8 0" />
@@ -624,64 +801,116 @@ const AdminDashboard = () => {
               </div>
             </div>
 
-            {/* Recent Activities */}
+            {/* Upcoming Deadlines */}
             <div className="dash-card">
               <div className="dash-card-header">
                 <h3 className="dash-card-title">
                   <span className="dash-card-title-icon icon-activity">
-                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
-                      <polyline points="22 12 18 12 15 21 9 3 6 12 2 12" />
+                    <svg
+                      width="14"
+                      height="14"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth="2.5"
+                    >
+                      <circle cx="12" cy="12" r="10" />
+                      <polyline points="12 6 12 12 16 14" />
                     </svg>
                   </span>
-                  Recent Activities
+                  Upcoming Deadlines (7 days)
                 </h3>
                 <button
                   className="dash-card-action"
-                  onClick={() => navigate("/admin/audit-log")}
+                  onClick={() => navigate("/admin/orders")}
                 >
                   View All →
                 </button>
               </div>
               <div className="dash-card-body">
-                {recentActivities.length > 0 ? (
+                {upcomingDeadlines.length > 0 ? (
                   <div className="dash-activity-list">
-                    {recentActivities.map((activity, idx) => (
-                      <div key={idx} className="dash-activity-item">
-                        <div className="dash-activity-dot"></div>
-                        <div className="dash-activity-content">
-                          <p className="dash-activity-text">
-                            {activity.action || activity.description || "-"}
-                          </p>
-                          <span className="dash-activity-time">
-                            {activity.createdAt
-                              ? new Date(activity.createdAt).toLocaleString(
-                                  [],
-                                  {
+                    {upcomingDeadlines.map((order, idx) => {
+                      const deadline = order.deadline || order.dueDate;
+                      const daysLeft = deadline
+                        ? Math.ceil(
+                            (new Date(deadline) - new Date()) /
+                              (1000 * 60 * 60 * 24),
+                          )
+                        : null;
+                      return (
+                        <div
+                          key={order.id || idx}
+                          className="dash-activity-item"
+                        >
+                          <div
+                            className="dash-activity-dot"
+                            style={{
+                              background:
+                                daysLeft !== null && daysLeft <= 2
+                                  ? "#ef4444"
+                                  : daysLeft <= 4
+                                    ? "#f59e0b"
+                                    : "#3b82f6",
+                            }}
+                          ></div>
+                          <div className="dash-activity-content">
+                            <p className="dash-activity-text">
+                              <strong>#{order.id}</strong>{" "}
+                              {order.productName ||
+                                order.customerName ||
+                                "Order"}
+                              {daysLeft !== null && (
+                                <span
+                                  style={{
+                                    marginLeft: 8,
+                                    fontSize: "0.75rem",
+                                    color:
+                                      daysLeft <= 2 ? "#ef4444" : "#f59e0b",
+                                    fontWeight: 600,
+                                  }}
+                                >
+                                  {daysLeft <= 0
+                                    ? "Overdue!"
+                                    : `${daysLeft}d left`}
+                                </span>
+                              )}
+                            </p>
+                            <span className="dash-activity-time">
+                              {deadline
+                                ? new Date(deadline).toLocaleDateString([], {
                                     month: "short",
                                     day: "numeric",
-                                    hour: "2-digit",
-                                    minute: "2-digit",
-                                  }
-                                )
-                              : "-"}
-                          </span>
+                                    year: "numeric",
+                                  })
+                                : "-"}
+                            </span>
+                          </div>
                         </div>
-                      </div>
-                    ))}
+                      );
+                    })}
                   </div>
                 ) : (
                   <div className="dash-empty">
                     <div className="dash-empty-icon">
-                      <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#94a3b8" strokeWidth="1.5">
-                        <polyline points="22 12 18 12 15 21 9 3 6 12 2 12" />
+                      <svg
+                        width="28"
+                        height="28"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="#94a3b8"
+                        strokeWidth="1.5"
+                      >
+                        <circle cx="12" cy="12" r="10" />
+                        <polyline points="12 6 12 12 16 14" />
                       </svg>
                     </div>
-                    <p>No recent activities</p>
+                    <p>No upcoming deadlines</p>
                     <button
                       className="dash-empty-btn"
-                      onClick={() => navigate("/admin/audit-log")}
+                      onClick={() => navigate("/admin/orders")}
                     >
-                      View Audit Log
+                      View Orders
                     </button>
                   </div>
                 )}

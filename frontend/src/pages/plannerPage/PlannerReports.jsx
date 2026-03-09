@@ -1,9 +1,3 @@
-// ============================================================================
-// NOTE: Backend chưa có ReportsController hoặc KPI endpoint.
-// Trang này sử dụng 100% dữ liệu mock (hardcoded kpiData, productionSummary, etc).
-// Backend CÓ ManagerTrackingController (OEE, Gantt, Delays) có thể tái sử dụng
-// nếu backend cấp quyền cho role PRODUCTION_PLANNER.
-// ============================================================================
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useDispatch } from "react-redux";
@@ -240,6 +234,27 @@ const PlannerReports = () => {
             </div>
           </div>
         </header>
+
+        {/* Demo Mode Banner */}
+        <div
+          style={{
+            background: "#fff3cd",
+            color: "#856404",
+            padding: "10px 16px",
+            borderRadius: "8px",
+            marginBottom: "16px",
+            fontSize: "13px",
+            display: "flex",
+            alignItems: "center",
+            gap: "8px",
+          }}
+        >
+          <span>⚠️</span>
+          <span>
+            Demo Mode — Backend API chưa hỗ trợ Planner Reports. Dữ liệu hiển
+            thị là dữ liệu mẫu.
+          </span>
+        </div>
 
         {/* Horizontal Tabs */}
         <div className="reports-tabs">

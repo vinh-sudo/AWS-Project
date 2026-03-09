@@ -190,10 +190,68 @@ function AICopilot({ isOpen, onClose }) {
     setInputValue(question);
   };
 
+  const handleAiHealthSummary = async () => {
+    if (isTyping) return;
+    setMessages((prev) => [
+      ...prev,
+      {
+        id: Date.now(),
+        type: "user",
+        text: "📝 Tóm tắt AI sức khỏe sản xuất",
+        time: new Date().toLocaleTimeString([], {
+          hour: "2-digit",
+          minute: "2-digit",
+        }),
+      },
+    ]);
+    setIsTyping(true);
+
+    try {
+      const data = await aiService.getProductionHealthSummary();
+      addBotMessage(data || "Không có dữ liệu tóm tắt.");
+    } catch {
+      addBotMessage("Không thể lấy tóm tắt AI sức khỏe sản xuất.");
+    } finally {
+      setIsTyping(false);
+    }
+  };
+
+  const handleAiRootCauseSummary = async () => {
+    if (isTyping) return;
+    setMessages((prev) => [
+      ...prev,
+      {
+        id: Date.now(),
+        type: "user",
+        text: "📋 Tóm tắt AI nguyên nhân gốc",
+        time: new Date().toLocaleTimeString([], {
+          hour: "2-digit",
+          minute: "2-digit",
+        }),
+      },
+    ]);
+    setIsTyping(true);
+
+    try {
+      const data = await aiService.getRootCauseSummary();
+      addBotMessage(data || "Không có dữ liệu tóm tắt nguyên nhân.");
+    } catch {
+      addBotMessage("Không thể lấy tóm tắt AI nguyên nhân gốc.");
+    } finally {
+      setIsTyping(false);
+    }
+  };
+
   const quickActions = [
     { icon: "📊", label: "Trạng thái nhanh", action: handleQuickStatus },
     { icon: "🏭", label: "Sức khỏe SX", action: handleProductionHealth },
     { icon: "🔍", label: "Phân tích nguyên nhân", action: handleRootCause },
+    { icon: "📝", label: "Tóm tắt AI SX", action: handleAiHealthSummary },
+    {
+      icon: "📋",
+      label: "Tóm tắt nguyên nhân",
+      action: handleAiRootCauseSummary,
+    },
   ];
 
   const formatMessage = (text) => {

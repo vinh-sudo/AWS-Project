@@ -49,6 +49,27 @@ const RedirectIfAuthenticated = ({ children }) => {
   return children;
 };
 
+/**
+ * ReportsRedirect - Redirects to role-specific reports page.
+ */
+const ReportsRedirect = () => {
+  const user = useSelector(selectUser);
+  const role = user?.role?.toUpperCase();
+
+  switch (role) {
+    case "MANAGER":
+      return <Navigate to="/manager/reports" replace />;
+    case "ADMIN":
+      return <Navigate to="/admin/dashboard" replace />;
+    case "PRODUCTION_PLANNER":
+      return <Navigate to="/planner/reports" replace />;
+    case "LINE_LEADER":
+      return <Navigate to="/leader/progress" replace />;
+    default:
+      return <Navigate to="/login" replace />;
+  }
+};
+
 function App() {
   const [isCopilotOpen, setIsCopilotOpen] = useState(false);
 
@@ -251,7 +272,7 @@ function App() {
             path="/reports"
             element={
               <ProtectedRoute>
-                <PlannerReports />
+                <ReportsRedirect />
               </ProtectedRoute>
             }
           />

@@ -1,8 +1,3 @@
-// ============================================================================
-// NOTE: Backend chưa có PlannerController.
-// Trang này sử dụng 100% dữ liệu mock từ localStorage (ims_tasks).
-// Khi backend tạo endpoint cho Planner, refactor để gọi API thực.
-// ============================================================================
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useDispatch } from "react-redux";
@@ -236,6 +231,27 @@ const PlannerAssignment = () => {
             </div>
           </div>
         </header>
+
+        {/* Demo Mode Banner */}
+        <div
+          style={{
+            background: "#fff3cd",
+            color: "#856404",
+            padding: "10px 16px",
+            borderRadius: "8px",
+            marginBottom: "16px",
+            fontSize: "13px",
+            display: "flex",
+            alignItems: "center",
+            gap: "8px",
+          }}
+        >
+          <span>⚠️</span>
+          <span>
+            Demo Mode — Backend API chưa hỗ trợ Planner. Dữ liệu hiển thị là dữ
+            liệu mẫu.
+          </span>
+        </div>
 
         {/* Workflow Info */}
         <div className="workflow-info">

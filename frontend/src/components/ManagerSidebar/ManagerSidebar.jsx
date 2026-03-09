@@ -12,12 +12,11 @@ const ManagerSidebar = () => {
 
   const handleLogout = async () => {
     try {
-      await authService.logout();
-      dispatch(logout());
-      navigate("/login");
+      await dispatch(logout()).unwrap();
     } catch (error) {
       console.error("Logout failed:", error);
     }
+    navigate("/login");
   };
 
   const initials = currentUser?.fullName
