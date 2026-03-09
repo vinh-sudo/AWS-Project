@@ -1,10 +1,14 @@
 package be.backend.controller;
 
 import be.backend.entity.Notification;
+import be.backend.model.dto.NotificationDTO;
 import be.backend.service.utilities.NotificationQueryService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
 import org.springframework.web.bind.annotation.*;
+
+import java.util.stream.Collectors;
 
 @RestController
 @RequestMapping("/api/notifications")
@@ -17,12 +21,19 @@ public class NotificationController {
     // 1. Load my notifications (paging)
     // ===============================
     @GetMapping
-    public Page<Notification> getMyNotifications(
+    public Page<NotificationDTO> getMyNotifications(
             @RequestParam Integer userId,
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "20") int size
     ) {
-        return notificationQueryService.getMyNotifications(userId, page, size);
+        Page<Notification> notifications = notificationQueryService.getMyNotifications(userId, page, size);
+        return new PageImpl<>(
+                notifications.getContent().stream()
+                        .map(NotificationDTO::fromEntity)
+                        .collect(Collectors.toList()),
+                notifications.getPageable(),
+                notifications.getTotalElements()
+        );
     }
 
     // ===============================
@@ -53,15 +64,22 @@ public class NotificationController {
     }
 
     // ===============================
-    // 5. Filter by type (PLAN, ORDER…)
+    // 5. Filter by source type (PLAN, ORDER…)
     // ===============================
     @GetMapping("/filter")
-    public Page<Notification> filterByType(
+    public Page<NotificationDTO> filterByType(
             @RequestParam Integer userId,
             @RequestParam String sourceType,
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "20") int size
     ) {
-        return notificationQueryService.filterByType(userId, sourceType, page, size);
+        Page<Notification> notifications = notificationQueryService.filterByType(userId, sourceType, page, size);
+        return new PageImpl<>(
+                notifications.getContent().stream()
+                        .map(NotificationDTO::fromEntity)
+                        .collect(Collectors.toList()),
+                notifications.getPageable(),
+                notifications.getTotalElements()
+        );
     }
 }

@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 ﻿services:
   postgres:
     image: postgres:15
@@ -9,20 +10,19 @@
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
     volumes:
       - pgdata:/var/lib/postgresql/data
+=======
+version: "3.9"
+>>>>>>> 57fd1ac57de36b7b97d4eaca18d216063a956533
 
-  redis:
-    image: redis:7
-    container_name: redis-cache
-    command: redis-server --requirepass ${REDIS_PASSWORD}
+services:
 
   backend:
     build: ./backend/backend
     container_name: spring-backend
-    depends_on:
-      - postgres
-      - redis
+    restart: always
     ports:
       - "8080:8080"
+<<<<<<< HEAD
     environment:
       SPRING_DATASOURCE_URL: ${SPRING_DATASOURCE_URL}
       SPRING_DATASOURCE_USERNAME: ${SPRING_DATASOURCE_USERNAME}
@@ -49,3 +49,7 @@
 
 volumes:
   pgdata:
+=======
+    env_file:
+      - .env
+>>>>>>> 57fd1ac57de36b7b97d4eaca18d216063a956533
