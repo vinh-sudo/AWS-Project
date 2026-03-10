@@ -18,41 +18,110 @@ import "./LeaderProgress.css";
 /* ===== SVG Icon helpers ===== */
 const IC = {
   barChart: (
-    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-      <line x1="18" y1="20" x2="18" y2="10" /><line x1="12" y1="20" x2="12" y2="4" /><line x1="6" y1="20" x2="6" y2="14" />
+    <svg
+      width="20"
+      height="20"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    >
+      <line x1="18" y1="20" x2="18" y2="10" />
+      <line x1="12" y1="20" x2="12" y2="4" />
+      <line x1="6" y1="20" x2="6" y2="14" />
     </svg>
   ),
   clipboard: (
-    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <svg
+      width="16"
+      height="16"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    >
       <path d="M16 4h2a2 2 0 012 2v14a2 2 0 01-2 2H6a2 2 0 01-2-2V6a2 2 0 012-2h2" />
       <rect x="8" y="2" width="8" height="4" rx="1" ry="1" />
     </svg>
   ),
   alertTriangle: (
-    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <svg
+      width="16"
+      height="16"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    >
       <path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z" />
-      <line x1="12" y1="9" x2="12" y2="13" /><line x1="12" y1="17" x2="12.01" y2="17" />
+      <line x1="12" y1="9" x2="12" y2="13" />
+      <line x1="12" y1="17" x2="12.01" y2="17" />
     </svg>
   ),
   refresh: (
-    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-      <polyline points="23 4 23 10 17 10" /><polyline points="1 20 1 14 7 14" />
+    <svg
+      width="16"
+      height="16"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    >
+      <polyline points="23 4 23 10 17 10" />
+      <polyline points="1 20 1 14 7 14" />
       <path d="M3.51 9a9 9 0 0114.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0020.49 15" />
     </svg>
   ),
   check: (
-    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+    <svg
+      width="14"
+      height="14"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2.5"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    >
       <polyline points="20 6 9 17 4 12" />
     </svg>
   ),
   close: (
-    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-      <line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" />
+    <svg
+      width="18"
+      height="18"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    >
+      <line x1="18" y1="6" x2="6" y2="18" />
+      <line x1="6" y1="6" x2="18" y2="18" />
     </svg>
   ),
   pause: (
-    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-      <rect x="6" y="4" width="4" height="16" /><rect x="14" y="4" width="4" height="16" />
+    <svg
+      width="14"
+      height="14"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2.5"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    >
+      <rect x="6" y="4" width="4" height="16" />
+      <rect x="14" y="4" width="4" height="16" />
     </svg>
   ),
   play: (
@@ -61,12 +130,31 @@ const IC = {
     </svg>
   ),
   clock: (
-    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-      <circle cx="12" cy="12" r="10" /><polyline points="12 6 12 12 16 14" />
+    <svg
+      width="12"
+      height="12"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    >
+      <circle cx="12" cy="12" r="10" />
+      <polyline points="12 6 12 12 16 14" />
     </svg>
   ),
   inbox: (
-    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+    <svg
+      width="24"
+      height="24"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.5"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    >
       <polyline points="22 12 16 12 14 15 10 15 8 12 2 12" />
       <path d="M5.45 5.11L2 12v6a2 2 0 002 2h16a2 2 0 002-2v-6l-3.45-6.89A2 2 0 0016.76 4H7.24a2 2 0 00-1.79 1.11z" />
     </svg>
@@ -308,28 +396,44 @@ const LeaderProgress = () => {
 
   const getStatusBadgeClass = (status) => {
     switch (status) {
-      case "SCHEDULED": return "lp-status-scheduled";
-      case "RUNNING":   return "lp-status-running";
-      case "COMPLETED": return "lp-status-completed";
-      case "PAUSED":    return "lp-status-paused";
-      default:          return "";
+      case "SCHEDULED":
+        return "lp-status-scheduled";
+      case "RUNNING":
+        return "lp-status-running";
+      case "COMPLETED":
+        return "lp-status-completed";
+      case "PAUSED":
+        return "lp-status-paused";
+      default:
+        return "";
     }
   };
 
   const getStatusLabel = (status) => {
     switch (status) {
-      case "SCHEDULED": return "Chờ SX";
-      case "RUNNING":   return "Đang chạy";
-      case "COMPLETED": return "Hoàn thành";
-      case "PAUSED":    return "Tạm dừng";
-      default:          return status;
+      case "SCHEDULED":
+        return "Chờ SX";
+      case "RUNNING":
+        return "Đang chạy";
+      case "COMPLETED":
+        return "Hoàn thành";
+      case "PAUSED":
+        return "Tạm dừng";
+      default:
+        return status;
     }
   };
 
   const filteredSchedules = getFilteredSchedules();
-  const scheduledCount = schedules.filter((s) => s.status === "SCHEDULED").length;
-  const inProgressCount = schedules.filter((s) => s.status === "RUNNING").length;
-  const completedCount = schedules.filter((s) => s.status === "COMPLETED").length;
+  const scheduledCount = schedules.filter(
+    (s) => s.status === "SCHEDULED",
+  ).length;
+  const inProgressCount = schedules.filter(
+    (s) => s.status === "RUNNING",
+  ).length;
+  const completedCount = schedules.filter(
+    (s) => s.status === "COMPLETED",
+  ).length;
   const onHoldCount = schedules.filter((s) => s.status === "PAUSED").length;
   const totalIncidents = dashboard?.unresolvedIncidentCount || 0;
   const recentIncidents = dashboard?.recentIncidents || [];
@@ -337,9 +441,9 @@ const LeaderProgress = () => {
   /* ===== Filter chip config ===== */
   const chips = [
     { key: "inProgress", label: "Đang sản xuất", count: inProgressCount },
-    { key: "scheduled",  label: "Chờ sản xuất",  count: scheduledCount },
-    { key: "onHold",     label: "Tạm dừng",      count: onHoldCount },
-    { key: "completed",  label: "Hoàn thành",     count: completedCount },
+    { key: "scheduled", label: "Chờ sản xuất", count: scheduledCount },
+    { key: "onHold", label: "Tạm dừng", count: onHoldCount },
+    { key: "completed", label: "Hoàn thành", count: completedCount },
   ];
 
   // ─── RENDER ─────────────────────────────────────────────────────────
@@ -364,7 +468,9 @@ const LeaderProgress = () => {
           <div className="lp-header-right">
             {totalIncidents > 0 && (
               <div className="lp-incident-badge">
-                <span className="lp-incident-badge-count">{totalIncidents}</span>
+                <span className="lp-incident-badge-count">
+                  {totalIncidents}
+                </span>
                 Sự cố đang mở
               </div>
             )}
@@ -409,19 +515,27 @@ const LeaderProgress = () => {
         {dashboard && (
           <div className="lp-summary-strip">
             <div className="lp-summary-card accent-cyan">
-              <span className="lp-summary-value">{dashboard.todayProducedQuantity || 0}</span>
+              <span className="lp-summary-value">
+                {dashboard.todayProducedQuantity || 0}
+              </span>
               <span className="lp-summary-label">SL hôm nay</span>
             </div>
             <div className="lp-summary-card accent-blue">
-              <span className="lp-summary-value">{dashboard.activeScheduleCount || 0}</span>
+              <span className="lp-summary-value">
+                {dashboard.activeScheduleCount || 0}
+              </span>
               <span className="lp-summary-label">Lịch đang chạy</span>
             </div>
             <div className="lp-summary-card accent-amber">
-              <span className="lp-summary-value">{dashboard.todayDowntimeMinutes || 0}p</span>
+              <span className="lp-summary-value">
+                {dashboard.todayDowntimeMinutes || 0}p
+              </span>
               <span className="lp-summary-label">Downtime</span>
             </div>
             <div className="lp-summary-card accent-emerald">
-              <span className="lp-summary-value">{dashboard.todayEfficiency || 0}%</span>
+              <span className="lp-summary-value">
+                {dashboard.todayEfficiency || 0}%
+              </span>
               <span className="lp-summary-label">Hiệu suất</span>
             </div>
           </div>
@@ -445,8 +559,12 @@ const LeaderProgress = () => {
               lòng liên hệ <strong>Quản lý (Manager)</strong> để được phân công.
             </p>
             <div className="lp-not-assigned-info">
-              <span>👤 Tên: <strong>{currentLeaderName}</strong></span>
-              <span>🔑 Mã NV: <strong>{currentUser?.employeeCode || "N/A"}</strong></span>
+              <span>
+                👤 Tên: <strong>{currentLeaderName}</strong>
+              </span>
+              <span>
+                🔑 Mã NV: <strong>{currentUser?.employeeCode || "N/A"}</strong>
+              </span>
             </div>
             <button className="lp-empty-btn" onClick={fetchData}>
               Kiểm tra lại
@@ -457,7 +575,9 @@ const LeaderProgress = () => {
         {/* ── Error Banner ──────────────────────────── */}
         {error && error !== "NOT_ASSIGNED" && (
           <div className="lp-error-banner">
-            <span>{IC.alertTriangle} {error}</span>
+            <span>
+              {IC.alertTriangle} {error}
+            </span>
             <button onClick={fetchData}>Thử lại</button>
           </div>
         )}
@@ -478,7 +598,11 @@ const LeaderProgress = () => {
               ))}
             </div>
             <div className="lp-toolbar-right">
-              <button className="lp-btn-refresh" onClick={fetchData} title="Tải lại">
+              <button
+                className="lp-btn-refresh"
+                onClick={fetchData}
+                title="Tải lại"
+              >
                 {IC.refresh}
               </button>
             </div>
@@ -501,14 +625,20 @@ const LeaderProgress = () => {
                 <div key={schedule.scheduleId} className="lp-schedule-card">
                   {/* Card header */}
                   <div className="lp-sched-header">
-                    <span className="lp-sched-id">SCH-{schedule.scheduleId}</span>
-                    <span className={`lp-status-badge ${getStatusBadgeClass(schedule.status)}`}>
+                    <span className="lp-sched-id">
+                      SCH-{schedule.scheduleId}
+                    </span>
+                    <span
+                      className={`lp-status-badge ${getStatusBadgeClass(schedule.status)}`}
+                    >
                       {getStatusLabel(schedule.status)}
                     </span>
                   </div>
 
                   {/* Title */}
-                  <h3 className="lp-sched-title">{schedule.orderInfo || "N/A"}</h3>
+                  <h3 className="lp-sched-title">
+                    {schedule.orderInfo || "N/A"}
+                  </h3>
 
                   {/* Details */}
                   <div className="lp-sched-details">
@@ -529,6 +659,30 @@ const LeaderProgress = () => {
                       </span>
                     </div>
                   </div>
+
+                  {/* Actions — SCHEDULED */}
+                  {schedule.status === "SCHEDULED" && (
+                    <div className="lp-sched-actions">
+                      <button
+                        className="lp-action-btn resume"
+                        onClick={async () => {
+                          try {
+                            await leaderService.startSchedule(
+                              schedule.scheduleId,
+                            );
+                            alert("▶️ Đã bắt đầu sản xuất!");
+                            fetchData();
+                          } catch (err) {
+                            alert(
+                              `❌ Lỗi: ${err.response?.data?.message || "Không thể bắt đầu"}`,
+                            );
+                          }
+                        }}
+                      >
+                        {IC.play} Bắt đầu SX
+                      </button>
+                    </div>
+                  )}
 
                   {/* Actions — RUNNING */}
                   {schedule.status === "RUNNING" && (
@@ -559,7 +713,9 @@ const LeaderProgress = () => {
                     <div className="lp-sched-actions">
                       <button
                         className="lp-action-btn resume"
-                        onClick={() => handleResumeSchedule(schedule.scheduleId)}
+                        onClick={() =>
+                          handleResumeSchedule(schedule.scheduleId)
+                        }
                       >
                         {IC.play} Tiếp tục
                       </button>
@@ -601,9 +757,12 @@ const LeaderProgress = () => {
                 >
                   <div className="lp-incident-header">
                     <span className="lp-incident-type">
-                      {incidentTypeLabels[incident.incidentType] || incident.incidentType}
+                      {incidentTypeLabels[incident.incidentType] ||
+                        incident.incidentType}
                     </span>
-                    <span className={`lp-severity-badge severity-${(incident.severity || "").toLowerCase()}`}>
+                    <span
+                      className={`lp-severity-badge severity-${(incident.severity || "").toLowerCase()}`}
+                    >
                       {incident.severity}
                     </span>
                   </div>
@@ -626,18 +785,28 @@ const LeaderProgress = () => {
 
       {/* ── Update Progress Modal ───────────────────── */}
       {showUpdateModal && selectedSchedule && (
-        <div className="lp-modal-overlay" onClick={() => setShowUpdateModal(false)}>
+        <div
+          className="lp-modal-overlay"
+          onClick={() => setShowUpdateModal(false)}
+        >
           <div className="lp-modal" onClick={(e) => e.stopPropagation()}>
             <div className="lp-modal-header">
               <h2>{IC.barChart} Cập nhật tiến độ</h2>
-              <button className="lp-modal-close" onClick={() => setShowUpdateModal(false)}>
+              <button
+                className="lp-modal-close"
+                onClick={() => setShowUpdateModal(false)}
+              >
                 {IC.close}
               </button>
             </div>
             <div className="lp-modal-body">
               <div className="lp-modal-info">
-                <p><strong>Lịch:</strong> SCH-{selectedSchedule.scheduleId}</p>
-                <p className="lp-modal-info-title">{selectedSchedule.orderInfo || "N/A"}</p>
+                <p>
+                  <strong>Lịch:</strong> SCH-{selectedSchedule.scheduleId}
+                </p>
+                <p className="lp-modal-info-title">
+                  {selectedSchedule.orderInfo || "N/A"}
+                </p>
               </div>
 
               <div className="lp-form-group">
@@ -647,7 +816,9 @@ const LeaderProgress = () => {
                   min="0"
                   max="100"
                   value={newPercentage}
-                  onChange={(e) => setNewPercentage(parseInt(e.target.value) || 0)}
+                  onChange={(e) =>
+                    setNewPercentage(parseInt(e.target.value) || 0)
+                  }
                   className="lp-form-input"
                   placeholder="Nhập phần trăm..."
                 />
@@ -657,8 +828,10 @@ const LeaderProgress = () => {
                     style={{
                       width: `${Math.min(100, newPercentage)}%`,
                       background:
-                        newPercentage >= 100 ? "#059669"
-                          : newPercentage >= 50 ? "#0891b2"
+                        newPercentage >= 100
+                          ? "#059669"
+                          : newPercentage >= 50
+                            ? "#0891b2"
                             : "#d97706",
                     }}
                   />
@@ -682,7 +855,11 @@ const LeaderProgress = () => {
                   <button onClick={() => setProgressNote("Sản xuất suôn sẻ")}>
                     ✅ Suôn sẻ
                   </button>
-                  <button onClick={() => setProgressNote("Có vấn đề nhỏ đã khắc phục")}>
+                  <button
+                    onClick={() =>
+                      setProgressNote("Có vấn đề nhỏ đã khắc phục")
+                    }
+                  >
                     ⚠️ Vấn đề nhỏ
                   </button>
                   <button onClick={() => setProgressNote("Đạt năng suất cao")}>
@@ -692,7 +869,10 @@ const LeaderProgress = () => {
               </div>
             </div>
             <div className="lp-modal-footer">
-              <button className="lp-btn-cancel" onClick={() => setShowUpdateModal(false)}>
+              <button
+                className="lp-btn-cancel"
+                onClick={() => setShowUpdateModal(false)}
+              >
                 Hủy
               </button>
               <button
@@ -709,25 +889,40 @@ const LeaderProgress = () => {
 
       {/* ── Incident Report Modal ───────────────────── */}
       {showIncidentModal && selectedSchedule && (
-        <div className="lp-modal-overlay" onClick={() => setShowIncidentModal(false)}>
+        <div
+          className="lp-modal-overlay"
+          onClick={() => setShowIncidentModal(false)}
+        >
           <div className="lp-modal" onClick={(e) => e.stopPropagation()}>
             <div className="lp-modal-header incident">
               <h2>{IC.alertTriangle} Báo cáo sự cố</h2>
-              <button className="lp-modal-close" onClick={() => setShowIncidentModal(false)}>
+              <button
+                className="lp-modal-close"
+                onClick={() => setShowIncidentModal(false)}
+              >
                 {IC.close}
               </button>
             </div>
             <div className="lp-modal-body">
               <div className="lp-modal-info">
-                <p><strong>Lịch:</strong> SCH-{selectedSchedule.scheduleId}</p>
-                <p className="lp-modal-info-title">{selectedSchedule.orderInfo || "N/A"}</p>
+                <p>
+                  <strong>Lịch:</strong> SCH-{selectedSchedule.scheduleId}
+                </p>
+                <p className="lp-modal-info-title">
+                  {selectedSchedule.orderInfo || "N/A"}
+                </p>
               </div>
 
               <div className="lp-form-group">
                 <label>Loại sự cố</label>
                 <select
                   value={newIncident.incidentType}
-                  onChange={(e) => setNewIncident({ ...newIncident, incidentType: e.target.value })}
+                  onChange={(e) =>
+                    setNewIncident({
+                      ...newIncident,
+                      incidentType: e.target.value,
+                    })
+                  }
                   className="lp-form-select"
                 >
                   {incidentTypes.map((type) => (
@@ -742,11 +937,15 @@ const LeaderProgress = () => {
                 <label>Mức độ nghiêm trọng</label>
                 <select
                   value={newIncident.severity}
-                  onChange={(e) => setNewIncident({ ...newIncident, severity: e.target.value })}
+                  onChange={(e) =>
+                    setNewIncident({ ...newIncident, severity: e.target.value })
+                  }
                   className="lp-form-select"
                 >
                   <option value="LOW">Thấp - Không ảnh hưởng nhiều</option>
-                  <option value="MEDIUM">Trung bình - Ảnh hưởng năng suất</option>
+                  <option value="MEDIUM">
+                    Trung bình - Ảnh hưởng năng suất
+                  </option>
                   <option value="HIGH">Cao - Phải dừng sản xuất</option>
                 </select>
               </div>
@@ -755,7 +954,12 @@ const LeaderProgress = () => {
                 <label>Mô tả chi tiết *</label>
                 <textarea
                   value={newIncident.description}
-                  onChange={(e) => setNewIncident({ ...newIncident, description: e.target.value })}
+                  onChange={(e) =>
+                    setNewIncident({
+                      ...newIncident,
+                      description: e.target.value,
+                    })
+                  }
                   className="lp-form-textarea"
                   placeholder="Mô tả chi tiết sự cố..."
                   rows={4}
@@ -764,7 +968,10 @@ const LeaderProgress = () => {
               </div>
             </div>
             <div className="lp-modal-footer">
-              <button className="lp-btn-cancel" onClick={() => setShowIncidentModal(false)}>
+              <button
+                className="lp-btn-cancel"
+                onClick={() => setShowIncidentModal(false)}
+              >
                 Hủy
               </button>
               <button
@@ -781,11 +988,17 @@ const LeaderProgress = () => {
 
       {/* ── Shift Report Modal ──────────────────────── */}
       {showReportModal && (
-        <div className="lp-modal-overlay" onClick={() => setShowReportModal(false)}>
+        <div
+          className="lp-modal-overlay"
+          onClick={() => setShowReportModal(false)}
+        >
           <div className="lp-modal" onClick={(e) => e.stopPropagation()}>
             <div className="lp-modal-header">
               <h2>{IC.clipboard} Báo cáo cuối ca</h2>
-              <button className="lp-modal-close" onClick={() => setShowReportModal(false)}>
+              <button
+                className="lp-modal-close"
+                onClick={() => setShowReportModal(false)}
+              >
                 {IC.close}
               </button>
             </div>
@@ -794,7 +1007,9 @@ const LeaderProgress = () => {
                 <label>Ca làm việc</label>
                 <select
                   value={shiftReport.shift}
-                  onChange={(e) => setShiftReport({ ...shiftReport, shift: e.target.value })}
+                  onChange={(e) =>
+                    setShiftReport({ ...shiftReport, shift: e.target.value })
+                  }
                   className="lp-form-select"
                 >
                   <option value="MORNING">Ca sáng</option>
@@ -809,7 +1024,12 @@ const LeaderProgress = () => {
                   type="number"
                   min="0"
                   value={shiftReport.targetQuantity}
-                  onChange={(e) => setShiftReport({ ...shiftReport, targetQuantity: parseInt(e.target.value) || 0 })}
+                  onChange={(e) =>
+                    setShiftReport({
+                      ...shiftReport,
+                      targetQuantity: parseInt(e.target.value) || 0,
+                    })
+                  }
                   className="lp-form-input"
                   placeholder="Nhập sản lượng mục tiêu..."
                 />
@@ -821,7 +1041,12 @@ const LeaderProgress = () => {
                   type="number"
                   min="0"
                   value={shiftReport.goodQuantity}
-                  onChange={(e) => setShiftReport({ ...shiftReport, goodQuantity: parseInt(e.target.value) || 0 })}
+                  onChange={(e) =>
+                    setShiftReport({
+                      ...shiftReport,
+                      goodQuantity: parseInt(e.target.value) || 0,
+                    })
+                  }
                   className="lp-form-input"
                   placeholder="Nhập sản lượng đạt..."
                 />
@@ -833,7 +1058,12 @@ const LeaderProgress = () => {
                   type="number"
                   min="0"
                   value={shiftReport.rejectQuantity}
-                  onChange={(e) => setShiftReport({ ...shiftReport, rejectQuantity: parseInt(e.target.value) || 0 })}
+                  onChange={(e) =>
+                    setShiftReport({
+                      ...shiftReport,
+                      rejectQuantity: parseInt(e.target.value) || 0,
+                    })
+                  }
                   className="lp-form-input"
                   placeholder="Nhập sản lượng lỗi..."
                 />
@@ -845,7 +1075,12 @@ const LeaderProgress = () => {
                   type="number"
                   min="0"
                   value={shiftReport.downtimeMinutes}
-                  onChange={(e) => setShiftReport({ ...shiftReport, downtimeMinutes: parseInt(e.target.value) || 0 })}
+                  onChange={(e) =>
+                    setShiftReport({
+                      ...shiftReport,
+                      downtimeMinutes: parseInt(e.target.value) || 0,
+                    })
+                  }
                   className="lp-form-input"
                   placeholder="Nhập thời gian dừng..."
                 />
@@ -855,7 +1090,9 @@ const LeaderProgress = () => {
                 <label>Ghi chú</label>
                 <textarea
                   value={shiftReport.notes}
-                  onChange={(e) => setShiftReport({ ...shiftReport, notes: e.target.value })}
+                  onChange={(e) =>
+                    setShiftReport({ ...shiftReport, notes: e.target.value })
+                  }
                   className="lp-form-textarea"
                   placeholder="Ghi chú thêm..."
                   rows={3}
@@ -863,7 +1100,10 @@ const LeaderProgress = () => {
               </div>
             </div>
             <div className="lp-modal-footer">
-              <button className="lp-btn-cancel" onClick={() => setShowReportModal(false)}>
+              <button
+                className="lp-btn-cancel"
+                onClick={() => setShowReportModal(false)}
+              >
                 Hủy
               </button>
               <button

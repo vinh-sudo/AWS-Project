@@ -212,7 +212,22 @@ const managerService = {
 
   // ===================== ORDERS =====================
   getAllOrders: async () => {
-    const response = await api.get("/api/admin/orders");
+    const response = await api.get("/api/manager/orders");
+    return response.data;
+  },
+
+  getOrderById: async (id) => {
+    const response = await api.get(`/api/manager/orders/${id}`);
+    return response.data;
+  },
+
+  searchOrders: async (params) => {
+    const response = await api.get("/api/manager/orders/search", { params });
+    return response.data;
+  },
+
+  getOrdersByStatus: async (status) => {
+    const response = await api.get(`/api/manager/orders/status/${status}`);
     return response.data;
   },
 };

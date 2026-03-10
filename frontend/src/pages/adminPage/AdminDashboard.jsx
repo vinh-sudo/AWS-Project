@@ -148,15 +148,22 @@ const AdminDashboard = () => {
   };
 
   const getStatusBadgeClass = (status) => {
-    switch (status?.toLowerCase()) {
-      case "pending":
+    switch (status) {
+      case "Draft":
         return "badge-pending";
-      case "in_progress":
-      case "in progress":
+      case "Confirmed":
+        return "badge-pending";
+      case "PLANNING":
         return "badge-progress";
-      case "completed":
+      case "SCHEDULED":
+        return "badge-progress";
+      case "In Production":
+        return "badge-progress";
+      case "Completed":
         return "badge-completed";
-      case "cancelled":
+      case "Cancelled":
+        return "badge-cancelled";
+      case "STOPPED":
         return "badge-cancelled";
       default:
         return "badge-default";

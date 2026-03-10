@@ -84,7 +84,7 @@ const ManagerPlanning = () => {
           .filter((l) => l.plannedQty > 0)
           .map((l) => ({
             lineId: l.lineId,
-            plannedQuantity: l.plannedQty,
+            plannedQty: l.plannedQty,
           })),
       };
       await managerService.createPlan(request);
@@ -161,9 +161,7 @@ const ManagerPlanning = () => {
       (plans || []).map((p) => p.orderId || p.order?.id),
     );
     return (orders || []).filter(
-      (o) =>
-        (o.status === "Confirmed" || o.status === "Draft") &&
-        !plannedOrderIds.has(o.id),
+      (o) => o.status === "Confirmed" && !plannedOrderIds.has(o.id),
     );
   }, [orders, plans]);
 
