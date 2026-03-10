@@ -152,23 +152,23 @@
 }
 
 /* ============================================
-   SUMMARY STRIP – Compact 4-card layout
+   SUMMARY STRIP – Compact premium 4-card layout
    ============================================ */
 .ao-summary-strip {
   display: grid;
   grid-template-columns: repeat(4, 1fr);
-  gap: 16px;
-  margin-bottom: 32px;
+  gap: 12px;
+  margin-bottom: 24px;
 }
 
 .ao-summary-card {
   background: var(--ao-surface);
   border: 1px solid var(--ao-border-light);
-  border-radius: var(--ao-radius);
-  padding: 20px;
+  border-radius: 10px;
+  padding: 14px 16px 12px;
   display: flex;
-  align-items: flex-start;
-  gap: 14px;
+  flex-direction: column;
+  gap: 2px;
   transition: all var(--ao-transition);
   cursor: default;
   position: relative;
@@ -178,16 +178,56 @@
 .ao-summary-card:hover {
   border-color: var(--ao-border);
   box-shadow: var(--ao-shadow-sm);
+  transform: translateY(-1px);
+}
+
+/* Left accent bar */
+.ao-summary-accent {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 3px;
+  height: 100%;
+  border-radius: 3px 0 0 3px;
+  opacity: 0.85;
+  transition: opacity var(--ao-transition);
+}
+.ao-summary-card:hover .ao-summary-accent { opacity: 1; }
+.ao-summary-card.total .ao-summary-accent { background: linear-gradient(180deg, #818cf8, #6366f1); }
+.ao-summary-card.active .ao-summary-accent { background: linear-gradient(180deg, #60a5fa, #3b82f6); }
+.ao-summary-card.completed .ao-summary-accent { background: linear-gradient(180deg, #34d399, #059669); }
+.ao-summary-card.issues .ao-summary-accent { background: linear-gradient(180deg, #f87171, #dc2626); }
+
+/* Top row: label + icon */
+.ao-summary-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.ao-summary-label {
+  font-size: 11.5px;
+  font-weight: 500;
+  color: var(--ao-text-muted);
+  letter-spacing: 0.01em;
 }
 
 .ao-summary-icon {
-  width: 40px;
-  height: 40px;
-  border-radius: var(--ao-radius-sm);
+  width: 28px;
+  height: 28px;
+  border-radius: 7px;
   display: flex;
   align-items: center;
   justify-content: center;
   flex-shrink: 0;
+  transition: transform var(--ao-transition);
+}
+.ao-summary-card:hover .ao-summary-icon { transform: scale(1.08); }
+
+.ao-summary-card.total .ao-summary-icon { background: #eef2ff; color: #6366f1; }
+.ao-summary-card.active .ao-summary-icon { background: #eff6ff; color: #3b82f6; }
+.ao-summary-card.completed .ao-summary-icon { background: #ecfdf5; color: #059669; }
+.ao-summary-card.issues .ao-summary-icon { background: #fef2f2; color: #dc2626; }
 }
 
 .ao-summary-icon.total {
@@ -210,50 +250,47 @@
   color: #dc2626;
 }
 
-.ao-summary-info {
-  flex: 1;
-  min-width: 0;
+.ao-summary-icon svg {
+  width: 14px;
+  height: 14px;
 }
 
+/* Big number */
 .ao-summary-number {
-  font-size: 28px;
+  font-size: 22px;
   font-weight: 700;
   letter-spacing: -0.03em;
-  line-height: 1;
+  line-height: 1.1;
   color: var(--ao-text-primary);
+  margin-top: 0;
 }
 
-.ao-summary-label {
-  font-size: 12px;
-  font-weight: 500;
-  color: var(--ao-text-muted);
-  margin-top: 4px;
-}
-
+/* Breakdown tags */
 .ao-summary-breakdown {
   display: flex;
   align-items: center;
-  gap: 6px;
-  margin-top: 8px;
+  gap: 4px;
+  margin-top: 4px;
   flex-wrap: wrap;
 }
 
 .ao-summary-tag {
   display: inline-flex;
   align-items: center;
-  gap: 4px;
-  padding: 2px 8px;
+  gap: 3px;
+  padding: 1px 6px;
   background: var(--ao-bg);
   border-radius: var(--ao-radius-full);
-  font-size: 11px;
+  font-size: 10px;
   font-weight: 500;
   color: var(--ao-text-secondary);
   white-space: nowrap;
+  line-height: 1.6;
 }
 
 .ao-summary-tag-dot {
-  width: 6px;
-  height: 6px;
+  width: 5px;
+  height: 5px;
   border-radius: 50%;
   flex-shrink: 0;
 }
@@ -1701,6 +1738,7 @@
 @media (max-width: 1200px) {
   .ao-summary-strip {
     grid-template-columns: repeat(2, 1fr);
+    gap: 10px;
   }
 
   .ao-order-list-header,
@@ -1762,7 +1800,14 @@
   }
 
   .ao-summary-strip {
-    grid-template-columns: 1fr;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+  }
+  .ao-summary-card {
+    padding: 10px 12px 10px;
+  }
+  .ao-summary-number {
+    font-size: 18px;
   }
 
   .ao-filter-chips {

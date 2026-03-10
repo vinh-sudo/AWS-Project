@@ -12,57 +12,154 @@ import "./LeaderTaskAssignment.css";
 /* ===== SVG Icon helpers ===== */
 const IC = {
   fileText: (
-    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <svg
+      width="20"
+      height="20"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    >
       <path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z" />
-      <polyline points="14 2 14 8 20 8" /><line x1="16" y1="13" x2="8" y2="13" /><line x1="16" y1="17" x2="8" y2="17" />
+      <polyline points="14 2 14 8 20 8" />
+      <line x1="16" y1="13" x2="8" y2="13" />
+      <line x1="16" y1="17" x2="8" y2="17" />
     </svg>
   ),
   plus: (
-    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+    <svg
+      width="16"
+      height="16"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2.5"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    >
       <path d="M12 5v14M5 12h14" />
     </svg>
   ),
   edit: (
-    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <svg
+      width="16"
+      height="16"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    >
       <path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7" />
       <path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z" />
     </svg>
   ),
   trash: (
-    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-      <polyline points="3 6 5 6 21 6" /><path d="M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2" />
+    <svg
+      width="16"
+      height="16"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    >
+      <polyline points="3 6 5 6 21 6" />
+      <path d="M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2" />
     </svg>
   ),
   close: (
-    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-      <line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" />
+    <svg
+      width="18"
+      height="18"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    >
+      <line x1="18" y1="6" x2="6" y2="18" />
+      <line x1="6" y1="6" x2="18" y2="18" />
     </svg>
   ),
   package: (
-    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <svg
+      width="14"
+      height="14"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    >
       <line x1="16.5" y1="9.4" x2="7.5" y2="4.21" />
       <path d="M21 16V8a2 2 0 00-1-1.73l-7-4a2 2 0 00-2 0l-7 4A2 2 0 002 8v8a2 2 0 001 1.73l7 4a2 2 0 002 0l7-4A2 2 0 0021 16z" />
-      <polyline points="3.27 6.96 12 12.01 20.73 6.96" /><line x1="12" y1="22.08" x2="12" y2="12" />
+      <polyline points="3.27 6.96 12 12.01 20.73 6.96" />
+      <line x1="12" y1="22.08" x2="12" y2="12" />
     </svg>
   ),
   clock: (
-    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-      <circle cx="12" cy="12" r="10" /><polyline points="12 6 12 12 16 14" />
+    <svg
+      width="12"
+      height="12"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    >
+      <circle cx="12" cy="12" r="10" />
+      <polyline points="12 6 12 12 16 14" />
     </svg>
   ),
   lightbulb: (
-    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <svg
+      width="18"
+      height="18"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    >
       <path d="M9 18h6M10 22h4M12 2a7 7 0 00-4 12.7V17h8v-2.3A7 7 0 0012 2z" />
     </svg>
   ),
   alertTriangle: (
-    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <svg
+      width="18"
+      height="18"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    >
       <path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z" />
-      <line x1="12" y1="9" x2="12" y2="13" /><line x1="12" y1="17" x2="12.01" y2="17" />
+      <line x1="12" y1="9" x2="12" y2="13" />
+      <line x1="12" y1="17" x2="12.01" y2="17" />
     </svg>
   ),
   inbox: (
-    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+    <svg
+      width="24"
+      height="24"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.5"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    >
       <polyline points="22 12 16 12 14 15 10 15 8 12 2 12" />
       <path d="M5.45 5.11L2 12v6a2 2 0 002 2h16a2 2 0 002-2v-6l-3.45-6.89A2 2 0 0016.76 4H7.24a2 2 0 00-1.79 1.11z" />
     </svg>
@@ -191,9 +288,7 @@ const LeaderInternalNotes = () => {
 
     if (editingNote) {
       const updatedNotes = notes.map((n) =>
-        n.id === editingNote.id
-          ? { ...n, ...newNote, updatedAt: now }
-          : n,
+        n.id === editingNote.id ? { ...n, ...newNote, updatedAt: now } : n,
       );
       saveNotes(updatedNotes);
       alert("✅ Note updated successfully!");
@@ -235,7 +330,8 @@ const LeaderInternalNotes = () => {
               Internal Notes
             </h1>
             <p className="ln-header-subtitle">
-              Manage assignment notes and technical reminders for the production team
+              Manage assignment notes and technical reminders for the production
+              team
             </p>
           </div>
           <div className="ln-header-right">
@@ -306,7 +402,9 @@ const LeaderInternalNotes = () => {
             <div className="ln-empty-state">
               <div className="ln-empty-icon">{IC.inbox}</div>
               <p className="ln-empty-title">No notes yet</p>
-              <p className="ln-empty-text">Create your first note to get started.</p>
+              <p className="ln-empty-text">
+                Create your first note to get started.
+              </p>
               <button className="ln-empty-btn" onClick={openCreateModal}>
                 Create First Note
               </button>
@@ -369,14 +467,20 @@ const LeaderInternalNotes = () => {
           CREATE / EDIT NOTE MODAL
          ══════════════════════════════════════════════ */}
       {showCreateModal && (
-        <div className="ln-modal-overlay" onClick={() => setShowCreateModal(false)}>
+        <div
+          className="ln-modal-overlay"
+          onClick={() => setShowCreateModal(false)}
+        >
           <div className="ln-modal" onClick={(e) => e.stopPropagation()}>
             <div className="ln-modal-header">
               <h2>
                 {editingNote ? IC.edit : IC.fileText}
                 {editingNote ? " Edit Note" : " Create New Note"}
               </h2>
-              <button className="ln-modal-close" onClick={() => setShowCreateModal(false)}>
+              <button
+                className="ln-modal-close"
+                onClick={() => setShowCreateModal(false)}
+              >
                 {IC.close}
               </button>
             </div>
@@ -390,7 +494,10 @@ const LeaderInternalNotes = () => {
                 >
                   <option value="">-- No link --</option>
                   {schedules.map((schedule) => (
-                    <option key={schedule.scheduleId} value={schedule.scheduleId}>
+                    <option
+                      key={schedule.scheduleId}
+                      value={schedule.scheduleId}
+                    >
                       SCH-{schedule.scheduleId} - {schedule.orderInfo || "N/A"}
                     </option>
                   ))}
@@ -402,7 +509,9 @@ const LeaderInternalNotes = () => {
                 <input
                   type="text"
                   value={newNote.title}
-                  onChange={(e) => setNewNote({ ...newNote, title: e.target.value })}
+                  onChange={(e) =>
+                    setNewNote({ ...newNote, title: e.target.value })
+                  }
                   placeholder="E.g.: Morning shift assignment, Technical notes..."
                   className="ln-form-input"
                 />
@@ -412,7 +521,9 @@ const LeaderInternalNotes = () => {
                 <label>Content *</label>
                 <textarea
                   value={newNote.content}
-                  onChange={(e) => setNewNote({ ...newNote, content: e.target.value })}
+                  onChange={(e) =>
+                    setNewNote({ ...newNote, content: e.target.value })
+                  }
                   placeholder="Enter note content..."
                   className="ln-form-textarea"
                   rows={8}
@@ -427,7 +538,8 @@ const LeaderInternalNotes = () => {
                       setNewNote({
                         ...newNote,
                         title: "Morning Shift Assignment",
-                        content: "- Worker 1: Task A\n- Worker 2: Task B\n- Worker 3: Task C",
+                        content:
+                          "- Worker 1: Task A\n- Worker 2: Task B\n- Worker 3: Task C",
                       })
                     }
                   >
@@ -449,7 +561,8 @@ const LeaderInternalNotes = () => {
                       setNewNote({
                         ...newNote,
                         title: "End-of-Shift Checklist",
-                        content: "1. Check quantities\n2. Clean machines\n3. Log production\n4. Shift handover",
+                        content:
+                          "1. Check quantities\n2. Clean machines\n3. Log production\n4. Shift handover",
                       })
                     }
                   >
@@ -459,7 +572,10 @@ const LeaderInternalNotes = () => {
               </div>
             </div>
             <div className="ln-modal-footer">
-              <button className="ln-btn-cancel" onClick={() => setShowCreateModal(false)}>
+              <button
+                className="ln-btn-cancel"
+                onClick={() => setShowCreateModal(false)}
+              >
                 Cancel
               </button>
               <button className="ln-btn-confirm" onClick={handleSaveNote}>

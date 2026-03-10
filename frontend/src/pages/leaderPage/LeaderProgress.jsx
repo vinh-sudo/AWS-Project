@@ -563,7 +563,8 @@ const LeaderProgress = () => {
                 👤 Name: <strong>{currentLeaderName}</strong>
               </span>
               <span>
-                🔑 Employee ID: <strong>{currentUser?.employeeCode || "N/A"}</strong>
+                🔑 Employee ID:{" "}
+                <strong>{currentUser?.employeeCode || "N/A"}</strong>
               </span>
             </div>
             <button className="lp-empty-btn" onClick={fetchData}>
@@ -852,17 +853,23 @@ const LeaderProgress = () => {
               <div className="lp-quick-notes">
                 <label>Quick Notes:</label>
                 <div className="lp-quick-note-buttons">
-                  <button onClick={() => setProgressNote("Production running smoothly")}>
+                  <button
+                    onClick={() =>
+                      setProgressNote("Production running smoothly")
+                    }
+                  >
                     ✅ Smooth
                   </button>
                   <button
-                    onClick={() =>
-                      setProgressNote("Minor issue resolved")
-                    }
+                    onClick={() => setProgressNote("Minor issue resolved")}
                   >
                     ⚠️ Minor Issue
                   </button>
-                  <button onClick={() => setProgressNote("High productivity achieved")}>
+                  <button
+                    onClick={() =>
+                      setProgressNote("High productivity achieved")
+                    }
+                  >
                     🚀 High Productivity
                   </button>
                 </div>
@@ -943,9 +950,7 @@ const LeaderProgress = () => {
                   className="lp-form-select"
                 >
                   <option value="LOW">Low - Minor impact</option>
-                  <option value="MEDIUM">
-                    Medium - Affects productivity
-                  </option>
+                  <option value="MEDIUM">Medium - Affects productivity</option>
                   <option value="HIGH">High - Must stop production</option>
                 </select>
               </div>

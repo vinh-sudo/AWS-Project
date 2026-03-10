@@ -1019,7 +1019,7 @@ const AdminOrders = () => {
             </div>
           )}
 
-          {/* ── Summary Strip (4 cards) ── */}
+          {/* ── Summary Strip (4 compact cards) ── */}
           <div className="ao-summary-strip">
             {/* Total */}
             <div className="ao-summary-card">

@@ -68,7 +68,10 @@ const AdminAssignment = () => {
   };
 
   const handleUnassign = async (assignmentId, leaderCode) => {
-    if (!window.confirm(`Remove leader ${leaderCode} from this production line?`)) return;
+    if (
+      !window.confirm(`Remove leader ${leaderCode} from this production line?`)
+    )
+      return;
     try {
       setActionLoading(true);
       await adminService.unassignLeader(assignmentId);
@@ -117,7 +120,6 @@ const AdminAssignment = () => {
   return (
     <div className="admin-container">
       <AdminSidebar />
-      
 
       <div className="admin-main">
         <header className="dash-header">
