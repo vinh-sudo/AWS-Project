@@ -668,267 +668,6 @@
 }
 
 /* ============================================
-   BOTTOM ROW
-   ============================================ */
-.dash-bottom-row {
-  display: grid;
-  grid-template-columns: 1.6fr 1fr;
-  gap: 20px;
-}
-
-/* === Table === */
-.dash-table {
-  width: 100%;
-  border-collapse: separate;
-  border-spacing: 0;
-}
-
-.dash-table thead tr {
-  background: transparent;
-}
-
-.dash-table th {
-  font-size: 11px;
-  font-weight: 700;
-  color: var(--dash-text-muted);
-  text-transform: uppercase;
-  letter-spacing: 0.08em;
-  padding: 0 14px 14px;
-  text-align: left;
-  border-bottom: 2px solid #f1f5f9;
-}
-
-.dash-table td {
-  padding: 14px;
-  font-size: 13.5px;
-  color: var(--dash-text-secondary);
-  border-bottom: 1px solid var(--dash-border-light);
-  font-weight: 450;
-}
-
-.dash-table tbody tr {
-  transition: all 0.2s ease;
-}
-
-.dash-table tbody tr:hover {
-  background: linear-gradient(135deg, #f8faff 0%, #faf5ff 100%);
-}
-
-.dash-table tbody tr:hover td {
-  color: var(--dash-text-primary);
-}
-
-.dash-table tbody tr:last-child td {
-  border-bottom: none;
-}
-
-.dash-table-id {
-  font-weight: 700;
-  color: var(--dash-accent) !important;
-  font-size: 13px !important;
-  font-family: 'SF Mono', 'Fira Code', 'Consolas', monospace;
-}
-
-.dash-table-date {
-  color: var(--dash-text-muted) !important;
-  font-size: 12.5px !important;
-}
-
-/* === Status Badges === */
-.dash-badge {
-  display: inline-flex;
-  align-items: center;
-  gap: 5px;
-  padding: 5px 12px;
-  border-radius: 20px;
-  font-size: 11.5px;
-  font-weight: 600;
-  letter-spacing: 0.02em;
-  white-space: nowrap;
-}
-
-.badge-pending {
-  background: linear-gradient(135deg, #fffbeb, #fef3c7);
-  color: #d97706;
-  border: 1px solid rgba(245, 158, 11, 0.15);
-}
-
-.badge-progress {
-  background: linear-gradient(135deg, #eff6ff, #dbeafe);
-  color: #2563eb;
-  border: 1px solid rgba(37, 99, 235, 0.12);
-}
-
-.badge-completed {
-  background: linear-gradient(135deg, #ecfdf5, #d1fae5);
-  color: #059669;
-  border: 1px solid rgba(5, 150, 105, 0.12);
-}
-
-.badge-cancelled {
-  background: linear-gradient(135deg, #fef2f2, #fecdd3);
-  color: #dc2626;
-  border: 1px solid rgba(220, 38, 38, 0.1);
-}
-
-.badge-default {
-  background: #f1f5f9;
-  color: #64748b;
-  border: 1px solid rgba(100, 116, 139, 0.1);
-}
-
-/* === Activity Feed === */
-.dash-activity-list {
-  display: flex;
-  flex-direction: column;
-  gap: 0;
-}
-
-.dash-activity-item {
-  display: flex;
-  align-items: flex-start;
-  gap: 14px;
-  padding: 16px 4px;
-  border-bottom: 1px solid var(--dash-border-light);
-  position: relative;
-  transition: all 0.2s ease;
-  border-radius: 8px;
-  margin: 0 -4px;
-}
-
-.dash-activity-item:hover {
-  background: #fafbff;
-}
-
-.dash-activity-item:last-child {
-  border-bottom: none;
-}
-
-/* Timeline line connecting dots */
-.dash-activity-item::before {
-  content: '';
-  position: absolute;
-  left: 8px;
-  top: 36px;
-  bottom: -2px;
-  width: 2px;
-  background: linear-gradient(180deg, var(--dash-border) 0%, transparent 100%);
-}
-
-.dash-activity-item:last-child::before {
-  display: none;
-}
-
-.dash-activity-dot {
-  width: 12px;
-  height: 12px;
-  border-radius: 50%;
-  background: linear-gradient(135deg, #6366f1, #818cf8);
-  flex-shrink: 0;
-  margin-top: 3px;
-  box-shadow: 0 0 0 4px #eef2ff;
-  position: relative;
-  z-index: 1;
-}
-
-.dash-activity-item:nth-child(2n) .dash-activity-dot {
-  background: linear-gradient(135deg, #10b981, #34d399);
-  box-shadow: 0 0 0 4px #ecfdf5;
-}
-
-.dash-activity-item:nth-child(3n) .dash-activity-dot {
-  background: linear-gradient(135deg, #f59e0b, #fbbf24);
-  box-shadow: 0 0 0 4px #fffbeb;
-}
-
-.dash-activity-item:nth-child(4n) .dash-activity-dot {
-  background: linear-gradient(135deg, #ec4899, #f472b6);
-  box-shadow: 0 0 0 4px #fdf2f8;
-}
-
-.dash-activity-content {
-  flex: 1;
-  min-width: 0;
-}
-
-.dash-activity-text {
-  font-size: 13.5px;
-  color: var(--dash-text-secondary);
-  margin: 0;
-  line-height: 1.5;
-  font-weight: 500;
-}
-
-.dash-activity-time {
-  font-size: 11.5px;
-  color: var(--dash-text-muted);
-  font-weight: 500;
-  margin-top: 4px;
-  display: inline-flex;
-  align-items: center;
-  gap: 4px;
-}
-
-.dash-activity-time::before {
-  content: '';
-  width: 12px;
-  height: 12px;
-  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%2394a3b8' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Ccircle cx='12' cy='12' r='10'%3E%3C/circle%3E%3Cpolyline points='12 6 12 12 16 14'%3E%3C/polyline%3E%3C/svg%3E");
-  background-size: contain;
-  background-repeat: no-repeat;
-  flex-shrink: 0;
-}
-
-/* === Empty State === */
-.dash-empty {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  padding: 48px 20px;
-  text-align: center;
-}
-
-.dash-empty-icon {
-  width: 64px;
-  height: 64px;
-  border-radius: 20px;
-  background: linear-gradient(135deg, #f1f5f9, #e2e8f0);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  margin-bottom: 4px;
-}
-
-.dash-empty p {
-  font-size: 14px;
-  color: var(--dash-text-muted);
-  margin: 14px 0 0;
-  font-weight: 500;
-  line-height: 1.5;
-}
-
-.dash-empty-btn {
-  margin-top: 16px;
-  padding: 10px 24px;
-  background: linear-gradient(135deg, #6366f1, #818cf8);
-  color: #fff;
-  border: none;
-  border-radius: 12px;
-  font-size: 13px;
-  font-weight: 600;
-  cursor: pointer;
-  transition: all 0.25s ease;
-  box-shadow: 0 4px 14px rgba(99, 102, 241, 0.3);
-  letter-spacing: 0.01em;
-}
-
-.dash-empty-btn:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 8px 24px rgba(99, 102, 241, 0.4);
-}
-
-/* ============================================
    RESPONSIVE
    ============================================ */
 @media (max-width: 1400px) {
@@ -938,8 +677,7 @@
 }
 
 @media (max-width: 1100px) {
-  .dash-charts,
-  .dash-bottom-row {
+  .dash-charts {
     grid-template-columns: 1fr;
   }
 }
@@ -1001,15 +739,8 @@
     padding: 16px 12px 28px;
     gap: 18px;
   }
-
   .dash-card-body {
     padding: 12px 16px 20px;
-  }
-
-  .dash-table th,
-  .dash-table td {
-    padding: 10px 8px;
-    font-size: 12px;
   }
 
   .dash-quick-actions {
@@ -1104,8 +835,6 @@
 
 .dash-charts .dash-card:nth-child(1) { animation-delay: 0.35s; }
 .dash-charts .dash-card:nth-child(2) { animation-delay: 0.42s; }
-.dash-bottom-row .dash-card:nth-child(1) { animation-delay: 0.48s; }
-.dash-bottom-row .dash-card:nth-child(2) { animation-delay: 0.55s; }
 
 /* ============================================
    PULSE DOT for live indicator

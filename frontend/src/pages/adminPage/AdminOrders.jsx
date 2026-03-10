@@ -422,50 +422,50 @@ const AdminOrders = () => {
             </div>
           )}
 
-          {/* ── Summary Strip (4 cards) ── */}
+          {/* ── Summary Strip (4 compact cards) ── */}
           <div className="ao-summary-strip">
-            {/* Total */}
-            <div className="ao-summary-card">
-              <div className="ao-summary-icon total">{I.layers}</div>
-              <div className="ao-summary-info">
-                <div className="ao-summary-number">{stats.total}</div>
-                <div className="ao-summary-label">Total Orders</div>
+            <div className="ao-summary-card total">
+              <div className="ao-summary-accent" />
+              <div className="ao-summary-top">
+                <span className="ao-summary-label">Total Orders</span>
+                <div className="ao-summary-icon">{I.layers}</div>
+              </div>
+              <div className="ao-summary-number">{stats.total}</div>
+            </div>
+
+            <div className="ao-summary-card active">
+              <div className="ao-summary-accent" />
+              <div className="ao-summary-top">
+                <span className="ao-summary-label">Active</span>
+                <div className="ao-summary-icon">{I.zap}</div>
+              </div>
+              <div className="ao-summary-number">{stats.draft + stats.confirmed + stats.inProduction}</div>
+              <div className="ao-summary-breakdown">
+                <span className="ao-summary-tag"><span className="ao-summary-tag-dot draft" />{stats.draft} Draft</span>
+                <span className="ao-summary-tag"><span className="ao-summary-tag-dot confirmed" />{stats.confirmed} Confirmed</span>
+                <span className="ao-summary-tag"><span className="ao-summary-tag-dot production" />{stats.inProduction} Prod</span>
               </div>
             </div>
 
-            {/* Active */}
-            <div className="ao-summary-card">
-              <div className="ao-summary-icon active">{I.zap}</div>
-              <div className="ao-summary-info">
-                <div className="ao-summary-number">{stats.draft + stats.confirmed + stats.inProduction}</div>
-                <div className="ao-summary-label">Active</div>
-                <div className="ao-summary-breakdown">
-                  <span className="ao-summary-tag"><span className="ao-summary-tag-dot draft" />{stats.draft} Draft</span>
-                  <span className="ao-summary-tag"><span className="ao-summary-tag-dot confirmed" />{stats.confirmed} Confirmed</span>
-                  <span className="ao-summary-tag"><span className="ao-summary-tag-dot production" />{stats.inProduction} Production</span>
-                </div>
+            <div className="ao-summary-card completed">
+              <div className="ao-summary-accent" />
+              <div className="ao-summary-top">
+                <span className="ao-summary-label">Completed</span>
+                <div className="ao-summary-icon">{I.checkCircle}</div>
               </div>
+              <div className="ao-summary-number">{stats.completed}</div>
             </div>
 
-            {/* Completed */}
-            <div className="ao-summary-card">
-              <div className="ao-summary-icon completed">{I.checkCircle}</div>
-              <div className="ao-summary-info">
-                <div className="ao-summary-number">{stats.completed}</div>
-                <div className="ao-summary-label">Completed</div>
+            <div className="ao-summary-card issues">
+              <div className="ao-summary-accent" />
+              <div className="ao-summary-top">
+                <span className="ao-summary-label">Issues</span>
+                <div className="ao-summary-icon">{I.alertTriangle}</div>
               </div>
-            </div>
-
-            {/* Issues */}
-            <div className="ao-summary-card">
-              <div className="ao-summary-icon issues">{I.alertTriangle}</div>
-              <div className="ao-summary-info">
-                <div className="ao-summary-number">{stats.stopped + stats.cancelled}</div>
-                <div className="ao-summary-label">Issues</div>
-                <div className="ao-summary-breakdown">
-                  <span className="ao-summary-tag"><span className="ao-summary-tag-dot stopped" />{stats.stopped} Stopped</span>
-                  <span className="ao-summary-tag"><span className="ao-summary-tag-dot cancelled" />{stats.cancelled} Cancelled</span>
-                </div>
+              <div className="ao-summary-number">{stats.stopped + stats.cancelled}</div>
+              <div className="ao-summary-breakdown">
+                <span className="ao-summary-tag"><span className="ao-summary-tag-dot stopped" />{stats.stopped} Stopped</span>
+                <span className="ao-summary-tag"><span className="ao-summary-tag-dot cancelled" />{stats.cancelled} Cancelled</span>
               </div>
             </div>
           </div>
