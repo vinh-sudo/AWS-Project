@@ -48,8 +48,7 @@ public class Employee {
     @Column(name = "status", length = 20)
     private String status;
 
-    @OneToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "employee_id")
+    @OneToOne(mappedBy = "employee", fetch = FetchType.LAZY)
     private Account account;
 
     @OneToMany

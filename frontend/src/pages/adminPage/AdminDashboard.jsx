@@ -123,6 +123,29 @@ const AdminDashboard = () => {
     return "Good Evening";
   };
 
+  const getStatusBadgeClass = (status) => {
+    switch (status) {
+      case "Draft":
+        return "badge-pending";
+      case "Confirmed":
+        return "badge-pending";
+      case "PLANNING":
+        return "badge-progress";
+      case "SCHEDULED":
+        return "badge-progress";
+      case "In Production":
+        return "badge-progress";
+      case "Completed":
+        return "badge-completed";
+      case "Cancelled":
+        return "badge-cancelled";
+      case "STOPPED":
+        return "badge-cancelled";
+      default:
+        return "badge-default";
+    }
+  };
+
   const getUserInitial = () => {
     const name = currentUser?.fullName || "Admin";
     return name.charAt(0).toUpperCase();

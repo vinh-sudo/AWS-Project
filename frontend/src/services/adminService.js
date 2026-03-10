@@ -56,25 +56,6 @@ const confirmOrder = async (id) => {
 };
 
 /**
- * Start production (Confirmed -> In Production)
- */
-const startProduction = async (id) => {
-  const response = await api.post(
-    `/api/admin/orders/${id}/start-production`,
-    {},
-  );
-  return response.data;
-};
-
-/**
- * Complete order (In Production -> Completed)
- */
-const completeOrder = async (id) => {
-  const response = await api.post(`/api/admin/orders/${id}/complete`, {});
-  return response.data;
-};
-
-/**
  * Cancel order
  */
 const cancelOrder = async (id, reason = null) => {
@@ -298,10 +279,10 @@ const getDashboardStats = async () => {
       ),
       totalOrders: orderData?.totalOrders || 0,
       pendingOrders:
-        (countByStatus.DRAFT || 0) + (countByStatus.CONFIRMED || 0),
-      completedOrders: countByStatus.COMPLETED || 0,
-      inProgressOrders: countByStatus.IN_PRODUCTION || 0,
-      cancelledOrders: countByStatus.CANCELLED || 0,
+        (countByStatus["Draft"] || 0) + (countByStatus["Confirmed"] || 0),
+      completedOrders: countByStatus["Completed"] || 0,
+      inProgressOrders: countByStatus["In Production"] || 0,
+      cancelledOrders: countByStatus["Cancelled"] || 0,
       // System info
       totalLines: sysData?.totalLines || 0,
       activeLines: sysData?.activeLines || 0,
@@ -347,8 +328,6 @@ const adminService = {
   updateOrder,
   deleteOrder,
   confirmOrder,
-  startProduction,
-  completeOrder,
   cancelOrder,
   stopOrder,
   resumeOrder,

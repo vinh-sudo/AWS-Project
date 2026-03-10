@@ -46,7 +46,7 @@ public class AdminAssignmentService {
         return accountRepo.findAvailableLineLeaders()
                 .stream()
                 .map(a -> AccountSummaryResponse.builder()
-                        .id(a.getId())
+                        .id(a.getEmployee().getId())
                         .username(a.getUsername())
                         .employeeCode(a.getEmployee().getEmployeeCode())
                         .role(a.getRole())

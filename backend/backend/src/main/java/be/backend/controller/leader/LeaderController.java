@@ -105,4 +105,12 @@ public class LeaderController {
         incidentService.reportIncident(account, request);
         return ResponseEntity.status(HttpStatus.CREATED).build();
     }
+
+    /** Leader start sản xuất trên 1 schedule */
+    @PostMapping("/schedules/{id}/start")
+    public ResponseEntity<ScheduleSummaryResponse> startSchedule(
+            @AuthenticationPrincipal Account account,
+            @PathVariable Integer id) {
+        return ResponseEntity.ok(progressService.startSchedule(account, id));
+    }
 }
