@@ -30,13 +30,14 @@ const ManagerPlanning = () => {
     setLoading(true);
     setError(null);
     try {
-      const [plansRes, linesRes] = await Promise.all([
+      const [plansRes, linesRes, ordersRes] = await Promise.all([
         managerService.getAllPlans(),
         managerService.getLinesOverview(),
+        managerService.getAllOrders(),
       ]);
       setPlans(plansRes || []);
       setLinesOverview(linesRes || []);
-      setOrders([]);
+      setOrders(ordersRes || []);
     } catch (err) {
       console.error("Error fetching data:", err);
       setError("Unable to load data. Please try again later.");
@@ -156,10 +157,15 @@ const ManagerPlanning = () => {
   };
 
   const awaitingOrders = useMemo(() => {
-    return (orders || []).filter(
-      (o) => o.status === "APPROVED" || o.status === "NEW",
+    const plannedOrderIds = new Set(
+      (plans || []).map((p) => p.orderId || p.order?.id),
     );
-  }, [orders]);
+    return (orders || []).filter(
+      (o) =>
+        (o.status === "Confirmed" || o.status === "Draft") &&
+        !plannedOrderIds.has(o.id),
+    );
+  }, [orders, plans]);
 
   const filteredOrders = useMemo(() => {
     return awaitingOrders.filter((o) => {
