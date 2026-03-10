@@ -26,7 +26,8 @@ public interface AccountRepository extends JpaRepository<Account, Integer> {
             "FROM Account a JOIN a.employee e WHERE e.employeeCode = :employeeCode")
     boolean existsByEmployeeCode(String employeeCode);
 
-    Optional<Account> findByUsername(String username);
+    @Query("SELECT a FROM Account a LEFT JOIN FETCH a.employee WHERE a.username = :username")
+    Optional<Account> findByUsername(@Param("username") String username);
 
     Optional<Account> findByRoleIgnoreCase(String role);
 
