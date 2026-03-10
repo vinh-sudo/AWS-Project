@@ -168,37 +168,8 @@ public class OrderService {
         return buildResponse(saved);
     }
 
-    @Transactional
-    public OrderResponse startProduction(Integer orderId) {
-        Order order = getOrderEntity(orderId);
-        
-        if (!STATUS_CONFIRMED.equals(order.getStatus())) {
-            throw new BusinessException("Only Confirmed orders can start production. Current status: " + order.getStatus());
-        }
-        
-        order.setStatus(STATUS_IN_PRODUCTION);
-        order.setUpdatedAt(OffsetDateTime.now());
-        
-        Order saved = orderRepository.save(order);
-        log.info("Order {} started production", orderId);
-        return buildResponse(saved);
-    }
 
-    @Transactional
-    public OrderResponse completeOrder(Integer orderId) {
-        Order order = getOrderEntity(orderId);
-        
-        if (!STATUS_IN_PRODUCTION.equals(order.getStatus())) {
-            throw new BusinessException("Only In Production orders can be completed. Current status: " + order.getStatus());
-        }
-        
-        order.setStatus(STATUS_COMPLETED);
-        order.setUpdatedAt(OffsetDateTime.now());
-        
-        Order saved = orderRepository.save(order);
-        log.info("Order {} completed", orderId);
-        return buildResponse(saved);
-    }
+   
 
     @Transactional
     public OrderResponse cancelOrder(Integer orderId, String reason) {

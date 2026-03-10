@@ -60,16 +60,6 @@ public class OrderController {
         return ResponseEntity.ok(orderService.confirmOrder(id));
     }
 
-    @PostMapping("/{id}/start-production")
-    public ResponseEntity<OrderResponse> startProduction(@PathVariable Integer id) {
-        return ResponseEntity.ok(orderService.startProduction(id));
-    }
-
-    @PostMapping("/{id}/complete")
-    public ResponseEntity<OrderResponse> completeOrder(@PathVariable Integer id) {
-        return ResponseEntity.ok(orderService.completeOrder(id));
-    }
-
     @PostMapping("/{id}/cancel")
     public ResponseEntity<OrderResponse> cancelOrder(
             @PathVariable Integer id,
@@ -81,7 +71,6 @@ public class OrderController {
     // ==================== QUERIES ====================
 
     @GetMapping
-    @PreAuthorize("hasAnyRole('ADMIN','MANAGER')")
     public ResponseEntity<List<OrderResponse>> getAllOrders() {
         return ResponseEntity.ok(orderService.getAllOrders());
     }
