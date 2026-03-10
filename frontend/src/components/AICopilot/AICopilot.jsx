@@ -7,7 +7,7 @@ function AICopilot({ isOpen, onClose }) {
     {
       id: 1,
       type: "bot",
-      text: "Xin chào! Tôi là AI Production Copilot. Tôi có thể giúp bạn phân tích sản xuất, kiểm tra tình trạng dây chuyền, hoặc trả lời các câu hỏi về hoạt động sản xuất.",
+      text: "Hello! I'm the AI Production Copilot. I can help you analyze production, check line status, or answer questions about manufacturing operations.",
       time: new Date().toLocaleTimeString([], {
         hour: "2-digit",
         minute: "2-digit",
@@ -64,12 +64,12 @@ function AICopilot({ isOpen, onClose }) {
     try {
       const data = await aiService.chat(userText, sessionId);
       addBotMessage(
-        data.response || "Không có phản hồi từ AI.",
+        data.response || "No response from AI.",
         data.suggestedQuestions || [],
       );
     } catch {
       addBotMessage(
-        "Xin lỗi, hiện tại không thể kết nối đến AI. Vui lòng thử lại sau.",
+        "Sorry, unable to connect to AI at the moment. Please try again later.",
       );
     } finally {
       setIsTyping(false);
@@ -83,7 +83,7 @@ function AICopilot({ isOpen, onClose }) {
       {
         id: Date.now(),
         type: "user",
-        text: "📊 Tình trạng sản xuất nhanh",
+        text: "📊 Quick Production Status",
         time: new Date().toLocaleTimeString([], {
           hour: "2-digit",
           minute: "2-digit",
@@ -95,11 +95,11 @@ function AICopilot({ isOpen, onClose }) {
     try {
       const data = await aiService.getQuickStatus();
       addBotMessage(
-        data.response || "Không có dữ liệu.",
+        data.response || "No data available.",
         data.suggestedQuestions || [],
       );
     } catch {
-      addBotMessage("Không thể lấy tình trạng sản xuất. Vui lòng thử lại.");
+      addBotMessage("Unable to fetch production status. Please try again.");
     } finally {
       setIsTyping(false);
     }
@@ -112,7 +112,7 @@ function AICopilot({ isOpen, onClose }) {
       {
         id: Date.now(),
         type: "user",
-        text: "🏭 Kiểm tra sức khỏe sản xuất",
+        text: "🏭 Production Health Check",
         time: new Date().toLocaleTimeString([], {
           hour: "2-digit",
           minute: "2-digit",
@@ -129,15 +129,15 @@ function AICopilot({ isOpen, onClose }) {
           : data.overallStatus === "WARNING"
             ? "⚠️"
             : "🔴";
-      let text = `${statusEmoji} **Trạng thái:** ${data.overallStatus}\n`;
-      if (data.mainIssue) text += `\n📌 **Vấn đề chính:** ${data.mainIssue}`;
+      let text = `${statusEmoji} **Status:** ${data.overallStatus}\n`;
+      if (data.mainIssue) text += `\n📌 **Main Issue:** ${data.mainIssue}`;
       if (data.criticalLines?.length > 0)
-        text += `\n\n🚨 **Dây chuyền cần chú ý:**\n${data.criticalLines.map((l) => `• ${l}`).join("\n")}`;
+        text += `\n\n🚨 **Lines Requiring Attention:**\n${data.criticalLines.map((l) => `• ${l}`).join("\n")}`;
       if (data.recommendations?.length > 0)
-        text += `\n\n💡 **Khuyến nghị:**\n${data.recommendations.map((r) => `• ${r}`).join("\n")}`;
+        text += `\n\n💡 **Recommendations:**\n${data.recommendations.map((r) => `• ${r}`).join("\n")}`;
       addBotMessage(text);
     } catch {
-      addBotMessage("Không thể lấy dữ liệu sức khỏe sản xuất.");
+      addBotMessage("Unable to fetch production health data.");
     } finally {
       setIsTyping(false);
     }
@@ -150,7 +150,7 @@ function AICopilot({ isOpen, onClose }) {
       {
         id: Date.now(),
         type: "user",
-        text: "🔍 Phân tích nguyên nhân gốc",
+        text: "🔍 Root Cause Analysis",
         time: new Date().toLocaleTimeString([], {
           hour: "2-digit",
           minute: "2-digit",
@@ -161,19 +161,19 @@ function AICopilot({ isOpen, onClose }) {
 
     try {
       const data = await aiService.getRootCauseAnalysis();
-      let text = `🔍 **Nguyên nhân chính:** ${data.primaryRootCause}\n`;
-      text += `📊 **Độ tin cậy:** ${data.confidence}`;
+      let text = `🔍 **Primary Root Cause:** ${data.primaryRootCause}\n`;
+      text += `📊 **Confidence:** ${data.confidence}`;
       if (data.contributingFactors?.length > 0)
-        text += `\n\n📋 **Yếu tố liên quan:**\n${data.contributingFactors.map((f) => `• ${f}`).join("\n")}`;
+        text += `\n\n📋 **Contributing Factors:**\n${data.contributingFactors.map((f) => `• ${f}`).join("\n")}`;
       if (data.evidencePoints?.length > 0)
-        text += `\n\n📄 **Bằng chứng:**\n${data.evidencePoints.map((e) => `• ${e}`).join("\n")}`;
+        text += `\n\n📄 **Evidence:**\n${data.evidencePoints.map((e) => `• ${e}`).join("\n")}`;
       if (data.immediateActions?.length > 0)
-        text += `\n\n⚡ **Hành động ngay:**\n${data.immediateActions.map((a) => `• ${a}`).join("\n")}`;
+        text += `\n\n⚡ **Immediate Actions:**\n${data.immediateActions.map((a) => `• ${a}`).join("\n")}`;
       if (data.preventiveActions?.length > 0)
-        text += `\n\n🛡️ **Phòng ngừa:**\n${data.preventiveActions.map((a) => `• ${a}`).join("\n")}`;
+        text += `\n\n🛡️ **Preventive Actions:**\n${data.preventiveActions.map((a) => `• ${a}`).join("\n")}`;
       addBotMessage(text);
     } catch {
-      addBotMessage("Không thể thực hiện phân tích nguyên nhân gốc.");
+      addBotMessage("Unable to perform root cause analysis.");
     } finally {
       setIsTyping(false);
     }
@@ -197,7 +197,7 @@ function AICopilot({ isOpen, onClose }) {
       {
         id: Date.now(),
         type: "user",
-        text: "📝 Tóm tắt AI sức khỏe sản xuất",
+        text: "📝 AI Production Health Summary",
         time: new Date().toLocaleTimeString([], {
           hour: "2-digit",
           minute: "2-digit",
@@ -208,9 +208,9 @@ function AICopilot({ isOpen, onClose }) {
 
     try {
       const data = await aiService.getProductionHealthSummary();
-      addBotMessage(data || "Không có dữ liệu tóm tắt.");
+      addBotMessage(data || "No summary data available.");
     } catch {
-      addBotMessage("Không thể lấy tóm tắt AI sức khỏe sản xuất.");
+      addBotMessage("Unable to fetch AI production health summary.");
     } finally {
       setIsTyping(false);
     }
@@ -223,7 +223,7 @@ function AICopilot({ isOpen, onClose }) {
       {
         id: Date.now(),
         type: "user",
-        text: "📋 Tóm tắt AI nguyên nhân gốc",
+        text: "📋 AI Root Cause Summary",
         time: new Date().toLocaleTimeString([], {
           hour: "2-digit",
           minute: "2-digit",
@@ -234,22 +234,22 @@ function AICopilot({ isOpen, onClose }) {
 
     try {
       const data = await aiService.getRootCauseSummary();
-      addBotMessage(data || "Không có dữ liệu tóm tắt nguyên nhân.");
+      addBotMessage(data || "No root cause summary data available.");
     } catch {
-      addBotMessage("Không thể lấy tóm tắt AI nguyên nhân gốc.");
+      addBotMessage("Unable to fetch AI root cause summary.");
     } finally {
       setIsTyping(false);
     }
   };
 
   const quickActions = [
-    { icon: "📊", label: "Trạng thái nhanh", action: handleQuickStatus },
-    { icon: "🏭", label: "Sức khỏe SX", action: handleProductionHealth },
-    { icon: "🔍", label: "Phân tích nguyên nhân", action: handleRootCause },
-    { icon: "📝", label: "Tóm tắt AI SX", action: handleAiHealthSummary },
+    { icon: "📊", label: "Quick Status", action: handleQuickStatus },
+    { icon: "🏭", label: "Production Health", action: handleProductionHealth },
+    { icon: "🔍", label: "Root Cause Analysis", action: handleRootCause },
+    { icon: "📝", label: "AI Health Summary", action: handleAiHealthSummary },
     {
       icon: "📋",
-      label: "Tóm tắt nguyên nhân",
+      label: "Root Cause Summary",
       action: handleAiRootCauseSummary,
     },
   ];
@@ -358,7 +358,7 @@ function AICopilot({ isOpen, onClose }) {
           <input
             className="copilot-input"
             type="text"
-            placeholder="Hỏi về sản xuất..."
+            placeholder="Ask about production..."
             value={inputValue}
             onChange={(e) => setInputValue(e.target.value)}
             onKeyDown={handleKeyPress}

@@ -304,8 +304,8 @@ const PlannerScheduling = () => {
         >
           <span>⚠️</span>
           <span>
-            Demo Mode — Backend API chưa hỗ trợ Planner. Dữ liệu hiển thị là dữ
-            liệu mẫu.
+            Demo Mode — Backend API does not support Planner yet. Data shown is
+            sample data.
           </span>
         </div>
 

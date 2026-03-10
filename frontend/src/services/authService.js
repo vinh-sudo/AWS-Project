@@ -32,9 +32,9 @@ api.interceptors.response.use(
     const originalRequest = error.config;
     const status = error.response?.status;
 
-    // CHỈ logout khi 401 (Unauthorized = token hết hạn/invalid)
-    // KHÔNG logout khi 403 (Forbidden = user đã login nhưng không có quyền endpoint đó)
-    // 403 chỉ có nghĩa là role không đủ quyền, KHÔNG phải token sai
+    // ONLY logout on 401 (Unauthorized = token expired/invalid)
+    // DO NOT logout on 403 (Forbidden = user is logged in but lacks permission for that endpoint)
+    // 403 only means the role lacks permission, NOT that the token is invalid
     if (
       status === 401 &&
       !originalRequest._retry &&

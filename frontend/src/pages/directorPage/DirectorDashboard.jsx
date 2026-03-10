@@ -1,8 +1,8 @@
 // ============================================================================
-// NOTE: Backend chưa có DirectorController hoặc role DIRECTOR.
-// Trang này sử dụng 100% dữ liệu mock (hardcoded priorityOrders, kpiSummary, etc).
-// Backend chỉ có 4 role: ADMIN, MANAGER, LINE_LEADER, PRODUCTION_PLANNER.
-// Director không có trong hệ thống backend hiện tại.
+// NOTE: Backend does not have DirectorController or DIRECTOR role.
+// This page uses 100% mock data (hardcoded priorityOrders, kpiSummary, etc).
+// Backend only has 4 roles: ADMIN, MANAGER, LINE_LEADER, PRODUCTION_PLANNER.
+// Director is not in the current backend system.
 // ============================================================================
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
@@ -38,7 +38,7 @@ const DirectorDashboard = () => {
       status: "At Risk",
       priority: "Critical",
       progress: 35,
-      directorNote: "Cần tăng ca để kịp deadline",
+      directorNote: "Need overtime to meet deadline",
     },
     {
       id: "ORD-005",
@@ -76,23 +76,23 @@ const DirectorDashboard = () => {
     {
       id: 1,
       type: "deadline",
-      message: "ORD-003 có nguy cơ trễ deadline 2 ngày",
+      message: "ORD-003 is at risk of missing deadline by 2 days",
       severity: "critical",
-      time: "30 phút trước",
+      time: "30 minutes ago",
     },
     {
       id: 2,
       type: "capacity",
-      message: "SMT Line 1 đang quá tải (95% capacity)",
+      message: "SMT Line 1 is overloaded (95% capacity)",
       severity: "warning",
-      time: "1 giờ trước",
+      time: "1 hour ago",
     },
     {
       id: 3,
       type: "approval",
-      message: "3 đơn hàng mới cần phê duyệt ưu tiên",
+      message: "3 new orders need priority approval",
       severity: "info",
-      time: "2 giờ trước",
+      time: "2 hours ago",
     },
   ];
 
@@ -125,7 +125,7 @@ const DirectorDashboard = () => {
     );
     setShowDirectiveModal(false);
     setSelectedOrder(null);
-    alert("Đã lưu chỉ đạo thành công!");
+    alert("Directive saved successfully!");
   };
 
   const getStatusClass = (status) => {
@@ -183,21 +183,21 @@ const DirectorDashboard = () => {
         <nav className="sidebar-nav">
           <div className="nav-item active">
             <span className="nav-icon">📊</span>
-            <span>Tổng quan</span>
+            <span>Overview</span>
           </div>
           <div className="nav-item" onClick={() => navigate("/reports")}>
             <span className="nav-icon">📈</span>
-            <span>Báo cáo</span>
+            <span>Reports</span>
           </div>
           <div className="nav-item" onClick={() => navigate("/dashboard")}>
             <span className="nav-icon">🏭</span>
-            <span>Dashboard chi tiết</span>
+            <span>Detailed Dashboard</span>
           </div>
         </nav>
         <div className="sidebar-footer">
           <div className="nav-item logout" onClick={handleLogout}>
             <span className="nav-icon">🚪</span>
-            <span>Đăng xuất</span>
+            <span>Logout</span>
           </div>
         </div>
       </aside>
@@ -208,14 +208,14 @@ const DirectorDashboard = () => {
         <header className="director-header">
           <div className="header-left">
             <h1>👔 Director Dashboard</h1>
-            <p>Tổng quan và ra chỉ đạo sản xuất</p>
+            <p>Production overview and directives</p>
           </div>
           <div className="header-right">
             <div className="user-info">
               <span className="user-name">
                 {currentUser?.fullName || "Director"}
               </span>
-              <span className="user-role">Giám đốc sản xuất</span>
+              <span className="user-role">Production Director</span>
             </div>
           </div>
         </header>
@@ -227,42 +227,42 @@ const DirectorDashboard = () => {
               <div className="kpi-icon">📦</div>
               <div className="kpi-content">
                 <span className="kpi-value">{kpiSummary.totalOrders}</span>
-                <span className="kpi-label">Tổng đơn hàng</span>
+                <span className="kpi-label">Total Orders</span>
               </div>
             </div>
             <div className="kpi-card success">
               <div className="kpi-icon">✅</div>
               <div className="kpi-content">
                 <span className="kpi-value">{kpiSummary.completedOrders}</span>
-                <span className="kpi-label">Hoàn thành</span>
+                <span className="kpi-label">Completed</span>
               </div>
             </div>
             <div className="kpi-card">
               <div className="kpi-icon">⏱️</div>
               <div className="kpi-content">
                 <span className="kpi-value">{kpiSummary.onTimeDelivery}%</span>
-                <span className="kpi-label">Giao đúng hạn</span>
+                <span className="kpi-label">On-time Delivery</span>
               </div>
             </div>
             <div className="kpi-card">
               <div className="kpi-icon">⚡</div>
               <div className="kpi-content">
                 <span className="kpi-value">{kpiSummary.overallOEE}%</span>
-                <span className="kpi-label">OEE tổng</span>
+                <span className="kpi-label">Overall OEE</span>
               </div>
             </div>
             <div className="kpi-card highlight">
               <div className="kpi-icon">💰</div>
               <div className="kpi-content">
                 <span className="kpi-value">{kpiSummary.revenue}</span>
-                <span className="kpi-label">Doanh thu tháng</span>
+                <span className="kpi-label">Monthly Revenue</span>
               </div>
             </div>
             <div className="kpi-card warning">
               <div className="kpi-icon">⏳</div>
               <div className="kpi-content">
                 <span className="kpi-value">{kpiSummary.pendingApprovals}</span>
-                <span className="kpi-label">Chờ phê duyệt</span>
+                <span className="kpi-label">Pending Approval</span>
               </div>
             </div>
           </div>
@@ -273,24 +273,24 @@ const DirectorDashboard = () => {
           {/* Priority Orders - Director can set directives */}
           <section className="priority-orders-section">
             <div className="section-header">
-              <h2>🎯 Đơn hàng ưu tiên</h2>
+              <h2>🎯 Priority Orders</h2>
               <span className="section-subtitle">
-                Ra chỉ đạo và điều chỉnh ưu tiên
+                Issue directives and adjust priorities
               </span>
             </div>
             <div className="orders-table">
               <table>
                 <thead>
                   <tr>
-                    <th>Mã đơn</th>
-                    <th>Khách hàng</th>
-                    <th>Sản phẩm</th>
-                    <th>SL</th>
+                    <th>Order ID</th>
+                    <th>Customer</th>
+                    <th>Product</th>
+                    <th>Qty</th>
                     <th>Deadline</th>
-                    <th>Tiến độ</th>
-                    <th>Ưu tiên</th>
-                    <th>Chỉ đạo</th>
-                    <th>Hành động</th>
+                    <th>Progress</th>
+                    <th>Priority</th>
+                    <th>Directive</th>
+                    <th>Action</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -321,7 +321,7 @@ const DirectorDashboard = () => {
                       </td>
                       <td className="directive-cell">
                         {order.directorNote || (
-                          <span className="no-directive">Chưa có</span>
+                          <span className="no-directive">None</span>
                         )}
                       </td>
                       <td>
@@ -329,7 +329,7 @@ const DirectorDashboard = () => {
                           className="btn-directive"
                           onClick={() => openDirectiveModal(order)}
                         >
-                          ✏️ Chỉ đạo
+                          ✏️ Directive
                         </button>
                       </td>
                     </tr>
@@ -342,7 +342,7 @@ const DirectorDashboard = () => {
           {/* Lines Overview */}
           <section className="lines-overview-section">
             <div className="section-header">
-              <h2>🏭 Tổng quan dây chuyền</h2>
+              <h2>🏭 Production Lines Overview</h2>
             </div>
             <div className="lines-grid">
               {linesOverview.map((line, index) => (
@@ -361,7 +361,7 @@ const DirectorDashboard = () => {
                       <span className="metric-value">{line.oee}%</span>
                     </div>
                     <div className="metric">
-                      <span className="metric-label">Tải</span>
+                      <span className="metric-label">Load</span>
                       <span className="metric-value">{line.load}</span>
                     </div>
                   </div>
@@ -373,7 +373,7 @@ const DirectorDashboard = () => {
           {/* Critical Alerts */}
           <section className="alerts-section">
             <div className="section-header">
-              <h2>🚨 Cảnh báo quan trọng</h2>
+              <h2>🚨 Critical Alerts</h2>
             </div>
             <div className="alerts-list">
               {criticalAlerts.map((alert) => (
@@ -404,7 +404,7 @@ const DirectorDashboard = () => {
         <div className="modal-overlay">
           <div className="modal-content">
             <div className="modal-header">
-              <h3>📝 Ra chỉ đạo cho {selectedOrder.id}</h3>
+              <h3>📝 Directive for {selectedOrder.id}</h3>
               <button
                 className="modal-close"
                 onClick={() => setShowDirectiveModal(false)}
@@ -415,38 +415,38 @@ const DirectorDashboard = () => {
             <div className="modal-body">
               <div className="order-summary">
                 <p>
-                  <strong>Khách hàng:</strong> {selectedOrder.customer}
+                  <strong>Customer:</strong> {selectedOrder.customer}
                 </p>
                 <p>
-                  <strong>Sản phẩm:</strong> {selectedOrder.product}
+                  <strong>Product:</strong> {selectedOrder.product}
                 </p>
                 <p>
                   <strong>Deadline:</strong> {selectedOrder.deadline}
                 </p>
                 <p>
-                  <strong>Tiến độ:</strong> {selectedOrder.progress}%
+                  <strong>Progress:</strong> {selectedOrder.progress}%
                 </p>
               </div>
 
               <div className="form-group">
-                <label>Mức độ ưu tiên:</label>
+                <label>Priority Level:</label>
                 <select
                   value={newPriority}
                   onChange={(e) => setNewPriority(e.target.value)}
                 >
-                  <option value="Critical">Critical - Khẩn cấp</option>
-                  <option value="High">High - Cao</option>
-                  <option value="Medium">Medium - Trung bình</option>
-                  <option value="Low">Low - Thấp</option>
+                  <option value="Critical">Critical - Urgent</option>
+                  <option value="High">High</option>
+                  <option value="Medium">Medium</option>
+                  <option value="Low">Low</option>
                 </select>
               </div>
 
               <div className="form-group">
-                <label>Chỉ đạo của Giám đốc:</label>
+                <label>Director's Directive:</label>
                 <textarea
                   value={directive}
                   onChange={(e) => setDirective(e.target.value)}
-                  placeholder="Nhập chỉ đạo, ưu tiên, yêu cầu đặc biệt..."
+                  placeholder="Enter directives, priorities, special requirements..."
                   rows={4}
                 />
               </div>
@@ -456,10 +456,10 @@ const DirectorDashboard = () => {
                 className="btn-cancel"
                 onClick={() => setShowDirectiveModal(false)}
               >
-                Hủy
+                Cancel
               </button>
               <button className="btn-save" onClick={handleSaveDirective}>
-                💾 Lưu chỉ đạo
+                💾 Save Directive
               </button>
             </div>
           </div>

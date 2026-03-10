@@ -54,15 +54,15 @@ const AuditLog = () => {
             <p
               style={{ fontSize: "14px", maxWidth: "400px", lineHeight: "1.6" }}
             >
-              Tính năng Audit Log đang được phát triển. Hệ thống đã ghi nhận các
-              hoạt động nhưng chưa có API để hiển thị.
+              The Audit Log feature is under development. The system has been
+              recording activities but there is no API to display them yet.
             </p>
             <button
               className="btn-primary"
               onClick={() => navigate("/admin/dashboard")}
               style={{ marginTop: "24px" }}
             >
-              ← Quay về Dashboard
+              ← Back to Dashboard
             </button>
           </div>
         </div>

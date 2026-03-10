@@ -99,7 +99,7 @@ function App() {
           <Route path="/otp-verification" element={<OtpVerificationPage />} />
           <Route path="/reset-password" element={<ResetPasswordPage />} />
 
-          {/* Manager Routes - Quản lý sản xuất: lập kế hoạch, theo dõi tiến độ */}
+          {/* Manager Routes - Production management: planning, progress tracking */}
           <Route
             path="/manager"
             element={
@@ -157,7 +157,7 @@ function App() {
             }
           />
 
-          {/* Admin Routes - Quản lý user, đơn hàng, duyệt, audit */}
+          {/* Admin Routes - User management, orders, approvals, audit */}
           <Route
             path="/admin"
             element={

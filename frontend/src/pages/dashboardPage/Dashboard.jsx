@@ -15,7 +15,7 @@ const Dashboard = () => {
     }
   }, [currentUser, navigate]);
 
-  // Fallback nếu không xác định được role - redirect về login
+  // Fallback if role cannot be determined - redirect to login
   useEffect(() => {
     if (!currentUser) {
       navigate("/login", { replace: true });

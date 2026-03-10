@@ -251,8 +251,8 @@ const PlannerReports = () => {
         >
           <span>⚠️</span>
           <span>
-            Demo Mode — Backend API chưa hỗ trợ Planner Reports. Dữ liệu hiển
-            thị là dữ liệu mẫu.
+            Demo Mode — Backend API does not support Planner Reports yet. Data
+            shown is sample data.
           </span>
         </div>
 

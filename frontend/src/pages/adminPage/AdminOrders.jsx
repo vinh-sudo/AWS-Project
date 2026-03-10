@@ -362,12 +362,12 @@ const getPriorityKey = (priority) => {
   }
 };
 
-const formatDate = (d) => (d ? new Date(d).toLocaleDateString("vi-VN") : "—");
+const formatDate = (d) => (d ? new Date(d).toLocaleDateString("en-US") : "—");
 const formatCurrency = (v) =>
   v != null
-    ? new Intl.NumberFormat("vi-VN", {
+    ? new Intl.NumberFormat("en-US", {
         style: "currency",
-        currency: "VND",
+        currency: "USD",
       }).format(v)
     : "—";
 
@@ -1681,7 +1681,7 @@ const AdminOrders = () => {
                           <span className="ao-file-meta">
                             Uploaded:{" "}
                             {f.uploadedAt
-                              ? new Date(f.uploadedAt).toLocaleString("vi-VN")
+                              ? new Date(f.uploadedAt).toLocaleString("en-US")
                               : "—"}
                           </span>
                         </div>

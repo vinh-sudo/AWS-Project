@@ -1,8 +1,8 @@
 // ============================================================================
-// NOTE: Backend chưa có PlannerController.
-// Trang này sử dụng 100% dữ liệu mock (hardcoded trong fetchDashboardData).
-// Planner CÓ THỂ dùng các endpoint Manager (plans, tracking) nếu backend
-// cấp quyền cho role PRODUCTION_PLANNER, nhưng hiện tại chưa.
+// NOTE: Backend does not have PlannerController.
+// This page uses 100% mock data (hardcoded in fetchDashboardData).
+// Planner CAN use Manager endpoints (plans, tracking) if backend
+// grants permission to role PRODUCTION_PLANNER, but currently does not.
 // ============================================================================
 import React, { useState, useEffect } from "react";
 import "./PlannerDashboard.css";
@@ -32,7 +32,7 @@ const PlannerDashboard = () => {
   }, []);
 
   const fetchDashboardData = async () => {
-    // Mock data - thay bằng API thực tế
+    // Mock data - replace with actual API
     const mockOrders = {
       unscheduled: [
         {
@@ -141,8 +141,8 @@ const PlannerDashboard = () => {
         <div className="header-title">
           <h1>📋 Planner Dashboard</h1>
           <p className="today-date">
-            Hôm nay:{" "}
-            {new Date().toLocaleDateString("vi-VN", {
+            Today:{" "}
+            {new Date().toLocaleDateString("en-US", {
               weekday: "long",
               year: "numeric",
               month: "long",
@@ -153,7 +153,7 @@ const PlannerDashboard = () => {
         <div className="header-question">
           <span className="question-icon">💡</span>
           <span className="question-text">
-            Hôm nay cần lập lịch cho đơn nào?
+            Which orders need scheduling today?
           </span>
         </div>
       </div>
@@ -167,7 +167,7 @@ const PlannerDashboard = () => {
           <div className="stat-icon">📝</div>
           <div className="stat-content">
             <span className="stat-number">{stats.unscheduled}</span>
-            <span className="stat-label">Chưa lập lịch</span>
+            <span className="stat-label">Unscheduled</span>
           </div>
         </div>
 
@@ -178,7 +178,7 @@ const PlannerDashboard = () => {
           <div className="stat-icon">⚠️</div>
           <div className="stat-content">
             <span className="stat-number">{stats.atRisk}</span>
-            <span className="stat-label">Nguy cơ trễ</span>
+            <span className="stat-label">At Risk</span>
           </div>
         </div>
 
@@ -200,7 +200,7 @@ const PlannerDashboard = () => {
           <div className="stat-icon">📊</div>
           <div className="stat-content">
             <span className="stat-number">{stats.todayWorkload}%</span>
-            <span className="stat-label">Workload hôm nay</span>
+            <span className="stat-label">Today's Workload</span>
           </div>
         </div>
       </div>
@@ -214,13 +214,13 @@ const PlannerDashboard = () => {
               className={`tab-btn ${activeTab === "unscheduled" ? "active" : ""}`}
               onClick={() => setActiveTab("unscheduled")}
             >
-              📝 Chưa lập lịch ({orders.unscheduled.length})
+              📝 Unscheduled ({orders.unscheduled.length})
             </button>
             <button
               className={`tab-btn ${activeTab === "atRisk" ? "active" : ""}`}
               onClick={() => setActiveTab("atRisk")}
             >
-              ⚠️ Nguy cơ trễ ({orders.atRisk.length})
+              ⚠️ At Risk ({orders.atRisk.length})
             </button>
           </div>
 
@@ -238,13 +238,13 @@ const PlannerDashboard = () => {
         <div className="right-panel">
           {/* Line Status */}
           <div className="panel-section">
-            <h3>🏭 Trạng thái Line</h3>
+            <h3>🏭 Line Status</h3>
             <LineStatus lines={lines} />
           </div>
 
           {/* Workload Chart */}
           <div className="panel-section">
-            <h3>📈 Workload tuần này</h3>
+            <h3>📈 This Week's Workload</h3>
             <WorkloadChart data={workloadData} />
           </div>
         </div>

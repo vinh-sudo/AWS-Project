@@ -146,8 +146,8 @@ const uploadOrderFile = async (orderId, file) => {
 };
 
 // ==================== AUDIT LOG ====================
-// NOTE: Backend chưa có endpoint /api/admin/audit-logs.
-// Khi backend tạo endpoint này, uncomment và sửa lại.
+// NOTE: Backend does not have endpoint /api/admin/audit-logs yet.
+// When backend creates this endpoint, uncomment and update.
 
 const getAuditLogs = async () => [];
 const getAuditLogsByUser = async (/* userId */) => [];

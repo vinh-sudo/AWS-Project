@@ -85,9 +85,9 @@ const LeaderInternalNotes = () => {
             id: "NOTE-001",
             scheduleId: "SCH-001",
             scheduleInfo: "PCB-A100 - TechCorp Inc.",
-            title: "Phân công ca sáng",
+            title: "Morning Shift Assignment",
             content:
-              "- Nguyễn Văn A: Vận hành máy SMT chính\n- Trần Thị B: Kiểm tra chất lượng\n- Lê Văn C: Chuẩn bị linh kiện",
+              "- Worker A: Main SMT machine operator\n- Worker B: Quality inspection\n- Worker C: Component preparation",
             createdAt: "2026-01-20 08:00",
             updatedAt: "2026-01-20 08:00",
           },
@@ -95,9 +95,9 @@ const LeaderInternalNotes = () => {
             id: "NOTE-002",
             scheduleId: "SCH-001",
             scheduleInfo: "PCB-A100 - TechCorp Inc.",
-            title: "Lưu ý kỹ thuật",
+            title: "Technical Notes",
             content:
-              "Máy SMT-02 cần điều chỉnh nhiệt độ khi chạy PCB này. Nhiệt độ đề xuất: 245°C",
+              "SMT-02 machine needs temperature adjustment for this PCB. Recommended temp: 245°C",
             createdAt: "2026-01-21 09:30",
             updatedAt: "2026-01-21 09:30",
           },
@@ -105,9 +105,9 @@ const LeaderInternalNotes = () => {
             id: "NOTE-003",
             scheduleId: "SCH-003",
             scheduleInfo: "PCB-C300 - MicroTech Co.",
-            title: "Checklist cuối ca",
+            title: "End-of-Shift Checklist",
             content:
-              "1. Kiểm tra số lượng hoàn thành\n2. Vệ sinh máy\n3. Ghi log sản lượng\n4. Báo cáo sự cố nếu có",
+              "1. Check completed quantity\n2. Clean machines\n3. Log production output\n4. Report incidents if any",
             createdAt: "2026-01-22 17:00",
             updatedAt: "2026-01-22 17:00",
           },
@@ -183,7 +183,7 @@ const LeaderInternalNotes = () => {
 
   const handleSaveNote = () => {
     if (!newNote.title.trim() || !newNote.content.trim()) {
-      alert("Vui lòng nhập tiêu đề và nội dung!");
+      alert("Please enter a title and content!");
       return;
     }
 
@@ -196,7 +196,7 @@ const LeaderInternalNotes = () => {
           : n,
       );
       saveNotes(updatedNotes);
-      alert("✅ Đã cập nhật ghi chú!");
+      alert("✅ Note updated successfully!");
     } else {
       const note = {
         id: `NOTE-${Date.now()}`,
@@ -205,7 +205,7 @@ const LeaderInternalNotes = () => {
         updatedAt: now,
       };
       saveNotes([note, ...notes]);
-      alert("✅ Đã tạo ghi chú mới!");
+      alert("✅ New note created!");
     }
 
     setShowCreateModal(false);
@@ -214,10 +214,10 @@ const LeaderInternalNotes = () => {
   };
 
   const handleDeleteNote = (noteId) => {
-    if (window.confirm("Bạn có chắc muốn xóa ghi chú này?")) {
+    if (window.confirm("Are you sure you want to delete this note?")) {
       const updatedNotes = notes.filter((n) => n.id !== noteId);
       saveNotes(updatedNotes);
-      alert("🗑️ Đã xóa ghi chú!");
+      alert("🗑️ Note deleted!");
     }
   };
 
@@ -232,16 +232,16 @@ const LeaderInternalNotes = () => {
           <div className="ln-header-left">
             <h1 className="ln-header-title">
               {IC.fileText}
-              Ghi chú nội bộ
+              Internal Notes
             </h1>
             <p className="ln-header-subtitle">
-              Quản lý ghi chú phân công và lưu ý kỹ thuật cho đội sản xuất
+              Manage assignment notes and technical reminders for the production team
             </p>
           </div>
           <div className="ln-header-right">
             <button className="ln-btn-create" onClick={openCreateModal}>
               {IC.plus}
-              Tạo ghi chú mới
+              Create New Note
             </button>
             <NotificationBell />
             <div className="ln-user-info">
@@ -256,11 +256,11 @@ const LeaderInternalNotes = () => {
           <div className="ln-info-box warning">
             <div className="ln-info-icon">{IC.alertTriangle}</div>
             <div className="ln-info-content">
-              <strong>Chưa được phân công dây chuyền</strong>
+              <strong>Not assigned to any production line</strong>
               <p>
-                Tài khoản của bạn chưa được gán vào dây chuyền sản xuất nào.
-                Danh sách lịch sản xuất sẽ trống cho đến khi bạn được Quản lý
-                phân công vào dây chuyền.
+                Your account has not been assigned to any production line yet.
+                The production schedule list will be empty until you are
+                assigned to a line by a Manager.
               </p>
             </div>
           </div>
@@ -270,12 +270,12 @@ const LeaderInternalNotes = () => {
         <div className="ln-info-box">
           <div className="ln-info-icon">{IC.lightbulb}</div>
           <div className="ln-info-content">
-            <strong>Ghi chú nội bộ</strong>
+            <strong>Internal Notes</strong>
             <p>
-              Sử dụng trang này để ghi chú phân công công việc nội bộ, lưu ý kỹ
-              thuật, và các thông tin cần thiết cho đội sản xuất. Việc phân công
-              chi tiết công nhân được thực hiện ngoài hệ thống theo quy trình
-              nhà máy.
+              Use this page to manage internal task assignment notes, technical
+              reminders, and essential information for the production team.
+              Detailed worker assignments are handled outside the system
+              according to factory procedures.
             </p>
           </div>
         </div>
@@ -284,19 +284,19 @@ const LeaderInternalNotes = () => {
         <div className="ln-summary-strip">
           <div className="ln-summary-card accent-cyan">
             <span className="ln-summary-value">{notes.length}</span>
-            <span className="ln-summary-label">Tổng ghi chú</span>
+            <span className="ln-summary-label">Total Notes</span>
           </div>
           <div className="ln-summary-card accent-blue">
             <span className="ln-summary-value">
               {notes.filter((n) => n.scheduleId).length}
             </span>
-            <span className="ln-summary-label">Gắn với lịch sản xuất</span>
+            <span className="ln-summary-label">Linked to Schedule</span>
           </div>
           <div className="ln-summary-card accent-emerald">
             <span className="ln-summary-value">
               {new Set(notes.map((n) => n.scheduleId).filter(Boolean)).size}
             </span>
-            <span className="ln-summary-label">Lịch sản xuất liên quan</span>
+            <span className="ln-summary-label">Related Schedules</span>
           </div>
         </div>
 
@@ -305,10 +305,10 @@ const LeaderInternalNotes = () => {
           {notes.length === 0 ? (
             <div className="ln-empty-state">
               <div className="ln-empty-icon">{IC.inbox}</div>
-              <p className="ln-empty-title">Chưa có ghi chú nào</p>
-              <p className="ln-empty-text">Tạo ghi chú đầu tiên để bắt đầu.</p>
+              <p className="ln-empty-title">No notes yet</p>
+              <p className="ln-empty-text">Create your first note to get started.</p>
               <button className="ln-empty-btn" onClick={openCreateModal}>
-                Tạo ghi chú đầu tiên
+                Create First Note
               </button>
             </div>
           ) : (
@@ -321,14 +321,14 @@ const LeaderInternalNotes = () => {
                     <button
                       className="ln-note-action-btn"
                       onClick={() => openEditModal(note)}
-                      title="Chỉnh sửa"
+                      title="Edit"
                     >
                       {IC.edit}
                     </button>
                     <button
                       className="ln-note-action-btn delete"
                       onClick={() => handleDeleteNote(note.id)}
-                      title="Xóa"
+                      title="Delete"
                     >
                       {IC.trash}
                     </button>
@@ -353,9 +353,9 @@ const LeaderInternalNotes = () => {
                 {/* Footer */}
                 <div className="ln-note-footer">
                   <span className="ln-note-time">
-                    {IC.clock} Tạo: {note.createdAt}
+                    {IC.clock} Created: {note.createdAt}
                     {note.updatedAt !== note.createdAt && (
-                      <> &nbsp;|&nbsp; Cập nhật: {note.updatedAt}</>
+                      <> &nbsp;|&nbsp; Updated: {note.updatedAt}</>
                     )}
                   </span>
                 </div>
@@ -374,7 +374,7 @@ const LeaderInternalNotes = () => {
             <div className="ln-modal-header">
               <h2>
                 {editingNote ? IC.edit : IC.fileText}
-                {editingNote ? " Chỉnh sửa ghi chú" : " Tạo ghi chú mới"}
+                {editingNote ? " Edit Note" : " Create New Note"}
               </h2>
               <button className="ln-modal-close" onClick={() => setShowCreateModal(false)}>
                 {IC.close}
@@ -382,13 +382,13 @@ const LeaderInternalNotes = () => {
             </div>
             <div className="ln-modal-body">
               <div className="ln-form-group">
-                <label>Liên kết với lịch sản xuất (tùy chọn)</label>
+                <label>Link to Production Schedule (optional)</label>
                 <select
                   value={newNote.scheduleId}
                   onChange={handleScheduleChange}
                   className="ln-form-select"
                 >
-                  <option value="">-- Không liên kết --</option>
+                  <option value="">-- No link --</option>
                   {schedules.map((schedule) => (
                     <option key={schedule.scheduleId} value={schedule.scheduleId}>
                       SCH-{schedule.scheduleId} - {schedule.orderInfo || "N/A"}
@@ -398,58 +398,58 @@ const LeaderInternalNotes = () => {
               </div>
 
               <div className="ln-form-group">
-                <label>Tiêu đề *</label>
+                <label>Title *</label>
                 <input
                   type="text"
                   value={newNote.title}
                   onChange={(e) => setNewNote({ ...newNote, title: e.target.value })}
-                  placeholder="Ví dụ: Phân công ca sáng, Lưu ý kỹ thuật..."
+                  placeholder="E.g.: Morning shift assignment, Technical notes..."
                   className="ln-form-input"
                 />
               </div>
 
               <div className="ln-form-group">
-                <label>Nội dung *</label>
+                <label>Content *</label>
                 <textarea
                   value={newNote.content}
                   onChange={(e) => setNewNote({ ...newNote, content: e.target.value })}
-                  placeholder="Nhập nội dung ghi chú..."
+                  placeholder="Enter note content..."
                   className="ln-form-textarea"
                   rows={8}
                 />
               </div>
 
               <div className="ln-quick-templates">
-                <label>Mẫu nhanh:</label>
+                <label>Quick Templates:</label>
                 <div className="ln-template-buttons">
                   <button
                     onClick={() =>
                       setNewNote({
                         ...newNote,
-                        title: "Phân công ca sáng",
-                        content: "- Người 1: Nhiệm vụ A\n- Người 2: Nhiệm vụ B\n- Người 3: Nhiệm vụ C",
+                        title: "Morning Shift Assignment",
+                        content: "- Worker 1: Task A\n- Worker 2: Task B\n- Worker 3: Task C",
                       })
                     }
                   >
-                    👷 Phân công ca
+                    👷 Shift Assignment
                   </button>
                   <button
                     onClick={() =>
                       setNewNote({
                         ...newNote,
-                        title: "Lưu ý kỹ thuật",
-                        content: "Lưu ý:\n- \n- \n- ",
+                        title: "Technical Notes",
+                        content: "Notes:\n- \n- \n- ",
                       })
                     }
                   >
-                    ⚙️ Lưu ý kỹ thuật
+                    ⚙️ Technical Notes
                   </button>
                   <button
                     onClick={() =>
                       setNewNote({
                         ...newNote,
-                        title: "Checklist cuối ca",
-                        content: "1. Kiểm tra số lượng\n2. Vệ sinh máy\n3. Ghi log\n4. Bàn giao ca",
+                        title: "End-of-Shift Checklist",
+                        content: "1. Check quantities\n2. Clean machines\n3. Log production\n4. Shift handover",
                       })
                     }
                   >
@@ -460,10 +460,10 @@ const LeaderInternalNotes = () => {
             </div>
             <div className="ln-modal-footer">
               <button className="ln-btn-cancel" onClick={() => setShowCreateModal(false)}>
-                Hủy
+                Cancel
               </button>
               <button className="ln-btn-confirm" onClick={handleSaveNote}>
-                {editingNote ? "Cập nhật" : "Tạo ghi chú"}
+                {editingNote ? "Update" : "Create Note"}
               </button>
             </div>
           </div>

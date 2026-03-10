@@ -68,7 +68,7 @@ const AdminAssignment = () => {
   };
 
   const handleUnassign = async (assignmentId, leaderCode) => {
-    if (!window.confirm(`Gỡ leader ${leaderCode} khỏi dây chuyền?`)) return;
+    if (!window.confirm(`Remove leader ${leaderCode} from this production line?`)) return;
     try {
       setActionLoading(true);
       await adminService.unassignLeader(assignmentId);
@@ -146,7 +146,7 @@ const AdminAssignment = () => {
                   <div className="dot"></div>
                   <div className="dot"></div>
                 </div>
-                <p className="loading-text">Đang tải...</p>
+                <p className="loading-text">Loading...</p>
               </div>
             </div>
           ) : error ? (
@@ -154,7 +154,7 @@ const AdminAssignment = () => {
               <div className="error-icon">⚠️</div>
               <p className="error-message">{error}</p>
               <button className="btn-primary" onClick={fetchData}>
-                Thử lại
+                Retry
               </button>
             </div>
           ) : (
@@ -163,17 +163,17 @@ const AdminAssignment = () => {
               <div className="assignment-header">
                 <div className="assignment-stats">
                   <div className="stat-badge">
-                    <span className="stat-badge-label">Đã gán</span>
+                    <span className="stat-badge-label">Assigned</span>
                     <span className="stat-badge-value">{assignedCount}</span>
                   </div>
                   <div className="stat-badge available">
-                    <span className="stat-badge-label">Line trống</span>
+                    <span className="stat-badge-label">Vacant Lines</span>
                     <span className="stat-badge-value">
                       {lineSlots.filter((s) => !s.assignment).length}
                     </span>
                   </div>
                   <div className="stat-badge leader-stat">
-                    <span className="stat-badge-label">Leader khả dụng</span>
+                    <span className="stat-badge-label">Available Leaders</span>
                     <span className="stat-badge-value">
                       {availableLeaders.length}
                     </span>
@@ -216,10 +216,10 @@ const AdminAssignment = () => {
                             </div>
                           </div>
                           <div className="line-card-meta">
-                            Từ{" "}
+                            From{" "}
                             {a.startDate
                               ? new Date(a.startDate).toLocaleDateString(
-                                  "vi-VN",
+                                  "en-US",
                                 )
                               : "—"}
                           </div>
@@ -233,13 +233,13 @@ const AdminAssignment = () => {
                             }
                             disabled={actionLoading}
                           >
-                            Gỡ Leader
+                            Remove Leader
                           </button>
                         </div>
                       ) : (
                         <div className="line-card-body vacant-body">
                           <div className="vacant-icon">👤</div>
-                          <p className="vacant-text">Chưa có leader</p>
+                          <p className="vacant-text">No leader assigned</p>
                           <button
                             className="btn-assign-card"
                             onClick={() => openAssignModal(slot.lineId)}
@@ -247,7 +247,7 @@ const AdminAssignment = () => {
                               availableLeaders.length === 0 || actionLoading
                             }
                           >
-                            + Gán Leader
+                            + Assign Leader
                           </button>
                         </div>
                       )}
@@ -260,16 +260,16 @@ const AdminAssignment = () => {
               {availableLeaders.length > 0 && (
                 <div className="assignment-table-container">
                   <h3 className="section-title">
-                    Leader chưa gán ({availableLeaders.length})
+                    Unassigned Leaders ({availableLeaders.length})
                   </h3>
                   <table className="assignment-table">
                     <thead>
                       <tr>
                         <th>Username</th>
-                        <th>Mã nhân viên</th>
+                        <th>Employee Code</th>
                         <th>Role</th>
-                        <th>Trạng thái</th>
-                        <th>Đăng nhập cuối</th>
+                        <th>Status</th>
+                        <th>Last Login</th>
                       </tr>
                     </thead>
                     <tbody>
@@ -290,9 +290,9 @@ const AdminAssignment = () => {
                           <td>
                             {l.lastLogin
                               ? new Date(l.lastLogin).toLocaleDateString(
-                                  "vi-VN",
+                                  "en-US",
                                 )
-                              : "Chưa"}
+                              : "Never"}
                           </td>
                         </tr>
                       ))}
@@ -313,7 +313,7 @@ const AdminAssignment = () => {
         >
           <div className="modal-content" onClick={(e) => e.stopPropagation()}>
             <div className="modal-header">
-              <h2>Gán Leader → Line {selectedLineId}</h2>
+              <h2>Assign Leader → Line {selectedLineId}</h2>
               <button
                 className="modal-close"
                 onClick={() => setShowAssignModal(false)}
@@ -323,12 +323,12 @@ const AdminAssignment = () => {
             </div>
             <div className="modal-body">
               <div className="form-group">
-                <label>Chọn Leader</label>
+                <label>Select Leader</label>
                 <select
                   value={selectedLeaderId}
                   onChange={(e) => setSelectedLeaderId(e.target.value)}
                 >
-                  <option value="">-- Chọn Leader --</option>
+                  <option value="">-- Select Leader --</option>
                   {availableLeaders.map((l) => (
                     <option key={l.id} value={l.id}>
                       {l.username} ({l.employeeCode})
@@ -342,14 +342,14 @@ const AdminAssignment = () => {
                 className="btn-secondary"
                 onClick={() => setShowAssignModal(false)}
               >
-                Huỷ
+                Cancel
               </button>
               <button
                 className="btn-primary"
                 onClick={handleAssign}
                 disabled={!selectedLeaderId || actionLoading}
               >
-                {actionLoading ? "Đang gán..." : "Gán Leader"}
+                {actionLoading ? "Assigning..." : "Assign Leader"}
               </button>
             </div>
           </div>
