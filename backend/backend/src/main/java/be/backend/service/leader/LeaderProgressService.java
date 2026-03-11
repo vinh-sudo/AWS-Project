@@ -9,13 +9,17 @@ import be.backend.model.request.UpdateProgressRequest;
 import be.backend.model.response.ProgressResponse;
 import be.backend.model.response.ReportResponse;
 import be.backend.model.response.ScheduleSummaryResponse;
+import be.backend.model.response.ProductionFileResponse;
 import be.backend.repository.*;
+import be.backend.mapper.ProductionFileMapper;
+import be.backend.service.ProductionFileService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDate;
 import java.time.OffsetDateTime;
+import java.util.List;
 
 @Service
 @RequiredArgsConstructor
@@ -26,6 +30,8 @@ public class LeaderProgressService {
         private final ProductionProgressRepository progressRepo;
         private final ReportRepository reportRepo;
         private final OrderRepository orderRepo;
+        private final ProductionFileService productionFileService;
+        private final ProductionFileMapper productionFileMapper;
 
         /**
          * Cập nhật tiến độ schedule
@@ -235,13 +241,18 @@ public class LeaderProgressService {
                         // orderRepo.save(order); — cần inject OrderRepository
                 }
 
-                // 7. Build response (reuse DTO đã có)
+                // 7. Lấy danh sách tài liệu (POM/SOP) của order để trả về cho leader
+                List<ProductionFile> files = productionFileService.getFilesForOrder(order.getId());
+                List<ProductionFileResponse> documentResponses = productionFileMapper.toResponseList(files);
+
+                // 8. Build response (reuse DTO đã có, thêm documents)
                 return ScheduleSummaryResponse.builder()
                                 .scheduleId(schedule.getId())
                                 .orderInfo(schedule.getOrder().getId() + " - " + schedule.getOrder().getProductType())
                                 .status(schedule.getStatus())
                                 .startTime(schedule.getStartTime().toLocalDateTime())
                                 .endTime(schedule.getEndTime().toLocalDateTime())
+                                .documents(documentResponses)
                                 .build();
         }
 
