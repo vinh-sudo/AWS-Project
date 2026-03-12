@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useCallback, useRef } from "react";
+import { useNavigate } from "react-router-dom";
 import notificationService from "../../services/notificationService";
 import authService from "../../services/authService";
 import "./NotificationBell.css";
@@ -11,11 +12,13 @@ const SOURCE_TYPES = [
   { label: "Account", value: "ACCOUNT" },
   { label: "KPI", value: "KPI" },
   { label: "Report", value: "REPORT" },
+  { label: "Plan", value: "PLAN" },
 ];
 
 const LEVEL_ICONS = {
   INFO: "ℹ️",
   WARN: "⚠️",
+  ERROR: "🔴",
 };
 
 const SOURCE_ICONS = {
@@ -25,6 +28,7 @@ const SOURCE_ICONS = {
   ACCOUNT: "👤",
   KPI: "📊",
   REPORT: "📋",
+  PLAN: "📝",
 };
 
 function timeAgo(dateStr) {
@@ -59,6 +63,9 @@ const NotificationBell = () => {
   const [totalPages, setTotalPages] = useState(0);
   const [activeFilter, setActiveFilter] = useState(null);
   const intervalRef = useRef(null);
+  const triggerRef = useRef(null);
+  const [dropdownStyle, setDropdownStyle] = useState({});
+  const navigate = useNavigate();
 
   const currentUser = authService.getCurrentUser();
   const userId = currentUser?.id;
@@ -124,6 +131,14 @@ const NotificationBell = () => {
   }, [open]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const handleToggle = () => {
+    if (!open && triggerRef.current) {
+      const rect = triggerRef.current.getBoundingClientRect();
+      setDropdownStyle({
+        position: "fixed",
+        top: rect.bottom + 8,
+        right: window.innerWidth - rect.right,
+      });
+    }
     setOpen((prev) => !prev);
   };
 
@@ -170,14 +185,15 @@ const NotificationBell = () => {
   const handleItemClick = (notif) => {
     handleMarkAsRead(notif);
     if (notif.url) {
-      window.location.href = notif.url;
       setOpen(false);
+      navigate(notif.url);
     }
   };
 
   return (
     <div className="notification-bell">
       <button
+        ref={triggerRef}
         className="notification-bell__trigger"
         onClick={handleToggle}
         title="Notifications"
@@ -193,7 +209,7 @@ const NotificationBell = () => {
       {open && (
         <>
           <div className="notification-bell__overlay" onClick={handleClose} />
-          <div className="notification-bell__dropdown">
+          <div className="notification-bell__dropdown" style={dropdownStyle}>
             {/* Header */}
             <div className="notification-bell__header">
               <h3 className="notification-bell__title">Notifications</h3>

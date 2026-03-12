@@ -675,6 +675,7 @@ const AdminOrders = () => {
         price: it.price?.toString() || "",
       })),
     });
+    setPendingFiles([]);
     setShowEditModal(true);
   };
 
@@ -682,6 +683,20 @@ const AdminOrders = () => {
     try {
       setActionLoading(true);
       await adminService.updateOrder(editingOrder.id, buildOrderPayload());
+      if (pendingFiles.length > 0) {
+        let ok = 0;
+        for (const f of pendingFiles) {
+          try {
+            await adminService.uploadOrderFile(editingOrder.id, f);
+            ok++;
+          } catch (e) {
+            console.error(e);
+          }
+        }
+        if (ok < pendingFiles.length) {
+          alert(`Order updated! Files uploaded: ${ok}/${pendingFiles.length}`);
+        }
+      }
       setShowEditModal(false);
       setEditingOrder(null);
       resetForm();
@@ -1436,7 +1451,64 @@ const AdminOrders = () => {
                 {I.close}
               </button>
             </div>
-            <div className="ao-modal-body">{OrderForm()}</div>
+            <div className="ao-modal-body">
+              {OrderForm()}
+
+              {/* File Upload */}
+              <div className="ao-form-group">
+                <label className="ao-form-label">Attachments (SOP / BOM)</label>
+                <div
+                  className="ao-upload-area"
+                  onClick={() =>
+                    document.getElementById("ao-edit-files").click()
+                  }
+                >
+                  <span className="ao-upload-area-icon">{I.upload}</span>
+                  <span className="ao-upload-area-text">
+                    Click to select files
+                  </span>
+                  <span className="ao-upload-area-hint">
+                    SOP, BOM, drawings, specs…
+                  </span>
+                  <input
+                    id="ao-edit-files"
+                    type="file"
+                    multiple
+                    style={{ display: "none" }}
+                    onChange={(e) => {
+                      const f = Array.from(e.target.files);
+                      if (f.length) setPendingFiles((p) => [...p, ...f]);
+                      e.target.value = null;
+                    }}
+                  />
+                </div>
+                {pendingFiles.length > 0 && (
+                  <div className="ao-file-list" style={{ marginTop: 10 }}>
+                    {pendingFiles.map((f, i) => (
+                      <div className="ao-file-item" key={i}>
+                        <div className="ao-file-icon">{I.file}</div>
+                        <div className="ao-file-info">
+                          <span className="ao-file-name">{f.name}</span>
+                          <span className="ao-file-meta">
+                            {(f.size / 1024).toFixed(1)} KB
+                          </span>
+                        </div>
+                        <button
+                          className="ao-file-remove"
+                          onClick={() =>
+                            setPendingFiles((p) =>
+                              p.filter((_, idx) => idx !== i),
+                            )
+                          }
+                        >
+                          {I.minus}
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            </div>
             <div className="ao-modal-footer">
               <button
                 className="ao-btn-cancel"
@@ -1691,7 +1763,7 @@ const AdminOrders = () => {
                 )}
                 {uploadedFiles.length === 0 && (
                   <p className="ao-items-empty">
-                    No files uploaded in this session.
+                    No files uploaded yet. Use the area below to attach files.
                   </p>
                 )}
                 <div
