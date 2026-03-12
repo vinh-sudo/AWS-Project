@@ -3,6 +3,7 @@ import ManagerSidebar from "../../components/ManagerSidebar/ManagerSidebar";
 import ManagerTopBar from "./ManagerTopBar";
 import managerService from "../../services/managerService";
 import authService from "../../services/authService";
+import PageLoading from "../../components/PageLoading/PageLoading";
 import "./ManagerOrders.css";
 
 const ManagerOrders = () => {
@@ -260,10 +261,7 @@ const ManagerOrders = () => {
 
           {/* Content */}
           {loading ? (
-            <div className="mo-loading">
-              <div className="mo-loading-spinner"></div>
-              <p>Loading orders...</p>
-            </div>
+            <PageLoading variant="inline" text="Loading orders..." />
           ) : error ? (
             <div className="mo-error">
               <span className="mo-error-icon">⚠️</span>

@@ -2,6 +2,7 @@ import React, { useState, useEffect, useMemo } from "react";
 import ManagerSidebar from "../../components/ManagerSidebar/ManagerSidebar";
 import ManagerTopBar from "./ManagerTopBar";
 import managerService from "../../services/managerService";
+import PageLoading from "../../components/PageLoading/PageLoading";
 import "./ManagerPlanning.css";
 
 const ManagerPlanning = () => {
@@ -254,10 +255,7 @@ const ManagerPlanning = () => {
               </div>
 
               {loading ? (
-                <div className="pp-loading">
-                  <div className="spinner"></div>
-                  <span>Loading orders…</span>
-                </div>
+                <PageLoading variant="inline" text="Loading orders…" />
               ) : filteredOrders.length === 0 ? (
                 <div className="pp-empty">
                   <div className="pp-empty-icon">
@@ -353,9 +351,7 @@ const ManagerPlanning = () => {
               </div>
 
               {loading ? (
-                <div className="pp-loading">
-                  <div className="spinner"></div>
-                </div>
+                <PageLoading variant="inline" text="" />
               ) : linesOverview.length === 0 ? (
                 <div className="pp-empty">
                   <span>No lines available</span>
@@ -464,10 +460,7 @@ const ManagerPlanning = () => {
             </div>
 
             {loading ? (
-              <div className="pp-loading">
-                <div className="spinner"></div>
-                <span>Loading plans…</span>
-              </div>
+              <PageLoading variant="inline" text="Loading plans…" />
             ) : Object.keys(filteredPlansByOrder).length === 0 ? (
               <div className="pp-plans-empty">
                 <div className="pp-plans-empty-icon">

@@ -2,6 +2,7 @@ import React, { useState, useEffect, useMemo } from "react";
 import ManagerSidebar from "../../components/ManagerSidebar/ManagerSidebar";
 import ManagerTopBar from "./ManagerTopBar";
 import managerService from "../../services/managerService";
+import PageLoading from "../../components/PageLoading/PageLoading";
 import "./ManagerLines.css";
 
 const ManagerLines = () => {
@@ -267,10 +268,7 @@ const ManagerLines = () => {
 
           {/* ── Content ── */}
           {loading ? (
-            <div className="ln-loading">
-              <div className="ln-spinner"></div>
-              <span>Loading production lines...</span>
-            </div>
+            <PageLoading variant="inline" text="Loading production lines..." />
           ) : filteredLines.length === 0 ? (
             <div className="ln-empty">
               <div className="ln-empty-icon">

@@ -9,6 +9,7 @@ import NotificationBell from "../../components/NotificationBell/NotificationBell
 import AdminSidebar from "../../components/AdminSidebar/AdminSidebar";
 import authService from "../../services/authService";
 import adminService from "../../services/adminService";
+import PageLoading from "../../components/PageLoading/PageLoading";
 import "./AdminOrders.css";
 import "./AdminDashboard.css";
 
@@ -955,13 +956,12 @@ const AdminOrders = () => {
 
   /* ==============================
      LOADING SCREEN
-     ============================== */
-  if (initialLoad && loading) {
+     ============================== */  if (initialLoad && loading) {
     return (
-      <div className="ao-loading">
-        <div className="ao-loading-card">
-          <div className="ao-spinner" />
-          <p className="ao-loading-text">Loading orders...</p>
+      <div className="admin-container">
+        <AdminSidebar />
+        <div className="admin-main">
+          <PageLoading variant="fullpage" text="Loading orders..." />
         </div>
       </div>
     );

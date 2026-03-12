@@ -794,35 +794,6 @@
   color: var(--lp-text-secondary);
 }
 
-/* Loading state */
-.lp-loading {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  padding: 80px 32px;
-  gap: 16px;
-}
-
-.lp-spinner {
-  width: 32px;
-  height: 32px;
-  border: 2.5px solid var(--lp-border);
-  border-top-color: var(--lp-accent);
-  border-radius: 50%;
-  animation: lpSpin 0.8s linear infinite;
-}
-
-@keyframes lpSpin {
-  to { transform: rotate(360deg); }
-}
-
-.lp-loading-text {
-  font-size: 13px;
-  color: var(--lp-text-muted);
-  font-weight: 500;
-}
-
 /* Error banner */
 .lp-error-banner {
   display: flex;

@@ -3,6 +3,7 @@ import NotificationBell from "../../components/NotificationBell/NotificationBell
 import AdminSidebar from "../../components/AdminSidebar/AdminSidebar";
 import authService from "../../services/authService";
 import adminService from "../../services/adminService";
+import PageLoading from "../../components/PageLoading/PageLoading";
 import "./AdminAssignment.css";
 import "./AdminDashboard.css";
 
@@ -141,16 +142,7 @@ const AdminAssignment = () => {
 
         <div className="admin-content assignment-content">
           {loading ? (
-            <div className="loading-container">
-              <div className="loading-skeleton">
-                <div className="loading-dots">
-                  <div className="dot"></div>
-                  <div className="dot"></div>
-                  <div className="dot"></div>
-                </div>
-                <p className="loading-text">Loading...</p>
-              </div>
-            </div>
+            <PageLoading variant="inline" text="Loading assignments..." />
           ) : error ? (
             <div className="error-container">
               <div className="error-icon">⚠️</div>

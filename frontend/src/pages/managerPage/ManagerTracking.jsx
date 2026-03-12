@@ -3,6 +3,7 @@ import ManagerSidebar from "../../components/ManagerSidebar/ManagerSidebar";
 import ManagerTopBar from "./ManagerTopBar";
 import NotificationBell from "../../components/NotificationBell/NotificationBell";
 import managerService from "../../services/managerService";
+import PageLoading from "../../components/PageLoading/PageLoading";
 import "./ManagerTracking.css";
 
 const ManagerTracking = () => {
@@ -294,10 +295,7 @@ const ManagerTracking = () => {
               </div>
               <div className="card-content">
                 {loading ? (
-                  <div className="loading-spinner">
-                    <div className="spinner"></div>
-                    <span>Loading schedule...</span>
-                  </div>
+                  <PageLoading variant="inline" text="Loading schedule..." />
                 ) : Object.keys(filteredGanttByLine).length === 0 ? (
                   <div className="no-data">
                     <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="#ccc" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
@@ -394,10 +392,7 @@ const ManagerTracking = () => {
               </div>
               <div className="card-content">
                 {loading ? (
-                  <div className="loading-spinner">
-                    <div className="spinner"></div>
-                    <span>Loading OEE data...</span>
-                  </div>
+                  <PageLoading variant="inline" text="Loading OEE data..." />
                 ) : oeeData.length === 0 ? (
                   <div className="no-data">
                     <span className="no-data-icon">📭</span>
@@ -578,10 +573,7 @@ const ManagerTracking = () => {
               </div>
               <div className="card-content">
                 {loading ? (
-                  <div className="loading-spinner">
-                    <div className="spinner"></div>
-                    <span>Loading delays...</span>
-                  </div>
+                  <PageLoading variant="inline" text="Loading delays..." />
                 ) : delays.length === 0 ? (
                   <div className="no-data">
                     <span className="no-data-icon">✅</span>

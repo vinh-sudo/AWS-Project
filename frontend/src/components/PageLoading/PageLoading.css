@@ -1,0 +1,132 @@
+/* ============================================
+   PageLoading — Unified Loading Component
+   ============================================ */
+
+/* === Spinner animation === */
+@keyframes pageLoadingSpin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@keyframes pageLoadingPulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.5; }
+}
+
+/* === Spinner (shared) === */
+.page-loading-spinner {
+  width: 36px;
+  height: 36px;
+  border: 3px solid #e2e8f0;
+  border-top-color: #6366f1;
+  border-radius: 50%;
+  animation: pageLoadingSpin 0.75s linear infinite;
+}
+
+/* === Loading text (shared) === */
+.page-loading-text {
+  font-size: 13.5px;
+  color: #64748b;
+  font-weight: 500;
+  letter-spacing: -0.01em;
+}
+
+/* ============================================
+   VARIANT: Fullpage
+   Full-screen centered card with spinner
+   ============================================ */
+.page-loading-fullpage {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 100vh;
+  background: #f8fafc;
+}
+
+.page-loading-card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 20px;
+  padding: 48px 64px;
+  background: #ffffff;
+  border-radius: 16px;
+  border: 1px solid #e2e8f0;
+  box-shadow:
+    0 4px 12px rgba(0, 0, 0, 0.05),
+    0 1px 3px rgba(0, 0, 0, 0.03);
+  animation: pageLoadingFadeIn 0.3s ease-out;
+}
+
+@keyframes pageLoadingFadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(8px) scale(0.98);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+/* ============================================
+   VARIANT: Inline
+   Centered spinner inside a section/card
+   ============================================ */
+.page-loading-inline {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 48px 24px;
+  gap: 12px;
+  color: #64748b;
+}
+
+/* ============================================
+   VARIANT: Overlay
+   Semi-transparent overlay on top of content
+   ============================================ */
+.page-loading-overlay {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(255, 255, 255, 0.7);
+  backdrop-filter: blur(2px);
+  z-index: 10;
+  border-radius: inherit;
+}
+
+/* ============================================
+   Dark Mode Support
+   ============================================ */
+body.dark-mode .page-loading-fullpage {
+  background: #0f172a;
+}
+
+body.dark-mode .page-loading-card {
+  background: #1e293b;
+  border-color: #334155;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+}
+
+body.dark-mode .page-loading-text {
+  color: #94a3b8;
+}
+
+body.dark-mode .page-loading-spinner {
+  border-color: #334155;
+  border-top-color: #818cf8;
+}
+
+body.dark-mode .page-loading-inline {
+  color: #94a3b8;
+}
+
+body.dark-mode .page-loading-overlay {
+  background: rgba(15, 23, 42, 0.7);
+}

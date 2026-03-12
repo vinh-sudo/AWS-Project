@@ -19,6 +19,7 @@ import {
   Pie,
   Cell,
 } from "recharts";
+import PageLoading from "../../components/PageLoading/PageLoading";
 import "./ManagerDashboard.css";
 
 // Animated counter hook
@@ -525,10 +526,7 @@ const ManagerDashboard = () => {
               </div>
               <div className="card-content chart-content">
                 {loading ? (
-                  <div className="loading-spinner">
-                    <div className="spinner"></div>
-                    <span>Loading data...</span>
-                  </div>
+                  <PageLoading variant="inline" text="Loading data..." />
                 ) : barChartData.length === 0 ? (
                   <div className="no-data">
                     <span className="no-data-icon">📭</span>
@@ -614,9 +612,7 @@ const ManagerDashboard = () => {
                   </div>
                   <div className="donut-chart-wrapper">
                     {loading ? (
-                      <div className="loading-spinner small">
-                        <div className="spinner"></div>
-                      </div>
+                      <PageLoading variant="inline" text="" />
                     ) : (
                       <ResponsiveContainer width="100%" height={150}>
                         <PieChart>
@@ -669,9 +665,7 @@ const ManagerDashboard = () => {
                   </div>
                   <div className="donut-chart-wrapper">
                     {loading ? (
-                      <div className="loading-spinner small">
-                        <div className="spinner"></div>
-                      </div>
+                      <PageLoading variant="inline" text="" />
                     ) : (
                       <ResponsiveContainer width="100%" height={150}>
                         <PieChart>
@@ -724,9 +718,7 @@ const ManagerDashboard = () => {
                   </div>
                   <div className="donut-chart-wrapper">
                     {loading ? (
-                      <div className="loading-spinner small">
-                        <div className="spinner"></div>
-                      </div>
+                      <PageLoading variant="inline" text="" />
                     ) : (
                       <ResponsiveContainer width="100%" height={150}>
                         <PieChart>
@@ -791,10 +783,7 @@ const ManagerDashboard = () => {
               </div>
               <div className="card-content">
                 {loading ? (
-                  <div className="loading-spinner">
-                    <div className="spinner"></div>
-                    <span>Loading data...</span>
-                  </div>
+                  <PageLoading variant="inline" text="Loading data..." />
                 ) : linesOverview.length === 0 ? (
                   <div className="no-data">
                     <span className="no-data-icon">📭</span>
@@ -889,10 +878,7 @@ const ManagerDashboard = () => {
               </div>
               <div className="card-content">
                 {loading ? (
-                  <div className="loading-spinner">
-                    <div className="spinner"></div>
-                    <span>Loading data...</span>
-                  </div>
+                  <PageLoading variant="inline" text="Loading data..." />
                 ) : filteredDelays.length === 0 ? (
                   <div className="no-data">
                     <span className="no-data-icon">

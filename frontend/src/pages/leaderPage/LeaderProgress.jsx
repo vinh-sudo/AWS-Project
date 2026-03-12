@@ -13,6 +13,7 @@ import LeaderSidebar from "../../components/LeaderSidebar/LeaderSidebar";
 import authService from "../../services/authService";
 import leaderService from "../../services/leaderService";
 import scheduleService from "../../services/scheduleService";
+import PageLoading from "../../components/PageLoading/PageLoading";
 import "./LeaderProgress.css";
 
 /* ===== SVG Icon helpers ===== */
@@ -543,10 +544,7 @@ const LeaderProgress = () => {
 
         {/* ── Loading ───────────────────────────────── */}
         {loading && (
-          <div className="lp-loading">
-            <div className="lp-spinner" />
-            <span className="lp-loading-text">Loading data...</span>
-          </div>
+          <PageLoading variant="inline" text="Loading data..." />
         )}
 
         {/* ── Not Assigned ──────────────────────────── */}

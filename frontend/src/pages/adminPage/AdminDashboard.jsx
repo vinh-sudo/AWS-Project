@@ -17,6 +17,7 @@ import {
 } from "recharts";
 import authService from "../../services/authService";
 import adminService from "../../services/adminService";
+import PageLoading from "../../components/PageLoading/PageLoading";
 import "./AdminDashboard.css";
 
 const AdminDashboard = () => {
@@ -156,12 +157,7 @@ const AdminDashboard = () => {
       <div className="admin-container">
         <AdminSidebar />
         <div className="admin-main">
-          <div className="dash-loading">
-            <div className="dash-loading-card">
-              <div className="dash-spinner"></div>
-              <p className="dash-loading-text">Loading dashboard...</p>
-            </div>
-          </div>
+          <PageLoading variant="fullpage" text="Loading dashboard..." />
         </div>
       </div>
     );

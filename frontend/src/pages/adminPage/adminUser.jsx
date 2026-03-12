@@ -3,6 +3,7 @@ import NotificationBell from "../../components/NotificationBell/NotificationBell
 import AdminSidebar from "../../components/AdminSidebar/AdminSidebar";
 import authService from "../../services/authService";
 import adminService from "../../services/adminService";
+import PageLoading from "../../components/PageLoading/PageLoading";
 import "./adminUser.css";
 
 /* ── Helpers ── */
@@ -181,17 +182,13 @@ const UsersAdmin = () => {
   const getUserInitial = () => {
     const name = currentUser?.fullName || "Admin";
     return name.charAt(0).toUpperCase();
-  };
-
-  /* ── Loading Screen ── */
+  };  /* ── Loading Screen ── */
   if (initialLoad && loading) {
     return (
-      <div className="page-loading">
-        <div className="loading-card">
-          <div className="loading-dots">
-            <div className="dot"></div><div className="dot"></div><div className="dot"></div>
-          </div>
-          <p className="loading-text">Loading users...</p>
+      <div className="admin-container">
+        <AdminSidebar />
+        <div className="admin-main">
+          <PageLoading variant="fullpage" text="Loading users..." />
         </div>
       </div>
     );
@@ -359,12 +356,9 @@ const UsersAdmin = () => {
             </div>
           </div>
 
-          {/* Table */}
-          <div className="table-wrapper">
+          {/* Table */}          <div className="table-wrapper" style={{ position: "relative" }}>
             {loading && !initialLoad && (
-              <div className="table-loading-overlay">
-                <div className="loading-spinner"></div>
-              </div>
+              <PageLoading variant="overlay" />
             )}
 
             {users.length === 0 && !loading ? (

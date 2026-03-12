@@ -14,6 +14,7 @@ import {
   Legend,
   ResponsiveContainer,
 } from "recharts";
+import PageLoading from "../../components/PageLoading/PageLoading";
 import "./ManagerReports.css";
 
 const ManagerReports = () => {
@@ -214,11 +215,9 @@ const ManagerReports = () => {
         </div>
 
         {/* Content */}
-        <div className="report-content">
+        <div className="report-content" style={{ position: "relative" }}>
           {loading && (
-            <div className="loading-overlay">
-              <div className="loading-spinner">Loading statistics...</div>
-            </div>
+            <PageLoading variant="overlay" />
           )}
 
           {/* === Production Overview === */}
