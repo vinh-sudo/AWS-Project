@@ -6,6 +6,7 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 
 import java.time.LocalDateTime;
+import java.util.List;
 
 /**
  * Summary của 1 Production Schedule
@@ -21,4 +22,6 @@ public class ScheduleSummaryResponse {
     private String status;
     private LocalDateTime startTime;
     private LocalDateTime endTime;
+    // Danh sách tài liệu (POM/SOP) gắn với Order của schedule
+    private List<ProductionFileResponse> documents;
 }

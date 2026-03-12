@@ -2,11 +2,8 @@ package be.backend.service;
 
 import be.backend.entity.Order;
 import be.backend.entity.ProductionFile;
-import be.backend.entity.Account;
-import be.backend.entity.ProductionPlan;
 import be.backend.repository.OrderRepository;
 import be.backend.repository.ProductionFileRepository;
-import be.backend.repository.ProductionPlanRepository;
 import be.backend.service.utilities.S3Service;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
@@ -42,5 +39,10 @@ public class ProductionFileService {
         f.setUploadedAt(OffsetDateTime.now());
 
         return fileRepo.save(f);
+    }
+
+    // Lấy danh sách file (POM/SOP, tài liệu sản xuất) theo order
+    public List<ProductionFile> getFilesForOrder(Integer orderId) {
+        return fileRepo.findByOrderId(orderId);
     }
 }
