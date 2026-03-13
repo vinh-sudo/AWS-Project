@@ -12,11 +12,12 @@ public class LoginResponse{
     private Long expiresIn;
 
     //info user
-    private Long id;
+    private Long id;          // Account.id
+    private Long userId;      // User.id
     private String employeeCode;
     private String username;
     private String fullName;
     private String role;
     private String email;
-    
+
 }

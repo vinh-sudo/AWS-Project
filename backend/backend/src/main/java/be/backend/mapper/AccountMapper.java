@@ -9,6 +9,7 @@ import be.backend.model.response.LoginResponse;
 @Mapper(componentModel = "spring")
 public interface AccountMapper {
     @Mapping(target = "id", source = "id")
+    @Mapping(target = "userId", source = "user.id")
     @Mapping(target = "employeeCode", source = "employee.employeeCode")
     @Mapping(target = "fullName", source = "account", qualifiedByName = "getFullName")
     @Mapping(target = "email", source = "user.email")
