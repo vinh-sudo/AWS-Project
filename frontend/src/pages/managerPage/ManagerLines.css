@@ -116,15 +116,32 @@
   box-shadow: 0 6px 20px rgba(0, 0, 0, .08) !important;
 }
 
-.ln-stat-running::before { background: #36b58a; }
-.ln-stat-idle::before    { background: #8a92a6; }
-.ln-stat-maint::before   { background: #f09819; }
-.ln-stat-eff::before     { background: #667eea; }
-.ln-stat-machines::before { background: #764ba2; }
+.ln-stat-running::before {
+  background: #36b58a;
+}
+
+.ln-stat-idle::before {
+  background: #8a92a6;
+}
+
+.ln-stat-maint::before {
+  background: #f09819;
+}
+
+.ln-stat-eff::before {
+  background: #667eea;
+}
+
+.ln-stat-machines::before {
+  background: #764ba2;
+}
 
 .ln-stat-active.ln-stat-running::before,
 .ln-stat-active.ln-stat-idle::before,
-.ln-stat-active.ln-stat-maint::before { width: 100%; opacity: .08; }
+.ln-stat-active.ln-stat-maint::before {
+  width: 100%;
+  opacity: .08;
+}
 
 .ln-stat-icon {
   width: 42px;
@@ -136,11 +153,30 @@
   flex-shrink: 0;
 }
 
-.ln-stat-running .ln-stat-icon { background: rgba(54, 181, 138, .1); color: #36b58a; }
-.ln-stat-idle .ln-stat-icon    { background: rgba(138, 146, 166, .1); color: #8a92a6; }
-.ln-stat-maint .ln-stat-icon   { background: rgba(240, 152, 25, .1); color: #f09819; }
-.ln-stat-eff .ln-stat-icon     { background: rgba(102, 126, 234, .1); color: #667eea; }
-.ln-stat-machines .ln-stat-icon { background: rgba(118, 75, 162, .1); color: #764ba2; }
+.ln-stat-running .ln-stat-icon {
+  background: rgba(54, 181, 138, .1);
+  color: #36b58a;
+}
+
+.ln-stat-idle .ln-stat-icon {
+  background: rgba(138, 146, 166, .1);
+  color: #8a92a6;
+}
+
+.ln-stat-maint .ln-stat-icon {
+  background: rgba(240, 152, 25, .1);
+  color: #f09819;
+}
+
+.ln-stat-eff .ln-stat-icon {
+  background: rgba(102, 126, 234, .1);
+  color: #667eea;
+}
+
+.ln-stat-machines .ln-stat-icon {
+  background: rgba(118, 75, 162, .1);
+  color: #764ba2;
+}
 
 .ln-stat-info {
   display: flex;
@@ -521,14 +557,41 @@
   border-radius: 50%;
 }
 
-.ln-st-running             { background: rgba(54, 181, 138, .1);  color: #2e7d32; }
-.ln-st-running::before     { background: #2e7d32; }
-.ln-st-idle                { background: rgba(138, 146, 166, .1); color: #616161; }
-.ln-st-idle::before        { background: #616161; }
-.ln-st-maintenance         { background: rgba(240, 152, 25, .1);  color: #e67e00; }
-.ln-st-maintenance::before { background: #e67e00; }
-.ln-st-warning             { background: rgba(239, 83, 80, .1);   color: #c62828; }
-.ln-st-warning::before     { background: #c62828; }
+.ln-st-running {
+  background: rgba(54, 181, 138, .1);
+  color: #2e7d32;
+}
+
+.ln-st-running::before {
+  background: #2e7d32;
+}
+
+.ln-st-idle {
+  background: rgba(138, 146, 166, .1);
+  color: #616161;
+}
+
+.ln-st-idle::before {
+  background: #616161;
+}
+
+.ln-st-maintenance {
+  background: rgba(240, 152, 25, .1);
+  color: #e67e00;
+}
+
+.ln-st-maintenance::before {
+  background: #e67e00;
+}
+
+.ln-st-warning {
+  background: rgba(239, 83, 80, .1);
+  color: #c62828;
+}
+
+.ln-st-warning::before {
+  background: #c62828;
+}
 
 .ln-status-sm {
   padding: 2px 8px;
@@ -616,9 +679,46 @@
   animation: lnSlide .25s ease;
 }
 
+.ln-capacity-summary,
+.ln-card-capacity-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+  gap: 10px;
+  margin-bottom: 12px;
+}
+
+.ln-capacity-item {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 10px 12px;
+  border: 1px solid #eef0f5;
+  border-radius: 10px;
+  background: #fff;
+}
+
+.ln-capacity-label {
+  font-size: 11px;
+  color: #8a92a6;
+  text-transform: uppercase;
+  letter-spacing: .3px;
+}
+
+.ln-capacity-item strong {
+  font-size: 14px;
+  color: #1a1a2e;
+}
+
 @keyframes lnSlide {
-  from { opacity: 0; transform: translateY(-8px); }
-  to   { opacity: 1; transform: translateY(0); }
+  from {
+    opacity: 0;
+    transform: translateY(-8px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
 .ln-machines-section h4 {
@@ -698,10 +798,21 @@
   transition: stroke-dasharray .6s ease;
 }
 
-.ln-eff-high .ln-ring-fill { stroke: #36b58a; }
-.ln-eff-mid .ln-ring-fill  { stroke: #f09819; }
-.ln-eff-low .ln-ring-fill  { stroke: #ef5350; }
-.ln-eff-none .ln-ring-fill { stroke: #dfe3ec; }
+.ln-eff-high .ln-ring-fill {
+  stroke: #36b58a;
+}
+
+.ln-eff-mid .ln-ring-fill {
+  stroke: #f09819;
+}
+
+.ln-eff-low .ln-ring-fill {
+  stroke: #ef5350;
+}
+
+.ln-eff-none .ln-ring-fill {
+  stroke: #dfe3ec;
+}
 
 .ln-ring-text {
   position: absolute;
