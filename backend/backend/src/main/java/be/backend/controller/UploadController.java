@@ -18,6 +18,7 @@ import java.util.List;
 public class UploadController {
     private final ProductionFileService fileService;
     private final ProductionFileMapper fileMapper;
+
     @PreAuthorize("hasRole('ADMIN')")
     @PostMapping("/admin/order/{orderId}/files")
     public ProductionFileResponse upload(
@@ -31,6 +32,17 @@ public class UploadController {
                         file,
                         account.getUser().getId()
                 )
+        );
+    }
+
+    // Lấy danh sách file (POM/SOP, tài liệu sản xuất) cho một order - cho phép mọi user đã đăng nhập xem
+    @PreAuthorize("isAuthenticated()")
+    @GetMapping("/admin/order/{orderId}/files")
+    public List<ProductionFileResponse> getFilesForOrder(
+            @PathVariable Integer orderId
+    ) {
+        return fileMapper.toResponseList(
+                fileService.getFilesForOrder(orderId)
         );
     }
 }
