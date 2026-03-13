@@ -26,7 +26,6 @@
 }
 
 .mo-stat-icon {
-    font-size: 28px;
     width: 48px;
     height: 48px;
     display: flex;
@@ -34,6 +33,34 @@
     justify-content: center;
     border-radius: 12px;
     background: #f7f8fc;
+    color: #4f5b7a;
+}
+
+.mo-icon {
+    width: 20px;
+    height: 20px;
+    flex-shrink: 0;
+}
+
+.mo-icon-sm {
+    width: 16px;
+    height: 16px;
+}
+
+.mo-icon-md {
+    width: 18px;
+    height: 18px;
+}
+
+.mo-icon-lg {
+    width: 22px;
+    height: 22px;
+}
+
+.page-title-left h1 {
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
 }
 
 .mo-stat-info {
@@ -245,6 +272,11 @@
     color: #0d9488;
 }
 
+.mo-status-planning {
+    background: rgba(99, 102, 241, 0.12);
+    color: #4f46e5;
+}
+
 .mo-status-production {
     background: rgba(102, 126, 234, 0.12);
     color: #4f46e5;
@@ -299,7 +331,7 @@
 .mo-btn-view {
     display: inline-flex;
     align-items: center;
-    gap: 4px;
+    gap: 6px;
     background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
     color: #fff;
     border: none;
@@ -328,8 +360,19 @@
 }
 
 .mo-error-icon {
-    font-size: 40px;
+    width: 40px;
+    height: 40px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
     margin-bottom: 12px;
+}
+
+.mo-empty-icon {
+    display: inline-flex;
+    margin-right: 8px;
+    color: #8fa0c3;
+    vertical-align: middle;
 }
 
 .mo-error button {
@@ -398,6 +441,9 @@
 }
 
 .mo-modal-header h2 {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
     font-size: 18px;
     font-weight: 700;
     color: #1a1a2e;
@@ -410,7 +456,6 @@
     width: 32px;
     height: 32px;
     border-radius: 8px;
-    font-size: 16px;
     cursor: pointer;
     display: flex;
     align-items: center;
@@ -485,6 +530,9 @@
 }
 
 .mo-detail-items h3 {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
     font-size: 15px;
     font-weight: 700;
     color: #1a1a2e;
@@ -519,6 +567,47 @@
 
 .mo-items-table tbody tr:last-child td {
     border-bottom: none;
+}
+
+.mo-file-list {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.mo-file-item {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    padding: 10px 12px;
+    border-radius: 10px;
+    border: 1px solid #eceef5;
+    background: #fafbff;
+    text-decoration: none;
+    transition: border-color 0.2s, box-shadow 0.2s;
+}
+
+.mo-file-item:hover {
+    border-color: #cfd6ff;
+    box-shadow: 0 3px 10px rgba(102, 126, 234, 0.12);
+}
+
+.mo-file-name {
+    font-size: 13px;
+    font-weight: 600;
+    color: #374151;
+    word-break: break-word;
+}
+
+.mo-file-meta {
+    font-size: 12px;
+    color: #8b93a8;
+}
+
+.mo-file-empty {
+    margin: 0;
+    font-size: 13px;
+    color: #8b93a8;
 }
 
 /* Page subtitle */

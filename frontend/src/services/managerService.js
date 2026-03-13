@@ -230,6 +230,11 @@ const managerService = {
     const response = await api.get(`/api/manager/orders/status/${status}`);
     return response.data;
   },
+
+  getOrderFiles: async (orderId) => {
+    const response = await api.get(`/api/upload/admin/order/${orderId}/files`);
+    return response.data;
+  },
 };
 
 export default managerService;

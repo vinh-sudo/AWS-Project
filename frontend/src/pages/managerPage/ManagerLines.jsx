@@ -614,7 +614,9 @@ const ManagerLines = () => {
                       </div>
 
                       <div className="ln-card-metric">
-                        <span className="ln-card-metric-label">Utilization</span>
+                        <span className="ln-card-metric-label">
+                          Utilization
+                        </span>
                         <span className="ln-card-metric-value">
                           {Math.round(utilization)}%
                         </span>
@@ -722,7 +724,6 @@ const ManagerLines = () => {
                             </strong>
                           </div>
                         </div>
-
                       </div>
                     )}
                   </div>
