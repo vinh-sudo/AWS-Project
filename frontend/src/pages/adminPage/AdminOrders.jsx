@@ -717,7 +717,12 @@ const AdminOrders = () => {
     try {
       const detail = await adminService.getOrderById(id);
       setDetailOrder(detail);
-      setUploadedFiles([]);
+      try {
+        const files = await adminService.getOrderFiles(id);
+        setUploadedFiles(Array.isArray(files) ? files : []);
+      } catch {
+        setUploadedFiles([]);
+      }
       setShowDetailModal(true);
     } catch (err) {
       alert(err.response?.data?.message || "Failed to load order details");
@@ -956,7 +961,7 @@ const AdminOrders = () => {
 
   /* ==============================
      LOADING SCREEN
-     ============================== */  if (initialLoad && loading) {
+     ============================== */ if (initialLoad && loading) {
     return (
       <div className="admin-container">
         <AdminSidebar />

@@ -68,7 +68,7 @@ const NotificationBell = () => {
   const navigate = useNavigate();
 
   const currentUser = authService.getCurrentUser();
-  const userId = currentUser?.id;
+  const userId = currentUser?.userId ?? currentUser?.id;
 
   // Fetch unread count
   const fetchUnreadCount = useCallback(async () => {

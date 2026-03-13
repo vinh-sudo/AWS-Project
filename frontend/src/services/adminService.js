@@ -145,6 +145,17 @@ const uploadOrderFile = async (orderId, file) => {
   return response.data;
 };
 
+/**
+ * Get files for an order
+ * GET /api/upload/admin/order/{orderId}/files
+ * @param {number} orderId
+ * @returns {Promise<ProductionFileResponse[]>}
+ */
+const getOrderFiles = async (orderId) => {
+  const response = await api.get(`/api/upload/admin/order/${orderId}/files`);
+  return response.data;
+};
+
 // ==================== AUDIT LOG ====================
 // NOTE: Backend does not have endpoint /api/admin/audit-logs yet.
 // When backend creates this endpoint, uncomment and update.
@@ -338,6 +349,7 @@ const adminService = {
   getMyOrders,
   // File Upload
   uploadOrderFile,
+  getOrderFiles,
   // Statistics
   getOrderOverview,
   getOrderTrend,

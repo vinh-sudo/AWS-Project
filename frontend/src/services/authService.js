@@ -116,6 +116,7 @@ export const authService = {
       // Store user info
       const userSession = {
         id: data.id,
+        userId: data.userId ?? data.id,
         employeeCode: data.employeeCode,
         username: data.username,
         fullName: data.fullName,
