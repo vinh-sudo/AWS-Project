@@ -129,6 +129,9 @@ const ManagerOrders = () => {
     key: "id",
     direction: "desc",
   });
+  const [activeTab, setActiveTab] = useState("details");
+  const [showAdvancedFilters, setShowAdvancedFilters] = useState(false);
+  const [activeFilterChips, setActiveFilterChips] = useState([]);
 
   const currentUser = authService.getCurrentUser();
 
@@ -462,11 +465,45 @@ const ManagerOrders = () => {
                 <option value="Urgent">Urgent</option>
               </select>
             </div>
+            <button 
+              className={`mo-filter-toggle ${showAdvancedFilters ? 'mo-filter-open' : ''}`}
+              onClick={() => setShowAdvancedFilters(!showAdvancedFilters)}
+              title="Advanced Filters"
+            >
+              ⚙️ Advanced
+            </button>
             <div className="mo-filter-summary">
               Showing <strong>{filteredOrders.length}</strong> of{" "}
               {orders.length} orders
             </div>
           </div>
+
+          {/* Active Filter Chips */}
+          {activeFilterChips.length > 0 && (
+            <div className="mo-advanced-filters">
+              <div className="mo-active-filters">
+                {activeFilterChips.map((chip, idx) => (
+                  <span key={idx} className="mo-filter-chip">
+                    {chip}
+                    <button 
+                      className="mo-filter-chip-close" 
+                      onClick={() => {
+                        setActiveFilterChips(activeFilterChips.filter((_, i) => i !== idx));
+                      }}
+                    >
+                      ✕
+                    </button>
+                  </span>
+                ))}
+                <button 
+                  className="mo-filter-chip-clear-all"
+                  onClick={() => setActiveFilterChips([])}
+                >
+                  Clear All
+                </button>
+              </div>
+            </div>
+          )}
 
           {/* Content */}
           {loading ? (
@@ -613,145 +650,182 @@ const ManagerOrders = () => {
                 <Icon name="x" className="mo-icon mo-icon-sm" />
               </button>
             </div>
+            
+            {/* Modal Tabs */}
+            <div className="mo-modal-tabs">
+              <button 
+                className={`mo-tab-btn ${activeTab === 'details' ? 'mo-tab-active' : ''}`}
+                onClick={() => setActiveTab('details')}
+              >
+                Details
+              </button>
+              <button 
+                className={`mo-tab-btn ${activeTab === 'items' ? 'mo-tab-active' : ''}`}
+                onClick={() => setActiveTab('items')}
+              >
+                Items
+              </button>
+              <button 
+                className={`mo-tab-btn ${activeTab === 'files' ? 'mo-tab-active' : ''}`}
+                onClick={() => setActiveTab('files')}
+              >
+                Files
+              </button>
+            </div>
+            
             <div className="mo-modal-body">
               {detailLoading ? (
                 <PageLoading variant="inline" text="Loading order detail..." />
               ) : (
                 <>
-                  <div className="mo-detail-grid">
-                    <div className="mo-detail-item">
-                      <span className="mo-detail-label">Customer</span>
-                      <span className="mo-detail-value">
-                        {detailOrder.customerName}
-                      </span>
-                    </div>
-                    <div className="mo-detail-item">
-                      <span className="mo-detail-label">Product Type</span>
-                      <span className="mo-detail-value">
-                        {detailOrder.productType}
-                      </span>
-                    </div>
-                    <div className="mo-detail-item">
-                      <span className="mo-detail-label">Quantity</span>
-                      <span className="mo-detail-value">
-                        {detailOrder.quantity?.toLocaleString()}
-                      </span>
-                    </div>
-                    <div className="mo-detail-item">
-                      <span className="mo-detail-label">Deadline</span>
-                      <span className="mo-detail-value">
-                        {formatDate(detailOrder.deadline)}
-                      </span>
-                    </div>
-                    <div className="mo-detail-item">
-                      <span className="mo-detail-label">Priority</span>
-                      <span
-                        className={`mo-priority-badge ${getPriorityClass(detailOrder.priority)}`}
-                      >
-                        {detailOrder.priority}
-                      </span>
-                    </div>
-                    <div className="mo-detail-item">
-                      <span className="mo-detail-label">Status</span>
-                      <span
-                        className={`mo-status-badge ${getStatusClass(detailOrder.status)}`}
-                      >
-                        {getStatusDisplay(detailOrder.status)}
-                      </span>
-                    </div>
-                    <div className="mo-detail-item">
-                      <span className="mo-detail-label">Created By</span>
-                      <span className="mo-detail-value">
-                        {detailOrder.createdByName || "—"}
-                      </span>
-                    </div>
-                    <div className="mo-detail-item">
-                      <span className="mo-detail-label">Total Price</span>
-                      <span className="mo-detail-value">
-                        {formatCurrency(detailOrder.totalPrice)}
-                      </span>
-                    </div>
-                    <div className="mo-detail-item">
-                      <span className="mo-detail-label">Created</span>
-                      <span className="mo-detail-value">
-                        {formatDate(detailOrder.createdAt)}
-                      </span>
-                    </div>
-                    <div className="mo-detail-item">
-                      <span className="mo-detail-label">Updated</span>
-                      <span className="mo-detail-value">
-                        {formatDate(detailOrder.updatedAt)}
-                      </span>
+                  {/* Details Tab */}
+                  <div className={`mo-tab-content ${activeTab === 'details' ? 'mo-tab-content-active' : ''}`}>
+                    <div className="mo-detail-grid">
+                      <div className="mo-detail-item">
+                        <span className="mo-detail-label">Customer</span>
+                        <span className="mo-detail-value">
+                          {detailOrder.customerName}
+                        </span>
+                      </div>
+                      <div className="mo-detail-item">
+                        <span className="mo-detail-label">Product Type</span>
+                        <span className="mo-detail-value">
+                          {detailOrder.productType}
+                        </span>
+                      </div>
+                      <div className="mo-detail-item">
+                        <span className="mo-detail-label">Quantity</span>
+                        <span className="mo-detail-value">
+                          {detailOrder.quantity?.toLocaleString()}
+                        </span>
+                      </div>
+                      <div className="mo-detail-item">
+                        <span className="mo-detail-label">Deadline</span>
+                        <span className="mo-detail-value">
+                          {formatDate(detailOrder.deadline)}
+                        </span>
+                      </div>
+                      <div className="mo-detail-item">
+                        <span className="mo-detail-label">Priority</span>
+                        <span
+                          className={`mo-priority-badge ${getPriorityClass(detailOrder.priority)}`}
+                        >
+                          {detailOrder.priority}
+                        </span>
+                      </div>
+                      <div className="mo-detail-item">
+                        <span className="mo-detail-label">Status</span>
+                        <span
+                          className={`mo-status-badge ${getStatusClass(detailOrder.status)}`}
+                        >
+                          {getStatusDisplay(detailOrder.status)}
+                        </span>
+                      </div>
+                      <div className="mo-detail-item">
+                        <span className="mo-detail-label">Created By</span>
+                        <span className="mo-detail-value">
+                          {detailOrder.createdByName || "—"}
+                        </span>
+                      </div>
+                      <div className="mo-detail-item">
+                        <span className="mo-detail-label">Total Price</span>
+                        <span className="mo-detail-value">
+                          {formatCurrency(detailOrder.totalPrice)}
+                        </span>
+                      </div>
+                      <div className="mo-detail-item">
+                        <span className="mo-detail-label">Created</span>
+                        <span className="mo-detail-value">
+                          {formatDate(detailOrder.createdAt)}
+                        </span>
+                      </div>
+                      <div className="mo-detail-item">
+                        <span className="mo-detail-label">Updated</span>
+                        <span className="mo-detail-value">
+                          {formatDate(detailOrder.updatedAt)}
+                        </span>
+                      </div>
                     </div>
                   </div>
 
-                  {detailOrder.items && detailOrder.items.length > 0 && (
-                    <div className="mo-detail-items">
-                      <h3>
-                        <Icon name="package" className="mo-icon mo-icon-sm" />
-                        <span>Order Items ({detailOrder.items.length})</span>
-                      </h3>
-                      <table className="mo-items-table">
-                        <thead>
-                          <tr>
-                            <th>#</th>
-                            <th>Product Name</th>
-                            <th>Quantity</th>
-                            <th>Price</th>
-                            <th>Subtotal</th>
-                          </tr>
-                        </thead>
-                        <tbody>
-                          {detailOrder.items.map((item, idx) => (
-                            <tr key={item.id || idx}>
-                              <td>{idx + 1}</td>
-                              <td>{item.productName}</td>
-                              <td>{item.quantity?.toLocaleString()}</td>
-                              <td>{formatCurrency(item.price)}</td>
-                              <td>
-                                {formatCurrency(
-                                  (item.quantity || 0) * (item.price || 0),
-                                )}
-                              </td>
+                  {/* Items Tab */}
+                  <div className={`mo-tab-content ${activeTab === 'items' ? 'mo-tab-content-active' : ''}`}>
+                    {detailOrder.items && detailOrder.items.length > 0 ? (
+                      <div className="mo-detail-items">
+                        <h3>
+                          <Icon name="package" className="mo-icon mo-icon-sm" />
+                          <span>Order Items ({detailOrder.items.length})</span>
+                        </h3>
+                        <table className="mo-items-table">
+                          <thead>
+                            <tr>
+                              <th>#</th>
+                              <th>Product Name</th>
+                              <th>Quantity</th>
+                              <th>Price</th>
+                              <th>Subtotal</th>
                             </tr>
-                          ))}
-                        </tbody>
-                      </table>
-                    </div>
-                  )}
-                  <div className="mo-detail-items">
-                    <h3>
-                      <Icon name="paperclip" className="mo-icon mo-icon-sm" />
-                      <span>Files ({orderFiles.length})</span>
-                    </h3>
-                    {orderFiles.length > 0 ? (
-                      <div className="mo-file-list">
-                        {orderFiles.map((file, idx) => (
-                          <a
-                            key={file.id || idx}
-                            href={file.url}
-                            className="mo-file-item"
-                            target="_blank"
-                            rel="noopener noreferrer"
-                          >
-                            <span className="mo-file-name">
-                              {file.fileName || "Unnamed file"}
-                            </span>
-                            <span className="mo-file-meta">
-                              {file.uploadedAt
-                                ? new Date(file.uploadedAt).toLocaleString(
-                                    "en-US",
-                                  )
-                                : "Uploaded time unavailable"}
-                            </span>
-                          </a>
-                        ))}
+                          </thead>
+                          <tbody>
+                            {detailOrder.items.map((item, idx) => (
+                              <tr key={item.id || idx}>
+                                <td>{idx + 1}</td>
+                                <td>{item.productName}</td>
+                                <td>{item.quantity?.toLocaleString()}</td>
+                                <td>{formatCurrency(item.price)}</td>
+                                <td>
+                                  {formatCurrency(
+                                    (item.quantity || 0) * (item.price || 0),
+                                  )}
+                                </td>
+                              </tr>
+                            ))}
+                          </tbody>
+                        </table>
                       </div>
                     ) : (
-                      <p className="mo-file-empty">
-                        No files attached to this order.
-                      </p>
+                      <div className="mo-empty-state">
+                        <p>No items in this order</p>
+                      </div>
                     )}
+                  </div>
+
+                  {/* Files Tab */}
+                  <div className={`mo-tab-content ${activeTab === 'files' ? 'mo-tab-content-active' : ''}`}>
+                    <div className="mo-detail-items">
+                      <h3>
+                        <Icon name="paperclip" className="mo-icon mo-icon-sm" />
+                        <span>Files ({orderFiles.length})</span>
+                      </h3>
+                      {orderFiles.length > 0 ? (
+                        <div className="mo-file-list">
+                          {orderFiles.map((file, idx) => (
+                            <a
+                              key={file.id || idx}
+                              href={file.url}
+                              className="mo-file-item"
+                              target="_blank"
+                              rel="noopener noreferrer"
+                            >
+                              <span className="mo-file-name">
+                                {file.fileName || "Unnamed file"}
+                              </span>
+                              <span className="mo-file-meta">
+                                {file.uploadedAt
+                                  ? new Date(file.uploadedAt).toLocaleString(
+                                      "en-US",
+                                    )
+                                  : "Uploaded time unavailable"}
+                              </span>
+                            </a>
+                          ))}
+                        </div>
+                      ) : (
+                        <p className="mo-file-empty">
+                          No files attached to this order.
+                        </p>
+                      )}
+                    </div>
                   </div>
                 </>
               )}
