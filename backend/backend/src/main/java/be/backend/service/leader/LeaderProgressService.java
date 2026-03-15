@@ -238,7 +238,7 @@ public class LeaderProgressService {
                 if ("Confirmed".equals(order.getStatus())) {
                         order.setStatus("In Production");
                         order.setUpdatedAt(OffsetDateTime.now());
-                        // orderRepo.save(order); — cần inject OrderRepository
+                        orderRepo.save(order);
                 }
 
                 // 7. Lấy danh sách tài liệu (POM/SOP) của order để trả về cho leader
@@ -269,7 +269,7 @@ public class LeaderProgressService {
                 if (pendingCount == 0) {
                         order.setStatus("Completed");
                         order.setUpdatedAt(OffsetDateTime.now());
-                        // Cần inject orderRepo vào LeaderProgressService
+                        orderRepo.save(order);
                 }
 
         }

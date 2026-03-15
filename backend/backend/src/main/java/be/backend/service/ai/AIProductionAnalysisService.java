@@ -251,7 +251,6 @@ public class AIProductionAnalysisService {
         double achievementRate = stats.getAchievementRate();
         long totalDowntime = stats.getTotalDowntimeMinutes();
         boolean hasHighDelays = delays.stream().anyMatch(d -> "HIGH".equals(d.getRisk()));
-        boolean hasMediumDelays = delays.stream().anyMatch(d -> "MEDIUM".equals(d.getRisk()));
 
         // Pattern 1: Quality Issues (High reject + Normal/Low downtime)
         if (rejectRate > 3.0 && totalDowntime < 120 && avgOEE > 0.6) {

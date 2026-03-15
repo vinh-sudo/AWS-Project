@@ -1,11 +1,14 @@
 package be.backend.service.admin;
 
 import be.backend.entity.Account;
+import be.backend.enums.ActionType;
 import be.backend.enums.Role;
 import be.backend.exception.BusinessException;
 import be.backend.exception.ResourceNotFoundException;
+import be.backend.model.request.UpdateRoleRequest;
 import be.backend.model.response.AccountSummaryResponse;
 import be.backend.repository.AccountRepository;
+import be.backend.service.utilities.AuditLogService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
@@ -18,102 +21,132 @@ import org.springframework.transaction.annotation.Transactional;
 public class AdminAccountService {
 
     private final AccountRepository accountRepository;
+    private final AuditLogService auditLogService;
 
-    // ======================== 1. LIST + FILTER + SEARCH ========================
-
-    @Transactional(readOnly = true) // ① READ-ONLY: skip dirty-checking → nhanh hơn ~15%
-    public Page<AccountSummaryResponse> getAccounts(String role, String search,
-                                                     int page, int size) {
-        // ② Validate role nếu có truyền
+    @Transactional(readOnly = true)
+    public Page<AccountSummaryResponse> getAccounts(String role, String search, int page, int size) {
         String validatedRole = null;
         if (role != null && !role.isBlank()) {
-            Role.fromString(role); // throws BusinessException nếu invalid
+            Role.fromString(role);
             validatedRole = role.trim().toUpperCase();
         }
 
-        // ③ Normalize: blank → null (repo skip điều kiện khi null)
-        String normalizedSearch = (search != null && !search.isBlank())
-                ? search.trim()
-                : null;
-
-        // ④ Pageable (ORDER BY is in the native query)
+        String normalizedSearch = (search != null && !search.isBlank()) ? search.trim() : null;
         Pageable pageable = PageRequest.of(page, size);
 
-        // ⑤ Query + map trong 1 pipeline
-        return accountRepository
-                .findAllWithFilters(validatedRole, normalizedSearch, pageable)
+        return accountRepository.findAllWithFilters(validatedRole, normalizedSearch, pageable)
                 .map(this::toSummary);
     }
 
     // ======================== 2. EDIT ROLE ========================
-
-    @Transactional // ⑥ WRITE: cần commit
-    public AccountSummaryResponse updateRole(Integer accountId, String newRole) {
-        Role validated = Role.fromString(newRole); // ⑦ Validate trước khi query
-
-        Account account = findAccountOrThrow(accountId);
-
-        // ⑧ GUARD: Không đổi role của ADMIN
+    
+    @Transactional
+    public AccountSummaryResponse updateRole(Integer accountId, UpdateRoleRequest request, 
+                                             Account currentUser) {
+        Account account = accountRepository.findById(accountId)
+            .orElseThrow(() -> new ResourceNotFoundException("Account not found"));
+        
+        // Guard: Không sửa admin (String comparison)
         if ("ADMIN".equalsIgnoreCase(account.getRole())) {
-            throw new BusinessException("Cannot change role of an ADMIN account");
+            throw new BusinessException("Cannot change admin role");
         }
-
-        // ⑨ GUARD: Không gán ADMIN cho ai
-        if (validated == Role.ADMIN) {
+        
+        // Capture old value TRƯỚC KHI thay đổi
+        String oldRole = account.getRole();
+        
+        // Validate new role (throws exception if invalid)
+        Role newRoleEnum = Role.fromString(request.getRole());
+        if (newRoleEnum == Role.ADMIN) {
             throw new BusinessException("Cannot assign ADMIN role");
         }
-
-        account.setRole(validated.name());
-        return toSummary(accountRepository.save(account));
-    }
-
-    // ======================== 3. LOCK ========================
-
-    @Transactional
-    public AccountSummaryResponse lockAccount(Integer accountId) {
-        Account account = findAccountOrThrow(accountId);
-
-        // ⑩ GUARD: Không lock ADMIN
-        if ("ADMIN".equalsIgnoreCase(account.getRole())) {
-            throw new BusinessException("Cannot lock an ADMIN account");
-        }
-
-        // ⑪ Idempotent: đã locked → không lỗi, trả luôn
-        if (!"locked".equalsIgnoreCase(account.getStatus())) {
-            account.setStatus("locked");
-            account = accountRepository.save(account);
-        }
+        String newRole = newRoleEnum.name();
+        
+        // Update
+        account.setRole(newRole);
+        accountRepository.save(account);
+        
+        // Audit logging
+        auditLogService.builder()
+            .user(currentUser.getUser())
+            .action(ActionType.CHANGE_ROLE)
+            .entity("ACCOUNT")
+            .entityId(accountId)
+            .change("role", oldRole, newRole)
+            .log();
+        
         return toSummary(account);
     }
-
+    
+    // ======================== 3. LOCK ========================
+    
+    @Transactional
+    public AccountSummaryResponse lockAccount(Integer accountId, Account currentUser) {
+        Account account = accountRepository.findById(accountId)
+            .orElseThrow(() -> new ResourceNotFoundException("Account not found"));
+        
+        // Guard: Không lock chính mình
+        if (account.getId().equals(currentUser.getId())) {
+            throw new BusinessException("Cannot lock your own account");
+        }
+        
+        // Guard: Admin không thể bị lock
+        if ("ADMIN".equalsIgnoreCase(account.getRole())) {
+            throw new BusinessException("Cannot lock admin account");
+        }
+        
+        // Capture old status (for audit)
+        String oldStatus = account.getStatus();
+        
+        // Update status thành "locked"
+        account.setStatus("locked");
+        account = accountRepository.save(account);
+        
+        // Audit logging với details
+        auditLogService.builder()
+            .user(currentUser.getUser())
+            .action(ActionType.LOCK_ACCOUNT)
+            .entity("ACCOUNT")
+            .entityId(accountId)
+            .change("status", oldStatus, "locked")
+            .log();
+        
+        return toSummary(account);
+    }
+    
     // ======================== 4. UNLOCK ========================
 
     @Transactional
-    public AccountSummaryResponse unlockAccount(Integer accountId) {
-        Account account = findAccountOrThrow(accountId);
+    public AccountSummaryResponse unlockAccount(Integer accountId, Account currentUser) {
+        Account account = accountRepository.findById(accountId)
+            .orElseThrow(() -> new ResourceNotFoundException("Account not found"));
+        
+        // Capture old status
+        String oldStatus = account.getStatus();
 
-        if (!"active".equalsIgnoreCase(account.getStatus())) {
-            account.setStatus("active");
-            account = accountRepository.save(account);
-        }
+        // Update status thành "active"
+        account.setStatus("active");
+        account = accountRepository.save(account);
+        
+        // Audit logging
+        auditLogService.builder()
+            .user(currentUser.getUser())
+            .action(ActionType.UNLOCK_ACCOUNT)
+            .entity("ACCOUNT")
+            .entityId(accountId)
+            .change("status", oldStatus, "active")
+            .log();
+        
         return toSummary(account);
     }
 
     // ======================== PRIVATE HELPERS ========================
 
-    // ⑫ Extract method: DRY — dùng ở 4 method
-    private Account findAccountOrThrow(Integer id) {
-        return accountRepository.findById(id)
-                .orElseThrow(() -> new ResourceNotFoundException("Account", id.toString()));
-    }
-
-    // ⑬ Mapping: private vì chỉ service này dùng, logic đơn giản không cần MapStruct
     private AccountSummaryResponse toSummary(Account a) {
         return AccountSummaryResponse.builder()
                 .id(a.getId())
                 .username(a.getUsername())
                 .employeeCode(a.getEmployee() != null ? a.getEmployee().getEmployeeCode() : null)
-                .role(a.getRole())
+                .role(a.getRole())  // String → String (no conversion)
                 .status(a.getStatus())
                 .lastLogin(a.getLastLogin())
                 .build();

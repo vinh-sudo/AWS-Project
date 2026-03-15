@@ -1,5 +1,6 @@
 package be.backend.controller.admin;
 
+import be.backend.entity.Account;
 import be.backend.model.request.UpdateRoleRequest;
 import be.backend.model.response.AccountSummaryResponse;
 import be.backend.service.admin.AdminAccountService;
@@ -8,6 +9,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
@@ -40,21 +42,26 @@ public class AdminAccountController {
     @PutMapping("/{id}/role")
     public ResponseEntity<AccountSummaryResponse> updateRole(
             @PathVariable Integer id,
-            @Valid @RequestBody UpdateRoleRequest request) {
+            @Valid @RequestBody UpdateRoleRequest request,
+            @AuthenticationPrincipal Account currentUser) {
 
         return ResponseEntity.ok(
-                adminAccountService.updateRole(id, request.getRole()));
+                adminAccountService.updateRole(id, request, currentUser));
     }
 
     /** Lock account */
     @PutMapping("/{id}/lock")
-    public ResponseEntity<AccountSummaryResponse> lockAccount(@PathVariable Integer id) {
-        return ResponseEntity.ok(adminAccountService.lockAccount(id));
+    public ResponseEntity<AccountSummaryResponse> lockAccount(
+            @PathVariable Integer id,
+            @AuthenticationPrincipal Account currentUser) {
+        return ResponseEntity.ok(adminAccountService.lockAccount(id, currentUser));
     }
 
     /** Unlock account */
     @PutMapping("/{id}/unlock")
-    public ResponseEntity<AccountSummaryResponse> unlockAccount(@PathVariable Integer id) {
-        return ResponseEntity.ok(adminAccountService.unlockAccount(id));
+    public ResponseEntity<AccountSummaryResponse> unlockAccount(
+            @PathVariable Integer id,
+            @AuthenticationPrincipal Account currentUser) {
+        return ResponseEntity.ok(adminAccountService.unlockAccount(id, currentUser));
     }
 }

@@ -1,6 +1,7 @@
 package be.backend.service.manager;
 
 import be.backend.entity.*;
+import be.backend.enums.ActionType;
 import be.backend.mapper.ProductionPlanMapper;
 import be.backend.model.request.LinePlanRequest;
 import be.backend.model.request.ProductionPlanRequest;
@@ -102,7 +103,7 @@ public class ManagerPlanningService {
         if (!result.isOk()) {
             AuditLog log = new AuditLog();
             log.setUser(account.getUser());
-            log.setActionType("CONFIRM_PLAN");
+            log.setActionType(ActionType.CONFIRM_PLAN);
             log.setEntity("Order");
             log.setDetails("FAILED: " + result.getMessage());
             auditRepo.save(log);
@@ -120,7 +121,7 @@ public class ManagerPlanningService {
 
         AuditLog log = new AuditLog();
         log.setUser(account.getUser());
-        log.setActionType("CONFIRM_PLAN");
+        log.setActionType(ActionType.CONFIRM_PLAN);
         log.setEntity("Order");
         log.setDetails("Order " + orderId + " scheduled");
         auditRepo.save(log);
@@ -148,7 +149,7 @@ public class ManagerPlanningService {
 
         AuditLog log = new AuditLog();
         log.setUser(account.getUser());
-        log.setActionType("CANCEL_PLAN");
+        log.setActionType(ActionType.CANCEL_PLAN);
         log.setEntity("Order");
         log.setDetails("Cancelled plan for order " + orderId);
         auditRepo.save(log);

@@ -19,6 +19,7 @@ public class ParsedQuestion {
     public Domain getDomain() { return domain; }
     public Integer getOrderId() { return orderId; }
     public Integer getScheduleId() { return scheduleId; }
+    public String getOriginalText() { return originalText; }
 
 
     public static ParsedQuestion generic(String text) {

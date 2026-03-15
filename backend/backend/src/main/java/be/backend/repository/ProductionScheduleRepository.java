@@ -1,6 +1,5 @@
 package be.backend.repository;
 
-import be.backend.entity.Order;
 import be.backend.entity.ProductionSchedule;
 import jakarta.persistence.LockModeType;
 import org.springframework.data.jpa.repository.JpaRepository;

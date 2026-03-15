@@ -2,7 +2,6 @@ package be.backend.service.leader;
 
 import be.backend.entity.*;
 import be.backend.event.MachineEvent;
-import be.backend.exception.BusinessException;
 import be.backend.exception.ForbiddenException;
 import be.backend.exception.ResourceNotFoundException;
 import be.backend.model.request.ReportIncidentRequest;
