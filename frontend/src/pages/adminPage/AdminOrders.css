@@ -1625,33 +1625,86 @@
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 6px;
-  padding: 16px;
-  border: 1.5px dashed var(--ao-border);
-  border-radius: var(--ao-radius-sm);
-  transition: all var(--ao-transition);
+  gap: 8px;
+  padding: 18px;
+  border: 1.5px dashed color-mix(in srgb, var(--ao-border) 85%, var(--ao-accent) 15%);
+  border-radius: var(--ao-radius);
+  background: linear-gradient(180deg, #ffffff 0%, #fbfbff 100%);
+  box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.02), var(--ao-shadow-xs);
+  transition: transform var(--ao-transition), border-color var(--ao-transition), background var(--ao-transition), box-shadow var(--ao-transition);
   cursor: pointer;
   text-align: center;
+  position: relative;
+  overflow: hidden;
 }
 
 .ao-upload-area:hover {
   border-color: var(--ao-accent);
-  background: var(--ao-accent-soft);
+  background: linear-gradient(180deg, var(--ao-accent-soft) 0%, #ffffff 100%);
+  box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.10), var(--ao-shadow-sm);
+  transform: translateY(-1px);
+}
+
+.ao-upload-area:active {
+  transform: translateY(0);
+}
+
+.ao-upload-area::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background:
+    radial-gradient(650px 200px at 50% 0%, rgba(99, 102, 241, 0.12), transparent 55%),
+    radial-gradient(500px 220px at 100% 100%, rgba(59, 130, 246, 0.10), transparent 60%);
+  opacity: 0;
+  transition: opacity var(--ao-transition);
+  pointer-events: none;
+}
+
+.ao-upload-area:hover::before {
+  opacity: 1;
 }
 
 .ao-upload-area-icon {
   color: var(--ao-accent);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  border-radius: 12px;
+  background: color-mix(in srgb, var(--ao-accent-soft) 85%, #ffffff 15%);
+  box-shadow: 0 8px 20px rgba(99, 102, 241, 0.12);
+  position: relative;
+  z-index: 1;
+}
+
+.ao-upload-area-icon svg {
+  width: 18px;
+  height: 18px;
 }
 
 .ao-upload-area-text {
-  font-size: 12.5px;
-  font-weight: 600;
+  font-size: 13px;
+  font-weight: 700;
   color: var(--ao-text-primary);
+  letter-spacing: -0.01em;
+  position: relative;
+  z-index: 1;
 }
 
 .ao-upload-area-hint {
-  font-size: 11px;
-  color: var(--ao-text-muted);
+  font-size: 11.5px;
+  color: var(--ao-text-secondary);
+  position: relative;
+  z-index: 1;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .ao-upload-area,
+  .ao-upload-area::before {
+    transition: none;
+  }
 }
 
 /* ============================================
