@@ -1,7 +1,6 @@
 package be.backend.service.admin;
 
 import be.backend.entity.Account;
-import be.backend.entity.User;
 import be.backend.exception.BusinessException;
 import be.backend.repository.AccountRepository;
 import be.backend.repository.UserRepository;

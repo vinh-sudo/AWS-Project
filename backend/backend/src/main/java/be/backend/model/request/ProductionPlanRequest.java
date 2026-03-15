@@ -1,7 +1,6 @@
 package be.backend.model.request;
 
 import lombok.Data;
-import org.springframework.web.multipart.MultipartFile;
 
 import java.time.LocalDate;
 import java.util.List;

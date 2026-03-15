@@ -1,7 +1,5 @@
 package be.backend.service.utilities;
 
-import java.time.LocalDate;
-import java.time.format.DateTimeFormatter;
 import java.util.Random;
 
 import org.springframework.stereotype.Service;

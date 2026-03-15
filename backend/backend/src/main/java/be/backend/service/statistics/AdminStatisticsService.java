@@ -7,7 +7,6 @@ import be.backend.model.dto.projection.OrderTrendProjection;
 import be.backend.model.dto.projection.RevenueProjection;
 import be.backend.model.response.statistics.*;
 import be.backend.repository.*;
-import be.backend.service.utilities.OeeCalculator;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
