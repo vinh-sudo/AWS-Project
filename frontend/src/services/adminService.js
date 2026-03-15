@@ -157,13 +157,44 @@ const getOrderFiles = async (orderId) => {
 };
 
 // ==================== AUDIT LOG ====================
-// NOTE: Backend does not have endpoint /api/admin/audit-logs yet.
-// When backend creates this endpoint, uncomment and update.
+// Backend endpoints:
+// - GET /api/admin/audit-logs?page=&size=
+// - GET /api/admin/audit-logs/user/{userId}?startDate=&endDate=&page=&size=
+// - GET /api/admin/audit-logs/action/{actionType}?since=&page=&size=
+// - GET /api/admin/audit-logs/entity/{entity}/{entityId}?page=&size=
+// - GET /api/admin/audit-logs/critical?since=&page=&size=
 
-const getAuditLogs = async () => [];
-const getAuditLogsByUser = async (/* userId */) => [];
-const getAuditLogsByAction = async (/* actionType */) => [];
-const getAuditLogsByEntity = async (/* entity */) => [];
+const getAuditLogs = async (params = {}) => {
+  const response = await api.get("/api/admin/audit-logs", { params });
+  return response.data;
+};
+
+const getAuditLogsByUser = async (userId, params = {}) => {
+  const response = await api.get(`/api/admin/audit-logs/user/${userId}`, {
+    params,
+  });
+  return response.data;
+};
+
+const getAuditLogsByAction = async (actionType, params = {}) => {
+  const response = await api.get(`/api/admin/audit-logs/action/${actionType}`, {
+    params,
+  });
+  return response.data;
+};
+
+const getAuditLogsByEntity = async (entity, entityId, params = {}) => {
+  const response = await api.get(
+    `/api/admin/audit-logs/entity/${entity}/${entityId}`,
+    { params },
+  );
+  return response.data;
+};
+
+const getCriticalAuditLogs = async (params = {}) => {
+  const response = await api.get("/api/admin/audit-logs/critical", { params });
+  return response.data;
+};
 
 // ==================== USER MANAGEMENT ====================
 // Backend endpoints: /api/admin/accounts
@@ -360,6 +391,7 @@ const adminService = {
   getAuditLogsByUser,
   getAuditLogsByAction,
   getAuditLogsByEntity,
+  getCriticalAuditLogs,
   // Accounts (User Management)
   getAccounts,
   updateAccountRole,

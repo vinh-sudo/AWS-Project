@@ -1,5 +1,6 @@
 package be.backend.entity;
 
+import be.backend.converter.ActionTypeConverter;
 import be.backend.enums.ActionType;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.NotNull;
@@ -39,7 +40,7 @@ public class AuditLog {
      * Action type enum (Type Safety + Storage Efficiency)
      */
     @NotNull
-    @Enumerated(EnumType.STRING)
+    @Convert(converter = ActionTypeConverter.class)
     @Column(name = "action_type", nullable = false, length = 30)
     private ActionType actionType;
 

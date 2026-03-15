@@ -2,6 +2,7 @@ package be.backend.repository;
 
 import be.backend.entity.AuditLog;
 import be.backend.enums.ActionType;
+import org.springframework.data.jpa.repository.EntityGraph;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
@@ -22,12 +23,17 @@ import java.util.List;
  */
 @Repository
 public interface AuditLogRepository extends JpaRepository<AuditLog, Integer> {
+
+    @Override
+    @EntityGraph(attributePaths = "user")
+    Page<AuditLog> findAll(Pageable pageable);
     
     /**
      * Query 1: Xem logs của 1 user trong khoảng thời gian
      * Use case: Admin xem "User X đã làm gì từ ngày A đến B"
      * Index: idx_audit_user_time (user_id, timestamp)
      */
+    @EntityGraph(attributePaths = "user")
     Page<AuditLog> findByUserIdAndTimestampBetween(
         Integer userId,
         OffsetDateTime start,
@@ -40,6 +46,7 @@ public interface AuditLogRepository extends JpaRepository<AuditLog, Integer> {
      * Use case: "Xem lịch sử của Order #123"
      * Index: idx_audit_entity (entity, entity_id, timestamp)
      */
+    @EntityGraph(attributePaths = "user")
     Page<AuditLog> findByEntityAndEntityIdOrderByTimestampDesc(
         String entity,
         Integer entityId,
@@ -51,6 +58,7 @@ public interface AuditLogRepository extends JpaRepository<AuditLog, Integer> {
      * Use case: "Xem tất cả DELETE actions trong 30 ngày"
      * Index: idx_audit_action (action_type, timestamp)
      */
+    @EntityGraph(attributePaths = "user")
     Page<AuditLog> findByActionTypeAndTimestampAfter(
         ActionType actionType,
         OffsetDateTime after,
@@ -67,6 +75,7 @@ public interface AuditLogRepository extends JpaRepository<AuditLog, Integer> {
         AND a.timestamp >= :since 
         ORDER BY a.timestamp DESC
         """)
+    @EntityGraph(attributePaths = "user")
     Page<AuditLog> findCriticalActions(
         @Param("criticalActions") List<ActionType> criticalActions,
         @Param("since") OffsetDateTime since,
