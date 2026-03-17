@@ -25,7 +25,6 @@ const AdminDashboard = () => {
   const currentUser = authService.getCurrentUser();
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  const [lastUpdated, setLastUpdated] = useState(null);
 
   const [stats, setStats] = useState({
     totalUsers: 0,
@@ -62,7 +61,6 @@ const AdminDashboard = () => {
         activeMachines: data.activeMachines || 0,
       });
 
-      setLastUpdated(new Date());
     } catch (err) {
       console.error("Error fetching dashboard data:", err);
       setError(err.response?.data?.message || "Failed to load dashboard data");
@@ -73,8 +71,6 @@ const AdminDashboard = () => {
 
   useEffect(() => {
     fetchDashboardData();
-    const interval = setInterval(fetchDashboardData, 60000);
-    return () => clearInterval(interval);
   }, [fetchDashboardData]);
 
   // Computed metrics
@@ -179,40 +175,10 @@ const AdminDashboard = () => {
               </h1>
               <p className="dash-subtitle">
                 Here's what's happening with your production system
-                {lastUpdated && (
-                  <span className="dash-last-updated">
-                    {" "}
-                    · Updated{" "}
-                    {lastUpdated.toLocaleTimeString([], {
-                      hour: "2-digit",
-                      minute: "2-digit",
-                    })}
-                  </span>
-                )}
               </p>
             </div>
           </div>
           <div className="dash-header-right">
-            <button
-              className="dash-refresh-btn"
-              onClick={fetchDashboardData}
-              title="Refresh data"
-            >
-              <svg
-                width="18"
-                height="18"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="2"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-              >
-                <polyline points="23 4 23 10 17 10" />
-                <polyline points="1 20 1 14 7 14" />
-                <path d="M3.51 9a9 9 0 0114.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0020.49 15" />
-              </svg>
-            </button>
             <NotificationBell />
           </div>
         </header>

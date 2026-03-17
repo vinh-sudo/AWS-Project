@@ -336,19 +336,35 @@ const UsersAdmin = () => {
             <button className="btn-primary" onClick={() => setShowCreateUser(true)}>
               <span>＋</span> Add User
             </button>
-          </div>
-
-          {/* Filters */}
-          <div className="filters-container">
-            <div className="search-box">
-              <span className="search-icon">🔍</span>
-              <input type="text" placeholder="Search by username or employee code..."
-                value={searchTerm} onChange={handleSearchChange} className="search-input" />
+          </div>          {/* Filters */}
+          <div className="filters-toolbar">
+            <div className="search-group">
+              <svg className="search-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <circle cx="11" cy="11" r="8" />
+                <path d="m21 21-4.35-4.35" />
+              </svg>
+              <input 
+                type="text" 
+                placeholder="Search by username or employee code..." 
+                value={searchTerm} 
+                onChange={handleSearchChange} 
+                className="search-input" 
+              />
+              {searchTerm && (
+                <button 
+                  className="clear-btn" 
+                  onClick={() => { setSearchTerm(""); setDebouncedSearch(""); setCurrentPage(0); }}
+                  title="Clear search"
+                >
+                  ✕
+                </button>
+              )}
             </div>
-            <div className="role-filter">
-              <label className="role-label">Role:</label>
-              <select value={roleFilter} onChange={handleRoleFilterChange} className="role-select">
-                <option>All roles</option>
+
+            <div className="filter-group">
+              <label className="filter-label">Role</label>
+              <select value={roleFilter} onChange={handleRoleFilterChange} className="filter-select">
+                <option value="All roles">All roles</option>
                 <option value="ADMIN">Admin</option>
                 <option value="MANAGER">Manager</option>
                 <option value="LINE_LEADER">Line Leader</option>
