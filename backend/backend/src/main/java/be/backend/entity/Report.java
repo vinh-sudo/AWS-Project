@@ -34,6 +34,16 @@ public class Report {
     @JoinColumn(name = "line_id", nullable = false)
     private ProductionLine line;
 
+    @ManyToOne(fetch = FetchType.LAZY)
+    @OnDelete(action = OnDeleteAction.CASCADE)
+    @JoinColumn(name = "schedule_id")
+    private ProductionSchedule schedule;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @OnDelete(action = OnDeleteAction.CASCADE)
+    @JoinColumn(name = "order_id")
+    private Order order;
+
     @NotNull
     @Column(name = "work_date", nullable = false)
     private LocalDate workDate;
