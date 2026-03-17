@@ -5,12 +5,12 @@ import { api } from "./authService";
 
 const leaderService = {
   /**
-   * Get leader dashboard overview (line status, KPIs, active schedules, incidents)
+   * Get leader dashboard overview (line status + KPIs)
    * GET /api/leader/dashboard
    * @returns {Promise<LeaderDashboardResponse>}
    *   { lineId, lineName, todayProducedQuantity, todayDowntimeMinutes,
    *     todayEfficiency, activeScheduleCount, activeSchedules[],
-   *     unresolvedIncidentCount, recentIncidents[] }
+   *     unresolvedIncidentCount }
    */
   getDashboard: async () => {
     try {

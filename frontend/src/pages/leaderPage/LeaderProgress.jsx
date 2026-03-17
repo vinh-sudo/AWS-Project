@@ -1,13 +1,14 @@
 // ============================================================================
 // LeaderProgress — Connected to backend LeaderController API
 // Endpoints used:
-//   GET  /api/leader/dashboard    → overview + active schedules + incidents
+//   GET  /api/leader/dashboard    → overview + KPI counters
 //   GET  /api/leader/schedules    → schedule list
 //   PUT  /api/leader/progress     → update progress
 //   POST /api/leader/incident     → report incident
 //   POST /api/leader/report       → submit end-of-shift report
 // ============================================================================
 import React, { useState, useEffect, useCallback } from "react";
+import { useParams } from "react-router-dom";
 import NotificationBell from "../../components/NotificationBell/NotificationBell";
 import LeaderSidebar from "../../components/LeaderSidebar/LeaderSidebar";
 import authService from "../../services/authService";
@@ -163,11 +164,14 @@ const IC = {
 };
 
 const LeaderProgress = () => {
+  const { scheduleId: focusedScheduleId } = useParams();
   const [activeTab, setActiveTab] = useState("inProgress");
   const [showUpdateModal, setShowUpdateModal] = useState(false);
   const [showIncidentModal, setShowIncidentModal] = useState(false);
   const [showReportModal, setShowReportModal] = useState(false);
+  const [showDocumentModal, setShowDocumentModal] = useState(false);
   const [selectedSchedule, setSelectedSchedule] = useState(null);
+  const [selectedDocuments, setSelectedDocuments] = useState([]);
   const [newPercentage, setNewPercentage] = useState(0);
   const [progressNote, setProgressNote] = useState("");
   const [loading, setLoading] = useState(true);
@@ -180,6 +184,8 @@ const LeaderProgress = () => {
   // Dashboard data from API
   const [dashboard, setDashboard] = useState(null);
   const [schedules, setSchedules] = useState([]);
+  const [scheduleDocuments, setScheduleDocuments] = useState({});
+  const [localProgressBySchedule, setLocalProgressBySchedule] = useState({});
 
   // Incident types (matching backend incidentType field)
   const incidentTypes = [
@@ -307,8 +313,6 @@ const LeaderProgress = () => {
         return schedules.filter((s) => s.status === "SCHEDULED");
       case "inProgress":
         return schedules.filter((s) => s.status === "RUNNING");
-      case "completed":
-        return schedules.filter((s) => s.status === "COMPLETED");
       case "onHold":
         return schedules.filter((s) => s.status === "PAUSED");
       default:
@@ -346,6 +350,15 @@ const LeaderProgress = () => {
     setShowReportModal(true);
   };
 
+  const openDocumentsModal = (schedule) => {
+    const docsFromSchedule = schedule?.documents || [];
+    const docsFromStart = scheduleDocuments[schedule.scheduleId] || [];
+    const docs = docsFromSchedule.length > 0 ? docsFromSchedule : docsFromStart;
+    setSelectedSchedule(schedule);
+    setSelectedDocuments(docs);
+    setShowDocumentModal(true);
+  };
+
   const handleUpdateProgress = async () => {
     try {
       const result = await leaderService.updateProgress({
@@ -353,6 +366,14 @@ const LeaderProgress = () => {
         percentage: newPercentage,
         note: progressNote || undefined,
       });
+
+      setLocalProgressBySchedule((prev) => ({
+        ...prev,
+        [selectedSchedule.scheduleId]: Number(
+          result?.percentage ?? newPercentage,
+        ),
+      }));
+
       alert(`✅ ${result.message || "Progress updated!"}`);
       setShowUpdateModal(false);
       setSelectedSchedule(null);
@@ -432,20 +453,46 @@ const LeaderProgress = () => {
   const inProgressCount = schedules.filter(
     (s) => s.status === "RUNNING",
   ).length;
-  const completedCount = schedules.filter(
-    (s) => s.status === "COMPLETED",
-  ).length;
   const onHoldCount = schedules.filter((s) => s.status === "PAUSED").length;
   const totalIncidents = dashboard?.unresolvedIncidentCount || 0;
-  const recentIncidents = dashboard?.recentIncidents || [];
+  const hasIncidentDetails = Array.isArray(dashboard?.recentIncidents);
+  const recentIncidents = hasIncidentDetails ? dashboard.recentIncidents : [];
 
   /* ===== Filter chip config ===== */
   const chips = [
     { key: "inProgress", label: "In Production", count: inProgressCount },
     { key: "scheduled", label: "Scheduled", count: scheduledCount },
     { key: "onHold", label: "Paused", count: onHoldCount },
-    { key: "completed", label: "Completed", count: completedCount },
   ];
+
+  useEffect(() => {
+    if (!focusedScheduleId || schedules.length === 0) {
+      return;
+    }
+
+    const schedule = schedules.find(
+      (item) => String(item.scheduleId) === String(focusedScheduleId),
+    );
+
+    if (!schedule) {
+      return;
+    }
+
+    if (schedule.status === "SCHEDULED") {
+      setActiveTab("scheduled");
+    } else if (schedule.status === "PAUSED") {
+      setActiveTab("onHold");
+    } else {
+      setActiveTab("inProgress");
+    }
+
+    requestAnimationFrame(() => {
+      const target = document.getElementById(`schedule-${schedule.scheduleId}`);
+      if (target) {
+        target.scrollIntoView({ behavior: "smooth", block: "center" });
+      }
+    });
+  }, [focusedScheduleId, schedules]);
 
   // ─── RENDER ─────────────────────────────────────────────────────────
   return (
@@ -543,9 +590,7 @@ const LeaderProgress = () => {
         )}
 
         {/* ── Loading ───────────────────────────────── */}
-        {loading && (
-          <PageLoading variant="inline" text="Loading data..." />
-        )}
+        {loading && <PageLoading variant="inline" text="Loading data..." />}
 
         {/* ── Not Assigned ──────────────────────────── */}
         {error && error === "NOT_ASSIGNED" && (
@@ -621,7 +666,11 @@ const LeaderProgress = () => {
               </div>
             ) : (
               filteredSchedules.map((schedule) => (
-                <div key={schedule.scheduleId} className="lp-schedule-card">
+                <div
+                  id={`schedule-${schedule.scheduleId}`}
+                  key={schedule.scheduleId}
+                  className="lp-schedule-card"
+                >
                   {/* Card header */}
                   <div className="lp-sched-header">
                     <span className="lp-sched-id">
@@ -657,6 +706,19 @@ const LeaderProgress = () => {
                           : "—"}
                       </span>
                     </div>
+                    {Object.prototype.hasOwnProperty.call(
+                      localProgressBySchedule,
+                      schedule.scheduleId,
+                    ) && (
+                      <div className="lp-sched-detail">
+                        <span className="lp-sched-detail-label">
+                          Last Updated Progress
+                        </span>
+                        <span className="lp-sched-detail-value">
+                          {localProgressBySchedule[schedule.scheduleId]}%
+                        </span>
+                      </div>
+                    )}
                   </div>
 
                   {/* Actions — SCHEDULED */}
@@ -666,9 +728,21 @@ const LeaderProgress = () => {
                         className="lp-action-btn resume"
                         onClick={async () => {
                           try {
-                            await leaderService.startSchedule(
-                              schedule.scheduleId,
-                            );
+                            const startResult =
+                              await leaderService.startSchedule(
+                                schedule.scheduleId,
+                              );
+
+                            if (
+                              Array.isArray(startResult?.documents) &&
+                              startResult.documents.length > 0
+                            ) {
+                              setScheduleDocuments((prev) => ({
+                                ...prev,
+                                [schedule.scheduleId]: startResult.documents,
+                              }));
+                            }
+
                             alert("▶️ Production started!");
                             fetchData();
                           } catch (err) {
@@ -692,6 +766,18 @@ const LeaderProgress = () => {
                       >
                         {IC.barChart} Update Progress
                       </button>
+                      {!!(
+                        (schedule.documents && schedule.documents.length > 0) ||
+                        (scheduleDocuments[schedule.scheduleId] &&
+                          scheduleDocuments[schedule.scheduleId].length > 0)
+                      ) && (
+                        <button
+                          className="lp-action-btn resume"
+                          onClick={() => openDocumentsModal(schedule)}
+                        >
+                          {IC.clipboard} View Documents
+                        </button>
+                      )}
                       <button
                         className="lp-action-btn incident"
                         onClick={() => openIncidentModal(schedule)}
@@ -718,6 +804,18 @@ const LeaderProgress = () => {
                       >
                         {IC.play} Resume
                       </button>
+                      {!!(
+                        (schedule.documents && schedule.documents.length > 0) ||
+                        (scheduleDocuments[schedule.scheduleId] &&
+                          scheduleDocuments[schedule.scheduleId].length > 0)
+                      ) && (
+                        <button
+                          className="lp-action-btn update"
+                          onClick={() => openDocumentsModal(schedule)}
+                        >
+                          {IC.clipboard} View Documents
+                        </button>
+                      )}
                       <button
                         className="lp-action-btn incident"
                         onClick={() => openIncidentModal(schedule)}
@@ -738,6 +836,16 @@ const LeaderProgress = () => {
                 </div>
               ))
             )}
+          </div>
+        )}
+
+        {/* ── Incident detail availability note ─────── */}
+        {!loading && totalIncidents > 0 && !hasIncidentDetails && (
+          <div className="lp-error-banner">
+            <span>
+              {IC.alertTriangle} There are {totalIncidents} open incidents.
+              Backend dashboard currently returns count only (no detail list).
+            </span>
           </div>
         )}
 
@@ -815,9 +923,10 @@ const LeaderProgress = () => {
                   min="0"
                   max="100"
                   value={newPercentage}
-                  onChange={(e) =>
-                    setNewPercentage(parseInt(e.target.value) || 0)
-                  }
+                  onChange={(e) => {
+                    const value = Number(e.target.value);
+                    setNewPercentage(Number.isNaN(value) ? 0 : value);
+                  }}
                   className="lp-form-input"
                   placeholder="Enter percentage..."
                 />
@@ -883,7 +992,7 @@ const LeaderProgress = () => {
               <button
                 className="lp-btn-confirm"
                 onClick={handleUpdateProgress}
-                disabled={newPercentage <= 0}
+                disabled={newPercentage < 0 || newPercentage > 100}
               >
                 Update Progress
               </button>
@@ -1112,9 +1221,89 @@ const LeaderProgress = () => {
               <button
                 className="lp-btn-confirm"
                 onClick={handleSubmitReport}
-                disabled={shiftReport.goodQuantity <= 0}
+                disabled={
+                  shiftReport.targetQuantity < 0 ||
+                  shiftReport.goodQuantity < 0 ||
+                  shiftReport.rejectQuantity < 0 ||
+                  (shiftReport.downtimeMinutes ?? 0) < 0
+                }
               >
                 Submit Shift Report
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ── Documents Modal ────────────────────────── */}
+      {showDocumentModal && selectedSchedule && (
+        <div
+          className="lp-modal-overlay"
+          onClick={() => setShowDocumentModal(false)}
+        >
+          <div className="lp-modal" onClick={(e) => e.stopPropagation()}>
+            <div className="lp-modal-header">
+              <h2>{IC.clipboard} Production Documents</h2>
+              <button
+                className="lp-modal-close"
+                onClick={() => setShowDocumentModal(false)}
+              >
+                {IC.close}
+              </button>
+            </div>
+            <div className="lp-modal-body">
+              <div className="lp-modal-info">
+                <p>
+                  <strong>Schedule:</strong> SCH-{selectedSchedule.scheduleId}
+                </p>
+                <p className="lp-modal-info-title">
+                  {selectedSchedule.orderInfo || "N/A"}
+                </p>
+              </div>
+
+              {selectedDocuments.length === 0 ? (
+                <div className="lp-empty-state">
+                  <p className="lp-empty-title">No documents available</p>
+                  <p className="lp-empty-text">
+                    No POM/SOP documents were returned for this schedule.
+                  </p>
+                </div>
+              ) : (
+                <div className="lp-incidents-grid">
+                  {selectedDocuments.map((doc) => {
+                    const label =
+                      doc.fileName || doc.documentName || "Document";
+                    const link = doc.url || doc.fileUrl || doc.downloadUrl;
+
+                    return (
+                      <div
+                        key={doc.id || `${label}-${link || "nolink"}`}
+                        className="lp-incident-card"
+                      >
+                        <div className="lp-incident-header">
+                          <span className="lp-incident-type">{label}</span>
+                        </div>
+                        <div className="lp-incident-time">
+                          {link ? (
+                            <a href={link} target="_blank" rel="noreferrer">
+                              Open document
+                            </a>
+                          ) : (
+                            "No link available"
+                          )}
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+            </div>
+            <div className="lp-modal-footer">
+              <button
+                className="lp-btn-cancel"
+                onClick={() => setShowDocumentModal(false)}
+              >
+                Close
               </button>
             </div>
           </div>

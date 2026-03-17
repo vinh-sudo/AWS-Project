@@ -259,6 +259,14 @@ function App() {
             }
           />
           <Route
+            path="/leader/schedules/:scheduleId"
+            element={
+              <RoleBasedRoute allowedRoles={["LINE_LEADER"]}>
+                <LeaderProgress />
+              </RoleBasedRoute>
+            }
+          />
+          <Route
             path="/leader/task-assignment"
             element={
               <RoleBasedRoute allowedRoles={["LINE_LEADER"]}>
