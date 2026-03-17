@@ -176,14 +176,45 @@ const ManagerPlanning = () => {
     return "load-low";
   };
 
+  const plansByOrder = useMemo(() => {
+    const grouped = {};
+    (plans || []).forEach((p) => {
+      const orderId = p.orderId || p.order?.id;
+      if (!grouped[orderId]) grouped[orderId] = [];
+      grouped[orderId].push(p);
+    });
+    return grouped;
+  }, [plans]);
+
   const awaitingOrders = useMemo(() => {
-    const plannedOrderIds = new Set(
-      (plans || []).map((p) => p.orderId || p.order?.id),
-    );
-    return (orders || []).filter(
-      (o) => o.status === "Confirmed" && !plannedOrderIds.has(o.id),
-    );
-  }, [orders, plans]);
+    return (orders || []).filter((o) => {
+      const orderPlans = plansByOrder[o.id] || [];
+      const decisions = orderPlans.map((p) => (p.decision || "").toUpperCase());
+
+      const hasDraft =
+        decisions.includes("DRAFT") || decisions.includes("PENDING");
+      const hasConfirmed = decisions.includes("CONFIRMED");
+      const hasCancelled = decisions.includes("CANCELLED");
+      const status = (o.status || "").toUpperCase();
+
+      // Keep initial planning path.
+      if (!hasConfirmed && (status === "CONFIRMED" || status === "PLANNING")) {
+        return true;
+      }
+
+      // Allow managers to recreate draft plans for the same order.
+      if (hasDraft) {
+        return true;
+      }
+
+      // Backend marks order as NEW after cancel; keep it replannable when it has cancelled plans.
+      if (hasCancelled && status === "NEW") {
+        return true;
+      }
+
+      return false;
+    });
+  }, [orders, plansByOrder]);
 
   const filteredOrders = useMemo(() => {
     return awaitingOrders.filter((o) => {
@@ -196,16 +227,6 @@ const ManagerPlanning = () => {
       );
     });
   }, [awaitingOrders, searchTerm]);
-
-  const plansByOrder = useMemo(() => {
-    const grouped = {};
-    (plans || []).forEach((p) => {
-      const orderId = p.orderId || p.order?.id;
-      if (!grouped[orderId]) grouped[orderId] = [];
-      grouped[orderId].push(p);
-    });
-    return grouped;
-  }, [plans]);
 
   const filteredPlansByOrder = useMemo(() => {
     if (!filterStatus) return plansByOrder;
