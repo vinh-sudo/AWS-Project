@@ -14,7 +14,9 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.time.OffsetDateTime;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 @Service
 @RequiredArgsConstructor
@@ -27,6 +29,7 @@ public class ManagerPlanningService {
     private final ProductionPlanMapper mapper;
     private final AuditLogRepository auditRepo;
     private final ProductionFileRepository fileRepo;
+    private final OrderItemRepository orderItemRepo;
 
     private final SchedulerService schedulerService;
 
@@ -36,7 +39,8 @@ public class ManagerPlanningService {
             Account account
     ) {
 
-        planRepo.deleteByOrderIdAndDecision(request.getOrderId(), "DRAFT");
+        // Keep existing DRAFT plans so managers can add plans in multiple sessions.
+        // planRepo.deleteByOrderIdAndDecision(request.getOrderId(), "DRAFT");
 
         Order order = orderRepo.findById(request.getOrderId())
                 .orElseThrow(() -> new RuntimeException("Order not found"));
@@ -44,12 +48,27 @@ public class ManagerPlanningService {
         Employee manager = employeeRepo.findByUserId(account.getUser().getId())
                 .orElseThrow(() -> new RuntimeException("Employee not found"));
 
+        Map<Integer, OrderItem> orderItemsById = new HashMap<>();
+        for (OrderItem item : orderItemRepo.findByOrderId(order.getId())) {
+            orderItemsById.put(item.getId(), item);
+        }
+
         List<ProductionPlan> plans = new ArrayList<>();
 
         for (LinePlanRequest lineReq : request.getLines()) {
 
             ProductionLine line = lineRepo.findById(lineReq.getLineId())
                     .orElseThrow(() -> new RuntimeException("Line not found"));
+
+            if (lineReq.getOrderItemId() == null) {
+                throw new RuntimeException("orderItemId is required for each line plan");
+            }
+
+            OrderItem orderItem = orderItemsById.get(lineReq.getOrderItemId());
+            if (orderItem == null) {
+                throw new RuntimeException("Order item " + lineReq.getOrderItemId()
+                        + " does not belong to order " + order.getId());
+            }
 
             int qty = lineReq.getPlannedQty();
 
@@ -59,6 +78,7 @@ public class ManagerPlanningService {
 
             ProductionPlan plan = new ProductionPlan();
             plan.setOrder(order);
+            plan.setOrderItem(orderItem);
             plan.setLine(line);
             plan.setPlanName(request.getPlanName());
             plan.setCreatedBy(manager);
@@ -75,8 +95,11 @@ public class ManagerPlanningService {
 
         planRepo.saveAll(plans);
 
-        order.setStatus("PLANNING");
-        orderRepo.save(order);
+        // Only move to PLANNING when this order has not been scheduled yet.
+        if (!planRepo.existsByOrderIdAndDecision(order.getId(), "CONFIRMED")) {
+            order.setStatus("PLANNING");
+            orderRepo.save(order);
+        }
 
         return mapper.toResponseList(plans);
     }
@@ -97,6 +120,36 @@ public class ManagerPlanningService {
             );
         }
 
+        Order order = plans.get(0).getOrder();
+        List<OrderItem> orderItems = orderItemRepo.findByOrderId(orderId);
+
+        if (!orderItems.isEmpty()) {
+            Map<Integer, Integer> plannedPerItem = new HashMap<>();
+            for (ProductionPlan plan : plans) {
+                if (plan.getOrderItem() == null) {
+                    return ScheduleValidationResult.fail(
+                            "Plan " + plan.getId() + " is missing order item"
+                    );
+                }
+                plannedPerItem.merge(
+                        plan.getOrderItem().getId(),
+                        plan.getPlannedQuantity(),
+                        Integer::sum
+                );
+            }
+
+            for (OrderItem item : orderItems) {
+                int plannedQty = plannedPerItem.getOrDefault(item.getId(), 0);
+                if (plannedQty < item.getQuantity()) {
+                    return ScheduleValidationResult.fail(
+                            "Planned quantity for item " + item.getId()
+                                    + " (" + plannedQty + ") is less than required quantity ("
+                                    + item.getQuantity() + ")"
+                    );
+                }
+            }
+        }
+
         ScheduleValidationResult result =
                 schedulerService.validateCapacity(plans);
 
@@ -115,7 +168,6 @@ public class ManagerPlanningService {
             plan.setDecision("CONFIRMED");
         }
 
-        Order order = plans.get(0).getOrder();
         order.setStatus("SCHEDULED");
         orderRepo.save(order);
 
@@ -144,7 +196,11 @@ public class ManagerPlanningService {
         plans.forEach(p -> p.setDecision("CANCELLED"));
 
         Order order = plans.get(0).getOrder();
-        order.setStatus("NEW");
+        if (planRepo.existsByOrderIdAndDecision(orderId, "CONFIRMED")) {
+            order.setStatus("SCHEDULED");
+        } else {
+            order.setStatus("NEW");
+        }
         orderRepo.save(order);
 
         AuditLog log = new AuditLog();

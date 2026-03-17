@@ -24,10 +24,10 @@ spring:
       ssl:
         enabled: true
   mail:
-    host: smtp.gmail.com
+    host: email-smtp.ap-southeast-1.amazonaws.com
     port: 587
-    username: ims.internal.system@gmail.com
-    password: dtsg mmii gsrb wcny
+    username: ${SES_SMTP_USERNAME}
+    password: ${SES_SMTP_PASSWORD}
     properties:
       mail:
         smtp:
@@ -36,8 +36,8 @@ spring:
             enable: true
 
 aws:
-  access-key: AKIAZJIX3IDXPSHJWQ3B
-  secret-key: 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
+  access-key: AKIAZJIX3IDXPSHJWQ3B # TODO: chuyen sang ENV, khong de secret trong file
+  secret-key: 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 # TODO: chuyen sang ENV
   region: ap-southeast-1
   bucket-name: ims-stores
 
@@ -45,6 +45,7 @@ jwt:
   secret: myVeryVeryVeryVeryVeryVerySecretKey1234567890
   expiration: 1800000
   refresh-expiration: 14400000
+
 ai:
   provider: openai
   openai:
@@ -58,3 +59,7 @@ logging:
   level:
     org.springframework.security: DEBUG
     org.springframework.web: INFO
+
+app:
+  mail:
+    from: no-reply@your-domain.com # Thay bang email da verify tren SES

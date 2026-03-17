@@ -2,6 +2,7 @@ package be.backend.service.utilities;
 
 import jakarta.mail.internet.MimeMessage;
 import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.mail.javamail.MimeMessageHelper;
 import org.springframework.stereotype.Service;
@@ -14,6 +15,9 @@ public class EmailService {
 
     private final JavaMailSender mailSender;
     private final SpringTemplateEngine templateEngine;
+
+    @Value("${app.mail.from}")
+    private String fromAddress;
 
     public void sendOtpEmail(String to, String otp) {
         try {
@@ -28,7 +32,7 @@ public class EmailService {
             helper.setTo(to);
             helper.setSubject("Your OTP Code");
             helper.setText(html, true);
-            helper.setFrom("ims.internal.system@gmail.com");
+            helper.setFrom(fromAddress);
 
             mailSender.send(message);
         } catch (Exception e) {
@@ -36,4 +40,3 @@ public class EmailService {
         }
     }
 }
-
