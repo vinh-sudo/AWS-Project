@@ -138,27 +138,6 @@
   z-index: 2;
 }
 
-.dash-refresh-btn {
-  width: 42px;
-  height: 42px;
-  border: 1px solid rgba(255, 255, 255, 0.2);
-  background: rgba(255, 255, 255, 0.12);
-  backdrop-filter: blur(10px);
-  border-radius: 12px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  cursor: pointer;
-  color: #fff;
-  transition: all 0.25s ease;
-}
-
-.dash-refresh-btn:hover {
-  background: rgba(255, 255, 255, 0.22);
-  transform: rotate(90deg);
-  border-color: rgba(255, 255, 255, 0.35);
-}
-
 /* === Content Area === */
 .dash-content {
   padding: 28px 36px 48px;
@@ -203,18 +182,18 @@
 }
 
 /* ============================================
-   STAT CARDS – Gradient Glass
+   STAT CARDS – Compact Version (50% size)
    ============================================ */
 .dash-stats {
   display: grid;
   grid-template-columns: repeat(4, 1fr);
-  gap: 20px;
+  gap: 12px;
 }
 
 .dash-stat-card {
   background: var(--dash-surface);
   border-radius: var(--dash-radius-lg);
-  padding: 24px 24px 20px;
+  padding: 14px 12px 10px;
   box-shadow: var(--dash-shadow);
   border: 1px solid var(--dash-border-light);
   transition: all var(--dash-transition);
@@ -293,21 +272,24 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  margin-bottom: 20px;
+  margin-bottom: 10px;
+  gap: 8px;
 }
 
 .dash-stat-icon {
-  width: 50px;
-  height: 50px;
-  border-radius: 14px;
+  width: 36px;
+  height: 36px;
+  border-radius: 10px;
   display: flex;
   align-items: center;
   justify-content: center;
   transition: transform 0.3s ease;
+  flex-shrink: 0;
+  font-size: 16px;
 }
 
 .dash-stat-card:hover .dash-stat-icon {
-  transform: scale(1.08);
+  transform: scale(1.06);
 }
 
 .dash-icon-users {
@@ -335,11 +317,12 @@
 }
 
 .dash-stat-badge {
-  font-size: 11px;
+  font-size: 10px;
   font-weight: 600;
-  padding: 5px 10px;
-  border-radius: 20px;
+  padding: 3px 8px;
+  border-radius: 16px;
   letter-spacing: 0.02em;
+  white-space: nowrap;
 }
 
 .dash-badge-blue {
@@ -363,33 +346,33 @@
 }
 
 .dash-stat-value {
-  font-size: 34px;
+  font-size: 22px;
   font-weight: 800;
   color: var(--dash-text-primary);
   line-height: 1;
   letter-spacing: -0.04em;
-  margin-bottom: 6px;
+  margin-bottom: 3px;
 }
 
 .dash-stat-total {
-  font-size: 18px;
+  font-size: 12px;
   font-weight: 500;
   color: var(--dash-text-muted);
-  margin-left: 2px;
+  margin-left: 1px;
 }
 
 .dash-stat-label {
-  font-size: 13px;
+  font-size: 11px;
   color: var(--dash-text-muted);
   font-weight: 500;
-  margin-bottom: 18px;
+  margin-bottom: 8px;
   letter-spacing: 0.01em;
 }
 
 .dash-stat-bar {
-  height: 6px;
+  height: 4px;
   background: #f1f5f9;
-  border-radius: 10px;
+  border-radius: 8px;
   overflow: hidden;
 }
 
@@ -398,17 +381,6 @@
   border-radius: 10px;
   transition: width 1.2s cubic-bezier(0.4, 0, 0.2, 1);
   position: relative;
-}
-
-.dash-stat-bar-fill::after {
-  content: '';
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.3), transparent);
-  animation: barShimmer 2s infinite;
 }
 
 @keyframes barShimmer {
