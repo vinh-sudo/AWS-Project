@@ -10,6 +10,7 @@ public class ProductionPlanResponse {
 
     private Integer planId;
     private Integer orderId;
+    private Integer orderItemId;
     private String planName;
     private Integer lineId;
     private String lineName;
@@ -24,4 +25,3 @@ public class ProductionPlanResponse {
     private String decision;
     private String note;
 }
-

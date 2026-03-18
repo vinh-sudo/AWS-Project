@@ -3,9 +3,7 @@ package be.backend.controller.leader;
 import be.backend.entity.Account;
 import be.backend.model.request.ReportIncidentRequest;
 import be.backend.model.request.SubmitReportRequest;
-import be.backend.model.request.UpdateProgressRequest;
 import be.backend.model.response.LeaderDashboardResponse;
-import be.backend.model.response.ProgressResponse;
 import be.backend.model.response.ReportResponse;
 import be.backend.model.response.ScheduleSummaryResponse;
 import be.backend.service.leader.LeaderDashboardService;
@@ -59,21 +57,6 @@ public class LeaderController {
         return ResponseEntity.ok(dashboardService.getMySchedules(account));
     }
 
-    /**
-     * Cập nhật tiến độ schedule
-     * 
-     * WHY @Valid?
-     * → Trigger Bean Validation trên UpdateProgressRequest
-     * → @NotNull, @DecimalMin, @DecimalMax được Spring tự kiểm tra
-     * → Nếu fail → MethodArgumentNotValidException → GlobalExceptionHandler bắt
-     * → Controller KHÔNG cần if/else validate → Clean Code
-     */
-    @PutMapping("/progress")
-    public ResponseEntity<ProgressResponse> updateProgress(
-            @AuthenticationPrincipal Account account,
-            @Valid @RequestBody UpdateProgressRequest request) {
-        return ResponseEntity.ok(progressService.updateProgress(account, request));
-    }
 
     /**
      * Submit báo cáo cuối ca

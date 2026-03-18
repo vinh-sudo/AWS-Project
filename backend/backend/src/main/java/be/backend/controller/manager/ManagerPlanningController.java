@@ -5,6 +5,7 @@ import be.backend.model.request.ProductionPlanRequest;
 import be.backend.model.response.ProductionPlanResponse;
 import be.backend.model.response.ScheduleValidationResult;
 import be.backend.service.manager.ManagerPlanningService;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -22,7 +23,7 @@ public class ManagerPlanningController {
     private final ManagerPlanningService planningService;
     @PostMapping("/create")
     public ResponseEntity<List<ProductionPlanResponse>> createPlan(
-            @RequestBody ProductionPlanRequest request,
+            @Valid @RequestBody ProductionPlanRequest request,
             @AuthenticationPrincipal Account account
     ) {
         return ResponseEntity.ok(

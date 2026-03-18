@@ -5,6 +5,7 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
+import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.List;
 
@@ -22,6 +23,8 @@ public class ScheduleSummaryResponse {
     private String status;
     private LocalDateTime startTime;
     private LocalDateTime endTime;
+    private BigDecimal percentage;
+    private BigDecimal orderCompletionPercentage;
     // Danh sách tài liệu (POM/SOP) gắn với Order của schedule
     private List<ProductionFileResponse> documents;
 }

@@ -26,6 +26,10 @@ public interface OrderRepository extends JpaRepository<Order, Integer> {
            "WHERE o.id = :id")
     Optional<Order> findByIdWithDetails(@Param("id") Integer id);
 
+    @org.springframework.data.jpa.repository.Lock(jakarta.persistence.LockModeType.PESSIMISTIC_WRITE)
+    @Query("SELECT o FROM Order o WHERE o.id = :id")
+    Optional<Order> findByIdForUpdate(@Param("id") Integer id);
+
     // ==================== INDEX-BASED QUERIES ====================
 
     // idx_orders_status

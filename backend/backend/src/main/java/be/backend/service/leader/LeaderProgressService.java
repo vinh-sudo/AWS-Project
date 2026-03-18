@@ -17,6 +17,8 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.time.LocalDate;
 import java.time.OffsetDateTime;
 import java.util.List;
@@ -65,8 +67,7 @@ public class LeaderProgressService {
                                                 "ProductionSchedule", request.getScheduleId().toString()));
 
                 if (!schedule.getPlan().getLine().getId().equals(leaderLineId)) {
-                        throw new ForbiddenException(
-                                        "Schedule does not belong to your line");
+                        throw new ForbiddenException("Schedule does not belong to your line");
                 }
 
                 // 3. Business rule: chỉ schedule RUNNING mới update được
@@ -76,31 +77,7 @@ public class LeaderProgressService {
                                                         + schedule.getStatus());
                 }
 
-                // 4. Append new progress record
-                ProductionProgress progress = new ProductionProgress();
-                progress.setSchedule(schedule);
-                progress.setPercentage(request.getPercentage());
-                progress.setStatus("In Progress");
-
-                // 5. Auto-complete nếu 100%
-                if (request.getPercentage().intValue() >= 100) {
-                        progress.setStatus("Completed");
-                        schedule.setStatus("COMPLETED");
-                        scheduleRepo.save(schedule);
-
-                        tryCompleteOrder(schedule.getOrder());
-                }
-
-                progressRepo.save(progress);
-
-                return ProgressResponse.builder()
-                                .scheduleId(schedule.getId())
-                                .percentage(request.getPercentage())
-                                .scheduleStatus(schedule.getStatus())
-                                .message(progress.getStatus().equals("Completed")
-                                                ? "Schedule completed!"
-                                                : "Progress updated to " + request.getPercentage() + "%")
-                                .build();
+                return refreshProgressFromReports(schedule);
         }
 
         /**
@@ -132,8 +109,18 @@ public class LeaderProgressService {
                 Employee employee = account.getEmployee();
 
                 // 2. Duplicate check
-                boolean exists = reportRepo.existsByEmployeeIdAndLineIdAndWorkDateAndShift(
-                                employee.getId(), line.getId(), LocalDate.now(), request.getShift());
+                ProductionSchedule schedule = scheduleRepo.findById(request.getScheduleId())
+                                .orElseThrow(() -> new ResourceNotFoundException("Schedule", request.getScheduleId().toString()));
+
+                if (!schedule.getPlan().getLine().getId().equals(line.getId())) {
+                        throw new ForbiddenException("Schedule does not belong to your line");
+                }
+
+                Order order = schedule.getOrder();
+
+                // Duplicate check by schedule/day/shift.
+                boolean exists = reportRepo.existsByEmployeeIdAndLineIdAndScheduleIdAndWorkDateAndShift(
+                                employee.getId(), line.getId(), schedule.getId(), LocalDate.now(), request.getShift());
 
                 if (exists) {
                         throw new BusinessException(
@@ -144,6 +131,8 @@ public class LeaderProgressService {
                 Report report = new Report();
                 report.setEmployee(employee);
                 report.setLine(line);
+                report.setSchedule(schedule);
+                report.setOrder(order);
                 report.setWorkDate(LocalDate.now());
                 report.setShift(request.getShift());
                 report.setTargetQuantity(request.getTargetQuantity());
@@ -155,8 +144,12 @@ public class LeaderProgressService {
 
                 reportRepo.save(report);
 
+                ProgressResponse latestProgress = refreshProgressFromReports(schedule);
+
                 return ReportResponse.builder()
                                 .reportId(report.getId())
+                                .scheduleId(schedule.getId())
+                                .orderId(order.getId())
                                 .lineId(line.getId())
                                 .lineName(line.getLineName())
                                 .workDate(report.getWorkDate())
@@ -164,6 +157,8 @@ public class LeaderProgressService {
                                 .goodQuantity(report.getGoodQuantity())
                                 .rejectQuantity(report.getRejectQuantity())
                                 .targetQuantity(report.getTargetQuantity())
+                                .scheduleCompletionPercentage(latestProgress.getPercentage())
+                                .orderCompletionPercentage(latestProgress.getOrderCompletionPercentage())
                                 .message("Report submitted successfully")
                                 .build();
         }
@@ -252,21 +247,79 @@ public class LeaderProgressService {
                                 .status(schedule.getStatus())
                                 .startTime(schedule.getStartTime().toLocalDateTime())
                                 .endTime(schedule.getEndTime().toLocalDateTime())
+                                .percentage(calculateSchedulePercentage(schedule))
+                                .orderCompletionPercentage(calculateOrderCompletionPercentage(order))
                                 .documents(documentResponses)
                                 .build();
         }
 
-        private void tryCompleteOrder(Order order) {
-                // Chỉ order đang "In Production" mới cần check
-                if (!"In Production".equals(order.getStatus())) {
+        private BigDecimal calculateSchedulePercentage(ProductionSchedule schedule) {
+                Integer plannedQty = schedule.getPlan().getPlannedQuantity();
+                if (plannedQty == null || plannedQty <= 0) {
+                        return BigDecimal.ZERO;
+                }
+
+                Long producedQtyRaw = reportRepo.sumGoodQuantityByScheduleId(schedule.getId());
+                long producedQty = producedQtyRaw == null ? 0L : producedQtyRaw;
+
+                BigDecimal percentage = BigDecimal.valueOf(producedQty)
+                                .multiply(BigDecimal.valueOf(100))
+                                .divide(BigDecimal.valueOf(plannedQty), 2, RoundingMode.HALF_UP);
+
+                return percentage.min(BigDecimal.valueOf(100));
+        }
+
+        private BigDecimal calculateOrderCompletionPercentage(Order order) {
+                Integer orderQty = order.getQuantity();
+                if (orderQty == null || orderQty <= 0) {
+                        return BigDecimal.ZERO;
+                }
+
+                Long producedQtyRaw = reportRepo.sumGoodQuantityByOrderId(order.getId());
+                long producedQty = producedQtyRaw == null ? 0L : producedQtyRaw;
+
+                BigDecimal percentage = BigDecimal.valueOf(producedQty)
+                                .multiply(BigDecimal.valueOf(100))
+                                .divide(BigDecimal.valueOf(orderQty), 2, RoundingMode.HALF_UP);
+
+                return percentage.min(BigDecimal.valueOf(100));
+        }
+
+        private ProgressResponse refreshProgressFromReports(ProductionSchedule schedule) {
+                BigDecimal schedulePercentage = calculateSchedulePercentage(schedule);
+                BigDecimal orderPercentage = calculateOrderCompletionPercentage(schedule.getOrder());
+
+                ProductionProgress progress = new ProductionProgress();
+                progress.setSchedule(schedule);
+                progress.setPercentage(schedulePercentage);
+                progress.setStatus("IN_PROGRESS");
+
+                if (schedulePercentage.compareTo(BigDecimal.valueOf(100)) >= 0) {
+                        progress.setStatus("COMPLETED");
+                        schedule.setStatus("COMPLETED");
+                        scheduleRepo.save(schedule);
+                }
+
+                progressRepo.save(progress);
+                tryCompleteOrder(schedule.getOrder(), orderPercentage);
+
+                return ProgressResponse.builder()
+                                .scheduleId(schedule.getId())
+                                .percentage(schedulePercentage)
+                                .orderCompletionPercentage(orderPercentage)
+                                .scheduleStatus(schedule.getStatus())
+                                .message("COMPLETED".equals(progress.getStatus())
+                                                ? "Schedule completed!"
+                                                : "Progress auto-updated to " + schedulePercentage + "%")
+                                .build();
+        }
+
+        private void tryCompleteOrder(Order order, BigDecimal orderPercentage) {
+                if ("COMPLETED".equalsIgnoreCase(order.getStatus())) {
                         return;
                 }
 
-                // Đếm schedule CHƯA COMPLETED của order này
-                long pendingCount = scheduleRepo.countByOrderIdAndStatusNot(
-                                order.getId(), "COMPLETED");
-
-                if (pendingCount == 0) {
+                if (orderPercentage.compareTo(BigDecimal.valueOf(100)) >= 0) {
                         order.setStatus("Completed");
                         order.setUpdatedAt(OffsetDateTime.now());
                         orderRepo.save(order);
