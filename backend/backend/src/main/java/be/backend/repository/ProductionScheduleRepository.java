@@ -86,5 +86,7 @@ public interface ProductionScheduleRepository extends JpaRepository<ProductionSc
         List<ProductionSchedule> findActiveByLineId(
                         @Param("lineId") Integer lineId);
 
+        List<ProductionSchedule> findByOrderId(Integer orderId);
+
         long countByOrderIdAndStatusNot(Integer orderId, String status);
 }

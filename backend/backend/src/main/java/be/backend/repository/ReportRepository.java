@@ -80,6 +80,21 @@ public interface ReportRepository extends JpaRepository<Report, Integer> {
             LocalDate workDate, String shift);
 
     /**
+     * Check trùng report (leader + line + order + ngày + ca)
+     * Tránh submit trùng
+     */
+    boolean existsByEmployeeIdAndLineIdAndScheduleIdAndWorkDateAndShift(
+            Integer employeeId, Integer lineId, Integer scheduleId,
+            LocalDate workDate, String shift);
+
+    @Query("""
+            select coalesce(sum(r.goodQuantity), 0)
+            from Report r
+            where r.schedule.id = :scheduleId
+            """)
+    Long sumGoodQuantityByScheduleId(@Param("scheduleId") Integer scheduleId);
+
+    /**
      * Tổng sản lượng hôm nay của 1 line
      * Dùng cho dashboard
      */

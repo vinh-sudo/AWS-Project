@@ -14,15 +14,15 @@ import be.backend.repository.IncidentLogRepository;
 import be.backend.repository.LineLeaderAssignmentRepository;
 import be.backend.repository.ProductionScheduleRepository;
 import be.backend.repository.ReportRepository;
-import lombok.RequiredArgsConstructor;
-import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
 import java.util.stream.Collectors;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.time.LocalDate;
 import java.time.OffsetDateTime;
 import java.util.List;
+import lombok.RequiredArgsConstructor;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 @Service
 @RequiredArgsConstructor
@@ -123,9 +123,26 @@ public class LeaderDashboardService {
                             .status(s.getStatus())
                             .startTime(s.getStartTime().toLocalDateTime())
                             .endTime(s.getEndTime().toLocalDateTime())
+                            .percentage(calculateSchedulePercentage(s))
                             .build();
                 })
                 .toList();
+    }
+
+    private BigDecimal calculateSchedulePercentage(ProductionSchedule schedule) {
+        Integer plannedQty = schedule.getPlan().getPlannedQuantity();
+        if (plannedQty == null || plannedQty <= 0) {
+            return BigDecimal.ZERO;
+        }
+
+        Long producedQtyRaw = reportRepo.sumGoodQuantityByScheduleId(schedule.getId());
+        long producedQty = producedQtyRaw == null ? 0L : producedQtyRaw;
+
+        BigDecimal percentage = BigDecimal.valueOf(producedQty)
+                .multiply(BigDecimal.valueOf(100))
+                .divide(BigDecimal.valueOf(plannedQty), 2, RoundingMode.HALF_UP);
+
+        return percentage.min(BigDecimal.valueOf(100));
     }
 
     /**

@@ -6,6 +6,9 @@ import lombok.Data;
 @Data
 public class SubmitReportRequest {
 
+    @NotNull(message = "Schedule ID is required")
+    private Integer scheduleId;
+
     @NotBlank(message = "Shift is required")
     @Pattern(regexp = "MORNING|AFTERNOON|NIGHT",
              message = "Shift must be MORNING, AFTERNOON, or NIGHT")

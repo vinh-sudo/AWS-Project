@@ -8,6 +8,7 @@ import java.time.LocalDate;
 @Builder
 public class ReportResponse {
     private Integer reportId;
+    private Integer orderId;
     private Integer lineId;
     private String lineName;
     private LocalDate workDate;
@@ -16,4 +17,5 @@ public class ReportResponse {
     private Integer rejectQuantity;
     private Integer targetQuantity;
     private String message;
+    private Integer scheduleId;
 }

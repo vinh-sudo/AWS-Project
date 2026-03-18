@@ -14,7 +14,10 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.time.OffsetDateTime;
 import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 
 @Service
 @RequiredArgsConstructor
@@ -27,6 +30,7 @@ public class ManagerPlanningService {
     private final ProductionPlanMapper mapper;
     private final AuditLogRepository auditRepo;
     private final ProductionFileRepository fileRepo;
+    private final OrderItemRepository orderItemRepo;
 
     private final SchedulerService schedulerService;
 
@@ -36,7 +40,8 @@ public class ManagerPlanningService {
             Account account
     ) {
 
-        planRepo.deleteByOrderIdAndDecision(request.getOrderId(), "DRAFT");
+        // Keep existing DRAFT plans so managers can add plans in multiple sessions.
+        // planRepo.deleteByOrderIdAndDecision(request.getOrderId(), "DRAFT");
 
         Order order = orderRepo.findById(request.getOrderId())
                 .orElseThrow(() -> new RuntimeException("Order not found"));
@@ -44,12 +49,27 @@ public class ManagerPlanningService {
         Employee manager = employeeRepo.findByUserId(account.getUser().getId())
                 .orElseThrow(() -> new RuntimeException("Employee not found"));
 
+        Map<Integer, OrderItem> orderItemsById = new HashMap<>();
+        for (OrderItem item : orderItemRepo.findByOrderId(order.getId())) {
+            orderItemsById.put(item.getId(), item);
+        }
+
         List<ProductionPlan> plans = new ArrayList<>();
 
         for (LinePlanRequest lineReq : request.getLines()) {
 
             ProductionLine line = lineRepo.findById(lineReq.getLineId())
                     .orElseThrow(() -> new RuntimeException("Line not found"));
+
+            if (lineReq.getOrderItemId() == null) {
+                throw new RuntimeException("orderItemId is required for each line plan");
+            }
+
+            OrderItem orderItem = orderItemsById.get(lineReq.getOrderItemId());
+            if (orderItem == null) {
+                throw new RuntimeException("Order item " + lineReq.getOrderItemId()
+                        + " does not belong to order " + order.getId());
+            }
 
             int qty = lineReq.getPlannedQty();
 
@@ -59,6 +79,7 @@ public class ManagerPlanningService {
 
             ProductionPlan plan = new ProductionPlan();
             plan.setOrder(order);
+            plan.setOrderItem(orderItem);
             plan.setLine(line);
             plan.setPlanName(request.getPlanName());
             plan.setCreatedBy(manager);
@@ -75,8 +96,11 @@ public class ManagerPlanningService {
 
         planRepo.saveAll(plans);
 
-        order.setStatus("PLANNING");
-        orderRepo.save(order);
+        // Only move to PLANNING when this order has not been scheduled yet.
+        if (!planRepo.existsByOrderIdAndDecision(order.getId(), "CONFIRMED")) {
+            order.setStatus("PLANNING");
+            orderRepo.save(order);
+        }
 
         return mapper.toResponseList(plans);
     }
@@ -85,10 +109,10 @@ public class ManagerPlanningService {
     @Transactional
     public ScheduleValidationResult confirm(Integer orderId, Account account) {
 
-        List<ProductionPlan> plans =
+        List<ProductionPlan> draftPlans =
                 planRepo.findByOrderIdAndDecision(orderId, "DRAFT");
 
-        if (plans.isEmpty()) {
+        if (draftPlans.isEmpty()) {
             return ScheduleValidationResult.fail("No draft plan");
         }
         if (!fileRepo.existsByOrderId(orderId)) {
@@ -97,36 +121,120 @@ public class ManagerPlanningService {
             );
         }
 
-        ScheduleValidationResult result =
-                schedulerService.validateCapacity(plans);
-
-        if (!result.isOk()) {
-            AuditLog log = new AuditLog();
-            log.setUser(account.getUser());
-            log.setActionType(ActionType.CONFIRM_PLAN);
-            log.setEntity("Order");
-            log.setDetails("FAILED: " + result.getMessage());
-            auditRepo.save(log);
-            return result;
+        Order order = draftPlans.get(0).getOrder();
+        List<OrderItem> orderItems = orderItemRepo.findByOrderId(orderId);
+        Map<Integer, OrderItem> orderItemsById = new HashMap<>();
+        for (OrderItem item : orderItems) {
+            orderItemsById.put(item.getId(), item);
         }
 
-        for (ProductionPlan plan : plans) {
-            schedulerService.createSchedules(plan);
-            plan.setDecision("CONFIRMED");
+        // Include already confirmed plans so full/partial status is calculated across multiple confirm batches.
+        List<ProductionPlan> confirmedPlans = planRepo.findByOrderIdAndDecision(orderId, "CONFIRMED");
+        Map<Integer, Integer> confirmedQtyByItem = sumPlannedQtyByItem(confirmedPlans);
+
+        Map<Integer, List<ProductionPlan>> draftPlansByItem = new LinkedHashMap<>();
+        for (ProductionPlan plan : draftPlans) {
+            if (plan.getOrderItem() == null) {
+                return ScheduleValidationResult.fail("Plan " + plan.getId() + " is missing order item");
+            }
+            draftPlansByItem.computeIfAbsent(plan.getOrderItem().getId(), key -> new ArrayList<>()).add(plan);
         }
 
-        Order order = plans.get(0).getOrder();
-        order.setStatus("SCHEDULED");
+        List<Integer> confirmedItems = new ArrayList<>();
+        Map<Integer, String> failedItems = new LinkedHashMap<>();
+
+        for (Map.Entry<Integer, List<ProductionPlan>> entry : draftPlansByItem.entrySet()) {
+            Integer orderItemId = entry.getKey();
+            List<ProductionPlan> itemPlans = entry.getValue();
+
+            OrderItem orderItem = orderItemsById.get(orderItemId);
+            if (orderItem == null) {
+                failedItems.put(orderItemId, "Order item does not belong to order " + orderId);
+                continue;
+            }
+
+            int requiredQty = orderItem.getQuantity();
+            int alreadyConfirmedQty = confirmedQtyByItem.getOrDefault(orderItemId, 0);
+            int draftQty = itemPlans.stream().mapToInt(ProductionPlan::getPlannedQuantity).sum();
+
+            if (alreadyConfirmedQty >= requiredQty) {
+                failedItems.put(orderItemId, "Item already fully confirmed");
+                continue;
+            }
+
+            int remainingQty = requiredQty - alreadyConfirmedQty;
+            if (draftQty > remainingQty) {
+                failedItems.put(
+                        orderItemId,
+                        "Draft qty (" + draftQty + ") exceeds remaining required qty (" + remainingQty + ")"
+                );
+                continue;
+            }
+
+            ScheduleValidationResult capacity = schedulerService.validateCapacity(itemPlans);
+            if (!capacity.isOk()) {
+                failedItems.put(orderItemId, capacity.getMessage());
+                continue;
+            }
+
+            for (ProductionPlan plan : itemPlans) {
+                schedulerService.createSchedules(plan);
+                plan.setDecision("CONFIRMED");
+            }
+
+            confirmedItems.add(orderItemId);
+            confirmedQtyByItem.merge(orderItemId, draftQty, Integer::sum);
+        }
+
+        String nextOrderStatus = isOrderFullyConfirmed(orderItems, confirmedQtyByItem)
+                ? "SCHEDULED"
+                : "PLANNING";
+        order.setStatus(nextOrderStatus);
         orderRepo.save(order);
+
+        ScheduleValidationResult response;
+        if (confirmedItems.isEmpty()) {
+            response = ScheduleValidationResult.fail("No order item was confirmed");
+        } else {
+            String message = failedItems.isEmpty()
+                    ? "All draft items confirmed"
+                    : "Partial confirm: " + confirmedItems.size() + " item(s) confirmed";
+            response = ScheduleValidationResult.success(message);
+        }
+
+        response.setOrderStatus(nextOrderStatus);
+        response.setConfirmedOrderItemIds(confirmedItems);
+        response.setFailedOrderItems(failedItems);
 
         AuditLog log = new AuditLog();
         log.setUser(account.getUser());
         log.setActionType(ActionType.CONFIRM_PLAN);
         log.setEntity("Order");
-        log.setDetails("Order " + orderId + " scheduled");
+        log.setDetails("Order " + orderId + ": " + response.getMessage());
         auditRepo.save(log);
 
-        return ScheduleValidationResult.success();
+        return response;
+    }
+
+    private Map<Integer, Integer> sumPlannedQtyByItem(List<ProductionPlan> plans) {
+        Map<Integer, Integer> qtyByItem = new HashMap<>();
+        for (ProductionPlan plan : plans) {
+            if (plan.getOrderItem() == null) {
+                continue;
+            }
+            qtyByItem.merge(plan.getOrderItem().getId(), plan.getPlannedQuantity(), Integer::sum);
+        }
+        return qtyByItem;
+    }
+
+    private boolean isOrderFullyConfirmed(List<OrderItem> orderItems, Map<Integer, Integer> confirmedQtyByItem) {
+        for (OrderItem item : orderItems) {
+            int confirmedQty = confirmedQtyByItem.getOrDefault(item.getId(), 0);
+            if (confirmedQty < item.getQuantity()) {
+                return false;
+            }
+        }
+        return true;
     }
 
 
@@ -144,7 +252,11 @@ public class ManagerPlanningService {
         plans.forEach(p -> p.setDecision("CANCELLED"));
 
         Order order = plans.get(0).getOrder();
-        order.setStatus("NEW");
+        if (planRepo.existsByOrderIdAndDecision(orderId, "CONFIRMED")) {
+            order.setStatus("SCHEDULED");
+        } else {
+            order.setStatus("NEW");
+        }
         orderRepo.save(order);
 
         AuditLog log = new AuditLog();
