@@ -94,6 +94,13 @@ public interface ReportRepository extends JpaRepository<Report, Integer> {
             """)
     Long sumGoodQuantityByScheduleId(@Param("scheduleId") Integer scheduleId);
 
+    @Query("""
+            select coalesce(sum(r.goodQuantity), 0)
+            from Report r
+            where r.order.id = :orderId
+            """)
+    Long sumGoodQuantityByOrderId(@Param("orderId") Integer orderId);
+
     /**
      * Tổng sản lượng hôm nay của 1 line
      * Dùng cho dashboard

@@ -10,7 +10,9 @@ import org.springframework.stereotype.Service;
 import java.time.OffsetDateTime;
 import java.time.ZoneOffset;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 @Service
 @RequiredArgsConstructor
@@ -23,6 +25,8 @@ public class SchedulerService {
 
     // ============== VALIDATE ==============
     public ScheduleValidationResult validateCapacity(List<ProductionPlan> plans) {
+
+        Map<String, Double> reservedHoursByWindow = new HashMap<>();
 
         for (ProductionPlan plan : plans) {
 
@@ -52,13 +56,15 @@ public class SchedulerService {
                 if (incidentRepo.hasBlockingIncident(
                         plan.getLine().getId().longValue(),
                         m.getId().longValue(),
-                        start, end))
+                        start, end)) {
                     continue;
+                }
 
                 // 4. Busy
                 if (scheduleRepo.existsOverlappingMachineForUpdate(
-                        m.getId().longValue(), start, end))
+                        m.getId().longValue(), start, end)) {
                     continue;
+                }
 
                 // 5. Capacity in hours
                 double hours = plan.getLine().getShiftHours()
@@ -67,17 +73,23 @@ public class SchedulerService {
                 totalHours += hours;
             }
 
-            if (totalHours < plan.getEstimatedHours()) {
+            String windowKey = buildWindowKey(plan.getLine().getId(), start, end);
+            double alreadyReserved = reservedHoursByWindow.getOrDefault(windowKey, 0.0);
+            double remainingHours = totalHours - alreadyReserved;
+
+            if (remainingHours < plan.getEstimatedHours()) {
                 return ScheduleValidationResult.fail(
                         "Not enough machine hours on line " + plan.getLine().getLineName());
             }
+
+            reservedHoursByWindow.put(windowKey, alreadyReserved + plan.getEstimatedHours());
         }
         return ScheduleValidationResult.success();
     }
 
     // ============== CREATE SCHEDULE ==============
     @Transactional
-    public List<ProductionSchedule> createSchedules(ProductionPlan plan) {
+    public ScheduleCreationResult createSchedules(ProductionPlan plan) {
 
         var start = plan.getPlannedStartDate().atStartOfDay().atOffset(ZoneOffset.of("+07"));
         var end = plan.getPlannedEndDate().atStartOfDay().atOffset(ZoneOffset.of("+07"));
@@ -88,33 +100,63 @@ public class SchedulerService {
 
         List<Machine> machines = machineRepo.findByLineIdAndStatus(plan.getLine().getId(), "ACTIVE");
 
-        List<ProductionSchedule> result = new ArrayList<>();
+        // Build allocation plan first so we never persist partial schedules for a plan.
+        List<MachineAllocation> allocations = new ArrayList<>();
 
         for (Machine m : machines) {
-            if (remaining <= 0)
+            if (remaining <= 0) {
                 break;
+            }
 
             if (scheduleRepo.existsOverlappingMachineForUpdate(
-                    m.getId().longValue(), start, end))
+                    m.getId().longValue(), start, end)) {
                 continue;
+            }
 
             double available = shift * eff;
             double assigned = Math.min(available, remaining);
             double realHours = assigned / eff;
 
-            ProductionSchedule s = new ProductionSchedule();
-            s.setOrder(plan.getOrder());
-            s.setPlan(plan);
-            s.setMachine(m);
-            s.setStartTime(start);
-            s.setEndTime(start.plusHours((long) Math.ceil(realHours)));
-            s.setStatus("SCHEDULED");
-
-            result.add(scheduleRepo.save(s));
+            allocations.add(new MachineAllocation(m, realHours, assigned));
             remaining -= assigned;
         }
 
-        return result;
+        if (remaining > 0) {
+            return ScheduleCreationResult.fail(
+                    "Could not allocate enough machine hours for plan " + plan.getId());
+        }
+
+        List<ProductionSchedule> result = new ArrayList<>();
+        for (MachineAllocation allocation : allocations) {
+            ProductionSchedule s = new ProductionSchedule();
+            s.setOrder(plan.getOrder());
+            s.setPlan(plan);
+            s.setMachine(allocation.machine());
+            s.setStartTime(start);
+            s.setEndTime(start.plusHours((long) Math.ceil(allocation.realHours())));
+            s.setStatus("SCHEDULED");
+
+            result.add(scheduleRepo.save(s));
+        }
+
+        return ScheduleCreationResult.success(result);
+    }
+
+    private String buildWindowKey(Integer lineId, OffsetDateTime start, OffsetDateTime end) {
+        return lineId + "|" + start.toString() + "|" + end.toString();
+    }
+
+    private record MachineAllocation(Machine machine, double realHours, double assignedHours) {
+    }
+
+    public record ScheduleCreationResult(boolean ok, String message, List<ProductionSchedule> schedules) {
+        public static ScheduleCreationResult success(List<ProductionSchedule> schedules) {
+            return new ScheduleCreationResult(true, "OK", schedules);
+        }
+
+        public static ScheduleCreationResult fail(String message) {
+            return new ScheduleCreationResult(false, message, List.of());
+        }
     }
 
     @Transactional

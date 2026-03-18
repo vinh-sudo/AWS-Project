@@ -124,6 +124,7 @@ public class LeaderDashboardService {
                             .startTime(s.getStartTime().toLocalDateTime())
                             .endTime(s.getEndTime().toLocalDateTime())
                             .percentage(calculateSchedulePercentage(s))
+                            .orderCompletionPercentage(calculateOrderCompletionPercentage(s))
                             .build();
                 })
                 .toList();
@@ -141,6 +142,22 @@ public class LeaderDashboardService {
         BigDecimal percentage = BigDecimal.valueOf(producedQty)
                 .multiply(BigDecimal.valueOf(100))
                 .divide(BigDecimal.valueOf(plannedQty), 2, RoundingMode.HALF_UP);
+
+        return percentage.min(BigDecimal.valueOf(100));
+    }
+
+    private BigDecimal calculateOrderCompletionPercentage(ProductionSchedule schedule) {
+        Integer orderQuantity = schedule.getOrder().getQuantity();
+        if (orderQuantity == null || orderQuantity <= 0) {
+            return BigDecimal.ZERO;
+        }
+
+        Long producedQtyRaw = reportRepo.sumGoodQuantityByOrderId(schedule.getOrder().getId());
+        long producedQty = producedQtyRaw == null ? 0L : producedQtyRaw;
+
+        BigDecimal percentage = BigDecimal.valueOf(producedQty)
+                .multiply(BigDecimal.valueOf(100))
+                .divide(BigDecimal.valueOf(orderQuantity), 2, RoundingMode.HALF_UP);
 
         return percentage.min(BigDecimal.valueOf(100));
     }

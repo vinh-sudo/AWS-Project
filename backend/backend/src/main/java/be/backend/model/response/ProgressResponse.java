@@ -9,6 +9,7 @@ import java.math.BigDecimal;
 public class ProgressResponse {
     private Integer scheduleId;
     private BigDecimal percentage;
+    private BigDecimal orderCompletionPercentage;
     private String scheduleStatus;
     private String message;
 }

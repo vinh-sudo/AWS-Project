@@ -109,8 +109,12 @@ public class ManagerPlanningService {
     @Transactional
     public ScheduleValidationResult confirm(Integer orderId, Account account) {
 
+        // Lock order row so only one confirm flow can process this order at a time.
+        Order order = orderRepo.findByIdForUpdate(orderId)
+                .orElseThrow(() -> new RuntimeException("Order not found"));
+
         List<ProductionPlan> draftPlans =
-                planRepo.findByOrderIdAndDecision(orderId, "DRAFT");
+                planRepo.findByOrderIdAndDecisionForUpdate(orderId, "DRAFT");
 
         if (draftPlans.isEmpty()) {
             return ScheduleValidationResult.fail("No draft plan");
@@ -121,7 +125,6 @@ public class ManagerPlanningService {
             );
         }
 
-        Order order = draftPlans.get(0).getOrder();
         List<OrderItem> orderItems = orderItemRepo.findByOrderId(orderId);
         Map<Integer, OrderItem> orderItemsById = new HashMap<>();
         for (OrderItem item : orderItems) {
@@ -142,6 +145,7 @@ public class ManagerPlanningService {
 
         List<Integer> confirmedItems = new ArrayList<>();
         Map<Integer, String> failedItems = new LinkedHashMap<>();
+        List<ProductionPlan> reservedCapacityPlans = new ArrayList<>();
 
         for (Map.Entry<Integer, List<ProductionPlan>> entry : draftPlansByItem.entrySet()) {
             Integer orderItemId = entry.getKey();
@@ -171,17 +175,34 @@ public class ManagerPlanningService {
                 continue;
             }
 
-            ScheduleValidationResult capacity = schedulerService.validateCapacity(itemPlans);
+            // Validate this item against already-reserved capacity from previously approved items.
+            List<ProductionPlan> capacityCheckPlans = new ArrayList<>(reservedCapacityPlans);
+            capacityCheckPlans.addAll(itemPlans);
+            ScheduleValidationResult capacity = schedulerService.validateCapacity(capacityCheckPlans);
             if (!capacity.isOk()) {
                 failedItems.put(orderItemId, capacity.getMessage());
                 continue;
             }
 
+            boolean itemCreated = true;
+            String itemFailureReason = null;
+
             for (ProductionPlan plan : itemPlans) {
-                schedulerService.createSchedules(plan);
+                SchedulerService.ScheduleCreationResult creation = schedulerService.createSchedules(plan);
+                if (!creation.ok()) {
+                    itemCreated = false;
+                    itemFailureReason = creation.message();
+                    break;
+                }
                 plan.setDecision("CONFIRMED");
             }
 
+            if (!itemCreated) {
+                failedItems.put(orderItemId, itemFailureReason);
+                continue;
+            }
+
+            reservedCapacityPlans.addAll(itemPlans);
             confirmedItems.add(orderItemId);
             confirmedQtyByItem.merge(orderItemId, draftQty, Integer::sum);
         }

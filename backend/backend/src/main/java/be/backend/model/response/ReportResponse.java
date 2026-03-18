@@ -2,6 +2,7 @@ package be.backend.model.response;
 
 import lombok.Builder;
 import lombok.Data;
+import java.math.BigDecimal;
 import java.time.LocalDate;
 
 @Data
@@ -18,4 +19,6 @@ public class ReportResponse {
     private Integer targetQuantity;
     private String message;
     private Integer scheduleId;
+    private BigDecimal scheduleCompletionPercentage;
+    private BigDecimal orderCompletionPercentage;
 }

@@ -24,6 +24,7 @@ public class ScheduleSummaryResponse {
     private LocalDateTime startTime;
     private LocalDateTime endTime;
     private BigDecimal percentage;
+    private BigDecimal orderCompletionPercentage;
     // Danh sách tài liệu (POM/SOP) gắn với Order của schedule
     private List<ProductionFileResponse> documents;
 }

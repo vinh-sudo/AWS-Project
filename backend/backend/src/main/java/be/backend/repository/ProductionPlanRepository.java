@@ -25,4 +25,12 @@ public interface ProductionPlanRepository extends JpaRepository<ProductionPlan, 
     """)
     List<ProductionPlan> findAllForManager(@Param("status") String status);
 
+    @org.springframework.data.jpa.repository.Lock(jakarta.persistence.LockModeType.PESSIMISTIC_WRITE)
+    @Query("""
+        select p from ProductionPlan p
+        where p.order.id = :orderId and p.decision = :decision
+        """)
+    List<ProductionPlan> findByOrderIdAndDecisionForUpdate(@Param("orderId") Integer orderId,
+                                                            @Param("decision") String decision);
+
 }
