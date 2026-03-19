@@ -10,6 +10,7 @@ import java.time.LocalDate;
 public class ReportResponse {
     private Integer reportId;
     private Integer orderId;
+    private Integer orderItemId;
     private Integer lineId;
     private String lineName;
     private LocalDate workDate;
@@ -20,5 +21,6 @@ public class ReportResponse {
     private String message;
     private Integer scheduleId;
     private BigDecimal scheduleCompletionPercentage;
+    private BigDecimal orderItemCompletionPercentage;
     private BigDecimal orderCompletionPercentage;
 }

@@ -24,7 +24,9 @@ spring:
       ssl:
         enabled: true
   mail:
-    host: email-smtp.ap-southeast-1.amazonaws.com
+    # Dung Amazon SES SMTP interface
+    # Thay <region> bang region SES cua ban, vi du: email-smtp.ap-southeast-1.amazonaws.com
+    host: email-smtp.<region>.amazonaws.com
     port: 587
     username: ${SES_SMTP_USERNAME}
     password: ${SES_SMTP_PASSWORD}

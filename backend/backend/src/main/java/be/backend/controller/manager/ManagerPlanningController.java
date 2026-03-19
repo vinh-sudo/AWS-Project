@@ -1,7 +1,8 @@
 package be.backend.controller.manager;
 
 import be.backend.entity.Account;
-import be.backend.model.request.ProductionPlanRequest;
+import be.backend.model.request.CreatePlanByItemRequest;
+import be.backend.model.response.OrderPlanItemsViewResponse;
 import be.backend.model.response.ProductionPlanResponse;
 import be.backend.model.response.ScheduleValidationResult;
 import be.backend.service.manager.ManagerPlanningService;
@@ -21,28 +22,25 @@ import java.util.List;
 public class ManagerPlanningController {
 
     private final ManagerPlanningService planningService;
-    @PostMapping("/create")
-    public ResponseEntity<List<ProductionPlanResponse>> createPlan(
-            @Valid @RequestBody ProductionPlanRequest request,
+
+    @PostMapping("/create-by-item")
+    public ResponseEntity<List<ProductionPlanResponse>> createPlanByItem(
+            @Valid @RequestBody CreatePlanByItemRequest request,
             @AuthenticationPrincipal Account account
     ) {
-        return ResponseEntity.ok(
-                planningService.createPlan(request, account)
-        );
+        return ResponseEntity.ok(planningService.createPlanByItem(request, account));
     }
 
-    @PostMapping("/order/{orderId}/confirm")
-    public ResponseEntity<?> confirm(
+    @PostMapping("/order/{orderId}/confirm-item/{orderItemId}")
+    public ResponseEntity<?> confirmOrderItem(
             @PathVariable Integer orderId,
+            @PathVariable Integer orderItemId,
             @AuthenticationPrincipal Account account
     ) {
-        ScheduleValidationResult result =
-                planningService.confirm(orderId, account);
-
+        ScheduleValidationResult result = planningService.confirmOrderItem(orderId, orderItemId, account);
         if (!result.isOk()) {
             return ResponseEntity.badRequest().body(result);
         }
-
         return ResponseEntity.ok(result);
     }
 
@@ -60,5 +58,12 @@ public class ManagerPlanningController {
             @RequestParam(required = false) String status
     ) {
         return planningService.getAllPlans(status);
+    }
+
+    @GetMapping("/order/{orderId}/items")
+    public ResponseEntity<OrderPlanItemsViewResponse> getOrderItemPlans(
+            @PathVariable Integer orderId
+    ) {
+        return ResponseEntity.ok(planningService.getOrderItemPlansView(orderId));
     }
 }

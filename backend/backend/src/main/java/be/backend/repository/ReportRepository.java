@@ -116,4 +116,14 @@ public interface ReportRepository extends JpaRepository<Report, Integer> {
     ProductionSummaryProjection getTodaySummaryByLineId(
             @Param("lineId") Integer lineId,
             @Param("date") LocalDate date);
+
+    @Query("""
+            select coalesce(sum(r.goodQuantity), 0)
+            from Report r
+            join r.schedule s
+            join s.plan p
+            join p.orderItem oi
+            where oi.id = :orderItemId
+            """)
+    Long sumGoodQuantityByOrderItemId(@Param("orderItemId") Integer orderItemId);
 }

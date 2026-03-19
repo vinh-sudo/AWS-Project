@@ -8,7 +8,9 @@ import java.math.BigDecimal;
 @Builder
 public class ProgressResponse {
     private Integer scheduleId;
+    private Integer orderItemId;
     private BigDecimal percentage;
+    private BigDecimal orderItemCompletionPercentage;
     private BigDecimal orderCompletionPercentage;
     private String scheduleStatus;
     private String message;

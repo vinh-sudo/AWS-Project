@@ -66,9 +66,9 @@ public class ManagerOrderController {
 
     /**
      * Note: Các chức năng planning đã có ở ManagerPlanningController:
-     * - POST /api/manager/plans/create - Tạo production plan
-     * - POST /api/manager/plans/order/{orderId}/confirm - Confirm plan
-     * - POST /api/manager/plans/order/{orderId}/cancel - Cancel plan
+     * - POST /api/manager/plans/create-by-item - Tạo plan theo order item (auto route)
+     * - POST /api/manager/plans/order/{orderId}/confirm-item/{orderItemId} - Confirm plan theo order item
+     * - POST /api/manager/plans/order/{orderId}/cancel - Cancel draft plan
      * - GET /api/manager/plans/view - Xem plans
      */
 }
