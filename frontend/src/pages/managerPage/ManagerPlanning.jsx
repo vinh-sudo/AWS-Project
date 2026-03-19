@@ -42,6 +42,13 @@ const ManagerPlanning = () => {
     return fallback;
   };
 
+  const formatOrderItemLabel = (item) => {
+    if (!item) return "";
+    const name = item.productName || `Item ${item.id}`;
+    const qty = Number(item.quantity) || 0;
+    return `#${item.id} - ${name} (${qty.toLocaleString()} units)`;
+  };
+
   useEffect(() => {
     fetchData();
   }, []);
@@ -67,6 +74,10 @@ const ManagerPlanning = () => {
   };
 
   const openCreateModal = (order) => {
+    const orderItems = Array.isArray(order?.items) ? order.items : [];
+    const defaultOrderItemId =
+      orderItems.length === 1 ? orderItems[0].id : "";
+
     setSelectedOrder(order);
     setPlanForm({
       orderId: order.id,
@@ -77,6 +88,7 @@ const ManagerPlanning = () => {
         lineId: l.lineId,
         lineName: l.lineName,
         plannedQty: 0,
+        orderItemId: defaultOrderItemId,
       })),
     });
     setShowCreateModal(true);
@@ -93,18 +105,52 @@ const ManagerPlanning = () => {
     }));
   };
 
+  const handleLineOrderItemChange = (lineId, orderItemId) => {
+    setPlanForm((prev) => ({
+      ...prev,
+      lines: prev.lines.map((line) =>
+        line.lineId === lineId ? { ...line, orderItemId } : line,
+      ),
+    }));
+  };
+
   const handleCreatePlan = async () => {
     try {
+      const orderItems = Array.isArray(selectedOrder?.items)
+        ? selectedOrder.items
+        : [];
+      const selectedLines = planForm.lines.filter((l) => l.plannedQty > 0);
+
+      if (!planForm.planName.trim()) {
+        alert("Plan name is required.");
+        return;
+      }
+
+      if (orderItems.length === 0) {
+        alert("This order has no order items. Please check order details first.");
+        return;
+      }
+
+      if (selectedLines.length === 0) {
+        alert("Please allocate quantity to at least one line.");
+        return;
+      }
+
+      const hasMissingOrderItem = selectedLines.some((line) => !line.orderItemId);
+      if (hasMissingOrderItem) {
+        alert("Please select an Order Item for every allocated line.");
+        return;
+      }
+
       const request = {
         orderId: planForm.orderId,
-        planName: planForm.planName,
+        planName: planForm.planName.trim(),
         startDate: planForm.startDate,
-        note: planForm.note,
-        lines: planForm.lines
-          .filter((l) => l.plannedQty > 0)
-          .map((l) => ({
+        note: planForm.note.trim(),
+        lines: selectedLines.map((l) => ({
             lineId: l.lineId,
             plannedQty: l.plannedQty,
+            orderItemId: Number(l.orderItemId),
           })),
       };
       await managerService.createPlan(request);
@@ -328,7 +374,6 @@ const ManagerPlanning = () => {
                         <th>Qty</th>
                         <th>Priority</th>
                         <th>Deadline</th>
-                        <th></th>
                       </tr>
                     </thead>
                     <tbody>
@@ -348,15 +393,6 @@ const ManagerPlanning = () => {
                             </span>
                           </td>
                           <td className="pp-cell-muted">{order.deadline}</td>
-                          <td>
-                            <button
-                              className="pp-btn-plan"
-                              onClick={() => openCreateModal(order)}
-                              disabled={linesOverview.length === 0}
-                            >
-                              + Plan
-                            </button>
-                          </td>
                         </tr>
                       ))}
                     </tbody>
@@ -992,9 +1028,25 @@ const ManagerPlanning = () => {
                   <h3>
                     Allocate to Lines
                     <span className="alloc-hint">
-                      Distribute quantity across lines
+                      Set quantity and choose order item per line
                     </span>
                   </h3>
+                  {Array.isArray(selectedOrder.items) &&
+                  selectedOrder.items.length > 0 ? (
+                    <div className="allocation-item-summary">
+                      {selectedOrder.items.map((item) => (
+                        <span key={item.id} className="allocation-item-chip">
+                          {formatOrderItemLabel(item)}
+                        </span>
+                      ))}
+                    </div>
+                  ) : (
+                    <div className="pp-empty">
+                      <span>
+                        This order has no order items. Cannot create plan.
+                      </span>
+                    </div>
+                  )}
                   {planForm.lines.length === 0 ? (
                     <div className="pp-empty">
                       <span>No lines available</span>
@@ -1008,6 +1060,24 @@ const ManagerPlanning = () => {
                               {line.lineName}
                             </span>
                           </div>
+                          <select
+                            value={line.orderItemId || ""}
+                            onChange={(e) =>
+                              handleLineOrderItemChange(
+                                line.lineId,
+                                e.target.value,
+                              )
+                            }
+                            className="allocation-item-select"
+                            disabled={!selectedOrder.items?.length}
+                          >
+                            <option value="">Select order item</option>
+                            {(selectedOrder.items || []).map((item) => (
+                              <option key={item.id} value={item.id}>
+                                {formatOrderItemLabel(item)}
+                              </option>
+                            ))}
+                          </select>
                           <input
                             type="number"
                             min="0"
@@ -1064,7 +1134,11 @@ const ManagerPlanning = () => {
                 <button
                   className="btn-primary"
                   onClick={handleCreatePlan}
-                  disabled={totalPlanned === 0}
+                  disabled={
+                    totalPlanned === 0 ||
+                    !selectedOrder.items ||
+                    selectedOrder.items.length === 0
+                  }
                 >
                   Create Plan
                 </button>
