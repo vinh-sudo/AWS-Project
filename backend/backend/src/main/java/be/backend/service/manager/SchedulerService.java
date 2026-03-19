@@ -9,6 +9,7 @@ import org.springframework.stereotype.Service;
 
 import java.time.OffsetDateTime;
 import java.time.ZoneOffset;
+import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -32,6 +33,7 @@ public class SchedulerService {
 
             var start = plan.getPlannedStartDate().atStartOfDay().atOffset(ZoneOffset.of("+07"));
             var end = plan.getPlannedEndDate().atStartOfDay().atOffset(ZoneOffset.of("+07"));
+            long windowDays = calculateWindowDays(start, end);
 
             // 1. Leader check
             if (leaderRepo.findActiveLeader(plan.getLine().getId().longValue(), start, end).isEmpty()) {
@@ -68,7 +70,8 @@ public class SchedulerService {
 
                 // 5. Capacity in hours
                 double hours = plan.getLine().getShiftHours()
-                        * plan.getLine().getEfficiency().doubleValue();
+                        * plan.getLine().getEfficiency().doubleValue()
+                        * windowDays;
 
                 totalHours += hours;
             }
@@ -79,7 +82,10 @@ public class SchedulerService {
 
             if (remainingHours < plan.getEstimatedHours()) {
                 return ScheduleValidationResult.fail(
-                        "Not enough machine hours on line " + plan.getLine().getLineName());
+                        "Not enough machine hours on line " + plan.getLine().getLineName()
+                                + " (required " + Math.round(plan.getEstimatedHours() * 10.0) / 10.0
+                                + "h, available " + Math.max(Math.round(remainingHours * 10.0) / 10.0, 0)
+                                + "h)");
             }
 
             reservedHoursByWindow.put(windowKey, alreadyReserved + plan.getEstimatedHours());
@@ -97,6 +103,7 @@ public class SchedulerService {
         double remaining = plan.getEstimatedHours();
         double shift = plan.getLine().getShiftHours().doubleValue();
         double eff = plan.getLine().getEfficiency().doubleValue();
+        long windowDays = calculateWindowDays(start, end);
 
         List<Machine> machines = machineRepo.findByLineIdAndStatus(plan.getLine().getId(), "ACTIVE");
 
@@ -113,7 +120,7 @@ public class SchedulerService {
                 continue;
             }
 
-            double available = shift * eff;
+            double available = shift * eff * windowDays;
             double assigned = Math.min(available, remaining);
             double realHours = assigned / eff;
 
@@ -144,6 +151,11 @@ public class SchedulerService {
 
     private String buildWindowKey(Integer lineId, OffsetDateTime start, OffsetDateTime end) {
         return lineId + "|" + start.toString() + "|" + end.toString();
+    }
+
+    private long calculateWindowDays(OffsetDateTime start, OffsetDateTime end) {
+        long days = ChronoUnit.DAYS.between(start.toLocalDate(), end.toLocalDate());
+        return Math.max(days, 1);
     }
 
     private record MachineAllocation(Machine machine, double realHours, double assignedHours) {
@@ -208,9 +220,9 @@ public class SchedulerService {
 
         IncidentLog log = new IncidentLog();
         log.setSchedule(schedule);
-        log.setLine(schedule.getPlan().getLine()); 
+        log.setLine(schedule.getPlan().getLine());
         log.setIncidentType("RESUME");
-        log.setSeverity("LOW"); 
+        log.setSeverity("LOW");
         log.setDescription("Resumed by " + account.getUser().getLastName());
         log.setTimestamp(OffsetDateTime.now());
         incidentRepo.save(log);
