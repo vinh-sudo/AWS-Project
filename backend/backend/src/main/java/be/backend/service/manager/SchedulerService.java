@@ -50,7 +50,7 @@ public class SchedulerService {
 
             List<Machine> machines = machineRepo.findByLineIdAndStatus(plan.getLine().getId(), "ACTIVE");
 
-            double totalHours = 0;
+            double totalHoursInWindow = 0;
 
             for (Machine m : machines) {
 
@@ -70,15 +70,14 @@ public class SchedulerService {
 
                 // 5. Capacity in hours
                 double hours = plan.getLine().getShiftHours()
-                        * plan.getLine().getEfficiency().doubleValue()
-                        * windowDays;
+                        * plan.getLine().getEfficiency().doubleValue();
 
-                totalHours += hours;
+                totalHoursInWindow += hours * windowDays;
             }
 
             String windowKey = buildWindowKey(plan.getLine().getId(), start, end);
             double alreadyReserved = reservedHoursByWindow.getOrDefault(windowKey, 0.0);
-            double remainingHours = totalHours - alreadyReserved;
+            double remainingHours = totalHoursInWindow - alreadyReserved;
 
             if (remainingHours < plan.getEstimatedHours()) {
                 return ScheduleValidationResult.fail(
