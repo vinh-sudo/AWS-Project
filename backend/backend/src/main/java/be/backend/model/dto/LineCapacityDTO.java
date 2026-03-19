@@ -16,4 +16,5 @@ public class LineCapacityDTO {
     private Double busyHours;
     private Long totalMachines;
     private Long busyMachines;
+    private Long activeScheduleCount;
 }

@@ -29,22 +29,29 @@ public interface ProductionLineRepository extends JpaRepository<ProductionLine, 
 
             COUNT(DISTINCT
                 CASE
-                    WHEN ps.status IN ('Scheduled','In Progress')
+                    WHEN UPPER(ps.status) IN ('SCHEDULED','RUNNING','PAUSED')
                     THEN m.machine_id
                 END
-            )::BIGINT AS busyMachines
+            )::BIGINT AS busyMachines,
+
+            COUNT(DISTINCT
+                CASE
+                    WHEN UPPER(ps.status) IN ('SCHEDULED','RUNNING','PAUSED')
+                    THEN ps.schedule_id
+                END
+            )::BIGINT AS activeScheduleCount
 
         FROM production_line pl
 
         LEFT JOIN machine m
                ON m.line_id = pl.line_id
-              AND m.status = 'active'
+              AND UPPER(COALESCE(m.status, 'ACTIVE')) = 'ACTIVE'
 
         LEFT JOIN production_schedule ps
                ON ps.machine_id = m.machine_id
               AND ps.start_time <= :now
               AND ps.end_time   >= :now
-              AND ps.status IN ('Scheduled','In Progress')
+              AND UPPER(ps.status) IN ('SCHEDULED','RUNNING','PAUSED')
 
         GROUP BY
             pl.line_id,
