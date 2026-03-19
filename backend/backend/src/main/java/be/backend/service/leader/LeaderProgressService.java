@@ -4,6 +4,7 @@ import be.backend.entity.*;
 import be.backend.exception.BusinessException;
 import be.backend.exception.ForbiddenException;
 import be.backend.exception.ResourceNotFoundException;
+import be.backend.model.request.ReportIncidentRequest;
 import be.backend.model.request.SubmitReportRequest;
 import be.backend.model.request.UpdateProgressRequest;
 import be.backend.model.response.ProgressResponse;
@@ -11,17 +12,18 @@ import be.backend.model.response.ReportResponse;
 import be.backend.model.response.ScheduleSummaryResponse;
 import be.backend.model.response.ProductionFileResponse;
 import be.backend.repository.*;
-import be.backend.mapper.ProductionFileMapper;
 import be.backend.service.ProductionFileService;
+import be.backend.mapper.ProductionFileMapper;
+import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.time.LocalDate;
 import java.time.OffsetDateTime;
 import java.util.List;
+import java.util.Locale;
 
 @Service
 @RequiredArgsConstructor
@@ -234,6 +236,31 @@ public class LeaderProgressService {
                                         "Only SCHEDULED can be started. Current: " + schedule.getStatus());
                 }
 
+                // NEW: Guard stage ordering per order item
+                ProductionPlan plan = schedule.getPlan();
+                OrderItem orderItem = plan.getOrderItem();
+                if (orderItem != null) {
+                        int currentRank = routeRank(plan.getLine().getLineName());
+                        if (currentRank > 0) {
+                                // There is a previous stage (e.g. DIP after SMT)
+                                // Fetch all schedules for this order item and ensure all lower-rank stages are completed
+                                List<ProductionSchedule> itemSchedules = scheduleRepo
+                                                .findByOrderIdAndStatus(orderItem.getOrder().getId(), null);
+                                boolean previousStageIncomplete = itemSchedules.stream()
+                                                .filter(s -> s.getPlan() != null
+                                                                && s.getPlan().getOrderItem() != null
+                                                                && s.getPlan().getOrderItem().getId()
+                                                                                .equals(orderItem.getId()))
+                                                .anyMatch(s -> routeRank(s.getPlan().getLine().getLineName()) < currentRank
+                                                                && !"COMPLETED".equalsIgnoreCase(s.getStatus()));
+
+                                if (previousStageIncomplete) {
+                                        throw new BusinessException(
+                                                        "Cannot start this stage before previous production stage is completed");
+                                }
+                        }
+                }
+
                 // 5. Start schedule
                 schedule.setStatus("RUNNING");
                 scheduleRepo.save(schedule);
@@ -252,20 +279,33 @@ public class LeaderProgressService {
                 List<ProductionFileResponse> documentResponses = productionFileMapper.toResponseList(files);
 
                 // 8. Build response (reuse DTO đã có, thêm documents)
-                OrderItem orderItem = schedule.getPlan().getOrderItem();
+                OrderItem item = schedule.getPlan().getOrderItem();
 
                 return ScheduleSummaryResponse.builder()
                                 .scheduleId(schedule.getId())
                                 .orderInfo(schedule.getOrder().getId() + " - " + schedule.getOrder().getProductType())
                                 .status(schedule.getStatus())
-                                .startTime(schedule.getStartTime().toLocalDateTime())
-                                .endTime(schedule.getEndTime().toLocalDateTime())
-                                .orderItemId(orderItem != null ? orderItem.getId() : null)
-                                .percentage(calculateSchedulePercentage(schedule))
-                                .orderItemCompletionPercentage(calculateOrderItemCompletionPercentage(orderItem))
-                                .orderCompletionPercentage(calculateOrderCompletionPercentage(order))
+                                .startTime(schedule.getStartTime() != null
+                                                ? schedule.getStartTime().toLocalDateTime()
+                                                : null)
+                                .endTime(schedule.getEndTime() != null
+                                                ? schedule.getEndTime().toLocalDateTime()
+                                                : null)
+                                .orderItemId(item != null ? item.getId() : null)
                                 .documents(documentResponses)
                                 .build();
+        }
+
+        private int routeRank(String lineName) {
+                if (lineName == null) {
+                        return 99;
+                }
+                String normalized = lineName.toUpperCase(Locale.ROOT);
+                if (normalized.contains("SMT")) return 0;
+                if (normalized.contains("DIP")) return 1;
+                if (normalized.contains("TEST")) return 2;
+                if (normalized.contains("PACK")) return 3;
+                return 99;
         }
 
         private BigDecimal calculateSchedulePercentage(ProductionSchedule schedule) {
