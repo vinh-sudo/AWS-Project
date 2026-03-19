@@ -9,6 +9,7 @@ import org.springframework.stereotype.Service;
 
 import java.time.OffsetDateTime;
 import java.time.ZoneOffset;
+import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -33,6 +34,16 @@ public class SchedulerService {
             var start = plan.getPlannedStartDate().atStartOfDay().atOffset(ZoneOffset.of("+07"));
             var end = plan.getPlannedEndDate().atStartOfDay().atOffset(ZoneOffset.of("+07"));
 
+            // Defensive: ensure window is valid
+            if (end.isBefore(start)) {
+                return ScheduleValidationResult.fail("Invalid plan window for line " + plan.getLine().getLineName());
+            }
+
+            long days = ChronoUnit.DAYS.between(start.toLocalDate(), end.toLocalDate()) + 1;
+            if (days < 1) {
+                days = 1;
+            }
+
             // 1. Leader check
             if (leaderRepo.findActiveLeader(plan.getLine().getId().longValue(), start, end).isEmpty()) {
                 return ScheduleValidationResult.fail(
@@ -48,7 +59,7 @@ public class SchedulerService {
 
             List<Machine> machines = machineRepo.findByLineIdAndStatus(plan.getLine().getId(), "ACTIVE");
 
-            double totalHours = 0;
+            double totalHoursPerDay = 0;
 
             for (Machine m : machines) {
 
@@ -66,16 +77,18 @@ public class SchedulerService {
                     continue;
                 }
 
-                // 5. Capacity in hours
-                double hours = plan.getLine().getShiftHours()
+                // 5. Capacity in hours per day
+                double hoursPerDay = plan.getLine().getShiftHours()
                         * plan.getLine().getEfficiency().doubleValue();
 
-                totalHours += hours;
+                totalHoursPerDay += hoursPerDay;
             }
+
+            double totalHoursInWindow = totalHoursPerDay * days;
 
             String windowKey = buildWindowKey(plan.getLine().getId(), start, end);
             double alreadyReserved = reservedHoursByWindow.getOrDefault(windowKey, 0.0);
-            double remainingHours = totalHours - alreadyReserved;
+            double remainingHours = totalHoursInWindow - alreadyReserved;
 
             if (remainingHours < plan.getEstimatedHours()) {
                 return ScheduleValidationResult.fail(
