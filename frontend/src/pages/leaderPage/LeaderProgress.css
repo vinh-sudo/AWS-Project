@@ -533,17 +533,30 @@
   height: 14px;
 }
 
-/* Update progress button */
-.lp-action-btn.update {
+/* Log report button */
+.lp-action-btn.report {
   background: var(--lp-accent-soft);
   color: var(--lp-accent);
   border-color: #a5f3fc;
 }
 
-.lp-action-btn.update:hover {
+.lp-action-btn.report:hover {
   background: var(--lp-accent);
   color: #fff;
   box-shadow: 0 2px 8px rgba(8, 145, 178, 0.3);
+}
+
+/* Documents button */
+.lp-action-btn.documents {
+  background: #eef2ff;
+  color: #4338ca;
+  border-color: #c7d2fe;
+}
+
+.lp-action-btn.documents:hover {
+  background: #4338ca;
+  color: #fff;
+  box-shadow: 0 2px 8px rgba(67, 56, 202, 0.25);
 }
 
 /* Incident button */
@@ -1006,59 +1019,11 @@
   box-shadow: 0 0 0 3px rgba(8, 145, 178, 0.1);
 }
 
-/* Progress bar inside modal */
-.lp-progress-bar {
-  width: 100%;
-  height: 6px;
-  background: var(--lp-border-light);
-  border-radius: var(--lp-radius-full);
-  overflow: hidden;
-  margin-top: 6px;
-}
-
-.lp-progress-fill {
-  height: 100%;
-  border-radius: var(--lp-radius-full);
-  transition: width 0.4s ease;
-}
-
-/* Quick notes / templates */
-.lp-quick-notes {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-}
-
-.lp-quick-notes label {
-  font-size: 11px;
-  font-weight: 600;
-  color: var(--lp-text-muted);
-  text-transform: uppercase;
-  letter-spacing: 0.4px;
-}
-
-.lp-quick-note-buttons {
-  display: flex;
-  gap: 6px;
-  flex-wrap: wrap;
-}
-
-.lp-quick-note-buttons button {
-  padding: 5px 12px;
-  border: 1px solid var(--lp-border);
-  border-radius: var(--lp-radius-full);
-  background: var(--lp-surface);
+.lp-inline-help {
+  margin: 6px 0 0;
   font-size: 12px;
-  font-weight: 500;
-  color: var(--lp-text-secondary);
-  cursor: pointer;
-  transition: all var(--lp-transition);
-}
-
-.lp-quick-note-buttons button:hover {
-  border-color: var(--lp-accent);
-  color: var(--lp-accent);
-  background: var(--lp-accent-soft);
+  color: var(--lp-text-muted);
+  line-height: 1.45;
 }
 
 /* Modal footer */

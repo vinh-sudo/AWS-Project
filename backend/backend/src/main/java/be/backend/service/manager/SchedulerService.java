@@ -9,6 +9,7 @@ import org.springframework.stereotype.Service;
 
 import java.time.OffsetDateTime;
 import java.time.ZoneOffset;
+import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -32,6 +33,7 @@ public class SchedulerService {
 
             var start = plan.getPlannedStartDate().atStartOfDay().atOffset(ZoneOffset.of("+07"));
             var end = plan.getPlannedEndDate().atStartOfDay().atOffset(ZoneOffset.of("+07"));
+            long windowDays = Math.max(1, ChronoUnit.DAYS.between(start.toLocalDate(), end.toLocalDate()));
 
             // 1. Leader check
             if (leaderRepo.findActiveLeader(plan.getLine().getId().longValue(), start, end).isEmpty()) {
@@ -68,7 +70,8 @@ public class SchedulerService {
 
                 // 5. Capacity in hours
                 double hours = plan.getLine().getShiftHours()
-                        * plan.getLine().getEfficiency().doubleValue();
+                        * plan.getLine().getEfficiency().doubleValue()
+                        * windowDays;
 
                 totalHours += hours;
             }
@@ -93,6 +96,7 @@ public class SchedulerService {
 
         var start = plan.getPlannedStartDate().atStartOfDay().atOffset(ZoneOffset.of("+07"));
         var end = plan.getPlannedEndDate().atStartOfDay().atOffset(ZoneOffset.of("+07"));
+        long windowDays = Math.max(1, ChronoUnit.DAYS.between(start.toLocalDate(), end.toLocalDate()));
 
         double remaining = plan.getEstimatedHours();
         double shift = plan.getLine().getShiftHours().doubleValue();
@@ -113,7 +117,7 @@ public class SchedulerService {
                 continue;
             }
 
-            double available = shift * eff;
+            double available = shift * eff * windowDays;
             double assigned = Math.min(available, remaining);
             double realHours = assigned / eff;
 
@@ -208,9 +212,9 @@ public class SchedulerService {
 
         IncidentLog log = new IncidentLog();
         log.setSchedule(schedule);
-        log.setLine(schedule.getPlan().getLine()); 
+        log.setLine(schedule.getPlan().getLine());
         log.setIncidentType("RESUME");
-        log.setSeverity("LOW"); 
+        log.setSeverity("LOW");
         log.setDescription("Resumed by " + account.getUser().getLastName());
         log.setTimestamp(OffsetDateTime.now());
         incidentRepo.save(log);

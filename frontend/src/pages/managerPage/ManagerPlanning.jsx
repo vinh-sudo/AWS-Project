@@ -5,6 +5,33 @@ import managerService from "../../services/managerService";
 import PageLoading from "../../components/PageLoading/PageLoading";
 import "./ManagerPlanning.css";
 
+const getRouteRank = (lineName) => {
+  const normalized = (lineName || "").toUpperCase();
+  if (normalized.includes("SMT")) return 0;
+  if (normalized.includes("DIP")) return 1;
+  if (normalized.includes("TEST")) return 2;
+  if (normalized.includes("PACK")) return 3;
+  return 99;
+};
+
+const extractAnchorPlans = (orderPlans) => {
+  const anchorByItemAndDecision = {};
+
+  (orderPlans || []).forEach((plan) => {
+    const itemId = plan.orderItemId ?? "NO_ITEM";
+    const decision = (plan.decision || "").toUpperCase();
+    const key = `${itemId}-${decision}`;
+    const nextRank = getRouteRank(plan.lineName);
+    const current = anchorByItemAndDecision[key];
+
+    if (!current || nextRank < current.rank) {
+      anchorByItemAndDecision[key] = { rank: nextRank, plan };
+    }
+  });
+
+  return Object.values(anchorByItemAndDecision).map((entry) => entry.plan);
+};
+
 const ManagerPlanning = () => {
   const [plans, setPlans] = useState([]);
   const [linesOverview, setLinesOverview] = useState([]);
@@ -14,6 +41,8 @@ const ManagerPlanning = () => {
   const [filterStatus, setFilterStatus] = useState("");
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedOrder, setSelectedOrder] = useState(null);
+  const [selectedPlanningItemId, setSelectedPlanningItemId] = useState(null);
+  const [orderItemViewsByOrder, setOrderItemViewsByOrder] = useState({});
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [showOrderSelectModal, setShowOrderSelectModal] = useState(false);
   const [planForm, setPlanForm] = useState({
@@ -21,7 +50,7 @@ const ManagerPlanning = () => {
     planName: "",
     startDate: new Date().toISOString().split("T")[0],
     note: "",
-    lines: [],
+    items: [],
   });
 
   const getBackendErrorMessage = (err, fallback) => {
@@ -49,6 +78,70 @@ const ManagerPlanning = () => {
     return `#${item.id} - ${name} (${qty.toLocaleString()} units)`;
   };
 
+  const getOrderTotalQty = (order) => {
+    if (!order) return 0;
+    const items = Array.isArray(order.items) ? order.items : [];
+    if (items.length > 0) {
+      return items.reduce((sum, item) => sum + (Number(item.quantity) || 0), 0);
+    }
+    return Number(order.quantity) || 0;
+  };
+
+  const formatHours = (value) => {
+    const num = Number(value);
+    if (!Number.isFinite(num)) return "0";
+    return num.toLocaleString(undefined, { maximumFractionDigits: 1 });
+  };
+
+  const getOrderById = (orderId) =>
+    (orders || []).find((order) => Number(order.id) === Number(orderId));
+
+  const getOrderItemById = (order, orderItemId) => {
+    const items = Array.isArray(order?.items) ? order.items : [];
+    return items.find((item) => Number(item.id) === Number(orderItemId));
+  };
+
+  const groupPlansByOrderItem = (orderPlans) => {
+    const groups = {};
+    (orderPlans || []).forEach((plan) => {
+      const itemId = Number(plan.orderItemId);
+      const key = Number.isFinite(itemId) ? itemId : "NO_ITEM";
+      if (!groups[key]) groups[key] = [];
+      groups[key].push(plan);
+    });
+    return groups;
+  };
+
+  const buildPlanItemsFromBackendView = (order, backendView) => {
+    const orderItems = Array.isArray(order?.items) ? order.items : [];
+    const itemById = Object.fromEntries(orderItems.map((item) => [item.id, item]));
+    const backendItems = Array.isArray(backendView?.items) ? backendView.items : [];
+
+    if (backendItems.length > 0) {
+      return backendItems.map((viewItem) => {
+        const orderItem = itemById[viewItem.orderItemId] || {
+          id: viewItem.orderItemId,
+          quantity: viewItem.requiredQuantity,
+          productName: `Item ${viewItem.orderItemId}`,
+        };
+
+        return {
+          orderItemId: Number(viewItem.orderItemId),
+          label: formatOrderItemLabel(orderItem),
+          requiredQty: Number(viewItem.requiredQuantity) || 0,
+          confirmedQty: Number(viewItem.confirmedQuantity) || 0,
+          draftQty: Number(viewItem.draftQuantity) || 0,
+          remainingQty: Math.max(Number(viewItem.remainingQuantity) || 0, 0),
+          canConfirm: Boolean(viewItem.canConfirm),
+          confirmBlockedReason: viewItem.confirmBlockedReason || "",
+          plannedQty: 0,
+        };
+      });
+    }
+
+    return [];
+  };
+
   useEffect(() => {
     fetchData();
   }, []);
@@ -62,21 +155,91 @@ const ManagerPlanning = () => {
         managerService.getLinesOverview(),
         managerService.getAllOrders(),
       ]);
+
+      const orderIds = Array.from(
+        new Set(
+          (plansRes || [])
+            .map((plan) => Number(plan.orderId || plan.order?.id))
+            .filter((orderId) => Number.isFinite(orderId)),
+        ),
+      );
+
+      const viewEntries = await Promise.all(
+        orderIds.map(async (orderId) => {
+          try {
+            const view = await managerService.getOrderItemPlansView(orderId);
+            return [orderId, view];
+          } catch (viewErr) {
+            console.warn("Unable to load order item plan view:", orderId, viewErr);
+            return [orderId, null];
+          }
+        }),
+      );
+
+      const viewMap = Object.fromEntries(
+        viewEntries.filter((entry) => entry[1] !== null),
+      );
+
       setPlans(plansRes || []);
       setLinesOverview(linesRes || []);
       setOrders(ordersRes || []);
+      setOrderItemViewsByOrder(viewMap);
     } catch (err) {
       console.error("Error fetching data:", err);
       setError("Unable to load data. Please try again later.");
+      setOrderItemViewsByOrder({});
     } finally {
       setLoading(false);
     }
   };
 
-  const openCreateModal = (order) => {
-    const orderItems = Array.isArray(order?.items) ? order.items : [];
-    const defaultOrderItemId =
-      orderItems.length === 1 ? orderItems[0].id : "";
+  const plansByOrder = useMemo(() => {
+    const grouped = {};
+    (plans || []).forEach((p) => {
+      const orderId = p.orderId || p.order?.id;
+      if (!grouped[orderId]) grouped[orderId] = [];
+      grouped[orderId].push(p);
+    });
+    return grouped;
+  }, [plans]);
+
+  const planQtyByOrderItem = useMemo(() => {
+    const qtyMap = {};
+
+    Object.entries(plansByOrder).forEach(([orderId, orderPlans]) => {
+      const perItem = {};
+      extractAnchorPlans(orderPlans).forEach((plan) => {
+        const itemId = Number(plan.orderItemId);
+        if (!Number.isFinite(itemId)) return;
+
+        if (!perItem[itemId]) {
+          perItem[itemId] = { draftQty: 0, confirmedQty: 0 };
+        }
+
+        const qty = Number(plan.plannedQuantity) || 0;
+        const decision = (plan.decision || "").toUpperCase();
+        if (decision === "CONFIRMED") {
+          perItem[itemId].confirmedQty += qty;
+        } else if (decision === "DRAFT" || decision === "PENDING") {
+          perItem[itemId].draftQty += qty;
+        }
+      });
+
+      qtyMap[orderId] = perItem;
+    });
+
+    return qtyMap;
+  }, [plansByOrder]);
+
+  const openCreateModal = async (order) => {
+    let planItems = [];
+    try {
+      const backendView = await managerService.getOrderItemPlansView(order.id);
+      planItems = buildPlanItemsFromBackendView(order, backendView);
+    } catch (err) {
+      alert(getBackendErrorMessage(err, "Unable to load order item planning data."));
+      return;
+    }
 
     setSelectedOrder(order);
     setPlanForm({
@@ -84,32 +247,38 @@ const ManagerPlanning = () => {
       planName: "",
       startDate: new Date().toISOString().split("T")[0],
       note: "",
-      lines: linesOverview.map((l) => ({
-        lineId: l.lineId,
-        lineName: l.lineName,
-        plannedQty: 0,
-        orderItemId: defaultOrderItemId,
-      })),
+      items: planItems,
     });
+    setSelectedPlanningItemId(null);
     setShowCreateModal(true);
   };
 
-  const handleLineQtyChange = (lineId, qty) => {
+  const handleChooseOrderItemForPlanning = (orderItemId) => {
+    setSelectedPlanningItemId(orderItemId);
     setPlanForm((prev) => ({
       ...prev,
-      lines: prev.lines.map((line) =>
-        line.lineId === lineId
-          ? { ...line, plannedQty: parseInt(qty) || 0 }
-          : line,
+      items: prev.items.map((item) =>
+        item.orderItemId === orderItemId
+          ? {
+              ...item,
+              plannedQty: item.plannedQty > 0 ? item.plannedQty : 1,
+            }
+          : { ...item, plannedQty: 0 },
       ),
     }));
   };
 
-  const handleLineOrderItemChange = (lineId, orderItemId) => {
+  const handleItemPlannedQtyChange = (orderItemId, qty) => {
+    const normalizedQty = Math.max(parseInt(qty, 10) || 0, 0);
     setPlanForm((prev) => ({
       ...prev,
-      lines: prev.lines.map((line) =>
-        line.lineId === lineId ? { ...line, orderItemId } : line,
+      items: prev.items.map((item) =>
+        item.orderItemId === orderItemId
+          ? {
+              ...item,
+              plannedQty: Math.min(normalizedQty, item.remainingQty),
+            }
+          : item,
       ),
     }));
   };
@@ -119,7 +288,9 @@ const ManagerPlanning = () => {
       const orderItems = Array.isArray(selectedOrder?.items)
         ? selectedOrder.items
         : [];
-      const selectedLines = planForm.lines.filter((l) => l.plannedQty > 0);
+      const selectedItem = planForm.items.find(
+        (item) => item.orderItemId === selectedPlanningItemId,
+      );
 
       if (!planForm.planName.trim()) {
         alert("Plan name is required.");
@@ -131,30 +302,37 @@ const ManagerPlanning = () => {
         return;
       }
 
-      if (selectedLines.length === 0) {
-        alert("Please allocate quantity to at least one line.");
+      if (!selectedItem) {
+        alert("Please choose an order item and click New Planning first.");
         return;
       }
 
-      const hasMissingOrderItem = selectedLines.some((line) => !line.orderItemId);
-      if (hasMissingOrderItem) {
-        alert("Please select an Order Item for every allocated line.");
+      if (selectedItem.plannedQty <= 0) {
+        alert("Planned quantity must be greater than 0.");
         return;
       }
 
-      const request = {
+      if (selectedItem.plannedQty > selectedItem.remainingQty) {
+        alert(
+          `Planned qty exceeds remaining qty for order item #${selectedItem.orderItemId}.`,
+        );
+        return;
+      }
+
+      const baseRequest = {
         orderId: planForm.orderId,
         planName: planForm.planName.trim(),
         startDate: planForm.startDate,
         note: planForm.note.trim(),
-        lines: selectedLines.map((l) => ({
-            lineId: l.lineId,
-            plannedQty: l.plannedQty,
-            orderItemId: Number(l.orderItemId),
-          })),
       };
-      await managerService.createPlan(request);
-      alert("Plan created successfully!");
+
+      await managerService.createPlanByItem({
+        ...baseRequest,
+        orderItemId: Number(selectedItem.orderItemId),
+        plannedQty: Number(selectedItem.plannedQty),
+      });
+
+      alert(`Created plan for item #${selectedItem.orderItemId}.`);
       setShowCreateModal(false);
       fetchData();
     } catch (err) {
@@ -163,27 +341,76 @@ const ManagerPlanning = () => {
     }
   };
 
-  const handleConfirmPlan = async (orderId) => {
-    if (!window.confirm("Are you sure you want to confirm this plan?")) return;
+  const handleConfirmOrderItem = async (orderId, orderItemId) => {
+    if (!window.confirm(`Confirm plan for item #${orderItemId}?`)) {
+      return;
+    }
+
     try {
-      await managerService.confirmPlan(orderId);
-      alert("Plan confirmed!");
+      const backendView = await managerService.getOrderItemPlansView(orderId);
+      const targetItem = (backendView?.items || []).find(
+        (item) => Number(item.orderItemId) === Number(orderItemId),
+      );
+
+      if (!targetItem) {
+        alert("Order item not found in planning view.");
+        return;
+      }
+
+      if (!targetItem.canConfirm) {
+        alert(targetItem.confirmBlockedReason || "This order item cannot be confirmed now.");
+        return;
+      }
+
+      await managerService.confirmPlanItem(orderId, orderItemId);
+      alert(`Item #${orderItemId} confirmed.`);
       fetchData();
     } catch (err) {
-      console.error("Error confirming plan:", err);
-      alert(getBackendErrorMessage(err, "Failed to confirm plan."));
+      console.error("Error confirming order item:", err);
+      alert(getBackendErrorMessage(err, "Failed to confirm order item."));
     }
   };
 
-  const handleCancelPlan = async (orderId) => {
-    if (!window.confirm("Are you sure you want to cancel this plan?")) return;
+  const handleCancelOrderItem = async (orderId, orderItemId) => {
+    if (!window.confirm(`Cancel draft plan for item #${orderItemId}?`)) {
+      return;
+    }
+
     try {
-      await managerService.cancelPlan(orderId);
-      alert("Plan cancelled.");
-      fetchData();
+      const backendView = await managerService.getOrderItemPlansView(orderId);
+      const items = backendView?.items || [];
+      const targetItem = items.find(
+        (item) => Number(item.orderItemId) === Number(orderItemId),
+      );
+
+      if (!targetItem) {
+        alert("Order item not found in planning view.");
+        return;
+      }
+
+      if ((Number(targetItem.draftQuantity) || 0) <= 0) {
+        alert("This order item has no draft plan to cancel.");
+        return;
+      }
+
+      const draftItemIds = items
+        .filter((item) => (Number(item.draftQuantity) || 0) > 0)
+        .map((item) => Number(item.orderItemId));
+
+      // Backend currently exposes only order-level cancel endpoint.
+      if (draftItemIds.length === 1 && draftItemIds[0] === Number(orderItemId)) {
+        await managerService.cancelPlan(orderId);
+        alert(`Cancelled draft plan for item #${orderItemId}.`);
+        fetchData();
+        return;
+      }
+
+      alert(
+        "Backend currently supports cancel by order, not by individual item when multiple items are draft. Please confirm with BE team to add cancel-item API.",
+      );
     } catch (err) {
-      console.error("Error cancelling plan:", err);
-      alert(getBackendErrorMessage(err, "Failed to cancel plan."));
+      console.error("Error cancelling order item:", err);
+      alert(getBackendErrorMessage(err, "Failed to cancel order item."));
     }
   };
 
@@ -222,45 +449,45 @@ const ManagerPlanning = () => {
     return "load-low";
   };
 
-  const plansByOrder = useMemo(() => {
-    const grouped = {};
-    (plans || []).forEach((p) => {
-      const orderId = p.orderId || p.order?.id;
-      if (!grouped[orderId]) grouped[orderId] = [];
-      grouped[orderId].push(p);
-    });
-    return grouped;
-  }, [plans]);
-
   const awaitingOrders = useMemo(() => {
     return (orders || []).filter((o) => {
       const orderPlans = plansByOrder[o.id] || [];
       const decisions = orderPlans.map((p) => (p.decision || "").toUpperCase());
+      const itemPlanQty = planQtyByOrderItem[o.id] || {};
+      const orderItems = Array.isArray(o.items) ? o.items : [];
 
       const hasDraft =
         decisions.includes("DRAFT") || decisions.includes("PENDING");
-      const hasConfirmed = decisions.includes("CONFIRMED");
       const hasCancelled = decisions.includes("CANCELLED");
       const status = (o.status || "").toUpperCase();
+      const hasRemainingItem = orderItems.some((item) => {
+        const requiredQty = Number(item.quantity) || 0;
+        const confirmedQty = itemPlanQty[item.id]?.confirmedQty || 0;
+        return confirmedQty < requiredQty;
+      });
 
-      // Keep initial planning path.
-      if (!hasConfirmed && (status === "CONFIRMED" || status === "PLANNING")) {
+      if (
+        ["CONFIRMED", "PLANNING", "PARTIALLY_SCHEDULED"].includes(status) &&
+        (hasRemainingItem || orderItems.length === 0)
+      ) {
         return true;
       }
 
-      // Allow managers to recreate draft plans for the same order.
       if (hasDraft) {
         return true;
       }
 
-      // Backend marks order as NEW after cancel; keep it replannable when it has cancelled plans.
-      if (hasCancelled && status === "NEW") {
+      if (
+        hasCancelled &&
+        (status === "NEW" || status === "PARTIALLY_SCHEDULED") &&
+        (hasRemainingItem || orderItems.length === 0)
+      ) {
         return true;
       }
 
       return false;
     });
-  }, [orders, plansByOrder]);
+  }, [orders, plansByOrder, planQtyByOrderItem]);
 
   const filteredOrders = useMemo(() => {
     return awaitingOrders.filter((o) => {
@@ -288,12 +515,9 @@ const ManagerPlanning = () => {
 
   const confirmedCount = plans.filter((p) => p.decision === "CONFIRMED").length;
 
-  const totalPlanned = selectedOrder
-    ? planForm.lines.reduce((sum, l) => sum + l.plannedQty, 0)
-    : 0;
-  const allocPct = selectedOrder
-    ? Math.min((totalPlanned / (selectedOrder.quantity || 1)) * 100, 100)
-    : 0;
+  const selectedPlanningItem = planForm.items.find(
+    (item) => item.orderItemId === selectedPlanningItemId,
+  );
 
   return (
     <div className="manager-container">
@@ -383,7 +607,7 @@ const ManagerPlanning = () => {
                           <td>{order.customerName}</td>
                           <td className="pp-cell-muted">{order.productType}</td>
                           <td className="pp-cell-num">
-                            {(order.quantity || 0).toLocaleString()}
+                            {getOrderTotalQty(order).toLocaleString()}
                           </td>
                           <td>
                             <span
@@ -461,8 +685,8 @@ const ManagerPlanning = () => {
                               />
                             </div>
                             <span className="pp-cap-text">
-                              {line.busyHours || 0}h /{" "}
-                              {line.availableHours || 8}h capacity
+                              {formatHours(line.busyHours)}h /{" "}
+                              {formatHours(line.availableHours || 8)}h capacity
                             </span>
                           </div>
                         )}
@@ -646,17 +870,23 @@ const ManagerPlanning = () => {
               <div className="pp-plans-grid">
                 {Object.entries(filteredPlansByOrder).map(
                   ([orderId, orderPlans]) => {
-                    const hasActionable = orderPlans.some(
-                      (p) => p.decision === "DRAFT" || p.decision === "PENDING",
-                    );
-                    const totalQty = orderPlans.reduce(
+                    const orderIdNum = Number(orderId);
+                    const orderEntity = getOrderById(orderIdNum);
+                    const anchorPlans = extractAnchorPlans(orderPlans);
+                    const totalQty = anchorPlans.reduce(
                       (sum, p) => sum + (p.plannedQuantity || 0),
                       0,
                     );
+                    const itemCount = new Set(
+                      anchorPlans
+                        .map((p) => Number(p.orderItemId))
+                        .filter((itemId) => Number.isFinite(itemId)),
+                    ).size;
                     const totalHours = orderPlans.reduce(
                       (sum, p) => sum + (p.estimatedHours || 0),
                       0,
                     );
+                    const plansByItem = groupPlansByOrderItem(orderPlans);
 
                     return (
                       <div key={orderId} className="pp-plan-card">
@@ -679,8 +909,7 @@ const ManagerPlanning = () => {
                             </div>
                             <div className="pp-plan-card-meta">
                               <span className="pp-plan-card-chip">
-                                {orderPlans.length}{" "}
-                                {orderPlans.length === 1 ? "line" : "lines"}
+                                {itemCount} {itemCount === 1 ? "item" : "items"}
                               </span>
                               <span className="pp-plan-card-chip qty">
                                 {totalQty.toLocaleString()} units
@@ -690,121 +919,179 @@ const ManagerPlanning = () => {
                               </span>
                             </div>
                           </div>
-                          {hasActionable && (
-                            <div className="pp-plan-card-actions">
-                              <button
-                                className="pp-btn-card-confirm"
-                                onClick={() =>
-                                  handleConfirmPlan(parseInt(orderId))
-                                }
-                              >
-                                <svg
-                                  width="14"
-                                  height="14"
-                                  viewBox="0 0 24 24"
-                                  fill="none"
-                                  stroke="currentColor"
-                                  strokeWidth="2.5"
-                                  strokeLinecap="round"
-                                  strokeLinejoin="round"
-                                >
-                                  <polyline points="20 6 9 17 4 12" />
-                                </svg>
-                                Confirm
-                              </button>
-                              <button
-                                className="pp-btn-card-cancel"
-                                onClick={() =>
-                                  handleCancelPlan(parseInt(orderId))
-                                }
-                              >
-                                <svg
-                                  width="14"
-                                  height="14"
-                                  viewBox="0 0 24 24"
-                                  fill="none"
-                                  stroke="currentColor"
-                                  strokeWidth="2.5"
-                                  strokeLinecap="round"
-                                  strokeLinejoin="round"
-                                >
-                                  <line x1="18" y1="6" x2="6" y2="18" />
-                                  <line x1="6" y1="6" x2="18" y2="18" />
-                                </svg>
-                                Cancel
-                              </button>
-                            </div>
-                          )}
+                          <div className="pp-plan-card-actions" />
                         </div>
 
                         <div className="pp-plan-card-body">
-                          <table className="pp-plan-card-table">
-                            <thead>
-                              <tr>
-                                <th>Plan Name</th>
-                                <th>Line</th>
-                                <th>Quantity</th>
-                                <th>Start</th>
-                                <th>End</th>
-                                <th>Hours</th>
-                                <th>Status</th>
-                              </tr>
-                            </thead>
-                            <tbody>
-                              {orderPlans.map((plan) => (
-                                <tr key={plan.id || plan.planId}>
-                                  <td className="pp-plan-name-cell">
-                                    {plan.planName || "—"}
-                                  </td>
-                                  <td>
-                                    <span className="pp-plan-line-badge">
-                                      {plan.lineName || `Line ${plan.lineId}`}
-                                    </span>
-                                  </td>
-                                  <td className="pp-cell-num">
-                                    {(
-                                      plan.plannedQuantity || 0
-                                    ).toLocaleString()}
-                                  </td>
-                                  <td className="pp-cell-muted">
-                                    {plan.startDate}
-                                  </td>
-                                  <td className="pp-cell-muted">
-                                    {plan.endDate}
-                                  </td>
-                                  <td className="pp-cell-muted">
-                                    {(plan.estimatedHours || 0).toFixed(1)}h
-                                  </td>
-                                  <td>
-                                    <span
-                                      className={`pp-decision ${getDecisionClass(plan.decision)}`}
-                                    >
-                                      {plan.decision}
-                                    </span>
-                                  </td>
-                                </tr>
-                              ))}
-                            </tbody>
-                          </table>
-                        </div>
+                          {Object.entries(plansByItem).map(
+                            ([itemIdKey, itemPlans]) => {
+                              const itemId = Number(itemIdKey);
+                              const anchorItemPlans = extractAnchorPlans(itemPlans);
+                              const hasItemDraft = anchorItemPlans.some(
+                                (p) =>
+                                  (p.decision || "").toUpperCase() === "DRAFT" ||
+                                  (p.decision || "").toUpperCase() === "PENDING",
+                              );
+                              const itemQty = anchorItemPlans.reduce(
+                                (sum, p) => sum + (p.plannedQuantity || 0),
+                                0,
+                              );
+                              const itemHours = itemPlans.reduce(
+                                (sum, p) => sum + (p.estimatedHours || 0),
+                                0,
+                              );
+                              const orderItem = getOrderItemById(orderEntity, itemId);
+                              const itemLabel = orderItem
+                                ? formatOrderItemLabel(orderItem)
+                                : `Item #${itemId}`;
+                              const itemView = orderItemViewsByOrder[
+                                orderIdNum
+                              ]?.items?.find(
+                                (viewItem) =>
+                                  Number(viewItem.orderItemId) === itemId,
+                              );
+                              const itemCanConfirm = itemView
+                                ? Boolean(itemView.canConfirm)
+                                : true;
+                              const itemConfirmBlockedReason =
+                                itemView?.confirmBlockedReason || "";
 
-                        {orderPlans[0]?.note && (
-                          <div className="pp-plan-card-note">
-                            <svg
-                              width="12"
-                              height="12"
-                              viewBox="0 0 24 24"
-                              fill="none"
-                              stroke="currentColor"
-                              strokeWidth="2"
-                              strokeLinecap="round"
-                              strokeLinejoin="round"
-                            >
-                              <path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z" />
-                            </svg>
-                            {orderPlans[0].note}
-                          </div>
-                        )}
+                              return (
+                                <div key={`${orderId}-${itemIdKey}`} className="pp-item-plan-block">
+                                  <div className="pp-item-plan-header">
+                                    <div className="pp-item-plan-title">{itemLabel}</div>
+                                    <div className="pp-item-plan-meta">
+                                      <span className="pp-plan-card-chip qty">
+                                        {itemQty.toLocaleString()} units
+                                      </span>
+                                      <span className="pp-plan-card-chip hours">
+                                        {itemHours.toFixed(1)}h
+                                      </span>
+                                      {hasItemDraft && Number.isFinite(itemId) ? (
+                                        <>
+                                          <button
+                                            className="pp-btn-card-confirm"
+                                            onClick={() =>
+                                              handleConfirmOrderItem(orderIdNum, itemId)
+                                            }
+                                            disabled={!itemCanConfirm}
+                                            title={
+                                              itemCanConfirm
+                                                ? ""
+                                                : itemConfirmBlockedReason
+                                            }
+                                          >
+                                            <svg
+                                              width="14"
+                                              height="14"
+                                              viewBox="0 0 24 24"
+                                              fill="none"
+                                              stroke="currentColor"
+                                              strokeWidth="2.5"
+                                              strokeLinecap="round"
+                                              strokeLinejoin="round"
+                                            >
+                                              <polyline points="20 6 9 17 4 12" />
+                                            </svg>
+                                            Confirm item
+                                          </button>
+                                          <button
+                                            className="pp-btn-card-cancel"
+                                            onClick={() =>
+                                              handleCancelOrderItem(orderIdNum, itemId)
+                                            }
+                                          >
+                                            <svg
+                                              width="14"
+                                              height="14"
+                                              viewBox="0 0 24 24"
+                                              fill="none"
+                                              stroke="currentColor"
+                                              strokeWidth="2.5"
+                                              strokeLinecap="round"
+                                              strokeLinejoin="round"
+                                            >
+                                              <line x1="18" y1="6" x2="6" y2="18" />
+                                              <line x1="6" y1="6" x2="18" y2="18" />
+                                            </svg>
+                                            Cancel item
+                                          </button>
+                                        </>
+                                      ) : null}
+                                    </div>
+                                  </div>
+
+                                  {hasItemDraft && !itemCanConfirm && itemConfirmBlockedReason ? (
+                                    <div className="pp-item-plan-warning">
+                                      {itemConfirmBlockedReason}
+                                    </div>
+                                  ) : null}
+
+                                  <table className="pp-plan-card-table">
+                                    <thead>
+                                      <tr>
+                                        <th>Plan Name</th>
+                                        <th>Line</th>
+                                        <th>Quantity</th>
+                                        <th>Start</th>
+                                        <th>End</th>
+                                        <th>Hours</th>
+                                        <th>Status</th>
+                                      </tr>
+                                    </thead>
+                                    <tbody>
+                                      {itemPlans.map((plan) => (
+                                        <tr key={plan.id || plan.planId}>
+                                          <td className="pp-plan-name-cell">
+                                            {plan.planName || "—"}
+                                          </td>
+                                          <td>
+                                            <span className="pp-plan-line-badge">
+                                              {plan.lineName || `Line ${plan.lineId}`}
+                                            </span>
+                                          </td>
+                                          <td className="pp-cell-num">
+                                            {(plan.plannedQuantity || 0).toLocaleString()}
+                                          </td>
+                                          <td className="pp-cell-muted">{plan.startDate}</td>
+                                          <td className="pp-cell-muted">{plan.endDate}</td>
+                                          <td className="pp-cell-muted">
+                                            {(plan.estimatedHours || 0).toFixed(1)}h
+                                          </td>
+                                          <td>
+                                            <span
+                                              className={`pp-decision ${getDecisionClass(plan.decision)}`}
+                                            >
+                                              {plan.decision}
+                                            </span>
+                                          </td>
+                                        </tr>
+                                      ))}
+                                    </tbody>
+                                  </table>
+
+                                  {itemPlans[0]?.note ? (
+                                    <div className="pp-plan-card-note">
+                                      <svg
+                                        width="12"
+                                        height="12"
+                                        viewBox="0 0 24 24"
+                                        fill="none"
+                                        stroke="currentColor"
+                                        strokeWidth="2"
+                                        strokeLinecap="round"
+                                        strokeLinejoin="round"
+                                      >
+                                        <path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z" />
+                                      </svg>
+                                      {itemPlans[0].note}
+                                    </div>
+                                  ) : null}
+                                </div>
+                              );
+                            },
+                          )}
+                        </div>
                       </div>
                     );
                   },
@@ -896,7 +1183,7 @@ const ManagerPlanning = () => {
                             {order.priority}
                           </span>
                           <span className="pp-order-select-qty">
-                            {(order.quantity || 0).toLocaleString()} units
+                            {getOrderTotalQty(order).toLocaleString()} units
                           </span>
                           <svg
                             width="16"
@@ -971,7 +1258,7 @@ const ManagerPlanning = () => {
                   <div className="summary-item highlight">
                     <span className="summary-label">Total Quantity</span>
                     <span className="summary-value">
-                      {(selectedOrder.quantity || 0).toLocaleString()}
+                      {getOrderTotalQty(selectedOrder).toLocaleString()}
                     </span>
                   </div>
                 </div>
@@ -1026,9 +1313,9 @@ const ManagerPlanning = () => {
 
                 <div className="line-allocation">
                   <h3>
-                    Allocate to Lines
+                    Order Item Planning
                     <span className="alloc-hint">
-                      Set quantity and choose order item per line
+                      One item per plan action
                     </span>
                   </h3>
                   {Array.isArray(selectedOrder.items) &&
@@ -1047,80 +1334,81 @@ const ManagerPlanning = () => {
                       </span>
                     </div>
                   )}
-                  {planForm.lines.length === 0 ? (
+                  {planForm.items.length === 0 ? (
                     <div className="pp-empty">
-                      <span>No lines available</span>
+                      <span>No order items available for planning</span>
                     </div>
                   ) : (
                     <div className="allocation-grid">
-                      {planForm.lines.map((line) => (
-                        <div key={line.lineId} className="allocation-item">
-                          <div className="allocation-line-info">
-                            <span className="allocation-line-name">
-                              {line.lineName}
-                            </span>
+                      {planForm.items.map((item) => (
+                        <div
+                          key={item.orderItemId}
+                          className={`allocation-item ${
+                            selectedPlanningItemId === item.orderItemId ? "active" : ""
+                          }`}
+                        >
+                          <div className="allocation-item-main">
+                            <div className="allocation-line-info">
+                              <span className="allocation-line-name">
+                                {item.label}
+                              </span>
+                            </div>
+                            <button
+                              type="button"
+                              className="allocation-item-action"
+                              onClick={() =>
+                                handleChooseOrderItemForPlanning(item.orderItemId)
+                              }
+                              disabled={item.remainingQty === 0}
+                            >
+                              {selectedPlanningItemId === item.orderItemId
+                                ? "Selected"
+                                : "New Planning"}
+                            </button>
                           </div>
-                          <select
-                            value={line.orderItemId || ""}
-                            onChange={(e) =>
-                              handleLineOrderItemChange(
-                                line.lineId,
-                                e.target.value,
-                              )
-                            }
-                            className="allocation-item-select"
-                            disabled={!selectedOrder.items?.length}
-                          >
-                            <option value="">Select order item</option>
-                            {(selectedOrder.items || []).map((item) => (
-                              <option key={item.id} value={item.id}>
-                                {formatOrderItemLabel(item)}
-                              </option>
-                            ))}
-                          </select>
-                          <input
-                            type="number"
-                            min="0"
-                            value={line.plannedQty}
-                            onChange={(e) =>
-                              handleLineQtyChange(line.lineId, e.target.value)
-                            }
-                            className="allocation-input"
-                            placeholder="0"
-                          />
+                          <div className="allocation-item-meta">
+                            <span className="allocation-item-select">
+                              Remaining: {item.remainingQty.toLocaleString()} / {item.requiredQty.toLocaleString()}
+                            </span>
+                            {item.remainingQty === 0 ? (
+                              <span className="allocation-item-hint">
+                                Fully planned / confirmed
+                              </span>
+                            ) : null}
+                          </div>
+                          {selectedPlanningItemId === item.orderItemId ? (
+                            <div className="allocation-selected-editor">
+                              <label>Planned Quantity</label>
+                              <input
+                                type="number"
+                                min="1"
+                                max={item.remainingQty}
+                                value={item.plannedQty}
+                                onChange={(e) =>
+                                  handleItemPlannedQtyChange(
+                                    item.orderItemId,
+                                    e.target.value,
+                                  )
+                                }
+                                className="allocation-input"
+                                placeholder="0"
+                              />
+                            </div>
+                          ) : null}
                         </div>
                       ))}
                     </div>
                   )}
-                  <div className="allocation-summary">
-                    <div className="allocation-progress">
-                      <div className="allocation-progress-bar">
-                        <div
-                          className={`allocation-progress-fill ${
-                            totalPlanned === selectedOrder.quantity
-                              ? "match"
-                              : totalPlanned > selectedOrder.quantity
-                                ? "over"
-                                : "mismatch"
-                          }`}
-                          style={{ width: `${allocPct}%` }}
-                        />
-                      </div>
-                    </div>
-                    <span>
-                      <span
-                        className={
-                          totalPlanned === selectedOrder.quantity
-                            ? "match"
-                            : "mismatch"
-                        }
-                      >
-                        {totalPlanned.toLocaleString()}
+                  {selectedPlanningItem ? (
+                    <div className="allocation-summary">
+                      <span>
+                        Selected item #{selectedPlanningItem.orderItemId} • Remaining {selectedPlanningItem.remainingQty.toLocaleString()}
                       </span>
-                      {" / "}
-                      {(selectedOrder.quantity || 0).toLocaleString()}
-                    </span>
-                  </div>
+                      <span>
+                        Planning: {Number(selectedPlanningItem.plannedQty || 0).toLocaleString()} units
+                      </span>
+                    </div>
+                  ) : null}
                 </div>
               </div>
 
@@ -1135,9 +1423,9 @@ const ManagerPlanning = () => {
                   className="btn-primary"
                   onClick={handleCreatePlan}
                   disabled={
-                    totalPlanned === 0 ||
-                    !selectedOrder.items ||
-                    selectedOrder.items.length === 0
+                    !selectedPlanningItem ||
+                    Number(selectedPlanningItem.plannedQty || 0) <= 0 ||
+                    Number(selectedPlanningItem.remainingQty || 0) <= 0
                   }
                 >
                   Create Plan

@@ -26,7 +26,9 @@ const leaderService = {
    * Get active schedules on the leader's line
    * GET /api/leader/schedules
    * @returns {Promise<ScheduleSummaryResponse[]>}
-   *   [{ scheduleId, orderInfo, status, startTime, endTime }]
+  *   [{ scheduleId, orderInfo, status, startTime, endTime,
+  *      percentage, orderItemCompletionPercentage, orderCompletionPercentage,
+  *      documents? }]
    */
   getMySchedules: async () => {
     try {
@@ -39,30 +41,18 @@ const leaderService = {
   },
 
   /**
-   * Update production progress for a schedule
-   * PUT /api/leader/progress
-   * @param {Object} data - { scheduleId: number, percentage: number, note?: string }
-   * @returns {Promise<ProgressResponse>}
-   *   { scheduleId, percentage, scheduleStatus, message }
-   */
-  updateProgress: async (data) => {
-    try {
-      const response = await api.put("/api/leader/progress", data);
-      return response.data;
-    } catch (error) {
-      console.error("Error updating progress:", error);
-      throw error;
-    }
-  },
-
-  /**
    * Submit end-of-shift report
    * POST /api/leader/report
-   * @param {Object} data - { shift: "MORNING"|"AFTERNOON"|"NIGHT",
-   *   targetQuantity, goodQuantity, rejectQuantity, downtimeMinutes?, notes? }
+   * @param {Object} data - {
+   *   scheduleId: number,
+   *   shift: "MORNING"|"AFTERNOON"|"NIGHT",
+   *   targetQuantity, goodQuantity, rejectQuantity, downtimeMinutes?, notes?
+   * }
    * @returns {Promise<ReportResponse>}
-   *   { reportId, lineId, lineName, workDate, shift, goodQuantity,
-   *     rejectQuantity, targetQuantity, message }
+   *   { reportId, scheduleId, orderId, lineId, lineName, workDate, shift,
+   *     goodQuantity, rejectQuantity, targetQuantity,
+  *     scheduleCompletionPercentage, orderItemCompletionPercentage,
+  *     orderCompletionPercentage, message }
    */
   submitReport: async (data) => {
     try {

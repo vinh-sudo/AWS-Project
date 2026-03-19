@@ -937,6 +937,21 @@
     box-shadow: 0 2px 8px rgba(5, 150, 105, 0.25);
 }
 
+.pp-btn-card-confirm:disabled {
+    background: #f3f4f6;
+    color: #9ca3af;
+    border-color: #e5e7eb;
+    cursor: not-allowed;
+    box-shadow: none;
+}
+
+.pp-btn-card-confirm:disabled:hover {
+    background: #f3f4f6;
+    color: #9ca3af;
+    border-color: #e5e7eb;
+    box-shadow: none;
+}
+
 .pp-btn-card-cancel {
     display: inline-flex;
     align-items: center;
@@ -964,6 +979,47 @@
 .pp-plan-card-body {
     padding: 0;
     overflow-x: auto;
+}
+
+.pp-item-plan-block {
+    border-top: 1px solid #eef0f5;
+}
+
+.pp-item-plan-block:first-child {
+    border-top: none;
+}
+
+.pp-item-plan-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    padding: 10px 16px;
+    background: #fbfcff;
+    border-bottom: 1px solid #eef0f5;
+}
+
+.pp-item-plan-title {
+    font-size: 12.5px;
+    font-weight: 700;
+    color: #1f2937;
+}
+
+.pp-item-plan-meta {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.pp-item-plan-warning {
+    margin: 8px 16px 0;
+    padding: 8px 10px;
+    border: 1px solid #fed7aa;
+    background: #fffbeb;
+    color: #9a3412;
+    border-radius: 8px;
+    font-size: 12px;
+    line-height: 1.4;
 }
 
 .pp-plan-card-table {
@@ -1489,14 +1545,58 @@
 
 .allocation-item {
     display: flex;
-    justify-content: space-between;
-    align-items: center;
-    gap: 10px;
-    padding: 8px 12px;
+    flex-direction: column;
+    gap: 8px;
+    padding: 10px 12px;
     background: #fafbfd;
     border-radius: 7px;
     border: 1px solid #eef0f5;
     transition: all 0.12s;
+}
+
+.allocation-item.active {
+    border-color: #c7d2fe;
+    background: #f7f8ff;
+}
+
+.allocation-item-main {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    width: 100%;
+}
+
+.allocation-item-meta {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-wrap: wrap;
+    width: 100%;
+}
+
+.allocation-item-action {
+    padding: 7px 12px;
+    border-radius: 7px;
+    border: 1px solid #c7d2fe;
+    background: #eef2ff;
+    color: #4a6cf7;
+    font-size: 12px;
+    font-weight: 700;
+    cursor: pointer;
+    transition: all 0.15s;
+    font-family: inherit;
+    white-space: nowrap;
+}
+
+.allocation-item-action:hover:not(:disabled) {
+    background: #4a6cf7;
+    color: #fff;
+    border-color: #4a6cf7;
+}
+
+.allocation-item-action:disabled {
+    opacity: 0.45;
+    cursor: not-allowed;
 }
 
 .allocation-item:hover {
@@ -1507,12 +1607,15 @@
     display: flex;
     align-items: center;
     gap: 8px;
+    flex: 1;
+    min-width: 0;
 }
 
 .allocation-line-name {
     color: #1a1a2e;
     font-weight: 600;
     font-size: 13px;
+    overflow-wrap: anywhere;
 }
 
 .allocation-line-cap {
@@ -1521,7 +1624,8 @@
 }
 
 .allocation-input {
-    width: 90px;
+    width: 96px;
+    flex-shrink: 0;
     padding: 6px 10px;
     background: #fff;
     border: 1px solid #e2e6ef;
@@ -1536,10 +1640,10 @@
 }
 
 .allocation-item-select {
-    flex: 1;
-    min-width: 180px;
-    max-width: 320px;
-    padding: 6px 8px;
+    display: inline-flex;
+    align-items: center;
+    max-width: 100%;
+    padding: 5px 8px;
     background: #fff;
     border: 1px solid #e2e6ef;
     border-radius: 6px;
@@ -1547,6 +1651,29 @@
     font-size: 12px;
     outline: none;
     transition: border-color 0.15s, box-shadow 0.15s;
+}
+
+.allocation-item-hint {
+    font-size: 11px;
+    color: #8a92a6;
+    font-weight: 500;
+}
+
+.allocation-selected-editor {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    padding: 6px 8px;
+    border-radius: 6px;
+    background: #fff;
+    border: 1px dashed #c7d2fe;
+}
+
+.allocation-selected-editor label {
+    font-size: 12px;
+    font-weight: 600;
+    color: #475569;
 }
 
 .allocation-item-select:focus {
@@ -1571,6 +1698,16 @@
     color: #6b7280;
     font-weight: 500;
     border: 1px solid #eef0f5;
+}
+
+@media (max-width: 768px) {
+    .allocation-item-main {
+        align-items: flex-start;
+    }
+
+    .allocation-input {
+        width: 84px;
+    }
 }
 
 .allocation-summary .match {

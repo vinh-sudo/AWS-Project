@@ -3,7 +3,6 @@
 // Endpoints used:
 //   GET  /api/leader/dashboard    → overview + KPI counters
 //   GET  /api/leader/schedules    → schedule list
-//   PUT  /api/leader/progress     → update progress
 //   POST /api/leader/incident     → report incident
 //   POST /api/leader/report       → submit end-of-shift report
 // ============================================================================
@@ -16,6 +15,8 @@ import leaderService from "../../services/leaderService";
 import scheduleService from "../../services/scheduleService";
 import PageLoading from "../../components/PageLoading/PageLoading";
 import "./LeaderProgress.css";
+
+const SHIFT_REPORT_DRAFT_KEY = "leader_shift_report_draft_v1";
 
 /* ===== SVG Icon helpers ===== */
 const IC = {
@@ -166,14 +167,11 @@ const IC = {
 const LeaderProgress = () => {
   const { scheduleId: focusedScheduleId } = useParams();
   const [activeTab, setActiveTab] = useState("inProgress");
-  const [showUpdateModal, setShowUpdateModal] = useState(false);
   const [showIncidentModal, setShowIncidentModal] = useState(false);
   const [showReportModal, setShowReportModal] = useState(false);
   const [showDocumentModal, setShowDocumentModal] = useState(false);
   const [selectedSchedule, setSelectedSchedule] = useState(null);
   const [selectedDocuments, setSelectedDocuments] = useState([]);
-  const [newPercentage, setNewPercentage] = useState(0);
-  const [progressNote, setProgressNote] = useState("");
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
@@ -186,6 +184,8 @@ const LeaderProgress = () => {
   const [schedules, setSchedules] = useState([]);
   const [scheduleDocuments, setScheduleDocuments] = useState({});
   const [localProgressBySchedule, setLocalProgressBySchedule] = useState({});
+  const [localOrderItemProgressBySchedule, setLocalOrderItemProgressBySchedule] =
+    useState({});
 
   // Incident types (matching backend incidentType field)
   const incidentTypes = [
@@ -213,8 +213,8 @@ const LeaderProgress = () => {
     machineId: null,
   });
 
-  // End-of-shift report state
-  const [shiftReport, setShiftReport] = useState({
+  const createDefaultShiftReport = (scheduleId = "") => ({
+    scheduleId,
     shift: "MORNING",
     targetQuantity: 0,
     goodQuantity: 0,
@@ -222,6 +222,34 @@ const LeaderProgress = () => {
     downtimeMinutes: 0,
     notes: "",
   });
+
+  const loadShiftReportDraft = () => {
+    try {
+      const rawDraft = sessionStorage.getItem(SHIFT_REPORT_DRAFT_KEY);
+      if (!rawDraft) {
+        return createDefaultShiftReport();
+      }
+
+      const parsed = JSON.parse(rawDraft);
+      return {
+        ...createDefaultShiftReport(),
+        ...parsed,
+      };
+    } catch {
+      return createDefaultShiftReport();
+    }
+  };
+
+  const saveShiftReportDraft = (draft) => {
+    sessionStorage.setItem(SHIFT_REPORT_DRAFT_KEY, JSON.stringify(draft));
+  };
+
+  const clearShiftReportDraft = () => {
+    sessionStorage.removeItem(SHIFT_REPORT_DRAFT_KEY);
+  };
+
+  // End-of-shift report state
+  const [shiftReport, setShiftReport] = useState(() => loadShiftReportDraft());
 
   // Detect specific error types for user-friendly messages
   const getErrorMessage = (error) => {
@@ -239,6 +267,9 @@ const LeaderProgress = () => {
     }
     if (status === 401) {
       return "Session expired. Please log in again.";
+    }
+    if (status === 500) {
+      return message || "Server error occurred. Please try again later.";
     }
     return message || "Unable to load data. Please try again.";
   };
@@ -260,17 +291,24 @@ const LeaderProgress = () => {
         schedulesRes.status === "fulfilled" ? schedulesRes.value || [] : [],
       );
 
-      const rejections = [dashboardRes, schedulesRes].filter(
-        (r) => r.status === "rejected",
-      );
-      if (rejections.length > 0) {
-        const errorMsg = getErrorMessage(rejections[0].reason);
-        if (errorMsg === "NOT_ASSIGNED") {
-          setError("NOT_ASSIGNED");
-        } else if (rejections.length === 2) {
-          setError(errorMsg);
-        } else {
-          console.warn("Partial leader data errors:", rejections);
+      const dashboardRejected = dashboardRes.status === "rejected";
+      const schedulesRejected = schedulesRes.status === "rejected";
+
+      if (dashboardRejected || schedulesRejected) {
+        const priorityReason = schedulesRejected
+          ? schedulesRes.reason
+          : dashboardRes.reason;
+        const errorMsg = getErrorMessage(priorityReason);
+
+        setError(errorMsg === "NOT_ASSIGNED" ? "NOT_ASSIGNED" : errorMsg);
+
+        if (dashboardRejected || schedulesRejected) {
+          console.warn("Leader API partial/full failure", {
+            dashboardRejected,
+            schedulesRejected,
+            dashboardError: dashboardRejected ? dashboardRes.reason : null,
+            schedulesError: schedulesRejected ? schedulesRes.reason : null,
+          });
         }
       }
     } catch (err) {
@@ -320,13 +358,6 @@ const LeaderProgress = () => {
     }
   };
 
-  const openUpdateModal = (schedule) => {
-    setSelectedSchedule(schedule);
-    setNewPercentage(0);
-    setProgressNote("");
-    setShowUpdateModal(true);
-  };
-
   const openIncidentModal = (schedule) => {
     setSelectedSchedule(schedule);
     setNewIncident({
@@ -338,17 +369,26 @@ const LeaderProgress = () => {
     setShowIncidentModal(true);
   };
 
-  const openReportModal = () => {
-    setShiftReport({
-      shift: "MORNING",
-      targetQuantity: 0,
-      goodQuantity: 0,
-      rejectQuantity: 0,
-      downtimeMinutes: 0,
-      notes: "",
+  const openReportModal = (schedule = null) => {
+    setShiftReport((prev) => {
+      if (schedule?.scheduleId) {
+        const next = { ...prev, scheduleId: String(schedule.scheduleId) };
+        saveShiftReportDraft(next);
+        return next;
+      }
+      return prev;
     });
+    setSelectedSchedule(schedule);
     setShowReportModal(true);
   };
+
+  useEffect(() => {
+    if (!showReportModal) {
+      return;
+    }
+
+    saveShiftReportDraft(shiftReport);
+  }, [shiftReport, showReportModal]);
 
   const openDocumentsModal = (schedule) => {
     const docsFromSchedule = schedule?.documents || [];
@@ -357,30 +397,6 @@ const LeaderProgress = () => {
     setSelectedSchedule(schedule);
     setSelectedDocuments(docs);
     setShowDocumentModal(true);
-  };
-
-  const handleUpdateProgress = async () => {
-    try {
-      const result = await leaderService.updateProgress({
-        scheduleId: selectedSchedule.scheduleId,
-        percentage: newPercentage,
-        note: progressNote || undefined,
-      });
-
-      setLocalProgressBySchedule((prev) => ({
-        ...prev,
-        [selectedSchedule.scheduleId]: Number(
-          result?.percentage ?? newPercentage,
-        ),
-      }));
-
-      alert(`✅ ${result.message || "Progress updated!"}`);
-      setShowUpdateModal(false);
-      setSelectedSchedule(null);
-      fetchData();
-    } catch (err) {
-      alert(`❌ Error: ${err.response?.data?.message || "Unable to update"}`);
-    }
   };
 
   const handleReportIncident = async () => {
@@ -405,9 +421,57 @@ const LeaderProgress = () => {
 
   const handleSubmitReport = async () => {
     try {
-      const result = await leaderService.submitReport(shiftReport);
+      if (error) {
+        alert("❌ Cannot submit while schedule data failed to load. Please fix access and retry.");
+        return;
+      }
+
+      const selectedScheduleFromList = schedules.find(
+        (item) => String(item.scheduleId) === String(shiftReport.scheduleId),
+      );
+
+      if (!selectedScheduleFromList) {
+        alert("❌ Invalid schedule. Please reload data and choose a schedule again.");
+        return;
+      }
+
+      if (!["RUNNING", "PAUSED"].includes(selectedScheduleFromList.status)) {
+        alert("❌ Report can only be submitted for RUNNING or PAUSED schedules.");
+        return;
+      }
+
+      const payload = {
+        scheduleId: Number(shiftReport.scheduleId),
+        shift: shiftReport.shift,
+        targetQuantity: Number(shiftReport.targetQuantity) || 0,
+        goodQuantity: Number(shiftReport.goodQuantity) || 0,
+        rejectQuantity: Number(shiftReport.rejectQuantity) || 0,
+        downtimeMinutes: Number(shiftReport.downtimeMinutes) || 0,
+        notes: shiftReport.notes || undefined,
+      };
+
+      const result = await leaderService.submitReport(payload);
+
+      if (result?.scheduleId && result?.scheduleCompletionPercentage != null) {
+        setLocalProgressBySchedule((prev) => ({
+          ...prev,
+          [result.scheduleId]: Number(result.scheduleCompletionPercentage),
+        }));
+      }
+
+      if (result?.scheduleId && result?.orderItemCompletionPercentage != null) {
+        setLocalOrderItemProgressBySchedule((prev) => ({
+          ...prev,
+          [result.scheduleId]: Number(result.orderItemCompletionPercentage),
+        }));
+      }
+
       alert(`✅ ${result.message || "Shift report submitted successfully!"}`);
       setShowReportModal(false);
+      setSelectedSchedule(null);
+      const cleared = createDefaultShiftReport();
+      setShiftReport(cleared);
+      clearShiftReportDraft();
       fetchData();
     } catch (err) {
       alert(
@@ -444,6 +508,47 @@ const LeaderProgress = () => {
       default:
         return status;
     }
+  };
+
+  const getScheduleProgressValue = (schedule) => {
+    if (
+      Object.prototype.hasOwnProperty.call(
+        localProgressBySchedule,
+        schedule.scheduleId,
+      )
+    ) {
+      return localProgressBySchedule[schedule.scheduleId];
+    }
+
+    if (schedule?.percentage != null) {
+      return Number(schedule.percentage);
+    }
+
+    return null;
+  };
+
+  const getOrderProgressValue = (schedule) => {
+    if (schedule?.orderCompletionPercentage == null) {
+      return null;
+    }
+    return Number(schedule.orderCompletionPercentage);
+  };
+
+  const getOrderItemProgressValue = (schedule) => {
+    if (
+      Object.prototype.hasOwnProperty.call(
+        localOrderItemProgressBySchedule,
+        schedule.scheduleId,
+      )
+    ) {
+      return localOrderItemProgressBySchedule[schedule.scheduleId];
+    }
+
+    if (schedule?.orderItemCompletionPercentage != null) {
+      return Number(schedule.orderItemCompletionPercentage);
+    }
+
+    return null;
   };
 
   const filteredSchedules = getFilteredSchedules();
@@ -505,12 +610,12 @@ const LeaderProgress = () => {
           <div className="lp-header-left">
             <h1 className="lp-header-title">
               {IC.barChart}
-              Production Progress Update
+              Production Execution & Reporting
             </h1>
             <p className="lp-header-subtitle">
               {dashboard?.lineName
                 ? `${dashboard.lineName} — Today's efficiency: ${dashboard.todayEfficiency || 0}%`
-                : "Report production output and incidents for each schedule"}
+                : "Log shift output and incidents by schedule. Progress is auto-calculated from submitted reports."}
             </p>
           </div>
           <div className="lp-header-right">
@@ -524,7 +629,7 @@ const LeaderProgress = () => {
             )}
             <button className="lp-btn-report" onClick={openReportModal}>
               {IC.clipboard}
-              Shift Report
+              Log Shift Output
             </button>
             <NotificationBell />
             <div className="lp-user-info">
@@ -576,7 +681,7 @@ const LeaderProgress = () => {
             </div>
             <div className="lp-summary-card accent-amber">
               <span className="lp-summary-value">
-                {dashboard.todayDowntimeMinutes || 0}p
+                {dashboard.todayDowntimeMinutes || 0}m
               </span>
               <span className="lp-summary-label">Downtime</span>
             </div>
@@ -665,8 +770,13 @@ const LeaderProgress = () => {
                 </p>
               </div>
             ) : (
-              filteredSchedules.map((schedule) => (
-                <div
+              filteredSchedules.map((schedule) => {
+                const scheduleProgress = getScheduleProgressValue(schedule);
+                const orderItemProgress = getOrderItemProgressValue(schedule);
+                const orderProgress = getOrderProgressValue(schedule);
+
+                return (
+                  <div
                   id={`schedule-${schedule.scheduleId}`}
                   key={schedule.scheduleId}
                   className="lp-schedule-card"
@@ -706,16 +816,31 @@ const LeaderProgress = () => {
                           : "—"}
                       </span>
                     </div>
-                    {Object.prototype.hasOwnProperty.call(
-                      localProgressBySchedule,
-                      schedule.scheduleId,
-                    ) && (
+                    {scheduleProgress != null && (
+                      <div className="lp-sched-detail">
+                        <span className="lp-sched-detail-label">Progress</span>
+                        <span className="lp-sched-detail-value">
+                          {scheduleProgress}%
+                        </span>
+                      </div>
+                    )}
+                    {orderProgress != null && (
                       <div className="lp-sched-detail">
                         <span className="lp-sched-detail-label">
-                          Last Updated Progress
+                          Order Completion
                         </span>
                         <span className="lp-sched-detail-value">
-                          {localProgressBySchedule[schedule.scheduleId]}%
+                          {orderProgress}%
+                        </span>
+                      </div>
+                    )}
+                    {orderItemProgress != null && (
+                      <div className="lp-sched-detail">
+                        <span className="lp-sched-detail-label">
+                          Item Completion
+                        </span>
+                        <span className="lp-sched-detail-value">
+                          {orderItemProgress}%
                         </span>
                       </div>
                     )}
@@ -761,10 +886,10 @@ const LeaderProgress = () => {
                   {schedule.status === "RUNNING" && (
                     <div className="lp-sched-actions">
                       <button
-                        className="lp-action-btn update"
-                        onClick={() => openUpdateModal(schedule)}
+                        className="lp-action-btn report"
+                        onClick={() => openReportModal(schedule)}
                       >
-                        {IC.barChart} Update Progress
+                        {IC.clipboard} Log Production Output
                       </button>
                       {!!(
                         (schedule.documents && schedule.documents.length > 0) ||
@@ -772,7 +897,7 @@ const LeaderProgress = () => {
                           scheduleDocuments[schedule.scheduleId].length > 0)
                       ) && (
                         <button
-                          className="lp-action-btn resume"
+                          className="lp-action-btn documents"
                           onClick={() => openDocumentsModal(schedule)}
                         >
                           {IC.clipboard} View Documents
@@ -810,12 +935,18 @@ const LeaderProgress = () => {
                           scheduleDocuments[schedule.scheduleId].length > 0)
                       ) && (
                         <button
-                          className="lp-action-btn update"
+                          className="lp-action-btn documents"
                           onClick={() => openDocumentsModal(schedule)}
                         >
                           {IC.clipboard} View Documents
                         </button>
                       )}
+                      <button
+                        className="lp-action-btn report"
+                        onClick={() => openReportModal(schedule)}
+                      >
+                        {IC.clipboard} Log Shift Output
+                      </button>
                       <button
                         className="lp-action-btn incident"
                         onClick={() => openIncidentModal(schedule)}
@@ -833,8 +964,9 @@ const LeaderProgress = () => {
                       </span>
                     </div>
                   )}
-                </div>
-              ))
+                  </div>
+                );
+              })
             )}
           </div>
         )}
@@ -889,117 +1021,6 @@ const LeaderProgress = () => {
       {/* ══════════════════════════════════════════════
           MODALS
          ══════════════════════════════════════════════ */}
-
-      {/* ── Update Progress Modal ───────────────────── */}
-      {showUpdateModal && selectedSchedule && (
-        <div
-          className="lp-modal-overlay"
-          onClick={() => setShowUpdateModal(false)}
-        >
-          <div className="lp-modal" onClick={(e) => e.stopPropagation()}>
-            <div className="lp-modal-header">
-              <h2>{IC.barChart} Update Progress</h2>
-              <button
-                className="lp-modal-close"
-                onClick={() => setShowUpdateModal(false)}
-              >
-                {IC.close}
-              </button>
-            </div>
-            <div className="lp-modal-body">
-              <div className="lp-modal-info">
-                <p>
-                  <strong>Schedule:</strong> SCH-{selectedSchedule.scheduleId}
-                </p>
-                <p className="lp-modal-info-title">
-                  {selectedSchedule.orderInfo || "N/A"}
-                </p>
-              </div>
-
-              <div className="lp-form-group">
-                <label>Completion Percentage (%)</label>
-                <input
-                  type="number"
-                  min="0"
-                  max="100"
-                  value={newPercentage}
-                  onChange={(e) => {
-                    const value = Number(e.target.value);
-                    setNewPercentage(Number.isNaN(value) ? 0 : value);
-                  }}
-                  className="lp-form-input"
-                  placeholder="Enter percentage..."
-                />
-                <div className="lp-progress-bar">
-                  <div
-                    className="lp-progress-fill"
-                    style={{
-                      width: `${Math.min(100, newPercentage)}%`,
-                      background:
-                        newPercentage >= 100
-                          ? "#059669"
-                          : newPercentage >= 50
-                            ? "#0891b2"
-                            : "#d97706",
-                    }}
-                  />
-                </div>
-              </div>
-
-              <div className="lp-form-group">
-                <label>Notes</label>
-                <textarea
-                  value={progressNote}
-                  onChange={(e) => setProgressNote(e.target.value)}
-                  className="lp-form-textarea"
-                  placeholder="Enter notes about production progress..."
-                  rows={3}
-                />
-              </div>
-
-              <div className="lp-quick-notes">
-                <label>Quick Notes:</label>
-                <div className="lp-quick-note-buttons">
-                  <button
-                    onClick={() =>
-                      setProgressNote("Production running smoothly")
-                    }
-                  >
-                    ✅ Smooth
-                  </button>
-                  <button
-                    onClick={() => setProgressNote("Minor issue resolved")}
-                  >
-                    ⚠️ Minor Issue
-                  </button>
-                  <button
-                    onClick={() =>
-                      setProgressNote("High productivity achieved")
-                    }
-                  >
-                    🚀 High Productivity
-                  </button>
-                </div>
-              </div>
-            </div>
-            <div className="lp-modal-footer">
-              <button
-                className="lp-btn-cancel"
-                onClick={() => setShowUpdateModal(false)}
-              >
-                Cancel
-              </button>
-              <button
-                className="lp-btn-confirm"
-                onClick={handleUpdateProgress}
-                disabled={newPercentage < 0 || newPercentage > 100}
-              >
-                Update Progress
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
 
       {/* ── Incident Report Modal ───────────────────── */}
       {showIncidentModal && selectedSchedule && (
@@ -1106,7 +1127,7 @@ const LeaderProgress = () => {
         >
           <div className="lp-modal" onClick={(e) => e.stopPropagation()}>
             <div className="lp-modal-header">
-              <h2>{IC.clipboard} End-of-Shift Report</h2>
+              <h2>{IC.clipboard} Production Output Report</h2>
               <button
                 className="lp-modal-close"
                 onClick={() => setShowReportModal(false)}
@@ -1115,6 +1136,55 @@ const LeaderProgress = () => {
               </button>
             </div>
             <div className="lp-modal-body">
+              <div className="lp-form-group">
+                <label>Production Schedule *</label>
+                <select
+                  value={shiftReport.scheduleId}
+                  onChange={(e) => {
+                    const selectedId = e.target.value;
+                    const schedule = schedules.find(
+                      (item) => String(item.scheduleId) === selectedId,
+                    );
+
+                    setShiftReport({ ...shiftReport, scheduleId: selectedId });
+                    setSelectedSchedule(schedule || null);
+                  }}
+                  className="lp-form-select"
+                >
+                  <option value="">Select schedule...</option>
+                  {schedules
+                    .filter((schedule) =>
+                      ["RUNNING", "PAUSED"].includes(schedule.status),
+                    )
+                    .map((schedule) => (
+                      <option
+                        key={schedule.scheduleId}
+                        value={schedule.scheduleId}
+                      >
+                        SCH-{schedule.scheduleId} - {schedule.orderInfo || "N/A"}
+                      </option>
+                    ))}
+                </select>
+                <p className="lp-inline-help">
+                  Progress percentage is computed by backend from cumulative
+                  reported output.
+                </p>
+                <p className="lp-inline-help">Draft is auto-saved while you type.</p>
+              </div>
+
+              {selectedSchedule &&
+                String(selectedSchedule.scheduleId) ===
+                  String(shiftReport.scheduleId) && (
+                  <div className="lp-modal-info">
+                    <p>
+                      <strong>Schedule:</strong> SCH-{selectedSchedule.scheduleId}
+                    </p>
+                    <p className="lp-modal-info-title">
+                      {selectedSchedule.orderInfo || "N/A"}
+                    </p>
+                  </div>
+                )}
+
               <div className="lp-form-group">
                 <label>Work Shift</label>
                 <select
@@ -1222,6 +1292,8 @@ const LeaderProgress = () => {
                 className="lp-btn-confirm"
                 onClick={handleSubmitReport}
                 disabled={
+                  !!error ||
+                  !shiftReport.scheduleId ||
                   shiftReport.targetQuantity < 0 ||
                   shiftReport.goodQuantity < 0 ||
                   shiftReport.rejectQuantity < 0 ||

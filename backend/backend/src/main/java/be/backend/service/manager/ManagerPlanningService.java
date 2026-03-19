@@ -52,8 +52,7 @@ public class ManagerPlanningService {
     @Transactional
     public List<ProductionPlanResponse> createPlanByItem(
             CreatePlanByItemRequest request,
-            Account account
-    ) {
+            Account account) {
         Order order = orderRepo.findById(request.getOrderId())
                 .orElseThrow(() -> new RuntimeException("Order not found"));
 
@@ -70,12 +69,10 @@ public class ManagerPlanningService {
 
         int requiredQty = orderItem.getQuantity();
         Map<Integer, Integer> confirmedQtyByItem = sumPlannedQtyByItem(
-                planRepo.findByOrderIdAndDecision(order.getId(), DECISION_CONFIRMED)
-        );
+                planRepo.findByOrderIdAndDecision(order.getId(), DECISION_CONFIRMED));
         int alreadyConfirmedQty = confirmedQtyByItem.getOrDefault(orderItem.getId(), 0);
         int existingDraftQty = extractItemQtyFromPlans(
-                planRepo.findByOrderIdAndOrderItemIdAndDecision(order.getId(), orderItem.getId(), DECISION_DRAFT)
-        );
+                planRepo.findByOrderIdAndOrderItemIdAndDecision(order.getId(), orderItem.getId(), DECISION_DRAFT));
 
         int remainingQty = requiredQty - alreadyConfirmedQty - existingDraftQty;
         if (request.getPlannedQty() > remainingQty) {
@@ -102,8 +99,7 @@ public class ManagerPlanningService {
                     request.getPlanName(),
                     request.getPlannedQty(),
                     stageStart,
-                    request.getNote()
-            );
+                    request.getNote());
             plans.add(plan);
             stageStart = plan.getPlannedEndDate();
         }
@@ -139,8 +135,7 @@ public class ManagerPlanningService {
         List<ProductionPlan> itemDraftPlans = planRepo.findByOrderIdAndOrderItemIdAndDecisionForUpdate(
                 orderId,
                 orderItemId,
-                DECISION_DRAFT
-        );
+                DECISION_DRAFT);
 
         if (itemDraftPlans.isEmpty()) {
             return ScheduleValidationResult.fail("No draft plan for order item " + orderItemId);
@@ -149,8 +144,7 @@ public class ManagerPlanningService {
         List<ProductionPlan> itemConfirmedPlans = planRepo.findByOrderIdAndOrderItemIdAndDecision(
                 orderId,
                 orderItemId,
-                DECISION_CONFIRMED
-        );
+                DECISION_CONFIRMED);
 
         int alreadyConfirmedQty = extractItemQtyFromPlans(itemConfirmedPlans);
         int draftQty = extractItemQtyFromPlans(itemDraftPlans);
@@ -163,8 +157,7 @@ public class ManagerPlanningService {
         int remainingQty = requiredQty - alreadyConfirmedQty;
         if (draftQty > remainingQty) {
             return ScheduleValidationResult.fail(
-                    "Draft qty (" + draftQty + ") exceeds remaining required qty (" + remainingQty + ")"
-            );
+                    "Draft qty (" + draftQty + ") exceeds remaining required qty (" + remainingQty + ")");
         }
 
         ScheduleValidationResult capacity = schedulerService.validateCapacity(itemDraftPlans);
@@ -182,16 +175,14 @@ public class ManagerPlanningService {
 
         List<OrderItem> orderItems = orderItemRepo.findByOrderId(orderId);
         Map<Integer, Integer> confirmedQtyByItem = sumPlannedQtyByItem(
-                planRepo.findByOrderIdAndDecision(orderId, DECISION_CONFIRMED)
-        );
+                planRepo.findByOrderIdAndDecision(orderId, DECISION_CONFIRMED));
 
         String nextOrderStatus = computeNextOrderStatus(orderItems, confirmedQtyByItem);
         order.setStatus(nextOrderStatus);
         orderRepo.save(order);
 
         ScheduleValidationResult result = ScheduleValidationResult.success(
-                "Order item " + orderItemId + " confirmed"
-        );
+                "Order item " + orderItemId + " confirmed");
         result.setOrderStatus(nextOrderStatus);
         result.setConfirmedOrderItemIds(List.of(orderItemId));
         result.setFailedOrderItems(Map.of());
@@ -231,12 +222,24 @@ public class ManagerPlanningService {
             int confirmedQty = extractItemQtyFromPlans(filterPlansByDecision(itemPlans, DECISION_CONFIRMED));
             int remainingQty = Math.max(item.getQuantity() - confirmedQty, 0);
 
-            boolean canConfirm = hasFiles && draftQty > 0 && confirmedQty < item.getQuantity() && draftQty <= remainingQty;
+            boolean canConfirm = hasFiles && draftQty > 0 && confirmedQty < item.getQuantity()
+                    && draftQty <= remainingQty;
+            String capacityBlockedReason = null;
+
+            if (canConfirm) {
+                List<ProductionPlan> itemDraftPlans = filterPlansByDecision(itemPlans, DECISION_DRAFT);
+                ScheduleValidationResult capacity = schedulerService.validateCapacity(itemDraftPlans);
+                if (!capacity.isOk()) {
+                    canConfirm = false;
+                    capacityBlockedReason = capacity.getMessage();
+                }
+            }
 
             List<OrderPlanItemsViewResponse.StageView> stages = itemPlans.stream()
                     .sorted(Comparator
                             .comparingInt((ProductionPlan p) -> routeRank(p.getLine().getLineName()))
-                            .thenComparing(ProductionPlan::getCreatedAt, Comparator.nullsLast(Comparator.naturalOrder()))
+                            .thenComparing(ProductionPlan::getCreatedAt,
+                                    Comparator.nullsLast(Comparator.naturalOrder()))
                             .thenComparing(ProductionPlan::getId, Comparator.nullsLast(Comparator.naturalOrder())))
                     .map(plan -> OrderPlanItemsViewResponse.StageView.builder()
                             .planId(plan.getId())
@@ -259,7 +262,14 @@ public class ManagerPlanningService {
                     .remainingQuantity(remainingQty)
                     .itemStatus(computeItemStatus(item.getQuantity(), draftQty, confirmedQty))
                     .canConfirm(canConfirm)
-                    .confirmBlockedReason(canConfirm ? null : deriveConfirmBlockedReason(hasFiles, draftQty, confirmedQty, item.getQuantity(), remainingQty))
+                    .confirmBlockedReason(canConfirm ? null
+                            : deriveConfirmBlockedReason(
+                                    hasFiles,
+                                    draftQty,
+                                    confirmedQty,
+                                    item.getQuantity(),
+                                    remainingQty,
+                                    capacityBlockedReason))
                     .stages(stages)
                     .build());
         }
@@ -282,8 +292,7 @@ public class ManagerPlanningService {
             String planName,
             Integer qty,
             LocalDate startDate,
-            String note
-    ) {
+            String note) {
         double hourlyCapacity = line.getCapacity() * line.getEfficiency().doubleValue();
         double hours = qty / hourlyCapacity;
         long days = (long) Math.ceil(hours / 8);
@@ -378,13 +387,11 @@ public class ManagerPlanningService {
         return hasAnyConfirmed ? ORDER_STATUS_PARTIALLY_SCHEDULED : ORDER_STATUS_PLANNING;
     }
 
-
     // ================= CANCEL =================
     @Transactional
     public void cancel(Integer orderId, Account account) {
 
-        List<ProductionPlan> plans =
-                planRepo.findByOrderIdAndDecision(orderId, DECISION_DRAFT);
+        List<ProductionPlan> plans = planRepo.findByOrderIdAndDecision(orderId, DECISION_DRAFT);
 
         if (plans.isEmpty()) {
             throw new RuntimeException("No DRAFT plan to cancel");
@@ -432,10 +439,11 @@ public class ManagerPlanningService {
     }
 
     private String deriveConfirmBlockedReason(boolean hasFiles,
-                                              int draftQty,
-                                              int confirmedQty,
-                                              int requiredQty,
-                                              int remainingQty) {
+            int draftQty,
+            int confirmedQty,
+            int requiredQty,
+            int remainingQty,
+            String capacityBlockedReason) {
         if (!hasFiles) {
             return "Order has no SOP / BOM file";
         }
@@ -447,6 +455,9 @@ public class ManagerPlanningService {
         }
         if (draftQty > remainingQty) {
             return "Draft qty exceeds remaining required qty";
+        }
+        if (capacityBlockedReason != null && !capacityBlockedReason.isBlank()) {
+            return capacityBlockedReason;
         }
         return "Item cannot be confirmed";
     }

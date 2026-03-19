@@ -17,9 +17,12 @@ const managerService = {
   },
 
   // ===================== PLANNING =====================
-  createPlan: async (planRequest) => {
+  createPlanByItem: async (planRequest) => {
     try {
-      const response = await api.post("/api/manager/plans/create", planRequest);
+      const response = await api.post(
+        "/api/manager/plans/create-by-item",
+        planRequest,
+      );
       return response.data;
     } catch (error) {
       console.error("Error creating plan:", error);
@@ -27,10 +30,15 @@ const managerService = {
     }
   },
 
-  confirmPlan: async (orderId) => {
+  // Backward-compatible alias for older call-sites.
+  createPlan: async (planRequest) => {
+    return managerService.createPlanByItem(planRequest);
+  },
+
+  confirmPlanItem: async (orderId, orderItemId) => {
     try {
       const response = await api.post(
-        `/api/manager/plans/order/${orderId}/confirm`,
+        `/api/manager/plans/order/${orderId}/confirm-item/${orderItemId}`,
         {},
       );
       return response.data;
@@ -38,6 +46,11 @@ const managerService = {
       console.error("Error confirming plan:", error);
       throw error;
     }
+  },
+
+  // Backward-compatible alias for older call-sites.
+  confirmPlan: async (orderId, orderItemId) => {
+    return managerService.confirmPlanItem(orderId, orderItemId);
   },
 
   cancelPlan: async (orderId) => {
@@ -60,6 +73,16 @@ const managerService = {
       return response.data;
     } catch (error) {
       console.error("Error fetching plans:", error);
+      throw error;
+    }
+  },
+
+  getOrderItemPlansView: async (orderId) => {
+    try {
+      const response = await api.get(`/api/manager/plans/order/${orderId}/items`);
+      return response.data;
+    } catch (error) {
+      console.error("Error fetching order item plan view:", error);
       throw error;
     }
   },
