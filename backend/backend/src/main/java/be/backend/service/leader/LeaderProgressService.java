@@ -27,11 +27,17 @@ import java.util.List;
 @RequiredArgsConstructor
 public class LeaderProgressService {
 
+        private static final String ORDER_STATUS_SCHEDULED = "SCHEDULED";
+        private static final String ORDER_STATUS_PARTIALLY_SCHEDULED = "PARTIALLY_SCHEDULED";
+        private static final String ORDER_STATUS_IN_PROGRESS = "IN_PROGRESS";
+        private static final String ORDER_STATUS_COMPLETED = "COMPLETED";
+
         private final LineLeaderAssignmentRepository assignmentRepo;
         private final ProductionScheduleRepository scheduleRepo;
         private final ProductionProgressRepository progressRepo;
         private final ReportRepository reportRepo;
         private final OrderRepository orderRepo;
+        private final OrderItemRepository orderItemRepo;
         private final ProductionFileService productionFileService;
         private final ProductionFileMapper productionFileMapper;
 
@@ -145,11 +151,15 @@ public class LeaderProgressService {
                 reportRepo.save(report);
 
                 ProgressResponse latestProgress = refreshProgressFromReports(schedule);
+                Integer orderItemId = schedule.getPlan().getOrderItem() != null
+                                ? schedule.getPlan().getOrderItem().getId()
+                                : null;
 
                 return ReportResponse.builder()
                                 .reportId(report.getId())
                                 .scheduleId(schedule.getId())
                                 .orderId(order.getId())
+                                .orderItemId(orderItemId)
                                 .lineId(line.getId())
                                 .lineName(line.getLineName())
                                 .workDate(report.getWorkDate())
@@ -158,6 +168,7 @@ public class LeaderProgressService {
                                 .rejectQuantity(report.getRejectQuantity())
                                 .targetQuantity(report.getTargetQuantity())
                                 .scheduleCompletionPercentage(latestProgress.getPercentage())
+                                .orderItemCompletionPercentage(latestProgress.getOrderItemCompletionPercentage())
                                 .orderCompletionPercentage(latestProgress.getOrderCompletionPercentage())
                                 .message("Report submitted successfully")
                                 .build();
@@ -227,11 +238,11 @@ public class LeaderProgressService {
                 schedule.setStatus("RUNNING");
                 scheduleRepo.save(schedule);
 
-                // 6. Auto chuyển Order → "In Production" (nếu chưa)
-                // → ORDER status là AGGREGATE: có ít nhất 1 schedule RUNNING → In Production
+                // 6. Auto chuyển Order -> IN_PROGRESS khi có schedule chạy
                 Order order = schedule.getOrder();
-                if ("Confirmed".equals(order.getStatus())) {
-                        order.setStatus("In Production");
+                if (ORDER_STATUS_SCHEDULED.equalsIgnoreCase(order.getStatus())
+                                || ORDER_STATUS_PARTIALLY_SCHEDULED.equalsIgnoreCase(order.getStatus())) {
+                        order.setStatus(ORDER_STATUS_IN_PROGRESS);
                         order.setUpdatedAt(OffsetDateTime.now());
                         orderRepo.save(order);
                 }
@@ -241,13 +252,17 @@ public class LeaderProgressService {
                 List<ProductionFileResponse> documentResponses = productionFileMapper.toResponseList(files);
 
                 // 8. Build response (reuse DTO đã có, thêm documents)
+                OrderItem orderItem = schedule.getPlan().getOrderItem();
+
                 return ScheduleSummaryResponse.builder()
                                 .scheduleId(schedule.getId())
                                 .orderInfo(schedule.getOrder().getId() + " - " + schedule.getOrder().getProductType())
                                 .status(schedule.getStatus())
                                 .startTime(schedule.getStartTime().toLocalDateTime())
                                 .endTime(schedule.getEndTime().toLocalDateTime())
+                                .orderItemId(orderItem != null ? orderItem.getId() : null)
                                 .percentage(calculateSchedulePercentage(schedule))
+                                .orderItemCompletionPercentage(calculateOrderItemCompletionPercentage(orderItem))
                                 .orderCompletionPercentage(calculateOrderCompletionPercentage(order))
                                 .documents(documentResponses)
                                 .build();
@@ -270,8 +285,10 @@ public class LeaderProgressService {
         }
 
         private BigDecimal calculateOrderCompletionPercentage(Order order) {
-                Integer orderQty = order.getQuantity();
-                if (orderQty == null || orderQty <= 0) {
+                int orderQty = orderItemRepo.findByOrderId(order.getId()).stream()
+                                .mapToInt(OrderItem::getQuantity)
+                                .sum();
+                if (orderQty <= 0) {
                         return BigDecimal.ZERO;
                 }
 
@@ -285,9 +302,26 @@ public class LeaderProgressService {
                 return percentage.min(BigDecimal.valueOf(100));
         }
 
+        private BigDecimal calculateOrderItemCompletionPercentage(OrderItem orderItem) {
+                if (orderItem == null || orderItem.getQuantity() == null || orderItem.getQuantity() <= 0) {
+                        return BigDecimal.ZERO;
+                }
+
+                Long producedQtyRaw = reportRepo.sumGoodQuantityByOrderItemId(orderItem.getId());
+                long producedQty = producedQtyRaw == null ? 0L : producedQtyRaw;
+
+                BigDecimal percentage = BigDecimal.valueOf(producedQty)
+                                .multiply(BigDecimal.valueOf(100))
+                                .divide(BigDecimal.valueOf(orderItem.getQuantity()), 2, RoundingMode.HALF_UP);
+
+                return percentage.min(BigDecimal.valueOf(100));
+        }
+
         private ProgressResponse refreshProgressFromReports(ProductionSchedule schedule) {
                 BigDecimal schedulePercentage = calculateSchedulePercentage(schedule);
                 BigDecimal orderPercentage = calculateOrderCompletionPercentage(schedule.getOrder());
+                OrderItem orderItem = schedule.getPlan().getOrderItem();
+                BigDecimal orderItemPercentage = calculateOrderItemCompletionPercentage(orderItem);
 
                 ProductionProgress progress = new ProductionProgress();
                 progress.setSchedule(schedule);
@@ -305,7 +339,9 @@ public class LeaderProgressService {
 
                 return ProgressResponse.builder()
                                 .scheduleId(schedule.getId())
+                                .orderItemId(orderItem != null ? orderItem.getId() : null)
                                 .percentage(schedulePercentage)
+                                .orderItemCompletionPercentage(orderItemPercentage)
                                 .orderCompletionPercentage(orderPercentage)
                                 .scheduleStatus(schedule.getStatus())
                                 .message("COMPLETED".equals(progress.getStatus())
@@ -315,12 +351,12 @@ public class LeaderProgressService {
         }
 
         private void tryCompleteOrder(Order order, BigDecimal orderPercentage) {
-                if ("COMPLETED".equalsIgnoreCase(order.getStatus())) {
+                if (ORDER_STATUS_COMPLETED.equalsIgnoreCase(order.getStatus())) {
                         return;
                 }
 
                 if (orderPercentage.compareTo(BigDecimal.valueOf(100)) >= 0) {
-                        order.setStatus("Completed");
+                        order.setStatus(ORDER_STATUS_COMPLETED);
                         order.setUpdatedAt(OffsetDateTime.now());
                         orderRepo.save(order);
                 }

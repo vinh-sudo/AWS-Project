@@ -12,8 +12,6 @@ public interface ProductionPlanRepository extends JpaRepository<ProductionPlan, 
     List<ProductionPlan> findByOrderIdAndDecision(Integer orderId, String decision);
 
     boolean existsByOrderIdAndDecision(Integer orderId, String decision);
-
-    void deleteByOrderIdAndDecision(Integer orderId, String decision);
     @Query("""
         select p from ProductionPlan p
         join fetch p.order
@@ -28,9 +26,26 @@ public interface ProductionPlanRepository extends JpaRepository<ProductionPlan, 
     @org.springframework.data.jpa.repository.Lock(jakarta.persistence.LockModeType.PESSIMISTIC_WRITE)
     @Query("""
         select p from ProductionPlan p
-        where p.order.id = :orderId and p.decision = :decision
+        where p.order.id = :orderId and p.orderItem.id = :orderItemId and p.decision = :decision
         """)
-    List<ProductionPlan> findByOrderIdAndDecisionForUpdate(@Param("orderId") Integer orderId,
-                                                            @Param("decision") String decision);
+    List<ProductionPlan> findByOrderIdAndOrderItemIdAndDecisionForUpdate(@Param("orderId") Integer orderId,
+                                                                          @Param("orderItemId") Integer orderItemId,
+                                                                          @Param("decision") String decision);
 
+    @Query("""
+        select p from ProductionPlan p
+        where p.order.id = :orderId and p.orderItem.id = :orderItemId and p.decision = :decision
+        """)
+    List<ProductionPlan> findByOrderIdAndOrderItemIdAndDecision(@Param("orderId") Integer orderId,
+                                                                 @Param("orderItemId") Integer orderItemId,
+                                                                 @Param("decision") String decision);
+
+    @Query("""
+        select p from ProductionPlan p
+        left join fetch p.orderItem
+        join fetch p.line
+        where p.order.id = :orderId
+        order by p.createdAt desc
+    """)
+    List<ProductionPlan> findByOrderIdForManager(@Param("orderId") Integer orderId);
 }
