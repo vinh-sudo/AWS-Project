@@ -126,4 +126,11 @@ public interface ReportRepository extends JpaRepository<Report, Integer> {
             where oi.id = :orderItemId
             """)
     Long sumGoodQuantityByOrderItemId(@Param("orderItemId") Integer orderItemId);
+
+    @Query("""
+            select coalesce(sum(r.goodQuantity + r.rejectQuantity), 0)
+            from Report r
+            where r.schedule.id = :scheduleId
+            """)
+    Long sumProducedQuantityByScheduleId(@Param("scheduleId") Integer scheduleId);
 }

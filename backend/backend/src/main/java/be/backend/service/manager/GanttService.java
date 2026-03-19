@@ -15,7 +15,6 @@ public class GanttService {
 
     private final ProductionScheduleRepository scheduleRepo;
 
-
     public List<GanttItemResponse> getGantt(LocalDate date) {
 
         var start = date.atStartOfDay().atOffset(ZoneOffset.of("+07"));
@@ -24,9 +23,14 @@ public class GanttService {
         return scheduleRepo.findInRange(start, end).stream()
                 .map(s -> GanttItemResponse.builder()
                         .scheduleId(s.getId())
+                        .planId(s.getPlan() != null ? s.getPlan().getId() : null)
+                        .planName(s.getPlan() != null ? s.getPlan().getPlanName() : null)
                         .line(s.getPlan().getLine().getLineName())
                         .machine(s.getMachine().getMachineName())
                         .orderId(s.getOrder().getId())
+                        .orderItemId(s.getPlan() != null && s.getPlan().getOrderItem() != null
+                                ? s.getPlan().getOrderItem().getId()
+                                : null)
                         .start(s.getStartTime())
                         .end(s.getEndTime())
                         .status(s.getStatus())

@@ -1,12 +1,14 @@
 package be.backend.service.manager;
 
 import be.backend.model.dto.LineCapacityDTO;
+import be.backend.model.response.LineOccupancyResponse;
 import be.backend.model.response.LineOverviewResponse;
 import be.backend.repository.ProductionLineRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
 import java.time.OffsetDateTime;
+import java.util.Comparator;
 import java.util.List;
 @Service
 @RequiredArgsConstructor
@@ -57,5 +59,45 @@ public class ManagerLineOverviewService {
                     .build();
 
         }).toList();
+    }
+
+    public List<LineOccupancyResponse> getOccupancy() {
+        List<LineCapacityDTO> lines = repository.getLineCapacity(OffsetDateTime.now());
+
+        return lines.stream()
+                .sorted(Comparator.comparing(LineCapacityDTO::getLineId))
+                .map(dto -> {
+                    int totalMachines = dto.getTotalMachines().intValue();
+                    int busyMachines = dto.getBusyMachines().intValue();
+                    long activeScheduleCount = dto.getActiveScheduleCount() == null ? 0 : dto.getActiveScheduleCount();
+
+                    boolean occupied = busyMachines > 0 || activeScheduleCount > 0;
+                    double occupancyPercent = totalMachines <= 0
+                            ? 0.0
+                            : Math.round((busyMachines * 10000.0) / totalMachines) / 100.0;
+
+                    String status;
+                    if (totalMachines <= 0) {
+                        status = "NO_MACHINE";
+                    } else if (busyMachines >= totalMachines) {
+                        status = "FULLY_OCCUPIED";
+                    } else if (occupied) {
+                        status = "PARTIALLY_OCCUPIED";
+                    } else {
+                        status = "AVAILABLE";
+                    }
+
+                    return LineOccupancyResponse.builder()
+                            .lineId(dto.getLineId())
+                            .lineName(dto.getLineName())
+                            .activeScheduleCount(activeScheduleCount)
+                            .totalMachines(totalMachines)
+                            .busyMachines(busyMachines)
+                            .occupancyPercent(occupancyPercent)
+                            .occupied(occupied)
+                            .status(status)
+                            .build();
+                })
+                .toList();
     }
 }

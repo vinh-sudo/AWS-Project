@@ -1,5 +1,6 @@
 package be.backend.controller.manager;
 
+import be.backend.model.response.LineOccupancyResponse;
 import be.backend.model.response.LineOverviewResponse;
 import be.backend.service.manager.ManagerLineOverviewService;
 import lombok.RequiredArgsConstructor;
@@ -21,5 +22,10 @@ public class ManagerLineController {
     @GetMapping("/overview")
     public List<LineOverviewResponse> overview() {
         return service.getOverview();
+    }
+
+    @GetMapping("/occupancy")
+    public List<LineOccupancyResponse> occupancy() {
+        return service.getOccupancy();
     }
 }

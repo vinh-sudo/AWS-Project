@@ -11,6 +11,8 @@ import org.springframework.stereotype.Service;
 import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 @Service
@@ -49,8 +51,6 @@ public class OeeService {
             List<Report> reports =
                     reportMap.getOrDefault(line.getId(), List.of());
 
-            if (reports.isEmpty()) continue;
-
             int good = 0;
             int reject = 0;
             int target = 0;
@@ -63,8 +63,10 @@ public class OeeService {
                 downtime += r.getDowntimeMinutes() == null ? 0 : r.getDowntimeMinutes();
             }
 
-            double planned = line.getShiftHours() * 60.0;
-            double operating = planned - downtime;
+            int shiftCount = countShiftBuckets(reports);
+            double plannedPerShift = line.getShiftHours() == null ? 0 : line.getShiftHours() * 60.0;
+            double planned = plannedPerShift * shiftCount;
+            double operating = Math.max(0, planned - downtime);
 
             double availability = planned == 0 ? 0 : operating / planned;
             double performance = target == 0 ? 0 : (double) good / target;
@@ -84,6 +86,24 @@ public class OeeService {
 
     public List<OeeLineResponse> getTodayOee() {
         return calculate(LocalDate.now());
+    }
+
+    private int countShiftBuckets(List<Report> reports) {
+        if (reports.isEmpty()) {
+            return 1;
+        }
+
+        Set<String> shifts = reports.stream()
+                .map(Report::getShift)
+                .filter(Objects::nonNull)
+                .map(String::trim)
+                .filter(s -> !s.isEmpty())
+                .collect(Collectors.toSet());
+
+        if (shifts.isEmpty()) {
+            return reports.size();
+        }
+        return shifts.size();
     }
 
     private double round(double v) {
