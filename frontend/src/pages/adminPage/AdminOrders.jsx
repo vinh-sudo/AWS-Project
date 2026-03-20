@@ -546,6 +546,23 @@ const AdminOrders = () => {
   };
   const setField = (field, val) => setFormData((p) => ({ ...p, [field]: val }));
 
+  const itemTotals = useMemo(
+    () =>
+      formData.items.reduce(
+        (acc, it) => {
+          const quantity = Number(it.quantity) || 0;
+          const price = Number(it.price) || 0;
+
+          return {
+            quantity: acc.quantity + quantity,
+            price: acc.price + quantity * price,
+          };
+        },
+        { quantity: 0, price: 0 },
+      ),
+    [formData.items],
+  );
+
   const buildOrderPayload = () => ({
     customerName: formData.customerName,
     productType: formData.productType,
@@ -885,6 +902,16 @@ const AdminOrders = () => {
           </button>
         </div>
       ))}
+      {formData.items.length > 0 && (
+        <div className="ao-items-totals">
+          <span className="ao-items-total-item">
+            Total Quantity: <strong>{itemTotals.quantity.toLocaleString()}</strong>
+          </span>
+          <span className="ao-items-total-item">
+            Total Price: <strong>{formatCurrency(itemTotals.price)}</strong>
+          </span>
+        </div>
+      )}
     </div>
   );
 
