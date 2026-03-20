@@ -42,7 +42,7 @@ const ManagerPlanning = () => {
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedOrder, setSelectedOrder] = useState(null);
   const [selectedPlanningItemId, setSelectedPlanningItemId] = useState(null);
-  const [orderItemViewsByOrder, setOrderItemViewsByOrder] = useState({});
+  const [orderItemViewByOrder, setOrderItemViewByOrder] = useState({});
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [showOrderSelectModal, setShowOrderSelectModal] = useState(false);
   const [planForm, setPlanForm] = useState({
@@ -156,38 +156,44 @@ const ManagerPlanning = () => {
         managerService.getAllOrders(),
       ]);
 
-      const orderIds = Array.from(
-        new Set(
+      const draftOrderIds = [
+        ...new Set(
           (plansRes || [])
-            .map((plan) => Number(plan.orderId || plan.order?.id))
-            .filter((orderId) => Number.isFinite(orderId)),
+            .filter((p) => {
+              const decision = (p.decision || "").toUpperCase();
+              return decision === "DRAFT" || decision === "PENDING";
+            })
+            .map((p) => Number(p.orderId || p.order?.id))
+            .filter((id) => Number.isFinite(id)),
         ),
-      );
+      ];
 
-      const viewEntries = await Promise.all(
-        orderIds.map(async (orderId) => {
+      const itemViewsEntries = await Promise.all(
+        draftOrderIds.map(async (orderId) => {
           try {
             const view = await managerService.getOrderItemPlansView(orderId);
             return [orderId, view];
           } catch (viewErr) {
-            console.warn("Unable to load order item plan view:", orderId, viewErr);
+            console.warn(
+              `Unable to fetch order item planning view for order ${orderId}:`,
+              viewErr,
+            );
             return [orderId, null];
           }
         }),
       );
 
-      const viewMap = Object.fromEntries(
-        viewEntries.filter((entry) => entry[1] !== null),
+      const itemViewMap = Object.fromEntries(
+        itemViewsEntries.filter(([, view]) => !!view),
       );
 
       setPlans(plansRes || []);
       setLinesOverview(linesRes || []);
       setOrders(ordersRes || []);
-      setOrderItemViewsByOrder(viewMap);
+      setOrderItemViewByOrder(itemViewMap);
     } catch (err) {
       console.error("Error fetching data:", err);
       setError("Unable to load data. Please try again later.");
-      setOrderItemViewsByOrder({});
     } finally {
       setLoading(false);
     }
@@ -944,17 +950,20 @@ const ManagerPlanning = () => {
                               const itemLabel = orderItem
                                 ? formatOrderItemLabel(orderItem)
                                 : `Item #${itemId}`;
-                              const itemView = orderItemViewsByOrder[
-                                orderIdNum
+                              const itemView = orderItemViewByOrder[
+                                Number(orderIdNum)
                               ]?.items?.find(
-                                (viewItem) =>
-                                  Number(viewItem.orderItemId) === itemId,
+                                (itemViewRow) =>
+                                  Number(itemViewRow.orderItemId) === Number(itemId),
                               );
                               const itemCanConfirm = itemView
                                 ? Boolean(itemView.canConfirm)
                                 : true;
                               const itemConfirmBlockedReason =
-                                itemView?.confirmBlockedReason || "";
+                                itemView && !itemCanConfirm
+                                  ? itemView.confirmBlockedReason ||
+                                    "This order item cannot be confirmed now."
+                                  : "";
 
                               return (
                                 <div key={`${orderId}-${itemIdKey}`} className="pp-item-plan-block">
@@ -971,14 +980,13 @@ const ManagerPlanning = () => {
                                         <>
                                           <button
                                             className="pp-btn-card-confirm"
-                                            onClick={() =>
-                                              handleConfirmOrderItem(orderIdNum, itemId)
-                                            }
                                             disabled={!itemCanConfirm}
                                             title={
-                                              itemCanConfirm
-                                                ? ""
-                                                : itemConfirmBlockedReason
+                                              itemConfirmBlockedReason ||
+                                              "Confirm this order item"
+                                            }
+                                            onClick={() =>
+                                              handleConfirmOrderItem(orderIdNum, itemId)
                                             }
                                           >
                                             <svg
@@ -1020,8 +1028,7 @@ const ManagerPlanning = () => {
                                       ) : null}
                                     </div>
                                   </div>
-
-                                  {hasItemDraft && !itemCanConfirm && itemConfirmBlockedReason ? (
+                                  {itemConfirmBlockedReason ? (
                                     <div className="pp-item-plan-warning">
                                       {itemConfirmBlockedReason}
                                     </div>

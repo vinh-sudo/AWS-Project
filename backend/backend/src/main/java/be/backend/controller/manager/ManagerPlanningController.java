@@ -44,6 +44,19 @@ public class ManagerPlanningController {
         return ResponseEntity.ok(result);
     }
 
+    @PostMapping("/order/{orderId}/cancel-item/{orderItemId}")
+    public ResponseEntity<?> cancelOrderItem(
+            @PathVariable Integer orderId,
+            @PathVariable Integer orderItemId,
+            @AuthenticationPrincipal Account account
+    ) {
+        ScheduleValidationResult result = planningService.cancelOrderItem(orderId, orderItemId, account);
+        if (!result.isOk()) {
+            return ResponseEntity.badRequest().body(result);
+        }
+        return ResponseEntity.ok(result);
+    }
+
     @PostMapping("/order/{orderId}/cancel")
     public ResponseEntity<String> cancel(
             @PathVariable Integer orderId,

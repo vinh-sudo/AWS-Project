@@ -10,10 +10,7 @@ import org.springframework.stereotype.Service;
 import java.time.OffsetDateTime;
 import java.time.ZoneOffset;
 import java.time.temporal.ChronoUnit;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 @Service
 @RequiredArgsConstructor
@@ -28,61 +25,66 @@ public class SchedulerService {
     public ScheduleValidationResult validateCapacity(List<ProductionPlan> plans) {
 
         Map<String, Double> reservedHoursByWindow = new HashMap<>();
+        // Cache per (line, window) so multiple plans on same line+window don't re-hit DB
+        Map<String, LineWindowCapacity> capacityCache = new HashMap<>();
 
         for (ProductionPlan plan : plans) {
 
             var start = plan.getPlannedStartDate().atStartOfDay().atOffset(ZoneOffset.of("+07"));
             var end = plan.getPlannedEndDate().atStartOfDay().atOffset(ZoneOffset.of("+07"));
-            long windowDays = Math.max(1, ChronoUnit.DAYS.between(start.toLocalDate(), end.toLocalDate()));
+            long windowDays = calculateWindowDays(start, end);
 
-            // 1. Leader check
-            if (leaderRepo.findActiveLeader(plan.getLine().getId().longValue(), start, end).isEmpty()) {
-                return ScheduleValidationResult.fail(
-                        "No active line leader for " + plan.getLine().getLineName());
-            }
+            Integer lineId = plan.getLine().getId();
+            String windowKey = buildWindowKey(lineId, start, end);
 
-            // 2. Line incident
-            if (incidentRepo.hasBlockingIncident(
-                    plan.getLine().getId().longValue(), null, start, end)) {
-                return ScheduleValidationResult.fail(
-                        "Line " + plan.getLine().getLineName() + " has blocking incident");
-            }
-
-            List<Machine> machines = machineRepo.findByLineIdAndStatus(plan.getLine().getId(), "ACTIVE");
-
-            double totalHours = 0;
-
-            for (Machine m : machines) {
-
-                // 3. Machine incident
-                if (incidentRepo.hasBlockingIncident(
-                        plan.getLine().getId().longValue(),
-                        m.getId().longValue(),
-                        start, end)) {
-                    continue;
+            LineWindowCapacity lineCapacity = capacityCache.get(windowKey);
+            if (lineCapacity == null) {
+                // 1. Leader check
+                if (leaderRepo.findActiveLeader(lineId.longValue(), start, end).isEmpty()) {
+                    return ScheduleValidationResult.fail(
+                            "No active line leader for " + plan.getLine().getLineName());
                 }
 
-                // 4. Busy
-                if (scheduleRepo.existsOverlappingMachineForUpdate(
-                        m.getId().longValue(), start, end)) {
-                    continue;
+                // 2. Line incident
+                if (incidentRepo.hasBlockingIncident(lineId.longValue(), null, start, end)) {
+                    return ScheduleValidationResult.fail(
+                            "Line " + plan.getLine().getLineName() + " has blocking incident");
                 }
 
-                // 5. Capacity in hours
-                double hours = plan.getLine().getShiftHours()
-                        * plan.getLine().getEfficiency().doubleValue()
-                        * windowDays;
+                // 3. Active machines (case-insensitive status)
+                List<Machine> machines = machineRepo.findActiveByLineId(lineId);
 
-                totalHours += hours;
+                double totalHoursInWindow = 0.0;
+
+                for (Machine m : machines) {
+                    // 4. Machine incident
+                    if (incidentRepo.hasBlockingIncident(lineId.longValue(), m.getId().longValue(), start, end)) {
+                        continue;
+                    }
+
+                    // 5. Busy
+                    if (scheduleRepo.existsOverlappingMachineForUpdate(m.getId().longValue(), start, end)) {
+                        continue;
+                    }
+
+                    double hoursPerDay = plan.getLine().getShiftHours()
+                            * plan.getLine().getEfficiency().doubleValue();
+                    totalHoursInWindow += hoursPerDay * windowDays;
+                }
+
+                lineCapacity = new LineWindowCapacity(totalHoursInWindow);
+                capacityCache.put(windowKey, lineCapacity);
             }
 
-            String windowKey = buildWindowKey(plan.getLine().getId(), start, end);
             double alreadyReserved = reservedHoursByWindow.getOrDefault(windowKey, 0.0);
-            double remainingHours = totalHours - alreadyReserved;
+            double remainingHours = lineCapacity.totalHoursInWindow - alreadyReserved;
 
             if (remainingHours < plan.getEstimatedHours()) {
                 return ScheduleValidationResult.fail(
-                        "Not enough machine hours on line " + plan.getLine().getLineName());
+                        "Not enough machine hours on line " + plan.getLine().getLineName()
+                                + " (required " + Math.round(plan.getEstimatedHours() * 10.0) / 10.0
+                                + "h, available " + Math.max(Math.round(remainingHours * 10.0) / 10.0, 0)
+                                + "h)");
             }
 
             reservedHoursByWindow.put(windowKey, alreadyReserved + plan.getEstimatedHours());
@@ -96,13 +98,13 @@ public class SchedulerService {
 
         var start = plan.getPlannedStartDate().atStartOfDay().atOffset(ZoneOffset.of("+07"));
         var end = plan.getPlannedEndDate().atStartOfDay().atOffset(ZoneOffset.of("+07"));
-        long windowDays = Math.max(1, ChronoUnit.DAYS.between(start.toLocalDate(), end.toLocalDate()));
 
         double remaining = plan.getEstimatedHours();
         double shift = plan.getLine().getShiftHours().doubleValue();
         double eff = plan.getLine().getEfficiency().doubleValue();
 
-        List<Machine> machines = machineRepo.findByLineIdAndStatus(plan.getLine().getId(), "ACTIVE");
+        // Use case-insensitive ACTIVE filter and reuse for all allocations
+        List<Machine> machines = machineRepo.findActiveByLineId(plan.getLine().getId());
 
         // Build allocation plan first so we never persist partial schedules for a plan.
         List<MachineAllocation> allocations = new ArrayList<>();
@@ -112,12 +114,11 @@ public class SchedulerService {
                 break;
             }
 
-            if (scheduleRepo.existsOverlappingMachineForUpdate(
-                    m.getId().longValue(), start, end)) {
+            if (scheduleRepo.existsOverlappingMachineForUpdate(m.getId().longValue(), start, end)) {
                 continue;
             }
 
-            double available = shift * eff * windowDays;
+            double available = shift * eff;
             double assigned = Math.min(available, remaining);
             double realHours = assigned / eff;
 
@@ -149,6 +150,13 @@ public class SchedulerService {
     private String buildWindowKey(Integer lineId, OffsetDateTime start, OffsetDateTime end) {
         return lineId + "|" + start.toString() + "|" + end.toString();
     }
+
+    private long calculateWindowDays(OffsetDateTime start, OffsetDateTime end) {
+        long days = ChronoUnit.DAYS.between(start.toLocalDate(), end.toLocalDate());
+        return Math.max(days, 1);
+    }
+
+    private record LineWindowCapacity(double totalHoursInWindow) {}
 
     private record MachineAllocation(Machine machine, double realHours, double assignedHours) {
     }
