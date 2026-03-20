@@ -391,10 +391,63 @@ public class ManagerPlanningService {
 
     // ================= CANCEL =================
     @Transactional
+    public ScheduleValidationResult cancelOrderItem(Integer orderId, Integer orderItemId, Account account) {
+
+        Order order = orderRepo.findByIdForUpdate(orderId)
+                .orElseThrow(() -> new RuntimeException("Order not found"));
+
+        OrderItem orderItem = orderItemRepo.findById(orderItemId)
+                .orElseThrow(() -> new RuntimeException("Order item not found"));
+
+        if (!Objects.equals(orderItem.getOrder().getId(), orderId)) {
+            return ScheduleValidationResult.fail("Order item does not belong to order " + orderId);
+        }
+
+        List<ProductionPlan> itemDraftPlans = planRepo.findByOrderIdAndOrderItemIdAndDecisionForUpdate(
+                orderId,
+                orderItemId,
+                DECISION_DRAFT);
+
+        if (itemDraftPlans.isEmpty()) {
+            return ScheduleValidationResult.fail("No DRAFT plan to cancel for order item " + orderItemId);
+        }
+
+        // mark drafts as cancelled for this item
+        itemDraftPlans.forEach(p -> p.setDecision("CANCELLED"));
+
+        // recompute order status after change
+        List<OrderItem> orderItems = orderItemRepo.findByOrderId(orderId);
+        Map<Integer, Integer> confirmedQtyByItem = sumPlannedQtyByItem(
+                planRepo.findByOrderIdAndDecision(orderId, DECISION_CONFIRMED));
+
+        String nextOrderStatus = computeNextOrderStatus(orderItems, confirmedQtyByItem);
+        order.setStatus(nextOrderStatus);
+        orderRepo.save(order);
+
+        AuditLog log = new AuditLog();
+        log.setUser(account.getUser());
+        log.setActionType(ActionType.CANCEL_PLAN);
+        log.setEntity("OrderItem");
+        log.setDetails("Cancelled plan for order " + orderId + " - order item " + orderItemId);
+        auditRepo.save(log);
+
+        ScheduleValidationResult result = ScheduleValidationResult.success(
+                "Order item " + orderItemId + " plan cancelled");
+        result.setOrderStatus(nextOrderStatus);
+        result.setConfirmedOrderItemIds(List.of());
+        result.setFailedOrderItems(Map.of());
+        return result;
+    }
+
+    @Transactional
     public void cancel(Integer orderId, Account account) {
+        // cancel DRAFT plans for all order items of this order
+        List<OrderItem> orderItems = orderItemRepo.findByOrderId(orderId);
+        if (orderItems.isEmpty()) {
+            throw new RuntimeException("Order has no items to cancel plan for");
+        }
 
         List<ProductionPlan> plans = planRepo.findByOrderIdAndDecision(orderId, DECISION_DRAFT);
-
         if (plans.isEmpty()) {
             throw new RuntimeException("No DRAFT plan to cancel");
         }
@@ -402,11 +455,10 @@ public class ManagerPlanningService {
         plans.forEach(p -> p.setDecision("CANCELLED"));
 
         Order order = plans.get(0).getOrder();
-        if (planRepo.existsByOrderIdAndDecision(orderId, DECISION_CONFIRMED)) {
-            order.setStatus(ORDER_STATUS_PARTIALLY_SCHEDULED);
-        } else {
-            order.setStatus(ORDER_STATUS_NEW);
-        }
+        Map<Integer, Integer> confirmedQtyByItem = sumPlannedQtyByItem(
+                planRepo.findByOrderIdAndDecision(orderId, DECISION_CONFIRMED));
+        String nextOrderStatus = computeNextOrderStatus(orderItems, confirmedQtyByItem);
+        order.setStatus(nextOrderStatus);
         orderRepo.save(order);
 
         AuditLog log = new AuditLog();
