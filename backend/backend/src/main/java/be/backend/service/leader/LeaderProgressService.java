@@ -391,9 +391,53 @@ public class LeaderProgressService {
                 Long producedQtyRaw = reportRepo.sumGoodQuantityByScheduleId(schedule.getId());
                 long producedQty = producedQtyRaw == null ? 0L : producedQtyRaw;
 
+                // Derive effective target based on route stage.
+                // For the first stage (SMT, rank 0) we use planned quantity.
+                // For downstream stages (DIP, Assembly, Testing, Packing),
+                // effective target should not exceed the good quantity produced
+                // by the previous stage for the same order item.
+                BigDecimal effectiveTarget = BigDecimal.valueOf(plannedQty);
+
+                ProductionPlan plan = schedule.getPlan();
+                OrderItem orderItem = plan != null ? plan.getOrderItem() : null;
+                if (orderItem != null) {
+                        int currentRank = routeRank(plan.getLine().getLineName());
+                        if (currentRank > 0 && currentRank < 99) {
+                                // Find all schedules of the same order that belong to the previous stage(s)
+                                List<ProductionSchedule> orderSchedules = scheduleRepo
+                                                .findByOrderId(orderItem.getOrder().getId());
+
+                                // Aggregate good quantity from strictly previous rank for this order item
+                                long previousStageGoodQty = orderSchedules.stream()
+                                                .filter(s -> s.getPlan() != null
+                                                                && s.getPlan().getOrderItem() != null
+                                                                && orderItem.getId().equals(
+                                                                                s.getPlan().getOrderItem().getId()))
+                                                .filter(s -> {
+                                                        int stageRank = routeRank(s.getPlan().getLine().getLineName());
+                                                        return stageRank == currentRank - 1; // direct previous stage
+                                                })
+                                                .mapToLong(s -> {
+                                                        Long qty = reportRepo
+                                                                        .sumGoodQuantityByScheduleId(s.getId());
+                                                        return qty == null ? 0L : qty;
+                                                })
+                                                .sum();
+
+                                if (previousStageGoodQty > 0) {
+                                        effectiveTarget = effectiveTarget
+                                                        .min(BigDecimal.valueOf(previousStageGoodQty));
+                                }
+                        }
+                }
+
+                if (effectiveTarget.compareTo(BigDecimal.ZERO) <= 0) {
+                        return BigDecimal.ZERO;
+                }
+
                 BigDecimal percentage = BigDecimal.valueOf(producedQty)
                                 .multiply(BigDecimal.valueOf(100))
-                                .divide(BigDecimal.valueOf(plannedQty), 2, RoundingMode.HALF_UP);
+                                .divide(effectiveTarget, 2, RoundingMode.HALF_UP);
 
                 return percentage.min(BigDecimal.valueOf(100));
         }
