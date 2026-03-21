@@ -96,4 +96,13 @@ public class LeaderController {
             @PathVariable Integer id) {
         return ResponseEntity.ok(progressService.startSchedule(account, id));
     }
+
+    /** Leader finish sản xuất trên 1 schedule */
+    @PostMapping("/schedules/{id}/finish")
+    public ResponseEntity<ScheduleSummaryResponse> finishSchedule(
+            @AuthenticationPrincipal Account account,
+            @PathVariable Integer id) {
+        return ResponseEntity.ok(progressService.finishSchedule(account, id));
+    }
+
 }

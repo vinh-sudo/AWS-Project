@@ -214,7 +214,7 @@ public class LeaderProgressService {
         @Transactional
         public ScheduleSummaryResponse startSchedule(Account account, Integer scheduleId) {
 
-                // 1. Resolve leader → lấy lineId (reuse method đã có)
+                // 1. Resolve leader
                 LineLeaderAssignment assignment = resolveAssignment(account);
                 Integer leaderLineId = assignment.getLine().getId();
 
@@ -223,40 +223,46 @@ public class LeaderProgressService {
                                 .orElseThrow(() -> new ResourceNotFoundException(
                                                 "Schedule", scheduleId.toString()));
 
-                // 3. GUARD: Schedule phải thuộc line của leader
-                // → Security: leader A không start schedule line B
                 if (!schedule.getPlan().getLine().getId().equals(leaderLineId)) {
                         throw new ForbiddenException("Schedule does not belong to your line");
                 }
 
-                // 4. GUARD: Chỉ SCHEDULED mới start được
-                // → Tránh start lại schedule đang RUNNING hoặc đã COMPLETED
+                // 3. GUARD: Chỉ SCHEDULED mới start được
                 if (!"SCHEDULED".equals(schedule.getStatus())) {
                         throw new BusinessException(
                                         "Only SCHEDULED can be started. Current: " + schedule.getStatus());
                 }
 
-                // NEW: Guard stage ordering per order item
+                // 4. Stage dependency guard: SMT must start before later stages of same order item
                 ProductionPlan plan = schedule.getPlan();
                 OrderItem orderItem = plan.getOrderItem();
                 if (orderItem != null) {
                         int currentRank = routeRank(plan.getLine().getLineName());
-                        if (currentRank > 0) {
-                                // There is a previous stage (e.g. DIP after SMT)
-                                // Fetch all schedules for this order item and ensure all lower-rank stages are completed
-                                List<ProductionSchedule> itemSchedules = scheduleRepo
-                                                .findByOrderIdAndStatus(orderItem.getOrder().getId(), null);
-                                boolean previousStageIncomplete = itemSchedules.stream()
+                        // rank 0 = SMT; only enforce dependency if this is not SMT or OTHER
+                        if (currentRank > 0 && currentRank < 99) {
+                                // Lấy tất cả schedule của cùng order item qua orderId và filter
+                                List<ProductionSchedule> orderSchedules = scheduleRepo
+                                                .findByOrderId(orderItem.getOrder().getId());
+
+                                boolean hasPreviousStageStarted = orderSchedules.stream()
                                                 .filter(s -> s.getPlan() != null
                                                                 && s.getPlan().getOrderItem() != null
                                                                 && s.getPlan().getOrderItem().getId()
                                                                                 .equals(orderItem.getId()))
-                                                .anyMatch(s -> routeRank(s.getPlan().getLine().getLineName()) < currentRank
-                                                                && !"COMPLETED".equalsIgnoreCase(s.getStatus()));
+                                                .anyMatch(s -> {
+                                                        int stageRank = routeRank(s.getPlan().getLine().getLineName());
+                                                        // previous stage = lower rank (e.g. SMT before DIP)
+                                                        if (stageRank >= currentRank) {
+                                                                return false;
+                                                        }
+                                                        String st = s.getStatus();
+                                                        return "RUNNING".equalsIgnoreCase(st)
+                                                                        || "COMPLETED".equalsIgnoreCase(st);
+                                                });
 
-                                if (previousStageIncomplete) {
+                                if (!hasPreviousStageStarted) {
                                         throw new BusinessException(
-                                                        "Cannot start this stage before previous production stage is completed");
+                                                        "Cannot start this stage before previous SMT/production stage has started");
                                 }
                         }
                 }
@@ -278,7 +284,63 @@ public class LeaderProgressService {
                 List<ProductionFile> files = productionFileService.getFilesForOrder(order.getId());
                 List<ProductionFileResponse> documentResponses = productionFileMapper.toResponseList(files);
 
-                // 8. Build response (reuse DTO đã có, thêm documents)
+                OrderItem item = schedule.getPlan().getOrderItem();
+
+                return ScheduleSummaryResponse.builder()
+                                .scheduleId(schedule.getId())
+                                .orderInfo(schedule.getOrder().getId() + " - " + schedule.getOrder().getProductType())
+                                .status(schedule.getStatus())
+                                .startTime(schedule.getStartTime() != null
+                                                ? schedule.getStartTime().toLocalDateTime()
+                                                : null)
+                                .endTime(schedule.getEndTime() != null
+                                                ? schedule.getEndTime().toLocalDateTime()
+                                                : null)
+                                .orderItemId(item != null ? item.getId() : null)
+                                .documents(documentResponses)
+                                .build();
+        }
+
+        /**
+         * Leader finish a running schedule on their line.
+         * Business rule:
+         *  - schedule must belong to leader's line
+         *  - schedule must be RUNNING
+         *  - when finished, status -> COMPLETED and progress/order completion are re-evaluated
+         */
+        @Transactional
+        public ScheduleSummaryResponse finishSchedule(Account account, Integer scheduleId) {
+
+                LineLeaderAssignment assignment = resolveAssignment(account);
+                Integer leaderLineId = assignment.getLine().getId();
+
+                ProductionSchedule schedule = scheduleRepo.findById(scheduleId)
+                                .orElseThrow(() -> new ResourceNotFoundException(
+                                                "Schedule", scheduleId.toString()));
+
+                if (!schedule.getPlan().getLine().getId().equals(leaderLineId)) {
+                        throw new ForbiddenException("Schedule does not belong to your line");
+                }
+
+                if (!"RUNNING".equals(schedule.getStatus())) {
+                        throw new BusinessException(
+                                        "Only RUNNING schedules can be finished. Current: " + schedule.getStatus());
+                }
+
+                // Mark schedule as completed and set end time if missing
+                schedule.setStatus("COMPLETED");
+                if (schedule.getEndTime() == null) {
+                        schedule.setEndTime(OffsetDateTime.now());
+                }
+                scheduleRepo.save(schedule);
+
+                // Recalculate order completion (will auto-complete order if 100%)
+                BigDecimal orderPercentage = calculateOrderCompletionPercentage(schedule.getOrder());
+                tryCompleteOrder(schedule.getOrder(), orderPercentage);
+
+                // Build summary similar to startSchedule
+                List<ProductionFile> files = productionFileService.getFilesForOrder(schedule.getOrder().getId());
+                List<ProductionFileResponse> documentResponses = productionFileMapper.toResponseList(files);
                 OrderItem item = schedule.getPlan().getOrderItem();
 
                 return ScheduleSummaryResponse.builder()
@@ -301,10 +363,22 @@ public class LeaderProgressService {
                         return 99;
                 }
                 String normalized = lineName.toUpperCase(Locale.ROOT);
-                if (normalized.contains("SMT")) return 0;
-                if (normalized.contains("DIP")) return 1;
-                if (normalized.contains("TEST")) return 2;
-                if (normalized.contains("PACK")) return 3;
+                // Match actual line naming: "SMT Line", "DIP Line", "Assembly Line", "Testing Line", "Packing Line"
+                if (normalized.contains("SMT")) {
+                        return 0;
+                }
+                if (normalized.contains("DIP")) {
+                        return 1;
+                }
+                if (normalized.contains("ASSEMBLY")) {
+                        return 2;
+                }
+                if (normalized.contains("TEST")) {
+                        return 3;
+                }
+                if (normalized.contains("PACK")) {
+                        return 4;
+                }
                 return 99;
         }
 
@@ -357,6 +431,66 @@ public class LeaderProgressService {
                 return percentage.min(BigDecimal.valueOf(100));
         }
 
+        // Check whether a single order item has all 5 logical stages completed
+        // Stages are derived from lineName via routeRank():
+        //  0: SMT, 1: DIP, 2: Assembly, 3: Testing, 4: Packing
+        private boolean isOrderItemRouteCompleted(OrderItem orderItem) {
+                if (orderItem == null || orderItem.getOrder() == null) {
+                        return false;
+                }
+
+                List<ProductionSchedule> orderSchedules = scheduleRepo
+                                .findByOrderId(orderItem.getOrder().getId());
+
+                boolean hasSMT = false;
+                boolean hasDIP = false;
+                boolean hasAssembly = false;
+                boolean hasTesting = false;
+                boolean hasPacking = false;
+
+                for (ProductionSchedule s : orderSchedules) {
+                        if (s.getPlan() == null || s.getPlan().getOrderItem() == null) {
+                                continue;
+                        }
+                        if (!orderItem.getId().equals(s.getPlan().getOrderItem().getId())) {
+                                continue;
+                        }
+                        if (!"COMPLETED".equalsIgnoreCase(s.getStatus())) {
+                                continue;
+                        }
+
+                        int rank = routeRank(s.getPlan().getLine().getLineName());
+                        if (rank == 0) {
+                                hasSMT = true;
+                        } else if (rank == 1) {
+                                hasDIP = true;
+                        } else if (rank == 2) {
+                                hasAssembly = true;
+                        } else if (rank == 3) {
+                                hasTesting = true;
+                        } else if (rank == 4) {
+                                hasPacking = true;
+                        }
+                }
+
+                // Require all 5 stages: SMT, DIP, Assembly, Testing, Packing
+                return hasSMT && hasDIP && hasAssembly && hasTesting && hasPacking;
+        }
+
+        // Check that all order items of an order have their 5-stage route completed
+        private boolean isOrderRouteCompleted(Order order) {
+                List<OrderItem> items = orderItemRepo.findByOrderId(order.getId());
+                if (items.isEmpty()) {
+                        return false;
+                }
+                for (OrderItem item : items) {
+                        if (!isOrderItemRouteCompleted(item)) {
+                                return false;
+                        }
+                }
+                return true;
+        }
+
         private ProgressResponse refreshProgressFromReports(ProductionSchedule schedule) {
                 BigDecimal schedulePercentage = calculateSchedulePercentage(schedule);
                 BigDecimal orderPercentage = calculateOrderCompletionPercentage(schedule.getOrder());
@@ -395,7 +529,11 @@ public class LeaderProgressService {
                         return;
                 }
 
-                if (orderPercentage.compareTo(BigDecimal.valueOf(100)) >= 0) {
+                // Only allow marking order as COMPLETED when
+                // 1) quantity-based completion is 100%
+                // 2) all 5 logical stages (SMT, DIP, Assembly, Testing, Packing)
+                //    are completed for every order item
+                if (orderPercentage.compareTo(BigDecimal.valueOf(100)) >= 0 && isOrderRouteCompleted(order)) {
                         order.setStatus(ORDER_STATUS_COMPLETED);
                         order.setUpdatedAt(OffsetDateTime.now());
                         orderRepo.save(order);
