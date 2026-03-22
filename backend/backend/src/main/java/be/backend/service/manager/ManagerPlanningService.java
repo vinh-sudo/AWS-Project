@@ -518,11 +518,15 @@ public class ManagerPlanningService {
         }
 
         String normalized = lineName.toUpperCase(Locale.ROOT);
+        // Match actual line names: "SMT Line", "DIP Line", "Assembly Line", "Testing Line", "Packing Line"
         if (normalized.contains("SMT")) {
             return "SMT";
         }
         if (normalized.contains("DIP")) {
             return "DIP";
+        }
+        if (normalized.contains("ASSEMBLY")) {
+            return "ASSEMBLY";
         }
         if (normalized.contains("TEST")) {
             return "TEST";
