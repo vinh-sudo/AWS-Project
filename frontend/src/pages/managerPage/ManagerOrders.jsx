@@ -2,7 +2,6 @@ import React, { useState, useEffect } from "react";
 import ManagerSidebar from "../../components/ManagerSidebar/ManagerSidebar";
 import ManagerTopBar from "./ManagerTopBar";
 import managerService from "../../services/managerService";
-import authService from "../../services/authService";
 import PageLoading from "../../components/PageLoading/PageLoading";
 import "./ManagerOrders.css";
 
@@ -123,6 +122,7 @@ const ManagerOrders = () => {
   const [priorityFilter, setPriorityFilter] = useState("All");
   const [showDetailModal, setShowDetailModal] = useState(false);
   const [detailOrder, setDetailOrder] = useState(null);
+  const [detailProgress, setDetailProgress] = useState(null);
   const [orderFiles, setOrderFiles] = useState([]);
   const [detailLoading, setDetailLoading] = useState(false);
   const [sortConfig, setSortConfig] = useState({
@@ -132,8 +132,6 @@ const ManagerOrders = () => {
   const [activeTab, setActiveTab] = useState("details");
   const [showAdvancedFilters, setShowAdvancedFilters] = useState(false);
   const [activeFilterChips, setActiveFilterChips] = useState([]);
-
-  const currentUser = authService.getCurrentUser();
 
   useEffect(() => {
     fetchOrders();
@@ -321,6 +319,15 @@ const ManagerOrders = () => {
       setDetailLoading(true);
       const detail = await managerService.getOrderById(orderId);
       setDetailOrder(detail);
+      setDetailProgress(null);
+
+      try {
+        const progress = await managerService.getOrderProgress(orderId);
+        setDetailProgress(progress || null);
+      } catch (progressError) {
+        console.error("Error loading order progress:", progressError);
+        setDetailProgress(null);
+      }
 
       try {
         const files = await managerService.getOrderFiles(orderId);
@@ -743,6 +750,20 @@ const ManagerOrders = () => {
                         <span className="mo-detail-label">Updated</span>
                         <span className="mo-detail-value">
                           {formatDate(detailOrder.updatedAt)}
+                        </span>
+                      </div>
+                      <div className="mo-detail-item">
+                        <span className="mo-detail-label">Order Progress</span>
+                        <span className="mo-detail-value">
+                          {detailProgress?.orderCompletionPercentage != null
+                            ? `${detailProgress.orderCompletionPercentage}%`
+                            : "-"}
+                        </span>
+                      </div>
+                      <div className="mo-detail-item">
+                        <span className="mo-detail-label">Route Completed</span>
+                        <span className="mo-detail-value">
+                          {detailProgress?.routeCompleted ? "Yes" : "No"}
                         </span>
                       </div>
                     </div>

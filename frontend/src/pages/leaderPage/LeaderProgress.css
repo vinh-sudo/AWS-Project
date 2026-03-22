@@ -1,24 +1,24 @@
 /* ============================================
    LEADER PROGRESS – Industrial Clean v4
    Matching AdminOrders Modern Minimal style
-   Cyan accent (#0891b2) variant
+  Unified role palette (indigo accent)
    ============================================ */
 
 /* === CSS Variables === */
 :root {
-  --lp-bg: #fafafa;
+  --lp-bg: #f8fafc;
   --lp-surface: #ffffff;
   --lp-surface-hover: #f9fafb;
-  --lp-border: #e5e5e5;
-  --lp-border-light: #f0f0f0;
-  --lp-border-focus: #d4d4d4;
-  --lp-text-primary: #171717;
-  --lp-text-secondary: #525252;
-  --lp-text-muted: #a3a3a3;
-  --lp-text-faint: #d4d4d4;
-  --lp-accent: #0891b2;
-  --lp-accent-soft: #ecfeff;
-  --lp-accent-hover: #0e7490;
+  --lp-border: #e2e8f0;
+  --lp-border-light: #f1f5f9;
+  --lp-border-focus: #cbd5e1;
+  --lp-text-primary: #0f172a;
+  --lp-text-secondary: #475569;
+  --lp-text-muted: #94a3b8;
+  --lp-text-faint: #cbd5e1;
+  --lp-accent: #6366f1;
+  --lp-accent-soft: #eef2ff;
+  --lp-accent-hover: #4f46e5;
   --lp-radius: 12px;
   --lp-radius-lg: 16px;
   --lp-radius-sm: 8px;
@@ -139,7 +139,7 @@
 
 .lp-btn-report:hover {
   background: var(--lp-accent-hover);
-  box-shadow: 0 4px 12px rgba(8, 145, 178, 0.3);
+  box-shadow: 0 4px 12px rgba(99, 102, 241, 0.3);
 }
 
 .lp-btn-report svg {
@@ -215,7 +215,7 @@
   background: var(--lp-accent-soft);
   color: var(--lp-accent);
   border-color: var(--lp-accent);
-  box-shadow: 0 0 0 4px rgba(8, 145, 178, 0.12);
+  box-shadow: 0 0 0 4px rgba(99, 102, 241, 0.12);
 }
 
 .lp-step-label {
@@ -288,7 +288,7 @@
 }
 
 /* Card accent variants */
-.lp-summary-card.accent-cyan .lp-summary-value { color: #0891b2; }
+.lp-summary-card.accent-cyan .lp-summary-value { color: #6366f1; }
 .lp-summary-card.accent-blue .lp-summary-value { color: #2563eb; }
 .lp-summary-card.accent-amber .lp-summary-value { color: #d97706; }
 .lp-summary-card.accent-emerald .lp-summary-value { color: #059669; }
@@ -337,7 +337,7 @@
   background: var(--lp-accent);
   color: #fff;
   border-color: var(--lp-accent);
-  box-shadow: 0 2px 8px rgba(8, 145, 178, 0.25);
+  box-shadow: 0 2px 8px rgba(99, 102, 241, 0.25);
 }
 
 .lp-chip.active:hover {
@@ -537,13 +537,13 @@
 .lp-action-btn.report {
   background: var(--lp-accent-soft);
   color: var(--lp-accent);
-  border-color: #a5f3fc;
+  border-color: #c7d2fe;
 }
 
 .lp-action-btn.report:hover {
   background: var(--lp-accent);
   color: #fff;
-  box-shadow: 0 2px 8px rgba(8, 145, 178, 0.3);
+  box-shadow: 0 2px 8px rgba(99, 102, 241, 0.3);
 }
 
 /* Documents button */
@@ -942,7 +942,7 @@
   padding: 12px 16px;
   background: var(--lp-accent-soft);
   border-radius: var(--lp-radius-sm);
-  border: 1px solid #a5f3fc;
+  border: 1px solid #c7d2fe;
 }
 
 .lp-modal-info p {
@@ -995,7 +995,7 @@
 .lp-form-select:focus {
   outline: none;
   border-color: var(--lp-accent);
-  box-shadow: 0 0 0 3px rgba(8, 145, 178, 0.1);
+  box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.1);
 }
 
 .lp-form-textarea {
@@ -1016,7 +1016,7 @@
 .lp-form-textarea:focus {
   outline: none;
   border-color: var(--lp-accent);
-  box-shadow: 0 0 0 3px rgba(8, 145, 178, 0.1);
+  box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.1);
 }
 
 .lp-inline-help {
@@ -1067,7 +1067,7 @@
 
 .lp-btn-confirm:hover {
   background: var(--lp-accent-hover);
-  box-shadow: 0 2px 8px rgba(8, 145, 178, 0.3);
+  box-shadow: 0 2px 8px rgba(99, 102, 241, 0.3);
 }
 
 .lp-btn-confirm:disabled {

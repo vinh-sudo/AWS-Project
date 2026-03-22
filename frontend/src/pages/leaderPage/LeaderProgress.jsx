@@ -344,6 +344,16 @@ const LeaderProgress = () => {
     }
   };
 
+  const handleFinishSchedule = async (scheduleId) => {
+    try {
+      await leaderService.finishSchedule(scheduleId);
+      alert("✅ Schedule finished!");
+      fetchData();
+    } catch (err) {
+      alert(`❌ Error: ${err.response?.data?.message || "Unable to finish"}`);
+    }
+  };
+
   // Filter based on active tab
   const getFilteredSchedules = () => {
     switch (activeTab) {
@@ -914,6 +924,12 @@ const LeaderProgress = () => {
                         onClick={() => handlePauseSchedule(schedule.scheduleId)}
                       >
                         {IC.pause} Pause
+                      </button>
+                      <button
+                        className="lp-action-btn resume"
+                        onClick={() => handleFinishSchedule(schedule.scheduleId)}
+                      >
+                        {IC.check} Finish
                       </button>
                     </div>
                   )}

@@ -13,6 +13,14 @@ const extractLinesOverviewData = (payload) => {
   return [];
 };
 
+const extractLineOccupancyData = (payload) => {
+  if (Array.isArray(payload)) return payload;
+  if (Array.isArray(payload?.data)) return payload.data;
+  if (Array.isArray(payload?.content)) return payload.content;
+  if (Array.isArray(payload?.items)) return payload.items;
+  return [];
+};
+
 const normalizeStatus = (status) => {
   const normalized = (status || "").toString().trim().toUpperCase();
   if (["RUNNING", "OK"].includes(normalized)) return "ok";
@@ -44,6 +52,29 @@ const mapLineData = (line) => ({
   status: getDisplayStatus(line?.status),
 });
 
+const mergeOverviewWithOccupancy = (overviewLines, occupancyLines) => {
+  const occupancyMap = new Map(
+    (occupancyLines || []).map((item) => [String(item?.lineId), item]),
+  );
+
+  return (overviewLines || []).map((line) => {
+    const occupancy = occupancyMap.get(String(line.lineId));
+    return {
+      ...line,
+      activeScheduleCount: parseNumber(occupancy?.activeScheduleCount),
+      occupancyPercent: parseNumber(occupancy?.occupancyPercent),
+      availableMachines:
+        occupancy?.totalMachines != null && occupancy?.busyMachines != null
+          ? Math.max(
+              0,
+              Number(occupancy.totalMachines) - Number(occupancy.busyMachines),
+            )
+          : line.availableMachines,
+      status: getDisplayStatus(occupancy?.status || line.status),
+    };
+  });
+};
+
 const ManagerLines = () => {
   const [linesOverview, setLinesOverview] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -61,10 +92,30 @@ const ManagerLines = () => {
     setLoading(true);
     setError(null);
     try {
-      const response = await managerService.getLinesOverview();
-      const normalizedLines =
-        extractLinesOverviewData(response).map(mapLineData);
+      const [overviewRes, occupancyRes] = await Promise.allSettled([
+        managerService.getLinesOverview(),
+        managerService.getLineOccupancy(),
+      ]);
+
+      const overviewData =
+        overviewRes.status === "fulfilled"
+          ? extractLinesOverviewData(overviewRes.value)
+          : [];
+      const occupancyData =
+        occupancyRes.status === "fulfilled"
+          ? extractLineOccupancyData(occupancyRes.value)
+          : [];
+
+      const normalizedLines = mergeOverviewWithOccupancy(
+        overviewData.map(mapLineData),
+        occupancyData,
+      );
+
       setLinesOverview(normalizedLines);
+
+      if (overviewRes.status === "rejected") {
+        throw overviewRes.reason;
+      }
     } catch (error) {
       console.error("Error fetching lines:", error);
       setError("Unable to load data. Please try again later.");

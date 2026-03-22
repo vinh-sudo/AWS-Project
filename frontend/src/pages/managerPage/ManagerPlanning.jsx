@@ -399,21 +399,9 @@ const ManagerPlanning = () => {
         return;
       }
 
-      const draftItemIds = items
-        .filter((item) => (Number(item.draftQuantity) || 0) > 0)
-        .map((item) => Number(item.orderItemId));
-
-      // Backend currently exposes only order-level cancel endpoint.
-      if (draftItemIds.length === 1 && draftItemIds[0] === Number(orderItemId)) {
-        await managerService.cancelPlan(orderId);
-        alert(`Cancelled draft plan for item #${orderItemId}.`);
-        fetchData();
-        return;
-      }
-
-      alert(
-        "Backend currently supports cancel by order, not by individual item when multiple items are draft. Please confirm with BE team to add cancel-item API.",
-      );
+      await managerService.cancelPlanItem(orderId, orderItemId);
+      alert(`Cancelled draft plan for item #${orderItemId}.`);
+      fetchData();
     } catch (err) {
       console.error("Error cancelling order item:", err);
       alert(getBackendErrorMessage(err, "Failed to cancel order item."));

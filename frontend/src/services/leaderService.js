@@ -91,6 +91,18 @@ const leaderService = {
       throw error;
     }
   },
+
+  finishSchedule: async (scheduleId) => {
+    try {
+      const response = await api.post(
+        `/api/leader/schedules/${scheduleId}/finish`,
+      );
+      return response.data;
+    } catch (error) {
+      console.error("Error finishing schedule:", error);
+      throw error;
+    }
+  },
 };
 
 export default leaderService;

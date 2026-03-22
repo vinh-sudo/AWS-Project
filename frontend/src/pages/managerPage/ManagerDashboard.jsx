@@ -1,58 +1,10 @@
-import React, { useState, useEffect, useRef, useCallback } from "react";
-import { useNavigate } from "react-router-dom";
-import { useDispatch } from "react-redux";
-import { logout } from "../../redux";
+import React, { useState, useEffect, useRef, useCallback, useMemo } from "react";
 import ManagerSidebar from "../../components/ManagerSidebar/ManagerSidebar";
 import ManagerTopBar from "./ManagerTopBar";
 import managerService from "../../services/managerService";
 import authService from "../../services/authService";
-import {
-  BarChart,
-  Bar,
-  XAxis,
-  YAxis,
-  CartesianGrid,
-  Tooltip,
-  Legend,
-  ResponsiveContainer,
-  PieChart,
-  Pie,
-  Cell,
-} from "recharts";
 import PageLoading from "../../components/PageLoading/PageLoading";
 import "./ManagerDashboard.css";
-
-// Animated counter hook
-const useAnimatedValue = (targetValue, duration = 1000) => {
-  const [value, setValue] = useState(0);
-  const startTime = useRef(null);
-  const animationFrame = useRef(null);
-
-  useEffect(() => {
-    startTime.current = Date.now();
-    const startValue = 0;
-
-    const animate = () => {
-      const now = Date.now();
-      const elapsed = now - startTime.current;
-      const progress = Math.min(elapsed / duration, 1);
-      const eased = 1 - Math.pow(1 - progress, 3);
-      const current = startValue + (targetValue - startValue) * eased;
-      setValue(current);
-
-      if (progress < 1) {
-        animationFrame.current = requestAnimationFrame(animate);
-      }
-    };
-
-    animationFrame.current = requestAnimationFrame(animate);
-    return () => {
-      if (animationFrame.current) cancelAnimationFrame(animationFrame.current);
-    };
-  }, [targetValue, duration]);
-
-  return value;
-};
 
 const ManagerDashboard = () => {
   const [linesOverview, setLinesOverview] = useState([]);
@@ -70,15 +22,12 @@ const ManagerDashboard = () => {
   const [darkMode, setDarkMode] = useState(() => {
     return localStorage.getItem("dashboard-dark-mode") === "true";
   });
-  const [expandedChart, setExpandedChart] = useState(null);
   const [showExportMenu, setShowExportMenu] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const [filteredDelays, setFilteredDelays] = useState([]);
   const [sortConfig, setSortConfig] = useState({ key: null, direction: "asc" });
 
   const currentUser = authService.getCurrentUser();
-  const navigate = useNavigate();
-  const dispatch = useDispatch();
   const exportMenuRef = useRef(null);
 
   // === DARK MODE TOGGLE ===
@@ -127,18 +76,12 @@ const ManagerDashboard = () => {
         setDarkMode((prev) => !prev);
       }
       if (e.key === "Escape") {
-        setExpandedChart(null);
         setShowExportMenu(false);
       }
     };
     document.addEventListener("keydown", handleKeyDown);
     return () => document.removeEventListener("keydown", handleKeyDown);
   }, []);
-
-  const handleLogout = async () => {
-    await dispatch(logout());
-    navigate("/login");
-  };
 
   const fetchDashboardData = useCallback(async () => {
     setLoading(true);
@@ -277,20 +220,17 @@ const ManagerDashboard = () => {
   const runningLines = linesOverview.filter(
     (l) => l.status?.toUpperCase() === "OK" || l.status?.toLowerCase() === "running"
   ).length;
-  const idleLines = linesOverview.filter(
-    (l) => l.status?.toLowerCase() === "idle"
-  ).length;
-  const maintenanceLines = linesOverview.filter(
-    (l) => l.status?.toLowerCase() === "maintenance"
-  ).length;
-  const averageOEE =
-    oeeData.length > 0
-      ? (
-          (oeeData.reduce((sum, d) => sum + (d.oee || 0), 0) /
-            (oeeData.filter((d) => d.oee > 0).length || 1)) *
-          100
-        ).toFixed(1)
-      : 0;
+
+  const toPercent = (raw) => {
+    const num = Number(raw);
+    if (!Number.isFinite(num)) return 0;
+    return num <= 1 ? num * 100 : num;
+  };
+
+  const achievementRate = Number(
+    toPercent(productionOverview?.achievementRate).toFixed(1)
+  );
+
   const criticalDelays = delays.filter(
     (d) => d.risk?.toUpperCase() === "HIGH"
   ).length;
@@ -298,72 +238,29 @@ const ManagerDashboard = () => {
     .reduce((sum, l) => sum + (l.busyHours || 0), 0)
     .toFixed(1);
 
-  // Animated values
-  const animatedOEE = useAnimatedValue(parseFloat(averageOEE), 1200);
-  const animatedRunning = useAnimatedValue(runningLines, 800);
-  const animatedDelays = useAnimatedValue(criticalDelays, 800);
-  const animatedHours = useAnimatedValue(parseFloat(totalOperatingHours), 1000);
+  const sortedLinesOverview = useMemo(() => {
+    const rows = [...linesOverview];
+    if (!sortConfig.key) return rows;
 
-  // Chart data
-  const barChartData = oeeData.map((item) => ({
-    name: item.line || "N/A",
-    Availability: parseFloat(((item.availability || 0) * 100).toFixed(1)),
-    Performance: parseFloat(((item.performance || 0) * 100).toFixed(1)),
-    Quality: parseFloat(((item.quality || 0) * 100).toFixed(1)),
-    OEE: parseFloat(((item.oee || 0) * 100).toFixed(1)),
-  }));
+    rows.sort((a, b) => {
+      const left = a[sortConfig.key];
+      const right = b[sortConfig.key];
 
-  // Donut chart data
-  const avgAvailability =
-    oeeData.length > 0
-      ? parseFloat(
-          ((oeeData.reduce((sum, d) => sum + (d.availability || 0), 0) / oeeData.length) * 100).toFixed(1)
-        )
-      : 0;
-  const avgPerformance =
-    oeeData.length > 0
-      ? parseFloat(
-          ((oeeData.reduce((sum, d) => sum + (d.performance || 0), 0) / oeeData.length) * 100).toFixed(1)
-        )
-      : 0;
-  const avgQuality =
-    oeeData.length > 0
-      ? parseFloat(
-          ((oeeData.reduce((sum, d) => sum + (d.quality || 0), 0) / oeeData.length) * 100).toFixed(1)
-        )
-      : 0;
+      if (left == null && right == null) return 0;
+      if (left == null) return sortConfig.direction === "asc" ? -1 : 1;
+      if (right == null) return sortConfig.direction === "asc" ? 1 : -1;
 
-  const availabilityDonut = [
-    { name: "Availability", value: avgAvailability },
-    { name: "Remaining", value: 100 - avgAvailability },
-  ];
-  const performanceDonut = [
-    { name: "Performance", value: avgPerformance },
-    { name: "Remaining", value: 100 - avgPerformance },
-  ];
-  const qualityDonut = [
-    { name: "Quality", value: avgQuality },
-    { name: "Remaining", value: 100 - avgQuality },
-  ];
+      if (typeof left === "number" && typeof right === "number") {
+        return sortConfig.direction === "asc" ? left - right : right - left;
+      }
 
-  const DONUT_COLORS_1 = ["#4a6cf7", "#e8ecf1"];
-  const DONUT_COLORS_2 = ["#36b58a", "#e8ecf1"];
-  const DONUT_COLORS_3 = ["#9b59f0", "#e8ecf1"];
+      return sortConfig.direction === "asc"
+        ? String(left).localeCompare(String(right))
+        : String(right).localeCompare(String(left));
+    });
 
-  const renderCustomLabel = ({ cx, cy, value, name }) => {
-    if (name === "Remaining") return null;
-    return (
-      <text
-        x={cx}
-        y={cy}
-        textAnchor="middle"
-        dominantBaseline="central"
-        style={{ fontSize: "22px", fontWeight: "800", fill: darkMode ? "#e0e0e0" : "#1a1a2e" }}
-      >
-        {value}%
-      </text>
-    );
-  };
+    return rows;
+  }, [linesOverview, sortConfig]);
 
   const formatDate = (date) => {
     return date.toLocaleDateString("en-US", {
@@ -399,6 +296,17 @@ const ManagerDashboard = () => {
               </p>
             </div>
             <div className="header-controls">
+              <select
+                value={overviewRange}
+                onChange={(e) => setOverviewRange(e.target.value)}
+                className="date-picker"
+                title="Production overview range"
+              >
+                <option value="TODAY">Today</option>
+                <option value="WEEK">This Week</option>
+                <option value="MONTH">This Month</option>
+              </select>
+
               <input
                 type="date"
                 value={selectedDate}
@@ -485,9 +393,11 @@ const ManagerDashboard = () => {
                   <span className="kpi-label">Achievement Rate</span>
                   <div className="kpi-icon">🎯</div>
                 </div>
-                <span className="kpi-value">{averageOEE}%</span>
+                <span className="kpi-value">{achievementRate}%</span>
                 <span className="kpi-subtitle">
-                  Overall equipment effectiveness
+                  {productionOverview
+                    ? `${productionOverview.totalGood}/${productionOverview.totalTarget} good vs target`
+                    : "Production achievement from backend"}
                 </span>
               </div>
 
@@ -506,267 +416,17 @@ const ManagerDashboard = () => {
                   <div className="kpi-icon">📈</div>
                 </div>
                 <span className="kpi-value">{totalOperatingHours}h</span>
-                <span className="kpi-subtitle">Total hours today</span>
+                <span className="kpi-subtitle">
+                  {productionOverview
+                    ? `Downtime: ${productionOverview.totalDowntimeMinutes || 0} min`
+                    : "Total hours from lines overview"}
+                </span>
               </div>
             </div>
           </section>
 
           {/* Main Content Grid */}
           <div className="dashboard-grid">
-            {/* === OEE Bar Chart === */}
-            <section className="dashboard-card chart-bar-card">
-              <div className="card-header">
-                <div className="card-header-left">
-                  <h2>
-                    <span className="card-icon blue">📊</span>
-                    OEE Breakdown by Line
-                  </h2>
-                  <span className="card-subtitle">Avg. OEE {averageOEE}%</span>
-                </div>
-              </div>
-              <div className="card-content chart-content">
-                {loading ? (
-                  <PageLoading variant="inline" text="Loading data..." />
-                ) : barChartData.length === 0 ? (
-                  <div className="no-data">
-                    <span className="no-data-icon">📭</span>
-                    <span>No chart data available</span>
-                  </div>
-                ) : (
-                  <ResponsiveContainer width="100%" height={300}>
-                    <BarChart
-                      data={barChartData}
-                      margin={{ top: 10, right: 10, left: -10, bottom: 0 }}
-                      barCategoryGap="22%"
-                    >
-                      <CartesianGrid
-                        strokeDasharray="3 3"
-                        vertical={false}
-                        stroke={darkMode ? "#333" : "#eef0f5"}
-                      />
-                      <XAxis
-                        dataKey="name"
-                        axisLine={false}
-                        tickLine={false}
-                        tick={{
-                          fontSize: 12,
-                          fill: darkMode ? "#999" : "#8a92a6",
-                        }}
-                      />
-                      <YAxis
-                        axisLine={false}
-                        tickLine={false}
-                        tick={{
-                          fontSize: 12,
-                          fill: darkMode ? "#999" : "#8a92a6",
-                        }}
-                        domain={[0, 100]}
-                        tickFormatter={(v) => `${v}%`}
-                      />
-                      <Tooltip
-                        contentStyle={{
-                          borderRadius: "10px",
-                          border: "1px solid #e8ecf1",
-                          boxShadow: "0 4px 14px rgba(0,0,0,0.08)",
-                          fontSize: "13px",
-                          background: darkMode ? "#1e1e2e" : "#fff",
-                          color: darkMode ? "#e0e0e0" : "#333",
-                        }}
-                        formatter={(value) => [`${value}%`]}
-                      />
-                      <Legend
-                        iconType="circle"
-                        iconSize={8}
-                        wrapperStyle={{ fontSize: "12px", paddingTop: "10px" }}
-                      />
-                      <Bar
-                        dataKey="Availability"
-                        fill="#4a6cf7"
-                        radius={[4, 4, 0, 0]}
-                        animationDuration={1200}
-                      />
-                      <Bar
-                        dataKey="Performance"
-                        fill="#9b59f0"
-                        radius={[4, 4, 0, 0]}
-                        animationDuration={1200}
-                      />
-                      <Bar
-                        dataKey="Quality"
-                        fill="#36b58a"
-                        radius={[4, 4, 0, 0]}
-                        animationDuration={1200}
-                      />
-                    </BarChart>
-                  </ResponsiveContainer>
-                )}
-              </div>
-            </section>
-
-            {/* Donut Charts */}
-            <section className="dashboard-card donut-charts-card">
-              <div className="donut-charts-row">
-                <div className="donut-chart-item">
-                  <div className="donut-chart-header">
-                    <h3>Avg. Availability</h3>
-                  </div>
-                  <div className="donut-chart-wrapper">
-                    {loading ? (
-                      <PageLoading variant="inline" text="" />
-                    ) : (
-                      <ResponsiveContainer width="100%" height={150}>
-                        <PieChart>
-                          <Pie
-                            data={availabilityDonut}
-                            cx="50%"
-                            cy="50%"
-                            innerRadius={45}
-                            outerRadius={62}
-                            dataKey="value"
-                            startAngle={90}
-                            endAngle={-270}
-                            strokeWidth={0}
-                            label={renderCustomLabel}
-                            labelLine={false}
-                            animationDuration={1200}
-                          >
-                            {availabilityDonut.map((entry, index) => (
-                              <Cell
-                                key={`cell-a-${index}`}
-                                fill={DONUT_COLORS_1[index]}
-                              />
-                            ))}
-                          </Pie>
-                        </PieChart>
-                      </ResponsiveContainer>
-                    )}
-                  </div>
-                  <div className="donut-chart-legend">
-                    <div className="legend-item">
-                      <span
-                        className="legend-dot"
-                        style={{ background: "#4a6cf7" }}
-                      ></span>
-                      <span>Available</span>
-                    </div>
-                    <div className="legend-item">
-                      <span
-                        className="legend-dot"
-                        style={{ background: "#e8ecf1" }}
-                      ></span>
-                      <span>Downtime</span>
-                    </div>
-                  </div>
-                </div>
-
-                <div className="donut-chart-item">
-                  <div className="donut-chart-header">
-                    <h3>Avg. Performance</h3>
-                  </div>
-                  <div className="donut-chart-wrapper">
-                    {loading ? (
-                      <PageLoading variant="inline" text="" />
-                    ) : (
-                      <ResponsiveContainer width="100%" height={150}>
-                        <PieChart>
-                          <Pie
-                            data={performanceDonut}
-                            cx="50%"
-                            cy="50%"
-                            innerRadius={45}
-                            outerRadius={62}
-                            dataKey="value"
-                            startAngle={90}
-                            endAngle={-270}
-                            strokeWidth={0}
-                            label={renderCustomLabel}
-                            labelLine={false}
-                            animationDuration={1200}
-                          >
-                            {performanceDonut.map((entry, index) => (
-                              <Cell
-                                key={`cell-p-${index}`}
-                                fill={DONUT_COLORS_2[index]}
-                              />
-                            ))}
-                          </Pie>
-                        </PieChart>
-                      </ResponsiveContainer>
-                    )}
-                  </div>
-                  <div className="donut-chart-legend">
-                    <div className="legend-item">
-                      <span
-                        className="legend-dot"
-                        style={{ background: "#36b58a" }}
-                      ></span>
-                      <span>Effective</span>
-                    </div>
-                    <div className="legend-item">
-                      <span
-                        className="legend-dot"
-                        style={{ background: "#e8ecf1" }}
-                      ></span>
-                      <span>Loss</span>
-                    </div>
-                  </div>
-                </div>
-
-                <div className="donut-chart-item">
-                  <div className="donut-chart-header">
-                    <h3>Avg. Quality</h3>
-                  </div>
-                  <div className="donut-chart-wrapper">
-                    {loading ? (
-                      <PageLoading variant="inline" text="" />
-                    ) : (
-                      <ResponsiveContainer width="100%" height={150}>
-                        <PieChart>
-                          <Pie
-                            data={qualityDonut}
-                            cx="50%"
-                            cy="50%"
-                            innerRadius={45}
-                            outerRadius={62}
-                            dataKey="value"
-                            startAngle={90}
-                            endAngle={-270}
-                            strokeWidth={0}
-                            label={renderCustomLabel}
-                            labelLine={false}
-                            animationDuration={1200}
-                          >
-                            {qualityDonut.map((entry, index) => (
-                              <Cell
-                                key={`cell-q-${index}`}
-                                fill={DONUT_COLORS_3[index]}
-                              />
-                            ))}
-                          </Pie>
-                        </PieChart>
-                      </ResponsiveContainer>
-                    )}
-                  </div>
-                  <div className="donut-chart-legend">
-                    <div className="legend-item">
-                      <span
-                        className="legend-dot"
-                        style={{ background: "#9b59f0" }}
-                      ></span>
-                      <span>Good</span>
-                    </div>
-                    <div className="legend-item">
-                      <span
-                        className="legend-dot"
-                        style={{ background: "#e8ecf1" }}
-                      ></span>
-                      <span>Defect</span>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </section>
-
             {/* Lines Overview */}
             <section className="dashboard-card lines-overview">
               <div className="card-header">
@@ -816,7 +476,7 @@ const ManagerDashboard = () => {
                       </tr>
                     </thead>
                     <tbody>
-                      {linesOverview.map((line) => (
+                      {sortedLinesOverview.map((line) => (
                         <tr key={line.lineId}>
                           <td className="line-name">{line.lineName}</td>
                           <td>

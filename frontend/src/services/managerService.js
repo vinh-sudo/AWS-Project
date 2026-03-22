@@ -16,6 +16,16 @@ const managerService = {
     }
   },
 
+  getLineOccupancy: async () => {
+    try {
+      const response = await api.get("/api/manager/lines/occupancy");
+      return response.data;
+    } catch (error) {
+      console.error("Error fetching line occupancy:", error);
+      throw error;
+    }
+  },
+
   // ===================== PLANNING =====================
   createPlanByItem: async (planRequest) => {
     try {
@@ -62,6 +72,19 @@ const managerService = {
       return response.data;
     } catch (error) {
       console.error("Error cancelling plan:", error);
+      throw error;
+    }
+  },
+
+  cancelPlanItem: async (orderId, orderItemId) => {
+    try {
+      const response = await api.post(
+        `/api/manager/plans/order/${orderId}/cancel-item/${orderItemId}`,
+        {},
+      );
+      return response.data;
+    } catch (error) {
+      console.error("Error cancelling order item plan:", error);
       throw error;
     }
   },
@@ -118,6 +141,18 @@ const managerService = {
       return response.data;
     } catch (error) {
       console.error("Error fetching delays:", error);
+      throw error;
+    }
+  },
+
+  getOrderProgress: async (orderId) => {
+    try {
+      const response = await api.get(
+        `/api/manager/tracking/orders/${orderId}/progress`,
+      );
+      return response.data;
+    } catch (error) {
+      console.error("Error fetching order progress:", error);
       throw error;
     }
   },
