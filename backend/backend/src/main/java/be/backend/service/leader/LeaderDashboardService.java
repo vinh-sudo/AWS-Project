@@ -85,15 +85,13 @@ public class LeaderDashboardService {
                         "No active line assignment found for employee " + employeeId));
     }
 
-    /**
-     * WHY dùng native query projection (ProductionSummaryProjection)?
+    /** WHY dùng native query projection (ProductionSummaryProjection)?
      * → SUM() / COALESCE() chạy nhanh hơn load tất cả Report rồi tính trong Java
      * → Database engine optimize aggregation tốt hơn application layer
      */
     private ProductionSummaryProjection fetchTodaySummary(Integer lineId) {
         return reportRepo.getTodaySummaryByLineId(lineId, LocalDate.now());
     }
-
     /**
      * Map ProductionSchedule entity → ScheduleSummaryResponse DTO
      * 
@@ -108,60 +106,89 @@ public class LeaderDashboardService {
      */
     private List<ScheduleSummaryResponse> fetchActiveSchedules(Integer lineId) {
         List<ProductionSchedule> schedules = scheduleRepo.findActiveByLineId(lineId);
-
         return schedules.stream()
                 .map(s -> {
                     // Concat tên sản phẩm từ tất cả items của order
                     // VD: "Áo polo, Quần kaki" hoặc "Ghế gỗ" (nếu 1 item)
-                    String productNames = s.getOrder().getItems().stream()
-                            .map(OrderItem::getProductName)
-                            .collect(Collectors.joining(", "));
+                    String productNames = (s.getOrder() != null && s.getOrder().getItems() != null)
+                            ? s.getOrder().getItems().stream()
+                                .map(item -> item != null && item.getProductName() != null ? item.getProductName() : "N/A")
+                                .collect(Collectors.joining(", "))
+                            : "N/A";
+
+                    // Lấy planned quantity
+                    Integer plannedQty = (s.getPlan() != null) ? s.getPlan().getPlannedQuantity() : null;
+
+                    // Xác định công đoạn trước (previous stage)
+                    Integer previousStageGoodQuantity = null;
+                    if (s.getPlan() != null && s.getPlan().getOrderItem() != null && s.getPlan().getLine() != null) {
+                        OrderItem orderItem = s.getPlan().getOrderItem();
+                        String currentLineName = s.getPlan().getLine().getLineName();
+                        int currentRank = routeRank(currentLineName);
+                        if (currentRank > 0 && currentRank < 99) {
+                            List<ProductionSchedule> allSchedules = (orderItem.getOrder() != null)
+                                ? scheduleRepo.findByOrderId(orderItem.getOrder().getId()) : List.of();
+                            ProductionSchedule prevStageSchedule = allSchedules.stream()
+                                .filter(ps -> ps.getPlan() != null
+                                        && ps.getPlan().getOrderItem() != null
+                                        && ps.getPlan().getOrderItem().getId().equals(orderItem.getId())
+                                        && ps.getPlan().getLine() != null
+                                        && routeRank(ps.getPlan().getLine().getLineName()) == (currentRank - 1))
+                                .findFirst().orElse(null);
+                            if (prevStageSchedule != null) {
+                                Long goodQty = reportRepo.sumGoodQuantityByScheduleId(prevStageSchedule.getId());
+                                previousStageGoodQuantity = goodQty != null ? goodQty.intValue() : 0;
+                            }
+                        }
+                    }
+
+                    // Null-safe cho startTime, endTime, order, plan, orderItem
+                    Integer scheduleId = s.getId();
+                    String orderInfo = (s.getOrder() != null ? s.getOrder().getId() : "N/A") + " - " + productNames;
+                    String status = s.getStatus();
+                    java.time.LocalDateTime startTime = s.getStartTime() != null ? s.getStartTime().toLocalDateTime() : null;
+                    java.time.LocalDateTime endTime = s.getEndTime() != null ? s.getEndTime().toLocalDateTime() : null;
+                    Integer orderItemId = (s.getPlan() != null && s.getPlan().getOrderItem() != null) ? s.getPlan().getOrderItem().getId() : null;
 
                     return ScheduleSummaryResponse.builder()
-                            .scheduleId(s.getId())
-                            .orderInfo(s.getOrder().getId() + " - " + productNames)
-                            .status(s.getStatus())
-                            .startTime(s.getStartTime().toLocalDateTime())
-                            .endTime(s.getEndTime().toLocalDateTime())
+                            .scheduleId(scheduleId)
+                            .orderInfo(orderInfo)
+                            .status(status)
+                            .startTime(startTime)
+                            .endTime(endTime)
+                            .orderItemId(orderItemId)
+                            .plannedQuantity(plannedQty)
+                            .previousStageGoodQuantity(previousStageGoodQuantity)
                             .percentage(calculateSchedulePercentage(s))
                             .orderCompletionPercentage(calculateOrderCompletionPercentage(s))
                             .build();
                 })
                 .toList();
     }
-
     private BigDecimal calculateSchedulePercentage(ProductionSchedule schedule) {
         Integer plannedQty = schedule.getPlan().getPlannedQuantity();
         if (plannedQty == null || plannedQty <= 0) {
             return BigDecimal.ZERO;
         }
-
         Long producedQtyRaw = reportRepo.sumGoodQuantityByScheduleId(schedule.getId());
         long producedQty = producedQtyRaw == null ? 0L : producedQtyRaw;
-
         BigDecimal percentage = BigDecimal.valueOf(producedQty)
                 .multiply(BigDecimal.valueOf(100))
                 .divide(BigDecimal.valueOf(plannedQty), 2, RoundingMode.HALF_UP);
-
         return percentage.min(BigDecimal.valueOf(100));
     }
-
     private BigDecimal calculateOrderCompletionPercentage(ProductionSchedule schedule) {
         Integer orderQuantity = schedule.getOrder().getQuantity();
         if (orderQuantity == null || orderQuantity <= 0) {
             return BigDecimal.ZERO;
         }
-
         Long producedQtyRaw = reportRepo.sumGoodQuantityByOrderId(schedule.getOrder().getId());
         long producedQty = producedQtyRaw == null ? 0L : producedQtyRaw;
-
         BigDecimal percentage = BigDecimal.valueOf(producedQty)
                 .multiply(BigDecimal.valueOf(100))
                 .divide(BigDecimal.valueOf(orderQuantity), 2, RoundingMode.HALF_UP);
-
         return percentage.min(BigDecimal.valueOf(100));
     }
-
     /**
      * Đếm incident trong 24h gần nhất
      * 
@@ -174,7 +201,6 @@ public class LeaderDashboardService {
         OffsetDateTime since = OffsetDateTime.now().minusHours(24);
         return incidentRepo.countByLineIdAndTimestampAfter(lineId, since);
     }
-
     /**
      * WHY tách ra method riêng thay vì inline?
      * → Logic chia + xử lý edge case (target = 0) → nên isolate
@@ -191,5 +217,19 @@ public class LeaderDashboardService {
         return BigDecimal.valueOf(good)
                 .multiply(BigDecimal.valueOf(100))
                 .divide(BigDecimal.valueOf(target), 2, RoundingMode.HALF_UP);
+    }
+    /**
+     * Xác định thứ tự công đoạn dựa trên tên line (ví dụ: SMT=1, DIP=2, ASSY=3, ...)
+     * Nếu không khớp trả về 99
+     */
+    private int routeRank(String lineName) {
+        if (lineName == null) return 99;
+        return switch (lineName.trim().toUpperCase()) {
+            case "SMT" -> 1;
+            case "DIP" -> 2;
+            case "ASSY" -> 3;
+            case "PACKING" -> 4;
+            default -> 99;
+        };
     }
 }

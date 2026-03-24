@@ -7,5 +7,6 @@ public record OrderEvent() {
     public record OrderReleasedToProductionEvent(Order order) {}
     public record OrderLateEvent(Order order) {}
     public record OrderCompletedEvent(Order order) {}
+    public record OrderCancelledEvent(Order order) {}
 
 }
