@@ -22,6 +22,7 @@ public class NotificationService {
     public void notifyStructured(
             User user,
             String title,
+            String message, // thêm tham số message
             Map<String, Object> payload,
             String level,
             String sourceType,
@@ -31,8 +32,8 @@ public class NotificationService {
         Notification n = new Notification();
         n.setUser(user);
         n.setTitle(title);
-        // For now, keep message as simple text; you can enrich it later if needed
-        n.setMessage(title);
+        // Nếu message null thì fallback về title
+        n.setMessage(message != null ? message : title);
         n.setLevel(level);
         n.setSourceType(sourceType);
         n.setSourceId(sourceId);
