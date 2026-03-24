@@ -117,7 +117,6 @@ public class ManagerPlanningService {
     // ================= CONFIRM (single order item) =================
     @Transactional
     public ScheduleValidationResult confirmOrderItem(Integer orderId, Integer orderItemId, Account account) {
-
         Order order = orderRepo.findByIdForUpdate(orderId)
                 .orElseThrow(() -> new RuntimeException("Order not found"));
 
@@ -141,10 +140,18 @@ public class ManagerPlanningService {
             return ScheduleValidationResult.fail("No draft plan for order item " + orderItemId);
         }
 
-        List<ProductionPlan> itemConfirmedPlans = planRepo.findByOrderIdAndOrderItemIdAndDecision(
-                orderId,
-                orderItemId,
-                DECISION_CONFIRMED);
+        // Lấy toàn bộ plan của order (dùng fetch join để giảm số lần truy vấn)
+        List<ProductionPlan> allPlans = planRepo.findByOrderIdForManager(orderId);
+        // Group theo orderItemId
+        Map<Integer, List<ProductionPlan>> plansByItem = new LinkedHashMap<>();
+        for (ProductionPlan plan : allPlans) {
+            if (plan.getOrderItem() == null) continue;
+            plansByItem.computeIfAbsent(plan.getOrderItem().getId(), ignored -> new ArrayList<>()).add(plan);
+        }
+        // Lấy các plan đã confirm của order item này
+        List<ProductionPlan> itemConfirmedPlans = plansByItem.getOrDefault(orderItemId, List.of()).stream()
+                .filter(p -> DECISION_CONFIRMED.equals(p.getDecision()))
+                .toList();
 
         int alreadyConfirmedQty = extractItemQtyFromPlans(itemConfirmedPlans);
         int draftQty = extractItemQtyFromPlans(itemDraftPlans);
@@ -173,9 +180,24 @@ public class ManagerPlanningService {
             plan.setDecision(DECISION_CONFIRMED);
         }
 
+        // Lấy lại toàn bộ plan sau khi xác nhận (để cập nhật trạng thái order chính xác)
+        List<ProductionPlan> allPlansAfter = planRepo.findByOrderIdForManager(orderId);
+        Map<Integer, List<ProductionPlan>> plansByItemAfter = new LinkedHashMap<>();
+        for (ProductionPlan plan : allPlansAfter) {
+            if (plan.getOrderItem() == null) continue;
+            plansByItemAfter.computeIfAbsent(plan.getOrderItem().getId(), ignored -> new ArrayList<>()).add(plan);
+        }
+        // Tính tổng confirmed quantity cho từng order item
+        Map<Integer, Integer> confirmedQtyByItem = new HashMap<>();
+        for (Map.Entry<Integer, List<ProductionPlan>> entry : plansByItemAfter.entrySet()) {
+            int confirmedQty = extractItemQtyFromPlans(entry.getValue().stream()
+                    .filter(p -> DECISION_CONFIRMED.equals(p.getDecision()))
+                    .toList());
+            confirmedQtyByItem.put(entry.getKey(), confirmedQty);
+        }
+
+        // Lấy danh sách order item (chỉ cần 1 lần)
         List<OrderItem> orderItems = orderItemRepo.findByOrderId(orderId);
-        Map<Integer, Integer> confirmedQtyByItem = sumPlannedQtyByItem(
-                planRepo.findByOrderIdAndDecision(orderId, DECISION_CONFIRMED));
 
         String nextOrderStatus = computeNextOrderStatus(orderItems, confirmedQtyByItem);
         order.setStatus(nextOrderStatus);
