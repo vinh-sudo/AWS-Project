@@ -24,9 +24,7 @@ spring:
       ssl:
         enabled: true
   mail:
-    # Dung Amazon SES SMTP interface
-    # Thay <region> bang region SES cua ban, vi du: email-smtp.ap-southeast-1.amazonaws.com
-    host: email-smtp.<region>.amazonaws.com
+    host: email-smtp.<ap-southeast-1>.amazonaws.com
     port: 587
     username: ${SES_SMTP_USERNAME}
     password: ${SES_SMTP_PASSWORD}
@@ -38,8 +36,8 @@ spring:
             enable: true
 
 aws:
-  access-key: AKIAZJIX3IDXPSHJWQ3B # TODO: chuyen sang ENV, khong de secret trong file
-  secret-key: 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 # TODO: chuyen sang ENV
+  access-key: AKIAZJIX3IDXPSHJWQ3B
+  secret-key: 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
   region: ap-southeast-1
   bucket-name: ims-stores
 

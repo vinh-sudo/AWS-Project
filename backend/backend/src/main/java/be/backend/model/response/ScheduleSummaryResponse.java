@@ -24,6 +24,8 @@ public class ScheduleSummaryResponse {
     private LocalDateTime startTime;
     private LocalDateTime endTime;
     private Integer orderItemId;
+    private Integer plannedQuantity;
+    private Integer previousStageGoodQuantity; // Số lượng good của công đoạn trước
     private BigDecimal percentage;
     private BigDecimal orderItemCompletionPercentage;
     private BigDecimal orderCompletionPercentage;

@@ -117,12 +117,41 @@ public class LeaderDashboardService {
                             .map(OrderItem::getProductName)
                             .collect(Collectors.joining(", "));
 
+                    // Lấy planned quantity
+                    Integer plannedQty = s.getPlan() != null ? s.getPlan().getPlannedQuantity() : null;
+
+                    // Xác định công đoạn trước (previous stage)
+                    Integer previousStageGoodQuantity = null;
+                    if (s.getPlan() != null && s.getPlan().getOrderItem() != null && s.getPlan().getLine() != null) {
+                        OrderItem orderItem = s.getPlan().getOrderItem();
+                        String currentLineName = s.getPlan().getLine().getLineName();
+                        int currentRank = routeRank(currentLineName);
+                        if (currentRank > 0 && currentRank < 99) {
+                            // Tìm schedule công đoạn trước (rank - 1) cho cùng order item
+                            List<ProductionSchedule> allSchedules = scheduleRepo.findByOrderId(orderItem.getOrder().getId());
+                            ProductionSchedule prevStageSchedule = allSchedules.stream()
+                                .filter(ps -> ps.getPlan() != null
+                                        && ps.getPlan().getOrderItem() != null
+                                        && ps.getPlan().getOrderItem().getId().equals(orderItem.getId())
+                                        && ps.getPlan().getLine() != null
+                                        && routeRank(ps.getPlan().getLine().getLineName()) == (currentRank - 1))
+                                .findFirst().orElse(null);
+                            if (prevStageSchedule != null) {
+                                Long goodQty = reportRepo.sumGoodQuantityByScheduleId(prevStageSchedule.getId());
+                                previousStageGoodQuantity = goodQty != null ? goodQty.intValue() : 0;
+                            }
+                        }
+                    }
+
                     return ScheduleSummaryResponse.builder()
                             .scheduleId(s.getId())
                             .orderInfo(s.getOrder().getId() + " - " + productNames)
                             .status(s.getStatus())
                             .startTime(s.getStartTime().toLocalDateTime())
                             .endTime(s.getEndTime().toLocalDateTime())
+                            .orderItemId(s.getPlan() != null && s.getPlan().getOrderItem() != null ? s.getPlan().getOrderItem().getId() : null)
+                            .plannedQuantity(plannedQty)
+                            .previousStageGoodQuantity(previousStageGoodQuantity)
                             .percentage(calculateSchedulePercentage(s))
                             .orderCompletionPercentage(calculateOrderCompletionPercentage(s))
                             .build();
