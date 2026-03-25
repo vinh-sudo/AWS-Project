@@ -327,6 +327,14 @@ public class LeaderProgressService {
                                         "Only RUNNING schedules can be finished. Current: " + schedule.getStatus());
                 }
 
+                // Kiểm tra tổng sản lượng đã đủ chưa
+                Integer plannedQty = schedule.getPlan().getPlannedQuantity();
+                Long producedQty = reportRepo.sumProducedQuantityByScheduleId(schedule.getId());
+                if (producedQty == null) producedQty = 0L;
+                if (producedQty < plannedQty) {
+                    throw new BusinessException("Cannot finish: Produced quantity (good + reject) " + producedQty + " < planned quantity " + plannedQty);
+                }
+
                 // Mark schedule as completed and set end time if missing
                 schedule.setStatus("COMPLETED");
                 if (schedule.getEndTime() == null) {
