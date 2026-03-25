@@ -157,28 +157,8 @@ const ManagerTracking = () => {
 
         <div className="page-content">
           {/* Page Title Row */}
-          <div className="page-title-row">
-            <div className="page-title-left">
-              <h1>Production Tracking</h1>
-              <p>Real-time monitoring of production activities</p>
-            </div>
-            <div className="header-controls">
-              <input
-                type="date"
-                value={selectedDate}
-                onChange={(e) => setSelectedDate(e.target.value)}
-                className="date-picker"
-              />
-              <button className="btn-refresh" onClick={fetchTrackingData}>
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                  <polyline points="23 4 23 10 17 10" />
-                  <polyline points="1 20 1 14 7 14" />
-                  <path d="M3.51 9a9 9 0 0114.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0020.49 15" />
-                </svg>
-                Refresh
-              </button>
-            </div>
-          </div>
+          
+         
 
           {/* Error Message */}
           {error && (

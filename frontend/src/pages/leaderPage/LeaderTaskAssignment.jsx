@@ -7,6 +7,7 @@ import NotificationBell from "../../components/NotificationBell/NotificationBell
 import LeaderSidebar from "../../components/LeaderSidebar/LeaderSidebar";
 import authService from "../../services/authService";
 import leaderService from "../../services/leaderService";
+import useConfirmDialog from "../../components/ConfirmDialog/useConfirmDialog";
 import "./LeaderTaskAssignment.css";
 
 /* ===== SVG Icon helpers ===== */
@@ -171,6 +172,7 @@ const LeaderInternalNotes = () => {
   const currentUser = authService.getCurrentUser();
   const currentLeaderName = currentUser?.fullName || "Leader";
   const currentTeam = "Production Line";
+  const confirmAction = useConfirmDialog();
 
   // Internal notes for internal task assignment tracking
   const [notes, setNotes] = useState(() => {
@@ -308,12 +310,22 @@ const LeaderInternalNotes = () => {
     setNewNote({ scheduleId: "", scheduleInfo: "", title: "", content: "" });
   };
 
-  const handleDeleteNote = (noteId) => {
-    if (window.confirm("Are you sure you want to delete this note?")) {
-      const updatedNotes = notes.filter((n) => n.id !== noteId);
-      saveNotes(updatedNotes);
-      alert("🗑️ Note deleted!");
+  const handleDeleteNote = async (noteId) => {
+    const accepted = await confirmAction({
+      title: "Delete Note",
+      message: "Are you sure you want to delete this note?",
+      confirmText: "Delete",
+      cancelText: "Keep",
+      tone: "danger",
+    });
+
+    if (!accepted) {
+      return;
     }
+
+    const updatedNotes = notes.filter((n) => n.id !== noteId);
+    saveNotes(updatedNotes);
+    alert("🗑️ Note deleted!");
   };
 
   // ─── RENDER ─────────────────────────────────────────────────────────

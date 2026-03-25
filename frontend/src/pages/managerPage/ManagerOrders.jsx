@@ -357,133 +357,17 @@ const ManagerOrders = () => {
         />
 
         <div className="page-content">
-          <div className="page-title-row">
-            <div className="page-title-left">
-              <h1>
-                <Icon name="package" className="mo-icon mo-icon-lg" />
-                <span>Order Management</span>
-              </h1>
-              <p className="page-subtitle">
-                Monitor and track all production orders
-              </p>
-            </div>
-            <div className="page-title-right">
-              <button
-                className="mo-refresh-btn"
-                onClick={fetchOrders}
-                title="Refresh"
-              >
-                <Icon name="refresh" className="mo-icon mo-icon-sm" />
-                <span>Refresh</span>
-              </button>
-            </div>
-          </div>
+          
+          
 
-          {/* Stats Cards */}
-          <div className="mo-stats-row">
-            <div className="mo-stat-card">
-              <div className="mo-stat-icon">
-                <Icon name="clipboard" />
-              </div>
-              <div className="mo-stat-info">
-                <span className="mo-stat-number">{stats.total}</span>
-                <span className="mo-stat-label">Total</span>
-              </div>
-            </div>
-            <div className="mo-stat-card mo-stat-draft">
-              <div className="mo-stat-icon">
-                <Icon name="draft" />
-              </div>
-              <div className="mo-stat-info">
-                <span className="mo-stat-number">{stats.pending}</span>
-                <span className="mo-stat-label">Pending</span>
-              </div>
-            </div>
-            <div className="mo-stat-card mo-stat-production">
-              <div className="mo-stat-icon">
-                <Icon name="factory" />
-              </div>
-              <div className="mo-stat-info">
-                <span className="mo-stat-number">
-                  {stats.planningScheduled}
-                </span>
-                <span className="mo-stat-label">Planning/Scheduled</span>
-              </div>
-            </div>
-            <div className="mo-stat-card mo-stat-production">
-              <div className="mo-stat-icon">
-                <Icon name="factory" />
-              </div>
-              <div className="mo-stat-info">
-                <span className="mo-stat-number">{stats.inProduction}</span>
-                <span className="mo-stat-label">In Production</span>
-              </div>
-            </div>
-            <div className="mo-stat-card mo-stat-completed">
-              <div className="mo-stat-icon">
-                <Icon name="spark" />
-              </div>
-              <div className="mo-stat-info">
-                <span className="mo-stat-number">{stats.completed}</span>
-                <span className="mo-stat-label">Completed</span>
-              </div>
-            </div>
-            <div className="mo-stat-card mo-stat-cancelled">
-              <div className="mo-stat-icon">
-                <Icon name="x" />
-              </div>
-              <div className="mo-stat-info">
-                <span className="mo-stat-number">{stats.blocked}</span>
-                <span className="mo-stat-label">Stopped/Cancelled</span>
-              </div>
-            </div>
-          </div>
+         
 
           {/* Filters */}
-          <div className="mo-filters-row">
-            <div className="mo-filter-group">
-              <label>Status</label>
-              <select
-                value={statusFilter}
-                onChange={(e) => setStatusFilter(e.target.value)}
-              >
-                <option value="ALL">All Status</option>
-                <option value="DRAFT">Draft</option>
-                <option value="CONFIRMED">Confirmed</option>
-                <option value="PLANNING">Planning</option>
-                <option value="SCHEDULED">Scheduled</option>
-                <option value="IN_PRODUCTION">In Production</option>
-                <option value="STOPPED">Stopped</option>
-                <option value="COMPLETED">Completed</option>
-                <option value="CANCELLED">Cancelled</option>
-                <option value="NEW">New</option>
-              </select>
-            </div>
-            <div className="mo-filter-group">
-              <label>Priority</label>
-              <select
-                value={priorityFilter}
-                onChange={(e) => setPriorityFilter(e.target.value)}
-              >
-                <option value="All">All Priority</option>
-                <option value="Low">Low</option>
-                <option value="Medium">Medium</option>
-                <option value="High">High</option>
-                <option value="Urgent">Urgent</option>
-              </select>
-            </div>
-            <button 
-              className={`mo-filter-toggle ${showAdvancedFilters ? 'mo-filter-open' : ''}`}
-              onClick={() => setShowAdvancedFilters(!showAdvancedFilters)}
-              title="Advanced Filters"
-            >
-              ⚙️ Advanced
-            </button>
-            <div className="mo-filter-summary">
-              Showing <strong>{filteredOrders.length}</strong> of{" "}
-              {orders.length} orders
-            </div>
-          </div>
+          
+             
+          
+           
+         
 
           {/* Active Filter Chips */}
           {activeFilterChips.length > 0 && (

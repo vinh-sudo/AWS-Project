@@ -3,6 +3,7 @@ import ManagerSidebar from "../../components/ManagerSidebar/ManagerSidebar";
 import ManagerTopBar from "./ManagerTopBar";
 import managerService from "../../services/managerService";
 import PageLoading from "../../components/PageLoading/PageLoading";
+import useConfirmDialog from "../../components/ConfirmDialog/useConfirmDialog";
 import "./ManagerPlanning.css";
 
 const getRouteRank = (lineName) => {
@@ -52,6 +53,7 @@ const ManagerPlanning = () => {
     note: "",
     items: [],
   });
+  const confirmAction = useConfirmDialog();
 
   const getBackendErrorMessage = (err, fallback) => {
     const payload = err?.response?.data;
@@ -348,7 +350,14 @@ const ManagerPlanning = () => {
   };
 
   const handleConfirmOrderItem = async (orderId, orderItemId) => {
-    if (!window.confirm(`Confirm plan for item #${orderItemId}?`)) {
+    const accepted = await confirmAction({
+      title: "Confirm Planning Item",
+      message: `Confirm plan for item #${orderItemId}?`,
+      confirmText: "Confirm",
+      cancelText: "Cancel",
+    });
+
+    if (!accepted) {
       return;
     }
 
@@ -378,7 +387,15 @@ const ManagerPlanning = () => {
   };
 
   const handleCancelOrderItem = async (orderId, orderItemId) => {
-    if (!window.confirm(`Cancel draft plan for item #${orderItemId}?`)) {
+    const accepted = await confirmAction({
+      title: "Cancel Draft Plan",
+      message: `Cancel draft plan for item #${orderItemId}?`,
+      confirmText: "Cancel Draft",
+      cancelText: "Back",
+      tone: "danger",
+    });
+
+    if (!accepted) {
       return;
     }
 

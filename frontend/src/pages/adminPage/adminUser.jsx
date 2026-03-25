@@ -185,7 +185,7 @@ const UsersAdmin = () => {
   };  /* ── Loading Screen ── */
   if (initialLoad && loading) {
     return (
-      <div className="admin-container">
+      <div className="admin-container users-admin-page">
         <AdminSidebar />
         <div className="admin-main">
           <PageLoading variant="fullpage" text="Loading users..." />
@@ -264,7 +264,7 @@ const UsersAdmin = () => {
     );  }
   /* ── Main Page ── */
   return (
-    <div className="admin-container">
+    <div className="admin-container users-admin-page">
       <AdminSidebar />
 
       <div className="admin-main">

@@ -25,6 +25,7 @@ const AdminDashboard = () => {
   const currentUser = authService.getCurrentUser();
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [assignments, setAssignments] = useState([]);
 
   const [stats, setStats] = useState({
     totalUsers: 0,
@@ -45,7 +46,12 @@ const AdminDashboard = () => {
     try {
       setLoading(true);
       setError(null);
-      const data = await adminService.getDashboardStats();
+      const [dashboardData, assignmentData] = await Promise.all([
+        adminService.getDashboardStats(),
+        adminService.getAssignments().catch(() => []),
+      ]);
+
+      const data = dashboardData || {};
       setStats({
         totalUsers: data.totalUsers || 0,
         activeUsers: data.activeUsers || 0,
@@ -60,6 +66,7 @@ const AdminDashboard = () => {
         totalMachines: data.totalMachines || 0,
         activeMachines: data.activeMachines || 0,
       });
+      setAssignments(Array.isArray(assignmentData) ? assignmentData : []);
 
     } catch (err) {
       console.error("Error fetching dashboard data:", err);
@@ -113,34 +120,25 @@ const AdminDashboard = () => {
     { status: "Cancelled", count: stats.cancelledOrders, fill: "#ef4444" },
   ];
 
+  const userManagementData = [
+    { name: "Active", value: stats.activeUsers, color: "#10b981" },
+    { name: "Blocked", value: stats.blockedUsers, color: "#f59e0b" },
+  ];
+
+  const userActiveRate =
+    stats.totalUsers > 0
+      ? ((stats.activeUsers / stats.totalUsers) * 100).toFixed(1)
+      : 0;
+
+  const assignmentPreview = assignments.slice(0, 5);
+  const assignedLines = assignments.length;
+  const unassignedLines = Math.max(0, stats.totalLines - assignedLines);
+
   const getGreeting = () => {
     const hour = new Date().getHours();
     if (hour < 12) return "Good Morning";
     if (hour < 18) return "Good Afternoon";
     return "Good Evening";
-  };
-
-  const getStatusBadgeClass = (status) => {
-    switch (status) {
-      case "Draft":
-        return "badge-pending";
-      case "Confirmed":
-        return "badge-pending";
-      case "PLANNING":
-        return "badge-progress";
-      case "SCHEDULED":
-        return "badge-progress";
-      case "In Production":
-        return "badge-progress";
-      case "Completed":
-        return "badge-completed";
-      case "Cancelled":
-        return "badge-cancelled";
-      case "STOPPED":
-        return "badge-cancelled";
-      default:
-        return "badge-default";
-    }
   };
 
   const getUserInitial = () => {
@@ -400,6 +398,27 @@ const AdminDashboard = () => {
             </button>
             <button
               className="dash-quick-btn"
+              onClick={() => navigate("/admin/assignments")}
+            >
+              <svg
+                width="16"
+                height="16"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
+              >
+                <path d="M4 6h16" />
+                <path d="M4 12h16" />
+                <path d="M4 18h16" />
+                <circle cx="7" cy="6" r="1" />
+                <circle cx="12" cy="12" r="1" />
+                <circle cx="17" cy="18" r="1" />
+              </svg>
+              Leader Assignment
+            </button>
+            <button
+              className="dash-quick-btn"
               onClick={() => navigate("/admin/audit-log")}
             >
               <svg
@@ -648,6 +667,151 @@ const AdminDashboard = () => {
                     </span>
                   </div>
                 </div>
+              </div>
+            </div>
+          </div>
+
+          {/* ===== User + Leader Assignment ===== */}
+          <div className="dash-secondary-grid">
+            <div className="dash-card">
+              <div className="dash-card-header">
+                <h3 className="dash-card-title">
+                  <span className="dash-card-title-icon icon-users-overview">
+                    <svg
+                      width="14"
+                      height="14"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth="2.5"
+                    >
+                      <path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2" />
+                      <circle cx="9" cy="7" r="4" />
+                      <path d="M23 21v-2a4 4 0 00-3-3.87" />
+                      <path d="M16 3.13a4 4 0 010 7.75" />
+                    </svg>
+                  </span>
+                  User Management Overview
+                </h3>
+                <button
+                  className="dash-card-action"
+                  onClick={() => navigate("/admin/users")}
+                >
+                  Open Users →
+                </button>
+              </div>
+              <div className="dash-card-body dash-user-overview-body">
+                <ResponsiveContainer width="100%" height={220}>
+                  <PieChart>
+                    <Pie
+                      data={userManagementData}
+                      cx="50%"
+                      cy="50%"
+                      innerRadius={58}
+                      outerRadius={88}
+                      paddingAngle={3}
+                      dataKey="value"
+                      strokeWidth={0}
+                    >
+                      {userManagementData.map((entry, index) => (
+                        <Cell
+                          key={`user-cell-${index}`}
+                          fill={entry.color}
+                        />
+                      ))}
+                    </Pie>
+                    <Tooltip
+                      contentStyle={{
+                        background: "#fff",
+                        border: "none",
+                        borderRadius: "12px",
+                        boxShadow: "0 8px 30px rgba(0,0,0,0.12)",
+                        padding: "10px 14px",
+                      }}
+                    />
+                  </PieChart>
+                </ResponsiveContainer>
+
+                <div className="dash-pie-center dash-pie-center-users">
+                  <span className="dash-pie-value">{userActiveRate}%</span>
+                  <span className="dash-pie-label">Active Users</span>
+                </div>
+
+                <div className="dash-user-summary">
+                  {userManagementData.map((item) => (
+                    <div key={item.name} className="dash-user-summary-item">
+                      <span
+                        className="dash-legend-dot"
+                        style={{ background: item.color }}
+                      ></span>
+                      <span>
+                        {item.name}: <strong>{item.value}</strong>
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+
+            <div className="dash-card">
+              <div className="dash-card-header">
+                <h3 className="dash-card-title">
+                  <span className="dash-card-title-icon icon-assignment-overview">
+                    <svg
+                      width="14"
+                      height="14"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth="2.5"
+                    >
+                      <path d="M8 6h13" />
+                      <path d="M8 12h13" />
+                      <path d="M8 18h13" />
+                      <path d="M3 6h.01" />
+                      <path d="M3 12h.01" />
+                      <path d="M3 18h.01" />
+                    </svg>
+                  </span>
+                  Leader Assignment Snapshot
+                </h3>
+                <button
+                  className="dash-card-action"
+                  onClick={() => navigate("/admin/assignments")}
+                >
+                  View Details →
+                </button>
+              </div>
+
+              <div className="dash-card-body">
+                <div className="dash-assignment-stats">
+                  <div className="dash-assignment-stat">
+                    <span className="dash-assignment-stat-label">Assigned</span>
+                    <span className="dash-assignment-stat-value">{assignedLines}</span>
+                  </div>
+                  <div className="dash-assignment-stat">
+                    <span className="dash-assignment-stat-label">Vacant</span>
+                    <span className="dash-assignment-stat-value">{unassignedLines}</span>
+                  </div>
+                </div>
+
+                {assignmentPreview.length > 0 ? (
+                  <div className="dash-assignment-list">
+                    {assignmentPreview.map((item) => (
+                      <div key={item.assignmentId} className="dash-assignment-row">
+                        <div className="dash-assignment-line">
+                          {item.lineName || `Line ${item.lineId}`}
+                        </div>
+                        <div className="dash-assignment-leader">{item.leaderUsername || "—"}</div>
+                        <div className="dash-assignment-code">{item.leaderEmployeeCode || "—"}</div>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <div className="dash-empty-assignment">
+                    No leader assignments found.
+                  </div>
+                )}
               </div>
             </div>
           </div>

@@ -14,6 +14,7 @@ import authService from "../../services/authService";
 import leaderService from "../../services/leaderService";
 import scheduleService from "../../services/scheduleService";
 import PageLoading from "../../components/PageLoading/PageLoading";
+import useConfirmDialog from "../../components/ConfirmDialog/useConfirmDialog";
 import "./LeaderProgress.css";
 
 const SHIFT_REPORT_DRAFT_KEY = "leader_shift_report_draft_v1";
@@ -112,21 +113,6 @@ const IC = {
       <line x1="6" y1="6" x2="18" y2="18" />
     </svg>
   ),
-  pause: (
-    <svg
-      width="14"
-      height="14"
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="2.5"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-    >
-      <rect x="6" y="4" width="4" height="16" />
-      <rect x="14" y="4" width="4" height="16" />
-    </svg>
-  ),
   play: (
     <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor">
       <polygon points="5 3 19 12 5 21 5 3" />
@@ -172,6 +158,7 @@ const LeaderProgress = () => {
   const [showDocumentModal, setShowDocumentModal] = useState(false);
   const [selectedSchedule, setSelectedSchedule] = useState(null);
   const [selectedDocuments, setSelectedDocuments] = useState([]);
+  const confirmAction = useConfirmDialog();
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
@@ -323,17 +310,7 @@ const LeaderProgress = () => {
     fetchData();
   }, [fetchData]);
 
-  // Pause / Resume schedule
-  const handlePauseSchedule = async (scheduleId) => {
-    try {
-      await scheduleService.pauseSchedule(scheduleId);
-      alert("⏸️ Schedule paused!");
-      fetchData();
-    } catch (err) {
-      alert(`❌ Error: ${err.response?.data?.message || "Unable to pause"}`);
-    }
-  };
-
+  // Resume schedule
   const handleResumeSchedule = async (scheduleId) => {
     try {
       await scheduleService.resumeSchedule(scheduleId);
@@ -345,6 +322,18 @@ const LeaderProgress = () => {
   };
 
   const handleFinishSchedule = async (scheduleId) => {
+    const confirmed = await confirmAction({
+      title: "Complete Schedule",
+      message: "Are you sure you want to complete this schedule?",
+      confirmText: "Complete",
+      cancelText: "Back",
+      tone: "danger",
+    });
+
+    if (!confirmed) {
+      return;
+    }
+
     try {
       await leaderService.finishSchedule(scheduleId);
       alert("✅ Schedule finished!");
@@ -382,7 +371,12 @@ const LeaderProgress = () => {
   const openReportModal = (schedule = null) => {
     setShiftReport((prev) => {
       if (schedule?.scheduleId) {
-        const next = { ...prev, scheduleId: String(schedule.scheduleId) };
+        const scheduleTarget = getScheduleTargetQuantity(schedule);
+        const next = {
+          ...prev,
+          scheduleId: String(schedule.scheduleId),
+          targetQuantity: scheduleTarget ?? 0,
+        };
         saveShiftReportDraft(next);
         return next;
       }
@@ -559,6 +553,48 @@ const LeaderProgress = () => {
     }
 
     return null;
+  };
+
+  const getScheduleTargetQuantity = (schedule) => {
+    if (!schedule) return null;
+
+    const candidates = [
+      schedule.targetQuantity,
+      schedule.targetQty,
+      schedule.plannedQty,
+      schedule.plannedQuantity,
+      schedule.planQty,
+      schedule.quantity,
+      schedule.orderQuantity,
+      schedule.requiredQuantity,
+      schedule.totalQuantity,
+      schedule.orderItemQuantity,
+      schedule.orderItem?.plannedQty,
+      schedule.orderItem?.quantity,
+      schedule.orderItem?.targetQuantity,
+    ];
+
+    const firstValid = candidates.find((value) => {
+      const num = Number(value);
+      return Number.isFinite(num) && num >= 0;
+    });
+
+    return firstValid == null ? null : Number(firstValid);
+  };
+
+  const getPreviousStageGoodQuantity = (schedule) => {
+    const candidates = [
+      schedule?.previousStageGoodQuantity,
+      schedule?.previousGoodQuantity,
+      schedule?.prevStageGoodQty,
+    ];
+
+    const firstValid = candidates.find((value) => {
+      const num = Number(value);
+      return Number.isFinite(num) && num >= 0;
+    });
+
+    return firstValid == null ? null : Number(firstValid);
   };
 
   const filteredSchedules = getFilteredSchedules();
@@ -784,6 +820,9 @@ const LeaderProgress = () => {
                 const scheduleProgress = getScheduleProgressValue(schedule);
                 const orderItemProgress = getOrderItemProgressValue(schedule);
                 const orderProgress = getOrderProgressValue(schedule);
+                const targetQuantity = getScheduleTargetQuantity(schedule);
+                const previousStageGoodQuantity =
+                  getPreviousStageGoodQuantity(schedule);
 
                 return (
                   <div
@@ -854,6 +893,24 @@ const LeaderProgress = () => {
                         </span>
                       </div>
                     )}
+                    {targetQuantity != null && (
+                      <div className="lp-sched-detail">
+                        <span className="lp-sched-detail-label">Target Quantity</span>
+                        <span className="lp-sched-detail-value">
+                          {targetQuantity.toLocaleString()} units
+                        </span>
+                      </div>
+                    )}
+                    {previousStageGoodQuantity != null && (
+                      <div className="lp-sched-detail">
+                        <span className="lp-sched-detail-label">
+                          Previous Stage Good
+                        </span>
+                        <span className="lp-sched-detail-value">
+                          {previousStageGoodQuantity.toLocaleString()} units
+                        </span>
+                      </div>
+                    )}
                   </div>
 
                   {/* Actions — SCHEDULED */}
@@ -918,12 +975,6 @@ const LeaderProgress = () => {
                         onClick={() => openIncidentModal(schedule)}
                       >
                         {IC.alertTriangle} Report Incident
-                      </button>
-                      <button
-                        className="lp-action-btn pause"
-                        onClick={() => handlePauseSchedule(schedule.scheduleId)}
-                      >
-                        {IC.pause} Pause
                       </button>
                       <button
                         className="lp-action-btn resume"
@@ -1161,8 +1212,13 @@ const LeaderProgress = () => {
                     const schedule = schedules.find(
                       (item) => String(item.scheduleId) === selectedId,
                     );
+                    const scheduleTarget = getScheduleTargetQuantity(schedule);
 
-                    setShiftReport({ ...shiftReport, scheduleId: selectedId });
+                    setShiftReport({
+                      ...shiftReport,
+                      scheduleId: selectedId,
+                      targetQuantity: scheduleTarget ?? 0,
+                    });
                     setSelectedSchedule(schedule || null);
                   }}
                   className="lp-form-select"
@@ -1178,6 +1234,9 @@ const LeaderProgress = () => {
                         value={schedule.scheduleId}
                       >
                         SCH-{schedule.scheduleId} - {schedule.orderInfo || "N/A"}
+                        {getScheduleTargetQuantity(schedule) != null
+                          ? ` (Target: ${getScheduleTargetQuantity(schedule).toLocaleString()})`
+                          : ""}
                       </option>
                     ))}
                 </select>
@@ -1231,6 +1290,11 @@ const LeaderProgress = () => {
                   className="lp-form-input"
                   placeholder="Enter target quantity..."
                 />
+                {selectedSchedule && getScheduleTargetQuantity(selectedSchedule) != null && (
+                  <p className="lp-inline-help">
+                    Manager target: {getScheduleTargetQuantity(selectedSchedule).toLocaleString()} units
+                  </p>
+                )}
               </div>
 
               <div className="lp-form-group">

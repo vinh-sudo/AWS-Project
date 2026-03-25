@@ -4,6 +4,7 @@ import AdminSidebar from "../../components/AdminSidebar/AdminSidebar";
 import authService from "../../services/authService";
 import adminService from "../../services/adminService";
 import PageLoading from "../../components/PageLoading/PageLoading";
+import useConfirmDialog from "../../components/ConfirmDialog/useConfirmDialog";
 import "./AdminAssignment.css";
 import "./AdminDashboard.css";
 
@@ -17,6 +18,7 @@ const AdminAssignment = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [actionLoading, setActionLoading] = useState(false);
+  const confirmAction = useConfirmDialog();
 
   // Assign modal
   const [showAssignModal, setShowAssignModal] = useState(false);
@@ -69,9 +71,15 @@ const AdminAssignment = () => {
   };
 
   const handleUnassign = async (assignmentId, leaderCode) => {
-    if (
-      !window.confirm(`Remove leader ${leaderCode} from this production line?`)
-    )
+    const accepted = await confirmAction({
+      title: "Remove Leader Assignment",
+      message: `Remove leader ${leaderCode} from this production line?`,
+      confirmText: "Remove",
+      cancelText: "Cancel",
+      tone: "danger",
+    });
+
+    if (!accepted)
       return;
     try {
       setActionLoading(true);
