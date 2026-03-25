@@ -16,4 +16,8 @@ public class OpenAIProperties {
     private String model = "gpt-3.5-turbo";
     private Integer maxTokens = 500;
     private Double temperature = 0.3;
+    private Integer connectTimeoutMs = 5000;
+    private Integer readTimeoutMs = 15000;
+    private Integer retryCount = 2;
+    private Integer retryBackoffMs = 300;
 }

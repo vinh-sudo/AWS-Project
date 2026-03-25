@@ -1,6 +1,8 @@
 package be.backend.service.ai;
 
 import be.backend.model.ai.AIOrderStatusContext;
+import be.backend.model.ai.AiDecisionResult;
+import be.backend.model.ai.AiRole;
 import be.backend.model.ai.ParsedQuestion;
 import be.backend.model.request.ai.AIChatRequest;
 import be.backend.model.response.ai.AIChatResponse;
@@ -32,31 +34,63 @@ public class AIChatService {
     private final ManagerStatisticsService statisticsService;
     private final AIQuestionRouter questionRouter;
     private final OrderService orderService;
+    private final AiContextService aiContextService;
+    private final AiDecisionEngine aiDecisionEngine;
 
 
     public AIChatResponse processChat(AIChatRequest request) {
+        return processChat(request, AiRole.UNKNOWN);
+    }
+
+    public AIChatResponse processChat(AIChatRequest request, AiRole role) {
         try {
+            if (request == null || request.getMessage() == null || request.getMessage().isBlank()) {
+                return AIChatResponse.builder()
+                    .response("Please provide a valid question.")
+                    .sessionId(request != null ? request.getSessionId() : null)
+                    .timestamp(LocalDateTime.now())
+                    .success(false)
+                    .suggestedQuestions(getDefaultQuestions())
+                    .responseType("TEXT")
+                    .systemStatus("WARNING")
+                    .riskLevel("LOW")
+                    .recommendations(List.of("Ask a question related to production status or risk"))
+                    .evidence(List.of("Empty input"))
+                    .confidence(0.9)
+                    .roleScope(role.name())
+                    .build();
+            }
+
             log.info("Processing AI chat: {}", request.getMessage());
 
+            var snapshot = aiContextService.getCurrentSnapshot();
+            AiDecisionResult decision = aiDecisionEngine.evaluate(snapshot, role);
             String userMessage = request.getMessage();
             ParsedQuestion parsed = questionRouter.parse(userMessage);
             String prompt;
 
             switch (parsed.getDomain()) {
                 case ORDER -> prompt = buildOrderPrompt(parsed, userMessage);
-                case SCHEDULE -> prompt = buildChatPrompt(userMessage); // schedule-specific can be added later
-                default -> prompt = buildChatPrompt(userMessage);
+                case SCHEDULE -> prompt = buildRoleAwarePrompt(userMessage, role, snapshot, decision);
+                default -> prompt = buildRoleAwarePrompt(userMessage, role, snapshot, decision);
             }
 
             String aiResponse = openAIClient.ask(prompt);
+            String finalResponse = normalizeAiResponse(aiResponse, decision, role);
 
             return AIChatResponse.builder()
-                .response(aiResponse)
+                .response(finalResponse)
                 .sessionId(request.getSessionId())
                 .timestamp(LocalDateTime.now())
                 .success(true)
                 .suggestedQuestions(generateSuggestedQuestions(userMessage))
                 .responseType("TEXT")
+                .systemStatus(decision.getSystemStatus())
+                .riskLevel(decision.getRiskLevel())
+                .recommendations(decision.getRecommendations())
+                .evidence(decision.getEvidence())
+                .confidence(decision.getConfidence())
+                .roleScope(role.name())
                 .build();
 
         } catch (Exception e) {
@@ -68,6 +102,12 @@ public class AIChatService {
                 .success(false)
                 .suggestedQuestions(getDefaultQuestions())
                 .responseType("TEXT")
+                .systemStatus("WARNING")
+                .riskLevel("MEDIUM")
+                .recommendations(List.of("Retry after a few minutes", "Check data source connectivity"))
+                .evidence(List.of("AI service error"))
+                .confidence(0.4)
+                .roleScope(role.name())
                 .build();
         }
     }
@@ -152,12 +192,15 @@ public class AIChatService {
             var delayData = delayService.getTodayDelay();
             var oeeData = oeeService.getTodayOee();
             var stats = statisticsService.getTodayStatistics();
+            var snapshot = aiContextService.getCurrentSnapshot();
+            AiDecisionResult decision = aiDecisionEngine.evaluate(snapshot, AiRole.MANAGER);
 
             String prompt = buildQuickStatusPrompt(delayData, oeeData, stats);
             String aiResponse = openAIClient.ask(prompt);
+            String finalResponse = normalizeAiResponse(aiResponse, decision, AiRole.MANAGER);
 
             return AIChatResponse.builder()
-                .response(aiResponse)
+                .response(finalResponse)
                 .sessionId("quick-status-" + System.currentTimeMillis())
                 .timestamp(LocalDateTime.now())
                 .success(true)
@@ -167,6 +210,12 @@ public class AIChatService {
                     "Compare with yesterday's performance?"
                 ))
                 .responseType("TEXT")
+                .systemStatus(decision.getSystemStatus())
+                .riskLevel(decision.getRiskLevel())
+                .recommendations(decision.getRecommendations())
+                .evidence(decision.getEvidence())
+                .confidence(decision.getConfidence())
+                .roleScope(AiRole.MANAGER.name())
                 .build();
 
         } catch (Exception e) {
@@ -175,51 +224,58 @@ public class AIChatService {
         }
     }
 
-    private String buildChatPrompt(String userMessage) {
+    private String buildRoleAwarePrompt(String userMessage, AiRole role, be.backend.model.ai.AiContextSnapshot snapshot, AiDecisionResult decision) {
         StringBuilder prompt = new StringBuilder();
 
-        // System context
-        prompt.append("You are an AI Production Assistant specialized in manufacturing. ");
-        prompt.append("Always answer in concise English (2-4 short sentences).\\n\\n");
+        prompt.append("You are an AI Production Assistant specialized in manufacturing operations. ");
+        prompt.append("Always answer in concise English (max 6 short sentences).\\n\\n");
 
-        // Add current production context
-        try {
-            var delayData = delayService.getTodayDelay();
-            var oeeData = oeeService.getTodayOee();
-            var stats = statisticsService.getTodayStatistics();
-
-            prompt.append("CURRENT PRODUCTION DATA (for your reference):\\n");
-            prompt.append("- Plan achievement rate: ").append(stats.getAchievementRate()).append("%\\n");
-            prompt.append("- Reject rate: ").append(stats.getRejectRate()).append("%\\n");
-            prompt.append("- Total downtime: ").append(stats.getTotalDowntimeMinutes()).append(" minutes\\n");
-
-            if (!delayData.isEmpty()) {
-                prompt.append("- Delayed lines: ");
-                delayData.forEach(delay ->
-                    prompt.append(delay.getLine()).append(" (")
-                          .append(delay.getDelay()).append(" units behind), ")
-                );
-                prompt.append("\\n");
-            }
-
-            if (!oeeData.isEmpty()) {
-                prompt.append("- OEE by line: ");
-                oeeData.forEach(oee ->
-                    prompt.append(oee.getLine()).append(" (")
-                          .append(String.format("%.1f", oee.getOee() * 100)).append("%), ")
-                );
-                prompt.append("\\n");
-            }
-
-        } catch (Exception e) {
-            log.warn("Could not load production context", e);
+        prompt.append("CALLER ROLE: ").append(role.name()).append("\\n");
+        if (role == AiRole.ADMIN) {
+            prompt.append("ROLE MODE: Focus on system-level risk and cross-line priorities.\\n");
+        } else {
+            prompt.append("ROLE MODE: Focus on shift-level execution and immediate operational actions.\\n");
         }
+
+        var stats = snapshot.getProductionOverview();
+        prompt.append("\\nCURRENT SNAPSHOT:\\n");
+        prompt.append("- Achievement rate: ").append(String.format("%.1f", stats.getAchievementRate() * 100)).append("%\\n");
+        prompt.append("- Reject rate: ").append(String.format("%.1f", stats.getRejectRate() * 100)).append("%\\n");
+        prompt.append("- Total downtime: ").append(stats.getTotalDowntimeMinutes()).append(" minutes\\n");
+
+        prompt.append("- Delays: ");
+        if (snapshot.getDelays().isEmpty()) {
+            prompt.append("None");
+        } else {
+            snapshot.getDelays().stream().limit(5).forEach(delay ->
+                prompt.append(delay.getLine()).append("(").append(delay.getDelay()).append("), ")
+            );
+        }
+        prompt.append("\\n");
+
+        prompt.append("- OEE lines: ");
+        if (snapshot.getOeeByLine().isEmpty()) {
+            prompt.append("No OEE data");
+        } else {
+            snapshot.getOeeByLine().stream().limit(5).forEach(oee ->
+                prompt.append(oee.getLine()).append("(")
+                    .append(String.format("%.1f", oee.getOee() * 100)).append("%), ")
+            );
+        }
+        prompt.append("\\n\\n");
+
+        prompt.append("RULE ENGINE OUTPUT (must align with this):\\n");
+        prompt.append("- System status: ").append(decision.getSystemStatus()).append("\\n");
+        prompt.append("- Risk level: ").append(decision.getRiskLevel()).append("\\n");
+        prompt.append("- Findings: ").append(String.join(" | ", decision.getFindings())).append("\\n");
+        prompt.append("- Evidence: ").append(String.join(" | ", decision.getEvidence())).append("\\n");
+        prompt.append("- Recommended actions: ").append(String.join(" | ", decision.getRecommendations())).append("\\n\\n");
 
         prompt.append("\\nUSER QUESTION: ").append(userMessage).append("\\n\\n");
 
-        prompt.append("TASK: Answer the user's question using the production data above when relevant. ");
-        prompt.append("If the data is not sufficient, say that clearly and suggest what additional information is needed. ");
-        prompt.append("Keep the answer brief, clear and practical.");
+        prompt.append("TASK: Answer the user's question based on the snapshot and rule output above. ");
+        prompt.append("Do not invent values. If data is insufficient, say what data is missing. ");
+        prompt.append("Close with 2-3 practical next actions tailored to the caller role.");
 
         return prompt.toString();
     }
@@ -313,6 +369,37 @@ public class AIChatService {
             .success(false)
             .suggestedQuestions(getDefaultQuestions())
             .responseType("TEXT")
+            .systemStatus("WARNING")
+            .riskLevel("MEDIUM")
+            .recommendations(List.of("Retry after a few minutes", "Check data source connectivity"))
+            .evidence(List.of("Context retrieval failure"))
+            .confidence(0.4)
+            .roleScope(AiRole.UNKNOWN.name())
             .build();
+    }
+
+    private String normalizeAiResponse(String aiResponse, AiDecisionResult decision, AiRole role) {
+        if (aiResponse == null || aiResponse.isBlank() || "AI analysis temporarily unavailable".equalsIgnoreCase(aiResponse.trim())) {
+            return buildRuleBasedFallbackAnswer(decision, role);
+        }
+        return aiResponse;
+    }
+
+    private String buildRuleBasedFallbackAnswer(AiDecisionResult decision, AiRole role) {
+        StringBuilder sb = new StringBuilder();
+        sb.append("System status: ").append(decision.getSystemStatus())
+            .append(" (risk: ").append(decision.getRiskLevel()).append("). ");
+
+        if (!decision.getFindings().isEmpty()) {
+            sb.append("Key finding: ").append(decision.getFindings().get(0)).append(". ");
+        }
+
+        sb.append(role == AiRole.ADMIN
+            ? "Recommended admin actions: "
+            : "Recommended manager actions: ");
+
+        decision.getRecommendations().stream().limit(3).forEach(rec -> sb.append(rec).append("; "));
+
+        return sb.toString().trim();
     }
 }

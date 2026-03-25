@@ -19,4 +19,10 @@ public class AIChatResponse {
     private boolean success;
     private List<String> suggestedQuestions; // Follow-up questions
     private String responseType; // TEXT, CHART, TABLE, etc.
+    private String systemStatus; // STABLE, WARNING, CRITICAL
+    private String riskLevel; // LOW, MEDIUM, HIGH
+    private List<String> recommendations;
+    private List<String> evidence;
+    private Double confidence; // 0.0 - 1.0
+    private String roleScope; // ADMIN, MANAGER, UNKNOWN
 }
