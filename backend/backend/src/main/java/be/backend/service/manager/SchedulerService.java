@@ -8,7 +8,6 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
 import java.time.OffsetDateTime;
-import java.time.ZoneOffset;
 import java.time.temporal.ChronoUnit;
 import java.util.*;
 
@@ -30,8 +29,8 @@ public class SchedulerService {
 
         for (ProductionPlan plan : plans) {
 
-            var start = plan.getPlannedStartDate().atStartOfDay().atOffset(ZoneOffset.of("+07"));
-            var end = plan.getPlannedEndDate().atStartOfDay().atOffset(ZoneOffset.of("+07"));
+            var start = plan.getPlannedStartDate();
+            var end = plan.getPlannedEndDate();
             long windowDays = calculateWindowDays(start, end);
 
             Integer lineId = plan.getLine().getId();
@@ -96,8 +95,8 @@ public class SchedulerService {
     @Transactional
     public ScheduleCreationResult createSchedules(ProductionPlan plan) {
 
-        var start = plan.getPlannedStartDate().atStartOfDay().atOffset(ZoneOffset.of("+07"));
-        var end = plan.getPlannedEndDate().atStartOfDay().atOffset(ZoneOffset.of("+07"));
+        var start = plan.getPlannedStartDate();
+        var end = plan.getPlannedEndDate();
 
         double remaining = plan.getEstimatedHours();
         double shift = plan.getLine().getShiftHours().doubleValue();

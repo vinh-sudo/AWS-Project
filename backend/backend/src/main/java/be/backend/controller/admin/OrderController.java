@@ -1,4 +1,4 @@
-package be.backend.controller;
+package be.backend.controller.admin;
 
 import be.backend.entity.Account;
 import be.backend.model.request.CreateOrderRequest;

@@ -1,4 +1,4 @@
-package be.backend.controller;
+package be.backend.controller.manager;
 
 import be.backend.model.response.OrderResponse;
 import be.backend.service.admin.OrderService;

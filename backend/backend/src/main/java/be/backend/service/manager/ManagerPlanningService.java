@@ -12,7 +12,6 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.time.LocalDate;
 import java.time.OffsetDateTime;
 import java.util.ArrayList;
 import java.util.Comparator;
@@ -87,7 +86,12 @@ public class ManagerPlanningService {
         ProductionLine testLine = findRouteLine(allLines, "TEST");
         ProductionLine packingLine = findRouteLine(allLines, "PACK");
 
-        LocalDate stageStart = request.getStartDate();
+        // Sửa logic ngày bắt đầu: nếu ngày truyền vào nhỏ hơn thời điểm hiện tại thì lấy OffsetDateTime.now()
+        OffsetDateTime now = OffsetDateTime.now();
+        OffsetDateTime stageStart = request.getStartDate().atStartOfDay().atOffset(now.getOffset());
+        if (stageStart.isBefore(now)) {
+            stageStart = now;
+        }
         List<ProductionPlan> plans = new ArrayList<>();
 
         for (ProductionLine line : List.of(smtLine, dipLine, testLine, packingLine)) {
@@ -315,7 +319,7 @@ public class ManagerPlanningService {
             Employee manager,
             String planName,
             Integer qty,
-            LocalDate startDate,
+            OffsetDateTime startDate,
             String note) {
         double hourlyCapacity = line.getCapacity() * line.getEfficiency().doubleValue();
         double hours = qty / hourlyCapacity;
