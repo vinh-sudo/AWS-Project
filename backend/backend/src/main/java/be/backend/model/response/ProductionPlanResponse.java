@@ -3,7 +3,8 @@ package be.backend.model.response;
 import lombok.Builder;
 import lombok.Data;
 
-import java.time.LocalDate;
+import java.time.OffsetDateTime;
+
 @Data
 @Builder
 public class ProductionPlanResponse {
@@ -17,8 +18,8 @@ public class ProductionPlanResponse {
 
     private Integer plannedQuantity;
 
-    private LocalDate startDate;
-    private LocalDate endDate;
+    private OffsetDateTime startDate;
+    private OffsetDateTime endDate;
 
     private Double estimatedHours;
 

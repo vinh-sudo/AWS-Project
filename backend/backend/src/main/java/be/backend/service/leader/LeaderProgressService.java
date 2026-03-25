@@ -4,7 +4,6 @@ import be.backend.entity.*;
 import be.backend.exception.BusinessException;
 import be.backend.exception.ForbiddenException;
 import be.backend.exception.ResourceNotFoundException;
-import be.backend.model.request.ReportIncidentRequest;
 import be.backend.model.request.SubmitReportRequest;
 import be.backend.model.request.UpdateProgressRequest;
 import be.backend.model.response.ProgressResponse;
@@ -85,7 +84,9 @@ public class LeaderProgressService {
                                                         + schedule.getStatus());
                 }
 
-                return refreshProgressFromReports(schedule);
+                ProgressResponse response = refreshProgressFromReports(schedule);
+                autoCompleteScheduleIfNeeded(schedule);
+                return response;
         }
 
         /**
@@ -153,6 +154,7 @@ public class LeaderProgressService {
                 reportRepo.save(report);
 
                 ProgressResponse latestProgress = refreshProgressFromReports(schedule);
+                autoCompleteScheduleIfNeeded(schedule);
                 Integer orderItemId = schedule.getPlan().getOrderItem() != null
                                 ? schedule.getPlan().getOrderItem().getId()
                                 : null;
@@ -308,55 +310,54 @@ public class LeaderProgressService {
          *  - schedule must be RUNNING
          *  - when finished, status -> COMPLETED and progress/order completion are re-evaluated
          */
-        @Transactional
-        public ScheduleSummaryResponse finishSchedule(Account account, Integer scheduleId) {
-
-                LineLeaderAssignment assignment = resolveAssignment(account);
-                Integer leaderLineId = assignment.getLine().getId();
-
-                ProductionSchedule schedule = scheduleRepo.findById(scheduleId)
-                                .orElseThrow(() -> new ResourceNotFoundException(
-                                                "Schedule", scheduleId.toString()));
-
-                if (!schedule.getPlan().getLine().getId().equals(leaderLineId)) {
-                        throw new ForbiddenException("Schedule does not belong to your line");
-                }
-
-                if (!"RUNNING".equals(schedule.getStatus())) {
-                        throw new BusinessException(
-                                        "Only RUNNING schedules can be finished. Current: " + schedule.getStatus());
-                }
-
-                // Mark schedule as completed and set end time if missing
-                schedule.setStatus("COMPLETED");
-                if (schedule.getEndTime() == null) {
-                        schedule.setEndTime(OffsetDateTime.now());
-                }
-                scheduleRepo.save(schedule);
-
-                // Recalculate order completion (will auto-complete order if 100%)
-                BigDecimal orderPercentage = calculateOrderCompletionPercentage(schedule.getOrder());
-                tryCompleteOrder(schedule.getOrder(), orderPercentage);
-
-                // Build summary similar to startSchedule
-                List<ProductionFile> files = productionFileService.getFilesForOrder(schedule.getOrder().getId());
-                List<ProductionFileResponse> documentResponses = productionFileMapper.toResponseList(files);
-                OrderItem item = schedule.getPlan().getOrderItem();
-
-                return ScheduleSummaryResponse.builder()
-                                .scheduleId(schedule.getId())
-                                .orderInfo(schedule.getOrder().getId() + " - " + schedule.getOrder().getProductType())
-                                .status(schedule.getStatus())
-                                .startTime(schedule.getStartTime() != null
-                                                ? schedule.getStartTime().toLocalDateTime()
-                                                : null)
-                                .endTime(schedule.getEndTime() != null
-                                                ? schedule.getEndTime().toLocalDateTime()
-                                                : null)
-                                .orderItemId(item != null ? item.getId() : null)
-                                .documents(documentResponses)
-                                .build();
-        }
+        /*
+         * @Transactional public ScheduleSummaryResponse finishSchedule(Account account,
+         * Integer scheduleId) {
+         *
+         * LineLeaderAssignment assignment = resolveAssignment(account); Integer
+         * leaderLineId = assignment.getLine().getId();
+         *
+         * ProductionSchedule schedule = scheduleRepo.findById(scheduleId)
+         * .orElseThrow(() -> new ResourceNotFoundException(
+         * "Schedule", scheduleId.toString()));
+         *
+         * if (!schedule.getPlan().getLine().getId().equals(leaderLineId)) { throw new
+         * ForbiddenException("Schedule does not belong to your line"); }
+         *
+         * if (!"RUNNING".equals(schedule.getStatus())) { throw new BusinessException(
+         * "Only RUNNING schedules can be finished. Current: " + schedule.getStatus()); }
+         *
+         * // Kiểm tra tổng sản lượng đã đủ chưa Integer plannedQty =
+         * schedule.getPlan().getPlannedQuantity(); Long producedQty =
+         * reportRepo.sumProducedQuantityByScheduleId(schedule.getId()); if (producedQty
+         * == null) producedQty = 0L; if (producedQty < plannedQty) { throw new
+         * BusinessException("Cannot finish: Produced quantity (good + reject) " +
+         * producedQty + " < planned quantity " + plannedQty); }
+         *
+         * // Mark schedule as completed and set end time if missing schedule.setStatus(
+         * "COMPLETED"); if (schedule.getEndTime() == null) {
+         * schedule.setEndTime(OffsetDateTime.now()); } scheduleRepo.save(schedule);
+         *
+         * // Recalculate order completion (will auto-complete order if 100%) BigDecimal
+         * orderPercentage = calculateOrderCompletionPercentage(schedule.getOrder());
+         * tryCompleteOrder(schedule.getOrder(), orderPercentage);
+         *
+         * // Build summary similar to startSchedule List<ProductionFile> files =
+         * productionFileService.getFilesForOrder(schedule.getOrder().getId());
+         * List<ProductionFileResponse> documentResponses =
+         * productionFileMapper.toResponseList(files); OrderItem item =
+         * schedule.getPlan().getOrderItem();
+         *
+         * return ScheduleSummaryResponse.builder() .scheduleId(schedule.getId())
+         * .orderInfo(schedule.getOrder().getId() + " - " +
+         * schedule.getOrder().getProductType()) .status(schedule.getStatus())
+         * .startTime(schedule.getStartTime() != null
+         * ? schedule.getStartTime().toLocalDateTime() : null)
+         * .endTime(schedule.getEndTime() != null
+         * ? schedule.getEndTime().toLocalDateTime() : null)
+         * .orderItemId(item != null ? item.getId() : null)
+         * .documents(documentResponses) .build(); }
+         */
 
         private int routeRank(String lineName) {
                 if (lineName == null) {
@@ -583,5 +584,21 @@ public class LeaderProgressService {
                         orderRepo.save(order);
                 }
 
+        }
+
+        private void autoCompleteScheduleIfNeeded(ProductionSchedule schedule) {
+                Integer plannedQty = schedule.getPlan().getPlannedQuantity();
+                Long producedQty = reportRepo.sumProducedQuantityByScheduleId(schedule.getId());
+                if (producedQty == null) producedQty = 0L;
+                if (producedQty >= plannedQty && "RUNNING".equals(schedule.getStatus())) {
+                        schedule.setStatus("COMPLETED");
+                        if (schedule.getEndTime() == null) {
+                                schedule.setEndTime(OffsetDateTime.now());
+                        }
+                        scheduleRepo.save(schedule);
+                        // Recalculate order completion (will auto-complete order if 100%)
+                        BigDecimal orderPercentage = calculateOrderCompletionPercentage(schedule.getOrder());
+                        tryCompleteOrder(schedule.getOrder(), orderPercentage);
+                }
         }
 }

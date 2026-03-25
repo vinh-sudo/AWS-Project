@@ -7,7 +7,6 @@ import lombok.Getter;
 import lombok.Setter;
 import org.hibernate.annotations.ColumnDefault;
 
-import java.time.LocalDate;
 import java.time.OffsetDateTime;
 import java.util.LinkedHashSet;
 import java.util.Set;
@@ -47,10 +46,10 @@ public class ProductionPlan {
 
     @NotNull
     @Column(name = "planned_start_date", nullable = false)
-    private LocalDate plannedStartDate;
+    private OffsetDateTime plannedStartDate;
 
     @Column(name = "planned_end_date")
-    private LocalDate plannedEndDate;
+    private OffsetDateTime plannedEndDate;
 
     @Column(name = "estimated_hours")
     private Double estimatedHours;
