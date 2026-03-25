@@ -1,4 +1,4 @@
-package be.backend.controller;
+package be.backend.controller.utils;
 
 import be.backend.model.request.PasswordResetRequest;
 import be.backend.service.admin.OtpService;

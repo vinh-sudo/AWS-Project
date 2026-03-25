@@ -1,4 +1,4 @@
-package be.backend.controller;
+package be.backend.controller.admin;
 
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;

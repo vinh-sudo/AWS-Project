@@ -1,4 +1,4 @@
-package be.backend.controller;
+package be.backend.controller.utils;
 
 import be.backend.entity.Account;
 import be.backend.mapper.ProductionFileMapper;
