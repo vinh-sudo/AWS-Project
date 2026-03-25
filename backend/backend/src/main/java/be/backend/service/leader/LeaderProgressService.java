@@ -84,7 +84,9 @@ public class LeaderProgressService {
                                                         + schedule.getStatus());
                 }
 
-                return refreshProgressFromReports(schedule);
+                ProgressResponse response = refreshProgressFromReports(schedule);
+                autoCompleteScheduleIfNeeded(schedule);
+                return response;
         }
 
         /**
@@ -152,6 +154,7 @@ public class LeaderProgressService {
                 reportRepo.save(report);
 
                 ProgressResponse latestProgress = refreshProgressFromReports(schedule);
+                autoCompleteScheduleIfNeeded(schedule);
                 Integer orderItemId = schedule.getPlan().getOrderItem() != null
                                 ? schedule.getPlan().getOrderItem().getId()
                                 : null;
@@ -581,5 +584,21 @@ public class LeaderProgressService {
                         orderRepo.save(order);
                 }
 
+        }
+
+        private void autoCompleteScheduleIfNeeded(ProductionSchedule schedule) {
+                Integer plannedQty = schedule.getPlan().getPlannedQuantity();
+                Long producedQty = reportRepo.sumProducedQuantityByScheduleId(schedule.getId());
+                if (producedQty == null) producedQty = 0L;
+                if (producedQty >= plannedQty && "RUNNING".equals(schedule.getStatus())) {
+                        schedule.setStatus("COMPLETED");
+                        if (schedule.getEndTime() == null) {
+                                schedule.setEndTime(OffsetDateTime.now());
+                        }
+                        scheduleRepo.save(schedule);
+                        // Recalculate order completion (will auto-complete order if 100%)
+                        BigDecimal orderPercentage = calculateOrderCompletionPercentage(schedule.getOrder());
+                        tryCompleteOrder(schedule.getOrder(), orderPercentage);
+                }
         }
 }
