@@ -14,7 +14,6 @@ import authService from "../../services/authService";
 import leaderService from "../../services/leaderService";
 import scheduleService from "../../services/scheduleService";
 import PageLoading from "../../components/PageLoading/PageLoading";
-import useConfirmDialog from "../../components/ConfirmDialog/useConfirmDialog";
 import "./LeaderProgress.css";
 
 const SHIFT_REPORT_DRAFT_KEY = "leader_shift_report_draft_v1";
@@ -158,7 +157,6 @@ const LeaderProgress = () => {
   const [showDocumentModal, setShowDocumentModal] = useState(false);
   const [selectedSchedule, setSelectedSchedule] = useState(null);
   const [selectedDocuments, setSelectedDocuments] = useState([]);
-  const confirmAction = useConfirmDialog();
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
@@ -318,28 +316,6 @@ const LeaderProgress = () => {
       fetchData();
     } catch (err) {
       alert(`❌ Error: ${err.response?.data?.message || "Unable to resume"}`);
-    }
-  };
-
-  const handleFinishSchedule = async (scheduleId) => {
-    const confirmed = await confirmAction({
-      title: "Complete Schedule",
-      message: "Are you sure you want to complete this schedule?",
-      confirmText: "Complete",
-      cancelText: "Back",
-      tone: "danger",
-    });
-
-    if (!confirmed) {
-      return;
-    }
-
-    try {
-      await leaderService.finishSchedule(scheduleId);
-      alert("✅ Schedule finished!");
-      fetchData();
-    } catch (err) {
-      alert(`❌ Error: ${err.response?.data?.message || "Unable to finish"}`);
     }
   };
 
@@ -975,12 +951,6 @@ const LeaderProgress = () => {
                         onClick={() => openIncidentModal(schedule)}
                       >
                         {IC.alertTriangle} Report Incident
-                      </button>
-                      <button
-                        className="lp-action-btn resume"
-                        onClick={() => handleFinishSchedule(schedule.scheduleId)}
-                      >
-                        {IC.check} Finish
                       </button>
                     </div>
                   )}

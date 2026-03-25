@@ -35,6 +35,7 @@ const UsersAdmin = () => {
   const [initialLoad, setInitialLoad] = useState(true);
   const [error, setError] = useState(null);
   const [actionLoading, setActionLoading] = useState(false);
+  const [feedback, setFeedback] = useState({ type: "", message: "" });
 
   const [searchTerm, setSearchTerm] = useState("");
   const [debouncedSearch, setDebouncedSearch] = useState("");
@@ -51,6 +52,15 @@ const UsersAdmin = () => {
   const [totalPages, setTotalPages] = useState(0);
   const [totalElements, setTotalElements] = useState(0);
   const pageSize = 10;
+  const feedbackTimerRef = useRef(null);
+
+  const showFeedback = useCallback((type, message) => {
+    setFeedback({ type, message });
+    window.clearTimeout(feedbackTimerRef.current);
+    feedbackTimerRef.current = window.setTimeout(() => {
+      setFeedback({ type: "", message: "" });
+    }, 2600);
+  }, []);
 
   /* Search debounce */
   const searchTimerRef = useRef(null);
@@ -90,6 +100,10 @@ const UsersAdmin = () => {
       setInitialLoad(false);
     }  }, [currentPage, pageSize, roleFilter, debouncedSearch]);
 
+  useEffect(() => {
+    return () => window.clearTimeout(feedbackTimerRef.current);
+  }, []);
+
   useEffect(() => { fetchUsers(); }, [fetchUsers]);
 
   const handleChange = (field, value) => setFormData((prev) => ({ ...prev, [field]: value }));
@@ -114,10 +128,10 @@ const UsersAdmin = () => {
         employeeCode: formData.employeeCode || undefined,
       });
       resetForm(); setShowCreateUser(false); fetchUsers();
-      alert("User created successfully!");
+      showFeedback("success", "User created successfully.");
     } catch (err) {
       const msg = err.response?.data?.message || err.response?.data || err.message || "Unknown error";
-      alert("Failed to create user:\n" + msg);
+      showFeedback("error", `Failed to create user: ${msg}`);
     } finally { setActionLoading(false); }
   };
 
@@ -141,9 +155,9 @@ const UsersAdmin = () => {
         formData.status ? await adminService.unlockAccount(selectedUser.id) : await adminService.lockAccount(selectedUser.id);
       }
       resetForm(); setShowEditUser(false); setSelectedUser(null); fetchUsers();
-      alert("User updated successfully!");
+      showFeedback("success", "User updated successfully.");
     } catch (err) {
-      alert(err.response?.data?.message || err.response?.data || "Failed to update user");
+      showFeedback("error", err.response?.data?.message || err.response?.data || "Failed to update user");
     } finally { setActionLoading(false); }
   };
 
@@ -152,14 +166,14 @@ const UsersAdmin = () => {
       setActionLoading(true);
       if (user.status === "active") {
         await adminService.lockAccount(user.id);
-        alert(`Account "${user.username}" has been locked.`);
+        showFeedback("success", `Account "${user.username}" has been locked.`);
       } else {
         await adminService.unlockAccount(user.id);
-        alert(`Account "${user.username}" has been unlocked.`);
+        showFeedback("success", `Account "${user.username}" has been unlocked.`);
       }
       fetchUsers();
     } catch (err) {
-      alert(err.response?.data?.message || err.response?.data || "Failed to update account status");
+      showFeedback("error", err.response?.data?.message || err.response?.data || "Failed to update account status");
     } finally { setActionLoading(false); }
   };
 
@@ -294,6 +308,13 @@ const UsersAdmin = () => {
 
         {/* Content Card */}
         <div className="admin-content">
+          {feedback.message && (
+            <div className={`users-feedback-banner ${feedback.type === "error" ? "error" : "success"}`}>
+              <span>{feedback.message}</span>
+              <button onClick={() => setFeedback({ type: "", message: "" })}>Dismiss</button>
+            </div>
+          )}
+
           {/* Error */}
           {error && (
             <div className="error-banner">

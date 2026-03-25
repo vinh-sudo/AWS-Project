@@ -202,12 +202,7 @@ const AuditLog = () => {
         );
       case FILTER_MODES.ALL:
       default:
-        // Safe fallback mode: backend /api/admin/audit-logs may return 500 on some datasets.
-        // Keep UI operational by using critical endpoint with a broader time window.
-        return adminService.getCriticalAuditLogs({
-          ...commonParams,
-          since: toIsoStringOrNull(startDate),
-        });
+        return adminService.getAuditLogs(commonParams);
     }
   }, [
     actionType,
@@ -370,7 +365,7 @@ const AuditLog = () => {
                 value={mode}
                 onChange={(e) => setMode(e.target.value)}
               >
-                <option value={FILTER_MODES.ALL}>Recent security feed</option>
+                <option value={FILTER_MODES.ALL}>All logs</option>
                 <option value={FILTER_MODES.CRITICAL}>Critical actions</option>
                 <option value={FILTER_MODES.ACTION}>By action type</option>
                 <option value={FILTER_MODES.USER}>By user</option>

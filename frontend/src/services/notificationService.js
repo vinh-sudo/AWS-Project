@@ -54,7 +54,7 @@ const notificationService = {
   /**
    * Get filtered notifications by sourceType
    * @param {number} userId
-   * @param {string} sourceType - ACCOUNT | LINE | SCHEDULE | REPORT | KPI | ORDER
+    * @param {string} sourceType - ACCOUNT | LINE | SCHEDULE | REPORT | KPI | ORDER | QUALITY
    * @param {number} page
    * @param {number} size
    */

@@ -11,9 +11,12 @@ const SOURCE_TYPES = [
   { label: "Line", value: "LINE" },
   { label: "Account", value: "ACCOUNT" },
   { label: "KPI", value: "KPI" },
+  { label: "Quality", value: "QUALITY" },
   { label: "Report", value: "REPORT" },
   { label: "Plan", value: "PLAN" },
 ];
+
+const PAGE_SIZE = 20;
 
 const LEVEL_ICONS = {
   INFO: "ℹ️",
@@ -27,8 +30,94 @@ const SOURCE_ICONS = {
   LINE: "🏭",
   ACCOUNT: "👤",
   KPI: "📊",
+  QUALITY: "🧪",
   REPORT: "📋",
   PLAN: "📝",
+};
+
+const getRoleDefaultPath = (role) => {
+  switch ((role || "").toUpperCase()) {
+    case "ADMIN":
+      return "/admin/dashboard";
+    case "MANAGER":
+      return "/manager/dashboard";
+    case "PRODUCTION_PLANNER":
+      return "/planner/assignment";
+    case "LINE_LEADER":
+      return "/leader/progress";
+    default:
+      return "/dashboard";
+  }
+};
+
+const normalizeNotificationUrl = (notif, role) => {
+  const fallback = getRoleDefaultPath(role);
+  if (!notif?.url) return fallback;
+
+  let pathname = "";
+  let search = "";
+
+  try {
+    const parsed = new URL(notif.url, window.location.origin);
+    pathname = parsed.pathname || "";
+    search = parsed.search || "";
+  } catch {
+    return fallback;
+  }
+
+  if (
+    pathname.startsWith("/admin/") ||
+    pathname.startsWith("/manager/") ||
+    pathname.startsWith("/planner/") ||
+    pathname.startsWith("/leader/") ||
+    pathname.startsWith("/dashboard")
+  ) {
+    return `${pathname}${search}`;
+  }
+
+  if (pathname.startsWith("/orders/")) {
+    if ((role || "").toUpperCase() === "ADMIN") {
+      return "/admin/orders";
+    }
+    if ((role || "").toUpperCase() === "MANAGER") {
+      return "/manager/orders";
+    }
+    return fallback;
+  }
+
+  if (pathname.startsWith("/plans/create")) {
+    if ((role || "").toUpperCase() === "MANAGER") {
+      return `/manager/planning${search}`;
+    }
+    return "/admin/orders";
+  }
+
+  if (pathname.startsWith("/manager/schedules/")) {
+    return "/manager/tracking";
+  }
+
+  if (pathname.startsWith("/lines/")) {
+    return "/manager/tracking";
+  }
+
+  if (pathname.startsWith("/reports/")) {
+    if ((role || "").toUpperCase() === "MANAGER") {
+      return "/manager/reports";
+    }
+    return fallback;
+  }
+
+  if (
+    pathname === "/my-line" ||
+    pathname === "/profile" ||
+    pathname === "/security" ||
+    pathname === "/account" ||
+    pathname === "/support"
+  ) {
+    return fallback;
+  }
+
+  return fallback;
 };
 
 function timeAgo(dateStr) {
@@ -68,51 +157,110 @@ const NotificationBell = () => {
   const navigate = useNavigate();
 
   const currentUser = authService.getCurrentUser();
-  const userId = currentUser?.userId ?? currentUser?.id;
+  const userRole = (currentUser?.role || "").toUpperCase();
+  const userIdCandidates = [currentUser?.userId, currentUser?.id]
+    .map((value) => Number(value))
+    .filter((value, index, arr) => Number.isFinite(value) && value > 0 && arr.indexOf(value) === index);
+  const [resolvedUserId, setResolvedUserId] = useState(
+    userIdCandidates[0] ?? null,
+  );
+
+  const resolveUserIdForNotifications = useCallback(async () => {
+    if (resolvedUserId) return resolvedUserId;
+    if (userIdCandidates.length === 0) return null;
+
+    const chosen = userIdCandidates[0];
+    setResolvedUserId(chosen);
+    return chosen;
+  }, [resolvedUserId, userIdCandidates]);
 
   // Fetch unread count
   const fetchUnreadCount = useCallback(async () => {
-    if (!userId) return;
+    const baseUserId = await resolveUserIdForNotifications();
+    if (!baseUserId) return;
+
+    const tryIds = [baseUserId, ...userIdCandidates.filter((id) => id !== baseUserId)];
+
     try {
-      const count = await notificationService.getUnreadCount(userId);
-      setUnreadCount(count);
+      for (const candidateId of tryIds) {
+        try {
+          const count = await notificationService.getUnreadCount(candidateId);
+          setUnreadCount(count);
+          if (resolvedUserId !== candidateId) {
+            setResolvedUserId(candidateId);
+          }
+          return;
+        } catch {
+          // Try next candidate id.
+        }
+      }
     } catch (err) {
       console.error("Failed to fetch unread count:", err);
     }
-  }, [userId]);
+  }, [resolveUserIdForNotifications, userIdCandidates, resolvedUserId]);
 
   // Fetch notifications (first page or append)
   const fetchNotifications = useCallback(
     async (pageNum = 0, filter = activeFilter, append = false) => {
-      if (!userId) return;
+      const baseUserId = await resolveUserIdForNotifications();
+      if (!baseUserId) return;
+
+      const tryIds = [baseUserId, ...userIdCandidates.filter((id) => id !== baseUserId)];
+
       try {
         setLoading(true);
-        let data;
-        if (filter) {
-          data = await notificationService.getFilteredNotifications(
-            userId,
-            filter,
-            pageNum,
-            15,
-          );
-        } else {
-          data = await notificationService.getNotifications(
-            userId,
-            pageNum,
-            15,
-          );
+
+        let selectedData = null;
+        let selectedUserId = null;
+
+        for (const candidateId of tryIds) {
+          try {
+            const data = filter
+              ? await notificationService.getFilteredNotifications(
+                  candidateId,
+                  filter,
+                  pageNum,
+                  PAGE_SIZE,
+                )
+              : await notificationService.getNotifications(
+                  candidateId,
+                  pageNum,
+                  PAGE_SIZE,
+                );
+
+            const hasResults = (data?.totalElements ?? 0) > 0 || (data?.content || []).length > 0;
+            if (!selectedData || hasResults || candidateId === baseUserId) {
+              selectedData = data;
+              selectedUserId = candidateId;
+            }
+
+            if (hasResults) {
+              break;
+            }
+          } catch {
+            // Try next candidate id.
+          }
         }
-        const items = data.content || [];
+
+        if (!selectedData) {
+          throw new Error("Unable to load notifications for current session user");
+        }
+
+        if (selectedUserId && resolvedUserId !== selectedUserId) {
+          setResolvedUserId(selectedUserId);
+        }
+
+        const items = selectedData.content || [];
         setNotifications((prev) => (append ? [...prev, ...items] : items));
-        setPage(data.number ?? pageNum);
-        setTotalPages(data.totalPages ?? 1);
+        setPage(selectedData.number ?? pageNum);
+        setTotalPages(selectedData.totalPages ?? 1);
       } catch (err) {
         console.error("Failed to fetch notifications:", err);
       } finally {
         setLoading(false);
       }
     },
-    [userId, activeFilter],
+    [activeFilter, resolveUserIdForNotifications, userIdCandidates, resolvedUserId],
   );
 
   // Poll unread count every 30s
@@ -147,13 +295,15 @@ const NotificationBell = () => {
   };
 
   const handleFilterChange = (sourceType) => {
-    setActiveFilter(sourceType);
+    const normalized = sourceType ? String(sourceType).toUpperCase() : null;
+    setActiveFilter(normalized);
     setPage(0);
     setNotifications([]);
-    fetchNotifications(0, sourceType, false);
+    fetchNotifications(0, normalized, false);
   };
 
   const handleMarkAsRead = async (notif) => {
+    const userId = await resolveUserIdForNotifications();
     if (!userId || notif.status === "READ") return;
     try {
       await notificationService.markAsRead(notif.id, userId);
@@ -167,6 +317,7 @@ const NotificationBell = () => {
   };
 
   const handleMarkAllAsRead = async () => {
+    const userId = await resolveUserIdForNotifications();
     if (!userId) return;
     try {
       await notificationService.markAllAsRead(userId);
@@ -178,16 +329,16 @@ const NotificationBell = () => {
   };
 
   const handleLoadMore = () => {
+    if (loading || page + 1 >= totalPages) return;
     const nextPage = page + 1;
     fetchNotifications(nextPage, activeFilter, true);
   };
 
-  const handleItemClick = (notif) => {
-    handleMarkAsRead(notif);
-    if (notif.url) {
-      setOpen(false);
-      navigate(notif.url);
-    }
+  const handleItemClick = async (notif) => {
+    await handleMarkAsRead(notif);
+    const nextUrl = normalizeNotificationUrl(notif, userRole);
+    setOpen(false);
+    navigate(nextUrl);
   };
 
   return (
@@ -262,10 +413,10 @@ const NotificationBell = () => {
                     onClick={() => handleItemClick(notif)}
                   >
                     <div
-                      className={`notification-bell__item-icon notification-bell__item-icon--${notif.level || "INFO"}`}
+                      className={`notification-bell__item-icon notification-bell__item-icon--${(notif.level || "INFO").toUpperCase()}`}
                     >
-                      {SOURCE_ICONS[notif.sourceType] ||
-                        LEVEL_ICONS[notif.level] ||
+                      {SOURCE_ICONS[(notif.sourceType || "").toUpperCase()] ||
+                        LEVEL_ICONS[(notif.level || "INFO").toUpperCase()] ||
                         "🔔"}
                     </div>
                     <div className="notification-bell__item-body">

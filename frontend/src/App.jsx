@@ -20,7 +20,6 @@ import AuditLog from "./pages/adminPage/AuditLog";
 import ManagerDashboard from "./pages/managerPage/ManagerDashboard";
 import ManagerPlanning from "./pages/managerPage/ManagerPlanning";
 import ManagerTracking from "./pages/managerPage/ManagerTracking";
-import ManagerLines from "./pages/managerPage/ManagerLines";
 import ManagerReports from "./pages/managerPage/ManagerReports";
 import ManagerOrders from "./pages/managerPage/ManagerOrders";
 // Planner imports
@@ -32,6 +31,7 @@ import LeaderTaskAssignment from "./pages/leaderPage/LeaderTaskAssignment";
 import Dashboard from "./pages/dashboardPage/Dashboard";
 import AICopilot from "./components/AICopilot/AICopilot";
 import AuthGuard from "./components/AuthGuard/AuthGuard";
+import { ConfirmDialogProvider } from "./components/ConfirmDialog/ConfirmDialogProvider";
 import "./App.css";
 
 /**
@@ -74,9 +74,10 @@ function App() {
   const [isCopilotOpen, setIsCopilotOpen] = useState(false);
 
   return (
-    <BrowserRouter>
-      <AuthGuard />
-      <Routes>
+    <ConfirmDialogProvider>
+      <BrowserRouter>
+        <AuthGuard />
+        <Routes>
         <Route element={<DraftLayout />}>
           {/* Public routes - redirect to dashboard if already authenticated */}
           <Route
@@ -129,14 +130,6 @@ function App() {
             element={
               <RoleBasedRoute allowedRoles={["MANAGER"]}>
                 <ManagerTracking />
-              </RoleBasedRoute>
-            }
-          />
-          <Route
-            path="/manager/lines"
-            element={
-              <RoleBasedRoute allowedRoles={["MANAGER"]}>
-                <ManagerLines />
               </RoleBasedRoute>
             }
           />
@@ -293,23 +286,24 @@ function App() {
             }
           />
         </Route>
-      </Routes>
+        </Routes>
 
-      {/* AI Copilot Floating Button */}
-      <button
-        className={`copilot-fab ${isCopilotOpen ? "hidden" : ""}`}
-        onClick={() => setIsCopilotOpen(true)}
-        title="AI Production Copilot"
-      >
-        🤖
-      </button>
+        {/* AI Copilot Floating Button */}
+        <button
+          className={`copilot-fab ${isCopilotOpen ? "hidden" : ""}`}
+          onClick={() => setIsCopilotOpen(true)}
+          title="AI Production Copilot"
+        >
+          🤖
+        </button>
 
-      {/* AI Copilot Panel */}
-      <AICopilot
-        isOpen={isCopilotOpen}
-        onClose={() => setIsCopilotOpen(false)}
-      />
-    </BrowserRouter>
+        {/* AI Copilot Panel */}
+        <AICopilot
+          isOpen={isCopilotOpen}
+          onClose={() => setIsCopilotOpen(false)}
+        />
+      </BrowserRouter>
+    </ConfirmDialogProvider>
   );
 }
 

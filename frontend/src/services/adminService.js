@@ -315,10 +315,13 @@ const getDashboardStats = async () => {
     return {
       totalUsers: sysData?.totalUsers || 0,
       activeUsers: sysData?.activeUsers || 0,
-      blockedUsers: Math.max(
-        0,
-        (sysData?.totalUsers || 0) - (sysData?.activeUsers || 0),
-      ),
+      blockedUsers:
+        sysData?.blockedUsers != null
+          ? sysData.blockedUsers
+          : Math.max(
+              0,
+              (sysData?.totalUsers || 0) - (sysData?.activeUsers || 0),
+            ),
       totalOrders: orderData?.totalOrders || 0,
       pendingOrders:
         (countByStatus["Draft"] || 0) + (countByStatus["Confirmed"] || 0),

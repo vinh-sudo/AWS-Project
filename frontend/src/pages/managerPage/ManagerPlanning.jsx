@@ -15,6 +15,19 @@ const getRouteRank = (lineName) => {
   return 99;
 };
 
+const formatDateTimeCell = (value) => {
+  if (!value) return "-";
+  const parsed = new Date(value);
+  if (Number.isNaN(parsed.getTime())) return String(value);
+  return parsed.toLocaleString("vi-VN", {
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+    hour: "2-digit",
+    minute: "2-digit",
+  });
+};
+
 const extractAnchorPlans = (orderPlans) => {
   const anchorByItemAndDecision = {};
 
@@ -1065,8 +1078,8 @@ const ManagerPlanning = () => {
                                           <td className="pp-cell-num">
                                             {(plan.plannedQuantity || 0).toLocaleString()}
                                           </td>
-                                          <td className="pp-cell-muted">{plan.startDate}</td>
-                                          <td className="pp-cell-muted">{plan.endDate}</td>
+                                          <td className="pp-cell-muted">{formatDateTimeCell(plan.startDate)}</td>
+                                          <td className="pp-cell-muted">{formatDateTimeCell(plan.endDate)}</td>
                                           <td className="pp-cell-muted">
                                             {(plan.estimatedHours || 0).toFixed(1)}h
                                           </td>

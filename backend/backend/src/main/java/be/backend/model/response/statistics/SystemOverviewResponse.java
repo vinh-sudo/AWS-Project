@@ -12,6 +12,7 @@ import lombok.NoArgsConstructor;
 public class SystemOverviewResponse {
     private long totalUsers;
     private long activeUsers;
+    private long blockedUsers;
     private long totalEmployees;
     private long totalLines;
     private long activeLines;

@@ -1,0 +1,130 @@
+.app-confirm-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 3000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+  background: rgba(15, 23, 42, 0.45);
+  backdrop-filter: blur(4px);
+  animation: appConfirmFadeIn 0.18s ease;
+}
+
+.app-confirm-dialog {
+  width: min(520px, 100%);
+  border-radius: 16px;
+  border: 1px solid rgba(148, 163, 184, 0.35);
+  background: linear-gradient(180deg, #ffffff 0%, #f8fbff 100%);
+  box-shadow: 0 24px 60px rgba(15, 23, 42, 0.28);
+  padding: 20px 22px;
+  animation: appConfirmRise 0.2s ease;
+}
+
+.app-confirm-header h3 {
+  margin: 0;
+  font-size: 20px;
+  line-height: 1.2;
+  color: #0f172a;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+}
+
+.app-confirm-message {
+  margin: 12px 0 0;
+  color: #334155;
+  font-size: 14.5px;
+  line-height: 1.6;
+}
+
+.app-confirm-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  margin-top: 22px;
+}
+
+.app-confirm-btn {
+  border: none;
+  border-radius: 11px;
+  padding: 10px 18px;
+  font-size: 13.5px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.app-confirm-cancel {
+  background: #f1f5f9;
+  color: #334155;
+  border: 1px solid #cbd5e1;
+}
+
+.app-confirm-cancel:hover {
+  background: #e2e8f0;
+}
+
+.app-confirm-ok {
+  background: linear-gradient(135deg, #0f766e 0%, #0d9488 100%);
+  color: #ffffff;
+  box-shadow: 0 8px 16px rgba(15, 118, 110, 0.28);
+}
+
+.app-confirm-ok:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 12px 24px rgba(15, 118, 110, 0.34);
+}
+
+.app-confirm-ok.danger {
+  background: linear-gradient(135deg, #dc2626 0%, #ef4444 100%);
+  box-shadow: 0 8px 16px rgba(220, 38, 38, 0.3);
+}
+
+.app-confirm-ok.danger:hover {
+  box-shadow: 0 12px 24px rgba(220, 38, 38, 0.35);
+}
+
+@keyframes appConfirmFadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes appConfirmRise {
+  from {
+    opacity: 0;
+    transform: translateY(10px) scale(0.98);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+@media (max-width: 640px) {
+  .app-confirm-dialog {
+    padding: 16px;
+    border-radius: 14px;
+  }
+
+  .app-confirm-header h3 {
+    font-size: 18px;
+  }
+
+  .app-confirm-message {
+    font-size: 14px;
+  }
+
+  .app-confirm-actions {
+    margin-top: 18px;
+    gap: 8px;
+  }
+
+  .app-confirm-btn {
+    flex: 1;
+    padding: 10px 12px;
+  }
+}
