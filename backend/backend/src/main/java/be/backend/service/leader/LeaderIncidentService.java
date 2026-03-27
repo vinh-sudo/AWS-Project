@@ -6,7 +6,10 @@ import be.backend.exception.ForbiddenException;
 import be.backend.exception.ResourceNotFoundException;
 import be.backend.model.request.ReportIncidentRequest;
 import be.backend.repository.*;
+import be.backend.service.utilities.SNSService;
+import be.backend.service.utilities.SQSService;
 import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -22,6 +25,13 @@ public class LeaderIncidentService {
     private final MachineRepository machineRepo;
     private final IncidentLogRepository incidentRepo;
     private final ApplicationEventPublisher eventPublisher;
+    private final SNSService snsService;
+    private final SQSService sqsService;
+
+    @Value("${aws.sns-topic-arn}")
+    private String snsTopicArn;
+    @Value("${aws.sqs-queue-url}")
+    private String sqsQueueUrl;
 
     /**
      * Báo cáo sự cố
@@ -89,11 +99,11 @@ public class LeaderIncidentService {
         if ("HIGH".equals(request.getSeverity()) && machine != null) {
             eventPublisher.publishEvent(
                     new MachineEvent.MachineDownEvent(machine));
-            // NOTE: MachineDownEvent nhận Machine
-            // Nếu machine == null (sự cố line, không phải máy)
-            // → cần tạo thêm event type VD: LineIncidentEvent
-            // Hoặc skip publish khi machine == null
         }
+        // Gửi notification qua SNS và SQS cho mọi incident
+        String message = String.format("Incident reported: %s (severity: %s) by %s", request.getIncidentType(), request.getSeverity(), account.getUsername());
+        snsService.publishToTopic(snsTopicArn, message, "Incident Reported");
+        sqsService.sendMessage(sqsQueueUrl, message);
     }
 
     private LineLeaderAssignment resolveAssignment(Account account) {

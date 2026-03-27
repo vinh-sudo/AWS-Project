@@ -13,8 +13,11 @@ import be.backend.model.response.ProductionFileResponse;
 import be.backend.repository.*;
 import be.backend.service.ProductionFileService;
 import be.backend.mapper.ProductionFileMapper;
+import be.backend.service.utilities.SNSService;
+import be.backend.service.utilities.SQSService;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
@@ -41,6 +44,13 @@ public class LeaderProgressService {
         private final OrderItemRepository orderItemRepo;
         private final ProductionFileService productionFileService;
         private final ProductionFileMapper productionFileMapper;
+        private final SNSService snsService;
+        private final SQSService sqsService;
+
+        @Value("${aws.sns-topic-arn}")
+        private String snsTopicArn;
+        @Value("${aws.sqs-queue-url}")
+        private String sqsQueueUrl;
 
         /**
          * Cập nhật tiến độ schedule
@@ -272,6 +282,11 @@ public class LeaderProgressService {
                 // 5. Start schedule
                 schedule.setStatus("RUNNING");
                 scheduleRepo.save(schedule);
+
+                // 5.1. Gửi notification qua SNS và SQS
+                String message = String.format("Schedule %d started by leader %s", scheduleId, account.getUsername());
+                snsService.publishToTopic(snsTopicArn, message, "Schedule Started");
+                sqsService.sendMessage(sqsQueueUrl, message);
 
                 // 6. Auto chuyển Order -> IN_PROGRESS khi có schedule chạy
                 Order order = schedule.getOrder();
