@@ -1,7 +1,37 @@
 import axios from "axios";
 import { isTokenExpired } from "../utils/tokenUtils";
 
-const API_BASE_URL = import.meta.env.VITE_API_URL || "http://localhost:8080";
+const normalizeBaseUrl = (url) =>
+  typeof url === "string" ? url.replace(/\/$/, "") : "";
+
+const resolveApiBaseUrl = () => {
+  const envUrl = normalizeBaseUrl(import.meta.env.VITE_API_URL);
+
+  // Default to same-origin if env is not configured.
+  if (!envUrl) {
+    return "";
+  }
+
+  // If frontend is served over HTTPS and API env URL is HTTP,
+  // upgrade it to HTTPS to avoid browser mixed-content blocks during login.
+  if (typeof window !== "undefined" && window.location.protocol === "https:") {
+    try {
+      const parsed = new URL(envUrl);
+      if (parsed.protocol === "http:") {
+        parsed.protocol = "https:";
+        return normalizeBaseUrl(parsed.toString());
+      }
+    } catch {
+      // Keep original env URL if parsing fails.
+    }
+  }
+
+  return envUrl;
+};
+
+// If VITE_API_URL is missing, use same-origin relative URLs (""),
+// which work when frontend and backend are served behind one domain/reverse proxy.
+const API_BASE_URL = resolveApiBaseUrl();
 
 // Create axios instance with default config
 const api = axios.create({
