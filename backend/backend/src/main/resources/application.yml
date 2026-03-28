@@ -1,8 +1,8 @@
 spring:
   datasource:
-    url: jdbc:postgresql://yamanote.proxy.rlwy.net:57879/railway
-    username: postgres
-    password: zAghXDygkxzsfGfItOcVCjqkqKrCCGKu
+    url: jdbc:postgresql://ims.cr2qyugw8ci4.ap-southeast-1.rds.amazonaws.com:5432/ims
+    username: ${RDS_USERNAME}
+    password: ${RDS_PASSWORD}
     driver-class-name: org.postgresql.Driver
 
   jpa:

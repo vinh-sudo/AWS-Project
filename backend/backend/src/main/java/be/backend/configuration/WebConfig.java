@@ -25,6 +25,9 @@ public class WebConfig implements WebMvcConfigurer {
                 "http://localhost:5173"
         ));
         config.setAllowedOrigins(List.of(
+                "https://ims.mom"
+        ));
+        config.setAllowedOrigins(List.of(
                 "http://ims.mom"
         ));
         config.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "OPTIONS"));

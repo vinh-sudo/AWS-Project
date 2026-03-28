@@ -1,10 +1,12 @@
 package be.backend.service.manager;
 
 import be.backend.entity.*;
+import be.backend.event.ProductionScheduleEvent;
 import be.backend.model.response.ScheduleValidationResult;
 import be.backend.repository.*;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 
 import java.time.OffsetDateTime;
@@ -19,6 +21,7 @@ public class SchedulerService {
     private final MachineRepository machineRepo;
     private final LineLeaderAssignmentRepository leaderRepo;
     private final IncidentLogRepository incidentRepo;
+    private final ApplicationEventPublisher eventPublisher;
 
     // ============== VALIDATE ==============
     public ScheduleValidationResult validateCapacity(List<ProductionPlan> plans) {
@@ -172,51 +175,38 @@ public class SchedulerService {
 
     @Transactional
     public void pauseSchedule(Integer scheduleId, Account account) {
-
         ProductionSchedule schedule = scheduleRepo.findById(scheduleId)
                 .orElseThrow(() -> new RuntimeException("Schedule not found"));
-
         if (!schedule.getStatus().equals("RUNNING")) {
             throw new RuntimeException("Only RUNNING schedule can be paused");
         }
-
-        // 1. Pause schedule
         schedule.setStatus("PAUSED");
-
-        // 2. Pause machine
         Machine machine = schedule.getMachine();
         machine.setRuntimeStatus("PAUSED");
         machineRepo.save(machine);
-
-        // 3. Log
         IncidentLog log = new IncidentLog();
         log.setSchedule(schedule);
-        log.setLine(schedule.getPlan().getLine()); // ← FIX
+        log.setLine(schedule.getPlan().getLine());
         log.setIncidentType("PAUSE");
-        log.setSeverity("LOW"); // ← BONUS
-        log.setDescription("Resumed by " + account.getUser().getLastName());
+        log.setSeverity("LOW");
+        log.setDescription("Paused by " + account.getUser().getLastName());
         log.setTimestamp(OffsetDateTime.now());
         incidentRepo.save(log);
+        // Publish event
+        eventPublisher.publishEvent(new ProductionScheduleEvent.SchedulePausedEvent(schedule));
     }
 
     @Transactional
     public void resumeSchedule(Integer scheduleId, Account account) {
-
         ProductionSchedule schedule = scheduleRepo.findById(scheduleId)
                 .orElseThrow(() -> new RuntimeException("Schedule not found"));
-
         if (!schedule.getStatus().equals("PAUSED")) {
             throw new RuntimeException("Only PAUSED schedule can be resumed");
         }
-
-        // 1. Resume schedule
         schedule.setStatus("RUNNING");
-
-        // 2. Resume machine
         Machine machine = schedule.getMachine();
         machine.setRuntimeStatus("RUNNING");
         machineRepo.save(machine);
-
         IncidentLog log = new IncidentLog();
         log.setSchedule(schedule);
         log.setLine(schedule.getPlan().getLine());
@@ -225,6 +215,8 @@ public class SchedulerService {
         log.setDescription("Resumed by " + account.getUser().getLastName());
         log.setTimestamp(OffsetDateTime.now());
         incidentRepo.save(log);
+        // Publish event
+        eventPublisher.publishEvent(new ProductionScheduleEvent.ScheduleResumedEvent(schedule));
     }
 
 }
