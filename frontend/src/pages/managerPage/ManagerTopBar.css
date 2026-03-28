@@ -26,8 +26,17 @@
 }
 
 .manager-topbar-right {
-    flex: 0 0 320px;
+    flex: 0 1 420px;
     max-width: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 10px;
+}
+
+.manager-topbar-search-wrap {
+    flex: 1 1 320px;
+    min-width: 200px;
 }
 
 .manager-topbar-search {
@@ -56,5 +65,10 @@
 
     .manager-topbar-right {
         flex-basis: auto;
+        justify-content: space-between;
+    }
+
+    .manager-topbar-search-wrap {
+        min-width: 0;
     }
 }

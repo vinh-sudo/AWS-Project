@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from "react";
+import NotificationBell from "../../components/NotificationBell/NotificationBell";
 import "./ManagerTopBar.css";
 
 const ManagerTopBar = ({
@@ -25,14 +26,17 @@ const ManagerTopBar = ({
       </div>
 
       <div className="manager-topbar-right">
-        <input
-          type="text"
-          className="manager-topbar-search"
-          placeholder={searchPlaceholder}
-          value={searchValue}
-          onChange={(event) => setSearchValue(event.target.value)}
-          aria-label={searchPlaceholder}
-        />
+        <div className="manager-topbar-search-wrap">
+          <input
+            type="text"
+            className="manager-topbar-search"
+            placeholder={searchPlaceholder}
+            value={searchValue}
+            onChange={(event) => setSearchValue(event.target.value)}
+            aria-label={searchPlaceholder}
+          />
+        </div>
+        <NotificationBell />
       </div>
     </header>
   );
