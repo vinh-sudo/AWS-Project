@@ -197,7 +197,7 @@ public class OrderService {
             throw new BusinessException(
                     "Only Draft or Cancelled orders can be deleted. Current status: " + order.getStatus());
         }
-        // ✅ ADD THIS - before delete
+
         auditLogService.builder()
                 .user(order.getCreatedBy())
                 .action(ActionType.DELETE_ORDER)

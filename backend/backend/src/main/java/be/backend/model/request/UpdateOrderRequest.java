@@ -23,6 +23,8 @@ public class UpdateOrderRequest {
 
     private String priority;
 
+    private String status;
+
     @Valid
     private List<OrderItemRequest> items;
 }
