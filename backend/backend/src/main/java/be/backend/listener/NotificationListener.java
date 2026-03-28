@@ -429,7 +429,7 @@ public class NotificationListener {
                 "good", r.getGoodQuantity(),
                 "target", r.getTargetQuantity()
         );
-        notifyRole("QA",
+        notifyRole("MANAGER",
                 "High reject rate",
                 message,
                 payload,
@@ -447,6 +447,29 @@ public class NotificationListener {
                 r.getId(),
                 "/dashboard/quality"
         );
+    }
+
+    // ===================== MACHINE =====================
+    @EventListener
+    public void onMachineDownEvent(MachineEvent.MachineDownEvent e) {
+        Machine machine = e.machine();
+        String message = String.format("Máy %s (ID: %d) đã gặp sự cố!", machine.getName(), machine.getId());
+        notifyRole("MANAGER",
+                "Sự cố máy móc",
+                message,
+                Map.of("machineId", machine.getId(), "machineName", machine.getName()),
+                "ERROR",
+                "MACHINE",
+                machine.getId(),
+                "/machines/" + machine.getId());
+        notifyRole("ADMIN",
+                "Sự cố máy móc",
+                message,
+                Map.of("machineId", machine.getId(), "machineName", machine.getName()),
+                "ERROR",
+                "MACHINE",
+                machine.getId(),
+                "/machines/" + machine.getId());
     }
 
     // ===================== CORE =====================

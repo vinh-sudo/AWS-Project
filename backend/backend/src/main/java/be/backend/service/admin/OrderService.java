@@ -5,6 +5,7 @@ import be.backend.entity.Order;
 import be.backend.entity.OrderItem;
 import be.backend.entity.User;
 import be.backend.enums.ActionType;
+import be.backend.event.OrderEvent;
 import be.backend.exception.BusinessException;
 import be.backend.exception.ResourceNotFoundException;
 import be.backend.mapper.OrderMapper;
@@ -20,6 +21,7 @@ import be.backend.service.utilities.AuditLogService;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
@@ -38,6 +40,7 @@ public class OrderService {
     private final UserRepository userRepository;
     private final OrderMapper orderMapper;
     private final AuditLogService auditLogService;
+    private final ApplicationEventPublisher eventPublisher;
 
     private static final String STATUS_DRAFT = "Draft";
     private static final String STATUS_CONFIRMED = "Confirmed";
@@ -91,6 +94,9 @@ public class OrderService {
                 .change("quantity", null, saved.getQuantity())
                 .change("priority", null, saved.getPriority())
                 .logAsync(); // Async - không block
+
+        // Publish event
+        eventPublisher.publishEvent(new OrderEvent.OrderCreatedEvent(saved));
 
         log.info("Order {} created with {} items", saved.getId(), saved.getItems().size());
         return buildResponse(saved);
@@ -154,6 +160,17 @@ public class OrderService {
             if (oldItemCount != newItemCount) {
                 changes.put("itemCount", new Object[]{oldItemCount, newItemCount});
             }
+        }
+
+        // Nếu trạng thái chuyển sang COMPLETED thì publish event
+        if (request.getStatus() != null && request.getStatus().equals(STATUS_COMPLETED) && !order.getStatus().equals(STATUS_COMPLETED)) {
+            order.setStatus(STATUS_COMPLETED);
+            eventPublisher.publishEvent(new OrderEvent.OrderCompletedEvent(order));
+        }
+        // Nếu trạng thái chuyển sang CANCELLED thì publish event
+        if (request.getStatus() != null && request.getStatus().equals(STATUS_CANCELLED) && !order.getStatus().equals(STATUS_CANCELLED)) {
+            order.setStatus(STATUS_CANCELLED);
+            eventPublisher.publishEvent(new OrderEvent.OrderCancelledEvent(order));
         }
 
         Order saved = orderRepository.save(order);
