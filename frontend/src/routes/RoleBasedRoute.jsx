@@ -3,6 +3,14 @@ import { Navigate } from "react-router-dom";
 import { useSelector } from "react-redux";
 import { selectUser, selectIsAuthenticated } from "../redux";
 
+const normalizeRole = (role) => {
+  const normalized = role?.toUpperCase();
+  if (normalized === "PRODUCTION_PLANNER") {
+    return "MANAGER";
+  }
+  return normalized;
+};
+
 /**
  * RoleBasedRoute - Restricts access to specific roles.
  * If the user is authenticated but doesn't have the required role,
@@ -19,9 +27,13 @@ const RoleBasedRoute = ({ allowedRoles, children }) => {
     return <Navigate to="/login" replace />;
   }
 
-  const userRole = user?.role?.toUpperCase();
+  const userRole = normalizeRole(user?.role);
 
-  if (!allowedRoles.map((r) => r.toUpperCase()).includes(userRole)) {
+  const normalizedAllowedRoles = allowedRoles.map((role) =>
+    normalizeRole(role),
+  );
+
+  if (!normalizedAllowedRoles.includes(userRole)) {
     // Redirect to the user's own dashboard based on their role
     const redirectPath = getRoleDefaultPath(userRole);
     return <Navigate to={redirectPath} replace />;
@@ -34,13 +46,11 @@ const RoleBasedRoute = ({ allowedRoles, children }) => {
  * Returns the default path for a given role.
  */
 export const getRoleDefaultPath = (role) => {
-  switch (role?.toUpperCase()) {
+  switch (normalizeRole(role)) {
     case "ADMIN":
       return "/admin/dashboard";
     case "MANAGER":
       return "/manager/dashboard";
-    case "PRODUCTION_PLANNER":
-      return "/planner/assignment";
     case "LINE_LEADER":
       return "/leader/progress";
     default:

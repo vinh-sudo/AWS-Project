@@ -306,7 +306,9 @@ export const authService = {
 
   // Check if user is production planner
   isProductionPlanner: () => {
-    return authService.hasRole("PRODUCTION_PLANNER");
+    const user = authService.getCurrentUser();
+    const role = user?.role?.toUpperCase();
+    return role === "PRODUCTION_PLANNER" || role === "MANAGER";
   },
 };
 

@@ -14,6 +14,7 @@ const SOURCE_TYPES = [
   { label: "Quality", value: "QUALITY" },
   { label: "Report", value: "REPORT" },
   { label: "Plan", value: "PLAN" },
+  { label: "System", value: "SYSTEM" },
 ];
 
 const PAGE_SIZE = 20;
@@ -33,16 +34,20 @@ const SOURCE_ICONS = {
   QUALITY: "🧪",
   REPORT: "📋",
   PLAN: "📝",
+  SYSTEM: "⚙️",
 };
 
 const getRoleDefaultPath = (role) => {
-  switch ((role || "").toUpperCase()) {
+  const normalizedRole =
+    (role || "").toUpperCase() === "PRODUCTION_PLANNER"
+      ? "MANAGER"
+      : (role || "").toUpperCase();
+
+  switch (normalizedRole) {
     case "ADMIN":
       return "/admin/dashboard";
     case "MANAGER":
       return "/manager/dashboard";
-    case "PRODUCTION_PLANNER":
-      return "/planner/assignment";
     case "LINE_LEADER":
       return "/leader/progress";
     default:
@@ -69,10 +74,34 @@ const normalizeNotificationUrl = (notif, role) => {
     pathname.startsWith("/admin/") ||
     pathname.startsWith("/manager/") ||
     pathname.startsWith("/planner/") ||
-    pathname.startsWith("/leader/") ||
-    pathname.startsWith("/dashboard")
+    pathname.startsWith("/leader/")
   ) {
+    if (
+      pathname.startsWith("/planner/") &&
+      (role || "").toUpperCase() !== "PRODUCTION_PLANNER"
+    ) {
+      return "/manager/dashboard";
+    }
     return `${pathname}${search}`;
+  }
+
+  if (pathname === "/dashboard") {
+    return "/dashboard";
+  }
+
+  if (pathname.startsWith("/dashboard/")) {
+    const dashboardSection = pathname.split("/")[2]?.toLowerCase();
+    if (dashboardSection === "kpi" || dashboardSection === "quality") {
+      if ((role || "").toUpperCase() === "MANAGER") {
+        return "/manager/reports";
+      }
+      return fallback;
+    }
+    return "/dashboard";
+  }
+
+  if (pathname === "/admin/accounts") {
+    return "/admin/users";
   }
 
   if (pathname.startsWith("/orders/")) {
@@ -103,6 +132,9 @@ const normalizeNotificationUrl = (notif, role) => {
   if (pathname.startsWith("/reports/")) {
     if ((role || "").toUpperCase() === "MANAGER") {
       return "/manager/reports";
+    }
+    if ((role || "").toUpperCase() === "LINE_LEADER") {
+      return "/leader/progress";
     }
     return fallback;
   }
@@ -151,6 +183,7 @@ const NotificationBell = () => {
   const [page, setPage] = useState(0);
   const [totalPages, setTotalPages] = useState(0);
   const [activeFilter, setActiveFilter] = useState(null);
+  const [loadError, setLoadError] = useState("");
   const intervalRef = useRef(null);
   const triggerRef = useRef(null);
   const [dropdownStyle, setDropdownStyle] = useState({});
@@ -160,7 +193,10 @@ const NotificationBell = () => {
   const userRole = (currentUser?.role || "").toUpperCase();
   const userIdCandidates = [currentUser?.userId, currentUser?.id]
     .map((value) => Number(value))
-    .filter((value, index, arr) => Number.isFinite(value) && value > 0 && arr.indexOf(value) === index);
+    .filter(
+      (value, index, arr) =>
+        Number.isFinite(value) && value > 0 && arr.indexOf(value) === index,
+    );
   const [resolvedUserId, setResolvedUserId] = useState(
     userIdCandidates[0] ?? null,
   );
@@ -179,7 +215,10 @@ const NotificationBell = () => {
     const baseUserId = await resolveUserIdForNotifications();
     if (!baseUserId) return;
 
-    const tryIds = [baseUserId, ...userIdCandidates.filter((id) => id !== baseUserId)];
+    const tryIds = [
+      baseUserId,
+      ...userIdCandidates.filter((id) => id !== baseUserId),
+    ];
 
     try {
       for (const candidateId of tryIds) {
@@ -205,10 +244,16 @@ const NotificationBell = () => {
       const baseUserId = await resolveUserIdForNotifications();
       if (!baseUserId) return;
 
-      const tryIds = [baseUserId, ...userIdCandidates.filter((id) => id !== baseUserId)];
+      const tryIds = [
+        baseUserId,
+        ...userIdCandidates.filter((id) => id !== baseUserId),
+      ];
 
       try {
         setLoading(true);
+        if (!append) {
+          setLoadError("");
+        }
 
         let selectedData = null;
         let selectedUserId = null;
@@ -228,7 +273,9 @@ const NotificationBell = () => {
                   PAGE_SIZE,
                 );
 
-            const hasResults = (data?.totalElements ?? 0) > 0 || (data?.content || []).length > 0;
+            const hasResults =
+              (data?.totalElements ?? 0) > 0 ||
+              (data?.content || []).length > 0;
             if (!selectedData || hasResults || candidateId === baseUserId) {
               selectedData = data;
               selectedUserId = candidateId;
@@ -243,7 +290,9 @@ const NotificationBell = () => {
         }
 
         if (!selectedData) {
-          throw new Error("Unable to load notifications for current session user");
+          throw new Error(
+            "Unable to load notifications for current session user",
+          );
         }
 
         if (selectedUserId && resolvedUserId !== selectedUserId) {
@@ -256,11 +305,17 @@ const NotificationBell = () => {
         setTotalPages(selectedData.totalPages ?? 1);
       } catch (err) {
         console.error("Failed to fetch notifications:", err);
+        setLoadError("Unable to load notifications. Please try again.");
       } finally {
         setLoading(false);
       }
     },
-    [activeFilter, resolveUserIdForNotifications, userIdCandidates, resolvedUserId],
+    [
+      activeFilter,
+      resolveUserIdForNotifications,
+      userIdCandidates,
+      resolvedUserId,
+    ],
   );
 
   // Poll unread count every 30s
@@ -298,6 +353,7 @@ const NotificationBell = () => {
     const normalized = sourceType ? String(sourceType).toUpperCase() : null;
     setActiveFilter(normalized);
     setPage(0);
+    setLoadError("");
     setNotifications([]);
     fetchNotifications(0, normalized, false);
   };
@@ -311,8 +367,10 @@ const NotificationBell = () => {
         prev.map((n) => (n.id === notif.id ? { ...n, status: "READ" } : n)),
       );
       setUnreadCount((prev) => Math.max(0, prev - 1));
+      setLoadError("");
     } catch (err) {
       console.error("Failed to mark as read:", err);
+      setLoadError("Unable to mark notification as read.");
     }
   };
 
@@ -323,8 +381,10 @@ const NotificationBell = () => {
       await notificationService.markAllAsRead(userId);
       setNotifications((prev) => prev.map((n) => ({ ...n, status: "READ" })));
       setUnreadCount(0);
+      setLoadError("");
     } catch (err) {
       console.error("Failed to mark all as read:", err);
+      setLoadError("Unable to mark all notifications as read.");
     }
   };
 
@@ -389,6 +449,19 @@ const NotificationBell = () => {
                 </button>
               ))}
             </div>
+
+            {loadError && (
+              <div className="notification-bell__error">
+                <span>{loadError}</span>
+                <button
+                  className="notification-bell__error-retry"
+                  onClick={() => fetchNotifications(0, activeFilter, false)}
+                  disabled={loading}
+                >
+                  Retry
+                </button>
+              </div>
+            )}
 
             {/* Notification list */}
             <div className="notification-bell__list">
