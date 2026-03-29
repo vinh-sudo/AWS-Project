@@ -7,9 +7,9 @@ const normalizeBaseUrl = (url) =>
 const resolveApiBaseUrl = () => {
   const envUrl = normalizeBaseUrl(import.meta.env.VITE_API_URL);
 
-  // Default to same-origin if env is not configured.
+  // Default to production API host if env is not configured.
   if (!envUrl) {
-    return "";
+    return "https://api.ims.mom";
   }
 
   // If frontend is served over HTTPS and API env URL is HTTP,
@@ -29,8 +29,7 @@ const resolveApiBaseUrl = () => {
   return envUrl;
 };
 
-// If VITE_API_URL is missing, use same-origin relative URLs (""),
-// which work when frontend and backend are served behind one domain/reverse proxy.
+// If VITE_API_URL is missing, use production API host.
 const API_BASE_URL = resolveApiBaseUrl();
 
 // Create axios instance with default config
