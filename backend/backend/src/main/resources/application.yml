@@ -64,4 +64,6 @@ logging:
 
 app:
   mail:
+
     from: no-reply@your-domain.com # Thay bang email da verify tren SES
+

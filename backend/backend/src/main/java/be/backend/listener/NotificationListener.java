@@ -453,11 +453,11 @@ public class NotificationListener {
     @EventListener
     public void onMachineDownEvent(MachineEvent.MachineDownEvent e) {
         Machine machine = e.machine();
-        String message = String.format("Máy %s (ID: %d) đã gặp sự cố!", machine.getName(), machine.getId());
+        String message = String.format("Máy %s (ID: %d) đã gặp sự cố!", machine.getMachineName(), machine.getId());
         notifyRole("MANAGER",
                 "Sự cố máy móc",
                 message,
-                Map.of("machineId", machine.getId(), "machineName", machine.getName()),
+                Map.of("machineId", machine.getId(), "machineName", machine.getMachineName()),
                 "ERROR",
                 "MACHINE",
                 machine.getId(),
@@ -465,7 +465,7 @@ public class NotificationListener {
         notifyRole("ADMIN",
                 "Sự cố máy móc",
                 message,
-                Map.of("machineId", machine.getId(), "machineName", machine.getName()),
+                Map.of("machineId", machine.getId(), "machineName", machine.getMachineName()),
                 "ERROR",
                 "MACHINE",
                 machine.getId(),
