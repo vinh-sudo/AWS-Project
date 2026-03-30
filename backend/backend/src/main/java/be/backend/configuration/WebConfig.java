@@ -22,13 +22,8 @@ public class WebConfig implements WebMvcConfigurer {
         CorsConfiguration config = new CorsConfiguration();
 
         config.setAllowedOrigins(List.of(
-                "http://localhost:5173"
-        ));
-
-        config.setAllowedOrigins(List.of(
-                "https://ims.mom"
-        ));
-        config.setAllowedOrigins(List.of(
+            "http://localhost:5173",
+            "https://ims.mom",
                 "http://ims.mom"
         ));
 
