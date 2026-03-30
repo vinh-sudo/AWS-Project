@@ -23,7 +23,8 @@ public class WebConfig implements WebMvcConfigurer {
 
         config.setAllowedOrigins(List.of(
                 "http://localhost:5173",
-                "https://ims.mom"
+                "https://ims.mom",
+                "exp://*"
         ));
         config.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "OPTIONS"));
         config.setAllowedHeaders(List.of("*"));
