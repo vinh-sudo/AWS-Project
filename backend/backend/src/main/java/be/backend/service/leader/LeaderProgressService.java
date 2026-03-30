@@ -1,9 +1,11 @@
 package be.backend.service.leader;
 
 import be.backend.entity.*;
+import be.backend.event.ReportEvent;
 import be.backend.exception.BusinessException;
 import be.backend.exception.ForbiddenException;
 import be.backend.exception.ResourceNotFoundException;
+import be.backend.mapper.ProductionFileMapper;
 import be.backend.model.request.SubmitReportRequest;
 import be.backend.model.request.UpdateProgressRequest;
 import be.backend.model.response.ProgressResponse;
@@ -12,9 +14,14 @@ import be.backend.model.response.ScheduleSummaryResponse;
 import be.backend.model.response.ProductionFileResponse;
 import be.backend.repository.*;
 import be.backend.service.ProductionFileService;
-import be.backend.mapper.ProductionFileMapper;
+
+import be.backend.service.utilities.SNSService;
+import be.backend.service.utilities.SQSService;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.context.ApplicationEventPublisher;
+
 import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
@@ -41,6 +48,16 @@ public class LeaderProgressService {
         private final OrderItemRepository orderItemRepo;
         private final ProductionFileService productionFileService;
         private final ProductionFileMapper productionFileMapper;
+
+        private final SNSService snsService;
+        private final SQSService sqsService;
+        private final ApplicationEventPublisher eventPublisher;
+
+        @Value("${aws.sns-topic-arn}")
+        private String snsTopicArn;
+        @Value("${aws.sqs-queue-url}")
+        private String sqsQueueUrl;
+
 
         /**
          * Cập nhật tiến độ schedule
@@ -152,6 +169,8 @@ public class LeaderProgressService {
                 report.setCreatedAt(OffsetDateTime.now());
 
                 reportRepo.save(report);
+                // Publish event for notification
+                eventPublisher.publishEvent(new ReportEvent.DailyReportSubmittedEvent(report));
 
                 ProgressResponse latestProgress = refreshProgressFromReports(schedule);
                 autoCompleteScheduleIfNeeded(schedule);
