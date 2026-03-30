@@ -451,25 +451,24 @@ public class NotificationListener {
 
     // ===================== MACHINE =====================
     @EventListener
-    public void onMachineDownEvent(MachineEvent.MachineDownEvent e) {
-        Machine machine = e.machine();
-        String message = String.format("Máy %s (ID: %d) đã gặp sự cố!", machine.getMachineName(), machine.getId());
-        notifyRole("MANAGER",
-                "Sự cố máy móc",
+    public void onMachineDown(MachineEvent.MachineDownEvent e) {
+        var m = e.machine();
+        String message = String.format("Machine %s (ID: %d) is DOWN! Immediate attention required.", m.getMachineCode(), m.getId());
+        Map<String, Object> payload = Map.of(
+                "machineId", m.getId(),
+                "machineCode", m.getMachineCode(),
+                "status", m.getRuntimeStatus()
+        );
+        notifyRole(
+                "MANAGER",
+                "Machine Down",
                 message,
-                Map.of("machineId", machine.getId(), "machineName", machine.getMachineName()),
+                payload,
                 "ERROR",
                 "MACHINE",
-                machine.getId(),
-                "/machines/" + machine.getId());
-        notifyRole("ADMIN",
-                "Sự cố máy móc",
-                message,
-                Map.of("machineId", machine.getId(), "machineName", machine.getMachineName()),
-                "ERROR",
-                "MACHINE",
-                machine.getId(),
-                "/machines/" + machine.getId());
+                m.getId(),
+                "/machines/" + m.getId()
+        );
     }
 
     // ===================== CORE =====================

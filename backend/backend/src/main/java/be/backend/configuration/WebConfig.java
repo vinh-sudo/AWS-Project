@@ -22,13 +22,8 @@ public class WebConfig implements WebMvcConfigurer {
         CorsConfiguration config = new CorsConfiguration();
 
         config.setAllowedOrigins(List.of(
-                "http://localhost:5173"
-        ));
-        config.setAllowedOrigins(List.of(
+                "http://localhost:5173",
                 "https://ims.mom"
-        ));
-        config.setAllowedOrigins(List.of(
-                "http://ims.mom"
         ));
         config.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "OPTIONS"));
         config.setAllowedHeaders(List.of("*"));
@@ -45,4 +40,3 @@ public class WebConfig implements WebMvcConfigurer {
         registry.addInterceptor(aiAuditLogInterceptor).addPathPatterns("/api/ai/**");
     }
 }
-
