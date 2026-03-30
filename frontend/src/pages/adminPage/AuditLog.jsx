@@ -119,16 +119,6 @@ const normalizeEntityInput = (value) =>
 
 const formatActionLabel = (value) => value?.replaceAll("_", " ") || "-";
 
-const parseDetailsForDisplay = (details) => {
-  if (!details) return "No details";
-  try {
-    const parsed = JSON.parse(details);
-    return JSON.stringify(parsed, null, 2);
-  } catch {
-    return details;
-  }
-};
-
 const AuditLog = () => {
   const currentUser = authService.getCurrentUser();
   const [logs, setLogs] = useState([]);
@@ -153,8 +143,6 @@ const AuditLog = () => {
   const [pageSize, setPageSize] = useState(20);
   const [totalElements, setTotalElements] = useState(0);
   const [totalPages, setTotalPages] = useState(0);
-
-  const [selectedLog, setSelectedLog] = useState(null);
 
   const userInitial = (currentUser?.fullName || "A").charAt(0).toUpperCase();
 
@@ -580,17 +568,11 @@ const AuditLog = () => {
                     <th className="table-header">Action</th>
                     <th className="table-header">Entity</th>
                     <th className="table-header">User</th>
-                    <th className="table-header">IP Address</th>
-                    <th className="table-header">Details</th>
-                    <th className="table-header" style={{ textAlign: "right" }}>
-                      View
-                    </th>
                   </tr>
                 </thead>
                 <tbody>
                   {logs.map((log) => {
                     const isCritical = CRITICAL_ACTIONS.has(log.actionType);
-                    const detailsText = parseDetailsForDisplay(log.details);
                     return (
                       <tr key={log.id} className="table-row">
                         <td className="table-cell">
@@ -621,24 +603,6 @@ const AuditLog = () => {
                           </div>
                         </td>
                         <td className="table-cell">{log.userId ?? "-"}</td>
-                        <td className="table-cell">{log.ipAddress || "-"}</td>
-                        <td className="table-cell">
-                          <div className="auditlog-details">{detailsText}</div>
-                        </td>
-                        <td className="table-cell">
-                          <div
-                            className="actions-cell"
-                            style={{ justifyContent: "flex-end" }}
-                          >
-                            <button
-                              className="action-button"
-                              onClick={() => setSelectedLog(log)}
-                              title="View full details"
-                            >
-                              🔍
-                            </button>
-                          </div>
-                        </td>
                       </tr>
                     );
                   })}
@@ -689,106 +653,6 @@ const AuditLog = () => {
           </div>
         </div>
 
-        {selectedLog && (
-          <div className="modal-overlay" onClick={() => setSelectedLog(null)}>
-            <div className="modal" onClick={(e) => e.stopPropagation()}>
-              <div className="modal-header">
-                <h3 className="modal-title">Audit Log Details</h3>
-                <button
-                  className="close-button"
-                  onClick={() => setSelectedLog(null)}
-                >
-                  ✕
-                </button>
-              </div>
-              <div className="modal-body">
-                <div className="form-group">
-                  <label className="form-label">Log ID</label>
-                  <div
-                    className="form-input"
-                    style={{ display: "flex", alignItems: "center" }}
-                  >
-                    {selectedLog.id}
-                  </div>
-                </div>
-                <div className="form-row">
-                  <div className="form-group">
-                    <label className="form-label">Action</label>
-                    <div
-                      className="form-input"
-                      style={{ display: "flex", alignItems: "center" }}
-                    >
-                      {formatActionLabel(selectedLog.actionType)}
-                    </div>
-                  </div>
-                  <div className="form-group">
-                    <label className="form-label">Time</label>
-                    <div
-                      className="form-input"
-                      style={{ display: "flex", alignItems: "center" }}
-                    >
-                      {formatDateTime(selectedLog.timestamp)}
-                    </div>
-                  </div>
-                </div>
-                <div className="form-row">
-                  <div className="form-group">
-                    <label className="form-label">Entity</label>
-                    <div
-                      className="form-input"
-                      style={{ display: "flex", alignItems: "center" }}
-                    >
-                      {selectedLog.entity || "-"}
-                    </div>
-                  </div>
-                  <div className="form-group">
-                    <label className="form-label">Entity ID</label>
-                    <div
-                      className="form-input"
-                      style={{ display: "flex", alignItems: "center" }}
-                    >
-                      {selectedLog.entityId ?? "-"}
-                    </div>
-                  </div>
-                </div>
-                <div className="form-row">
-                  <div className="form-group">
-                    <label className="form-label">User ID</label>
-                    <div
-                      className="form-input"
-                      style={{ display: "flex", alignItems: "center" }}
-                    >
-                      {selectedLog.userId ?? "-"}
-                    </div>
-                  </div>
-                  <div className="form-group">
-                    <label className="form-label">IP Address</label>
-                    <div
-                      className="form-input"
-                      style={{ display: "flex", alignItems: "center" }}
-                    >
-                      {selectedLog.ipAddress || "-"}
-                    </div>
-                  </div>
-                </div>
-                <div className="form-group">
-                  <label className="form-label">Details</label>
-                  <pre className="auditlog-modal-details">
-                    {parseDetailsForDisplay(selectedLog.details)}
-                  </pre>
-                </div>
-              </div>
-              <div className="modal-footer">
-                <button
-                  className="btn-cancel"
-                  onClick={() => setSelectedLog(null)}
-                >
-                  Close
-                </button>
-              </div>
-            </div>
-          </div>
-        )}
       </div>
     </div>
   );
