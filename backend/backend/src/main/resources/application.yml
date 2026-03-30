@@ -36,10 +36,11 @@ spring:
             enable: true
 
 aws:
+  access-key: AKIAZJIX3IDXGBVR7NWF
+  secret-key: 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
   region: ap-southeast-1
   sns-topic-arn: arn:aws:sns:ap-southeast-1:638389534958:production-notification
-  sqs-queue-url: https://sqs.ap-southeast-1.amazonaws.
-  com/638389534958/production-queue
+  sqs-queue-url: https://sqs.ap-southeast-1.amazonaws.com/638389534958/production-queue
   bucket-name: ims-stores
 
 jwt:
