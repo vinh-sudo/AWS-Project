@@ -15,6 +15,8 @@ const FILTER_MODES = {
   ENTITY: "ENTITY",
 };
 
+const ENTITY_PATTERN = /^[A-Z_]{2,50}$/;
+
 const ACTION_OPTIONS = [
   "LOGIN",
   "LOGOUT",
@@ -49,13 +51,13 @@ const ACTION_OPTIONS = [
   "UNKNOWN",
 ];
 
-const ENTITY_OPTIONS = [
+const ENTITY_SUGGESTIONS = [
   "ORDER",
   "ACCOUNT",
   "PLAN",
   "SCHEDULE",
   "REPORT",
-  "ASSIGNMENT",
+  "ORDERITEM",
   "SYSTEM",
 ];
 
@@ -107,6 +109,13 @@ const toIsoStringOrNull = (value) => {
   if (Number.isNaN(parsed.getTime())) return null;
   return parsed.toISOString();
 };
+
+const normalizeEntityInput = (value) =>
+  (value || "")
+    .trim()
+    .toUpperCase()
+    .replace(/\s+/g, "_")
+    .replace(/[^A-Z_]/g, "");
 
 const formatActionLabel = (value) => value?.replaceAll("_", " ") || "-";
 
@@ -168,11 +177,17 @@ const AuditLog = () => {
 
     switch (mode) {
       case FILTER_MODES.CRITICAL:
+        if (!toIsoStringOrNull(sinceDate)) {
+          throw new Error("Please provide a valid Since date");
+        }
         return adminService.getCriticalAuditLogs({
           ...commonParams,
           since: toIsoStringOrNull(sinceDate),
         });
       case FILTER_MODES.ACTION:
+        if (!toIsoStringOrNull(sinceDate)) {
+          throw new Error("Please provide a valid Since date");
+        }
         return adminService.getAuditLogsByAction(actionType, {
           ...commonParams,
           since: toIsoStringOrNull(sinceDate),
@@ -184,20 +199,35 @@ const AuditLog = () => {
         if (!DIGITS_ONLY.test(userId.trim())) {
           throw new Error("User ID must be numeric");
         }
+        if (!toIsoStringOrNull(startDate) || !toIsoStringOrNull(endDate)) {
+          throw new Error("Please provide valid Start Date and End Date");
+        }
+        if (new Date(startDate) > new Date(endDate)) {
+          throw new Error("Start Date must be before or equal to End Date");
+        }
         return adminService.getAuditLogsByUser(userId.trim(), {
           ...commonParams,
           startDate: toIsoStringOrNull(startDate),
           endDate: toIsoStringOrNull(endDate),
         });
       case FILTER_MODES.ENTITY:
+        if (!entity.trim()) {
+          throw new Error("Please enter Entity");
+        }
         if (!entityId.trim()) {
           throw new Error("Please enter Entity ID");
         }
         if (!DIGITS_ONLY.test(entityId.trim())) {
           throw new Error("Entity ID must be numeric");
         }
+        const normalizedEntity = normalizeEntityInput(entity);
+        if (!ENTITY_PATTERN.test(normalizedEntity)) {
+          throw new Error(
+            "Entity must contain 2-50 uppercase letters/underscores (A-Z, _)",
+          );
+        }
         return adminService.getAuditLogsByEntity(
-          entity,
+          normalizedEntity,
           entityId.trim(),
           commonParams,
         );
@@ -251,6 +281,10 @@ const AuditLog = () => {
   );
 
   const handleApplyFilters = () => {
+    if (mode === FILTER_MODES.ENTITY) {
+      setEntity((prev) => normalizeEntityInput(prev));
+    }
+
     if (currentPage === 0) {
       fetchAuditLogs();
       return;
@@ -463,18 +497,21 @@ const AuditLog = () => {
                   <label className="form-label" htmlFor="entityType">
                     Entity
                   </label>
-                  <select
+                  <input
                     id="entityType"
-                    className="form-select"
+                    className="form-input"
+                    list="audit-entity-options"
+                    placeholder="e.g. ORDER, ACCOUNT"
                     value={entity}
-                    onChange={(e) => setEntity(e.target.value)}
-                  >
-                    {ENTITY_OPTIONS.map((option) => (
-                      <option key={option} value={option}>
-                        {option}
-                      </option>
+                    onChange={(e) =>
+                      setEntity(normalizeEntityInput(e.target.value))
+                    }
+                  />
+                  <datalist id="audit-entity-options">
+                    {ENTITY_SUGGESTIONS.map((option) => (
+                      <option key={option} value={option} />
                     ))}
-                  </select>
+                  </datalist>
                 </div>
                 <div className="form-group">
                   <label className="form-label" htmlFor="entityId">

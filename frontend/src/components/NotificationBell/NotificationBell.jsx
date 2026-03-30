@@ -13,8 +13,7 @@ const SOURCE_TYPES = [
   { label: "KPI", value: "KPI" },
   { label: "Quality", value: "QUALITY" },
   { label: "Report", value: "REPORT" },
-  { label: "Plan", value: "PLAN" },
-  { label: "System", value: "SYSTEM" },
+  { label: "Machine", value: "MACHINE" },
 ];
 
 const PAGE_SIZE = 20;
@@ -33,9 +32,15 @@ const SOURCE_ICONS = {
   KPI: "📊",
   QUALITY: "🧪",
   REPORT: "📋",
-  PLAN: "📝",
-  SYSTEM: "⚙️",
+  MACHINE: "🛠️",
 };
+
+const SOURCE_LABELS = SOURCE_TYPES.reduce((acc, item) => {
+  if (item.value) {
+    acc[item.value] = item.label;
+  }
+  return acc;
+}, {});
 
 const getRoleDefaultPath = (role) => {
   const normalizedRole =
@@ -125,6 +130,16 @@ const normalizeNotificationUrl = (notif, role) => {
     return "/manager/tracking";
   }
 
+  if (pathname.startsWith("/machines/")) {
+    if ((role || "").toUpperCase() === "MANAGER") {
+      return "/manager/tracking";
+    }
+    if ((role || "").toUpperCase() === "ADMIN") {
+      return "/admin/dashboard";
+    }
+    return fallback;
+  }
+
   if (pathname.startsWith("/lines/")) {
     return "/manager/tracking";
   }
@@ -200,6 +215,25 @@ const NotificationBell = () => {
   const [resolvedUserId, setResolvedUserId] = useState(
     userIdCandidates[0] ?? null,
   );
+
+  const updateDropdownPosition = useCallback(() => {
+    if (!triggerRef.current) return;
+
+    const rect = triggerRef.current.getBoundingClientRect();
+    const viewportPadding = 12;
+    const width = Math.min(380, window.innerWidth - viewportPadding * 2);
+    const left = Math.max(
+      viewportPadding,
+      Math.min(rect.right - width, window.innerWidth - width - viewportPadding),
+    );
+
+    setDropdownStyle({
+      position: "fixed",
+      top: rect.bottom + 8,
+      left,
+      width,
+    });
+  }, []);
 
   const resolveUserIdForNotifications = useCallback(async () => {
     if (resolvedUserId) return resolvedUserId;
@@ -328,19 +362,33 @@ const NotificationBell = () => {
   // When dropdown opens, fetch notifications
   useEffect(() => {
     if (open) {
+      updateDropdownPosition();
       setPage(0);
       fetchNotifications(0, activeFilter, false);
     }
   }, [open]); // eslint-disable-line react-hooks/exhaustive-deps
 
+  useEffect(() => {
+    if (!open) return undefined;
+
+    const handleEscape = (event) => {
+      if (event.key === "Escape") {
+        setOpen(false);
+      }
+    };
+
+    window.addEventListener("resize", updateDropdownPosition);
+    window.addEventListener("keydown", handleEscape);
+
+    return () => {
+      window.removeEventListener("resize", updateDropdownPosition);
+      window.removeEventListener("keydown", handleEscape);
+    };
+  }, [open, updateDropdownPosition]);
+
   const handleToggle = () => {
-    if (!open && triggerRef.current) {
-      const rect = triggerRef.current.getBoundingClientRect();
-      setDropdownStyle({
-        position: "fixed",
-        top: rect.bottom + 8,
-        right: window.innerWidth - rect.right,
-      });
+    if (!open) {
+      updateDropdownPosition();
     }
     setOpen((prev) => !prev);
   };
@@ -408,6 +456,8 @@ const NotificationBell = () => {
         className="notification-bell__trigger"
         onClick={handleToggle}
         title="Notifications"
+        type="button"
+        aria-label="Open notifications"
       >
         🔔
         {unreadCount > 0 && (
@@ -428,6 +478,7 @@ const NotificationBell = () => {
                 className="notification-bell__mark-all"
                 onClick={handleMarkAllAsRead}
                 disabled={unreadCount === 0}
+                type="button"
               >
                 Mark all as read
               </button>
@@ -444,6 +495,7 @@ const NotificationBell = () => {
                       : ""
                   }`}
                   onClick={() => handleFilterChange(st.value)}
+                  type="button"
                 >
                   {st.label}
                 </button>
@@ -457,6 +509,7 @@ const NotificationBell = () => {
                   className="notification-bell__error-retry"
                   onClick={() => fetchNotifications(0, activeFilter, false)}
                   disabled={loading}
+                  type="button"
                 >
                   Retry
                 </button>
@@ -484,6 +537,14 @@ const NotificationBell = () => {
                         : ""
                     }`}
                     onClick={() => handleItemClick(notif)}
+                    role="button"
+                    tabIndex={0}
+                    onKeyDown={(event) => {
+                      if (event.key === "Enter" || event.key === " ") {
+                        event.preventDefault();
+                        handleItemClick(notif);
+                      }
+                    }}
                   >
                     <div
                       className={`notification-bell__item-icon notification-bell__item-icon--${(notif.level || "INFO").toUpperCase()}`}
@@ -499,9 +560,18 @@ const NotificationBell = () => {
                       <p className="notification-bell__item-message">
                         {stripHtml(notif.message)}
                       </p>
-                      <span className="notification-bell__item-time">
-                        {timeAgo(notif.createdAt)}
-                      </span>
+                      <div className="notification-bell__item-meta">
+                        <span className="notification-bell__item-time">
+                          {timeAgo(notif.createdAt)}
+                        </span>
+                        <span className="notification-bell__item-source">
+                          {SOURCE_LABELS[
+                            (notif.sourceType || "").toUpperCase()
+                          ] ||
+                            notif.sourceType ||
+                            "General"}
+                        </span>
+                      </div>
                     </div>
                     {notif.status === "UNREAD" && (
                       <div className="notification-bell__item-dot" />
@@ -518,6 +588,7 @@ const NotificationBell = () => {
                   className="notification-bell__load-more-btn"
                   onClick={handleLoadMore}
                   disabled={loading}
+                  type="button"
                 >
                   {loading ? "Loading..." : "Load more"}
                 </button>

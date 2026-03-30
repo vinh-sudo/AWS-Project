@@ -1,5 +1,11 @@
-import { useState } from "react";
-import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
+import { useEffect, useState } from "react";
+import {
+  BrowserRouter,
+  Routes,
+  Route,
+  Navigate,
+  useLocation,
+} from "react-router-dom";
 import { useSelector } from "react-redux";
 import { selectIsAuthenticated, selectUser } from "./redux";
 import LoginPage from "./pages/loginPage/LoginPage";
@@ -69,6 +75,47 @@ const ReportsRedirect = () => {
     default:
       return <Navigate to="/login" replace />;
   }
+};
+
+const AUTH_ROUTES = new Set([
+  "/",
+  "/login",
+  "/forgot-password",
+  "/otp-verification",
+  "/reset-password",
+]);
+
+const CopilotEntry = ({ isCopilotOpen, setIsCopilotOpen }) => {
+  const { pathname } = useLocation();
+  const isAuthRoute = AUTH_ROUTES.has(pathname);
+
+  useEffect(() => {
+    if (isAuthRoute && isCopilotOpen) {
+      setIsCopilotOpen(false);
+    }
+  }, [isAuthRoute, isCopilotOpen, setIsCopilotOpen]);
+
+  if (isAuthRoute) {
+    return null;
+  }
+
+  return (
+    <>
+      <button
+        className={`copilot-fab ${isCopilotOpen ? "hidden" : ""}`}
+        onClick={() => setIsCopilotOpen(true)}
+        title="AI Production Copilot"
+        type="button"
+      >
+        🤖
+      </button>
+
+      <AICopilot
+        isOpen={isCopilotOpen}
+        onClose={() => setIsCopilotOpen(false)}
+      />
+    </>
+  );
 };
 
 function App() {
@@ -297,19 +344,9 @@ function App() {
           </Route>
         </Routes>
 
-        {/* AI Copilot Floating Button */}
-        <button
-          className={`copilot-fab ${isCopilotOpen ? "hidden" : ""}`}
-          onClick={() => setIsCopilotOpen(true)}
-          title="AI Production Copilot"
-        >
-          🤖
-        </button>
-
-        {/* AI Copilot Panel */}
-        <AICopilot
-          isOpen={isCopilotOpen}
-          onClose={() => setIsCopilotOpen(false)}
+        <CopilotEntry
+          isCopilotOpen={isCopilotOpen}
+          setIsCopilotOpen={setIsCopilotOpen}
         />
       </BrowserRouter>
     </ConfirmDialogProvider>
