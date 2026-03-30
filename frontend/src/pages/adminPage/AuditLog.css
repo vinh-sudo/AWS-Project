@@ -65,10 +65,14 @@
 
 .auditlog-toolbar .form-input,
 .auditlog-toolbar .form-select {
-    height: 40px;
+    min-height: 46px;
+    height: 46px;
+    padding: 10px 14px;
+    line-height: 1.35;
     border-radius: 10px;
     border: 1px solid #d3e1e6;
     background: #ffffff;
+    box-sizing: border-box;
     transition: border-color 0.2s ease, box-shadow 0.2s ease;
 }
 
@@ -99,11 +103,12 @@
 
 .auditlog-btn-secondary,
 .auditlog-toolbar .btn-primary {
-    min-height: 40px;
+    min-height: 46px;
     border-radius: 10px;
     font-size: 13px;
+    line-height: 1.2;
     font-weight: 700;
-    padding: 0 14px;
+    padding: 10px 16px;
 }
 
 .auditlog-btn-secondary {

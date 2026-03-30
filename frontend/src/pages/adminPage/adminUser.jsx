@@ -1,4 +1,10 @@
-import React, { useState, useEffect, useRef, useMemo, useCallback } from "react";
+import React, {
+  useState,
+  useEffect,
+  useRef,
+  useMemo,
+  useCallback,
+} from "react";
 import NotificationBell from "../../components/NotificationBell/NotificationBell";
 import AdminSidebar from "../../components/AdminSidebar/AdminSidebar";
 import authService from "../../services/authService";
@@ -9,10 +15,14 @@ import "./adminUser.css";
 /* ── Helpers ── */
 const getRoleBadgeClass = (role) => {
   switch (role?.toUpperCase()) {
-    case "ADMIN": return "admin";
-    case "MANAGER": return "manager";
-    case "LINE_LEADER": return "line-leader";
-    default: return "manager";
+    case "ADMIN":
+      return "admin";
+    case "MANAGER":
+      return "manager";
+    case "LINE_LEADER":
+      return "line-leader";
+    default:
+      return "manager";
   }
 };
 
@@ -22,9 +32,18 @@ const getInitials = (username = "") =>
 const formatDate = (d) => {
   if (!d) return "—";
   const date = new Date(d);
-  return date.toLocaleDateString("en-GB", { day: "2-digit", month: "short", year: "numeric" }) +
-    " " + date.toLocaleTimeString("en-GB", { hour: "2-digit", minute: "2-digit" });
+  return (
+    date.toLocaleDateString("en-GB", {
+      day: "2-digit",
+      month: "short",
+      year: "numeric",
+    }) +
+    " " +
+    date.toLocaleTimeString("en-GB", { hour: "2-digit", minute: "2-digit" })
+  );
 };
+
+const PASSWORD_POLICY = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d).{8,}$/;
 
 /* ── Component ── */
 const UsersAdmin = () => {
@@ -44,8 +63,15 @@ const UsersAdmin = () => {
   const [showEditUser, setShowEditUser] = useState(false);
   const [selectedUser, setSelectedUser] = useState(null);
   const [formData, setFormData] = useState({
-    username: "", email: "", password: "", firstName: "", lastName: "",
-    phoneNumber: "", role: "MANAGER", employeeCode: "", status: true,
+    username: "",
+    email: "",
+    password: "",
+    firstName: "",
+    lastName: "",
+    phoneNumber: "",
+    role: "MANAGER",
+    employeeCode: "",
+    status: true,
   });
 
   const [currentPage, setCurrentPage] = useState(0);
@@ -78,7 +104,12 @@ const UsersAdmin = () => {
     setRoleFilter(e.target.value);
     setCurrentPage(0);
   };
-  useEffect(() => () => { if (searchTimerRef.current) clearTimeout(searchTimerRef.current); }, []);
+  useEffect(
+    () => () => {
+      if (searchTimerRef.current) clearTimeout(searchTimerRef.current);
+    },
+    [],
+  );
 
   /* API */
   const fetchUsers = useCallback(async () => {
@@ -94,53 +125,125 @@ const UsersAdmin = () => {
       setTotalElements(data.totalElements || 0);
     } catch (err) {
       console.error("Error fetching users:", err);
-      setError(err.response?.data?.message || err.response?.data || "Failed to load users");
+      setError(
+        err.response?.data?.message ||
+          err.response?.data ||
+          "Failed to load users",
+      );
     } finally {
       setLoading(false);
       setInitialLoad(false);
-    }  }, [currentPage, pageSize, roleFilter, debouncedSearch]);
+    }
+  }, [currentPage, pageSize, roleFilter, debouncedSearch]);
 
   useEffect(() => {
     return () => window.clearTimeout(feedbackTimerRef.current);
   }, []);
 
-  useEffect(() => { fetchUsers(); }, [fetchUsers]);
+  useEffect(() => {
+    fetchUsers();
+  }, [fetchUsers]);
 
-  const handleChange = (field, value) => setFormData((prev) => ({ ...prev, [field]: value }));
+  const handleChange = (field, value) =>
+    setFormData((prev) => ({ ...prev, [field]: value }));
 
-  const resetForm = () => setFormData({
-    username: "", email: "", password: "", firstName: "", lastName: "",
-    phoneNumber: "", role: "MANAGER", employeeCode: "", status: true,
-  });
+  const resetForm = () =>
+    setFormData({
+      username: "",
+      email: "",
+      password: "",
+      firstName: "",
+      lastName: "",
+      phoneNumber: "",
+      role: "MANAGER",
+      employeeCode: "",
+      status: true,
+    });
 
-  const handleCancel = () => { resetForm(); setShowCreateUser(false); setShowEditUser(false); setSelectedUser(null); };
+  const handleCancel = () => {
+    resetForm();
+    setShowCreateUser(false);
+    setShowEditUser(false);
+    setSelectedUser(null);
+  };
 
   /* Create */
   const handleSave = async () => {
     try {
-      setActionLoading(true);
-      await authService.register({
-        username: formData.username, password: formData.password,
-        firstName: formData.firstName, lastName: formData.lastName,
-        email: formData.email,
-        phoneNumber: formData.phoneNumber || undefined,
+      const payload = {
+        username: formData.username?.trim(),
+        password: formData.password || "",
+        firstName: formData.firstName?.trim(),
+        lastName: formData.lastName?.trim(),
+        email: formData.email?.trim(),
+        phoneNumber: formData.phoneNumber
+          ? formData.phoneNumber.replace(/\D/g, "")
+          : undefined,
         role: formData.role,
-        employeeCode: formData.employeeCode || undefined,
-      });
-      resetForm(); setShowCreateUser(false); fetchUsers();
+        employeeCode: formData.employeeCode?.trim() || undefined,
+      };
+
+      if (!payload.username || payload.username.length < 4) {
+        showFeedback("error", "Username must be at least 4 characters.");
+        return;
+      }
+
+      if (!payload.firstName || !payload.lastName) {
+        showFeedback("error", "First name and last name are required.");
+        return;
+      }
+
+      if (!payload.email) {
+        showFeedback("error", "Email is required.");
+        return;
+      }
+
+      if (!PASSWORD_POLICY.test(payload.password)) {
+        showFeedback(
+          "error",
+          "Password must have at least 8 chars, including uppercase, lowercase, and number.",
+        );
+        return;
+      }
+
+      if (
+        payload.phoneNumber &&
+        (payload.phoneNumber.length < 10 || payload.phoneNumber.length > 15)
+      ) {
+        showFeedback("error", "Phone number must contain 10-15 digits.");
+        return;
+      }
+
+      setActionLoading(true);
+      await authService.register(payload);
+      resetForm();
+      setShowCreateUser(false);
+      fetchUsers();
       showFeedback("success", "User created successfully.");
     } catch (err) {
-      const msg = err.response?.data?.message || err.response?.data || err.message || "Unknown error";
+      const msg =
+        err.response?.data?.message ||
+        err.response?.data ||
+        err.message ||
+        "Unknown error";
       showFeedback("error", `Failed to create user: ${msg}`);
-    } finally { setActionLoading(false); }
+    } finally {
+      setActionLoading(false);
+    }
   };
 
   /* Edit */
   const handleEditClick = (user) => {
     setSelectedUser(user);
     setFormData({
-      username: user.username || "", email: "", password: "", firstName: "", lastName: "",
-      phoneNumber: "", role: user.role?.toUpperCase() || "MANAGER", status: user.status === "active",
+      username: user.username || "",
+      email: "",
+      password: "",
+      firstName: "",
+      lastName: "",
+      phoneNumber: "",
+      role: user.role?.toUpperCase() || "MANAGER",
+      status: user.status === "active",
     });
     setShowEditUser(true);
   };
@@ -149,16 +252,29 @@ const UsersAdmin = () => {
     if (!selectedUser) return;
     try {
       setActionLoading(true);
-      if (formData.role !== selectedUser.role) await adminService.updateAccountRole(selectedUser.id, formData.role);
+      if (formData.role !== selectedUser.role)
+        await adminService.updateAccountRole(selectedUser.id, formData.role);
       const currentlyActive = selectedUser.status === "active";
       if (formData.status !== currentlyActive) {
-        formData.status ? await adminService.unlockAccount(selectedUser.id) : await adminService.lockAccount(selectedUser.id);
+        formData.status
+          ? await adminService.unlockAccount(selectedUser.id)
+          : await adminService.lockAccount(selectedUser.id);
       }
-      resetForm(); setShowEditUser(false); setSelectedUser(null); fetchUsers();
+      resetForm();
+      setShowEditUser(false);
+      setSelectedUser(null);
+      fetchUsers();
       showFeedback("success", "User updated successfully.");
     } catch (err) {
-      showFeedback("error", err.response?.data?.message || err.response?.data || "Failed to update user");
-    } finally { setActionLoading(false); }
+      showFeedback(
+        "error",
+        err.response?.data?.message ||
+          err.response?.data ||
+          "Failed to update user",
+      );
+    } finally {
+      setActionLoading(false);
+    }
   };
 
   const handleToggleLock = async (user) => {
@@ -169,12 +285,22 @@ const UsersAdmin = () => {
         showFeedback("success", `Account "${user.username}" has been locked.`);
       } else {
         await adminService.unlockAccount(user.id);
-        showFeedback("success", `Account "${user.username}" has been unlocked.`);
+        showFeedback(
+          "success",
+          `Account "${user.username}" has been unlocked.`,
+        );
       }
       fetchUsers();
     } catch (err) {
-      showFeedback("error", err.response?.data?.message || err.response?.data || "Failed to update account status");
-    } finally { setActionLoading(false); }
+      showFeedback(
+        "error",
+        err.response?.data?.message ||
+          err.response?.data ||
+          "Failed to update account status",
+      );
+    } finally {
+      setActionLoading(false);
+    }
   };
 
   /* Stats */
@@ -196,7 +322,7 @@ const UsersAdmin = () => {
   const getUserInitial = () => {
     const name = currentUser?.fullName || "Admin";
     return name.charAt(0).toUpperCase();
-  };  /* ── Loading Screen ── */
+  }; /* ── Loading Screen ── */
   if (initialLoad && loading) {
     return (
       <div className="admin-container users-admin-page">
@@ -215,45 +341,93 @@ const UsersAdmin = () => {
         <div className="modal">
           <div className="modal-header">
             <h2 className="modal-title">Create New User</h2>
-            <button className="close-button" onClick={handleCancel}>✕</button>
+            <button className="close-button" onClick={handleCancel}>
+              ✕
+            </button>
           </div>
           <div className="modal-body">
             <div className="form-group">
-              <label className="form-label">Username <span style={{ color: "#dc2626" }}>*</span></label>
-              <input type="text" placeholder="e.g. john.doe" value={formData.username}
-                onChange={(e) => handleChange("username", e.target.value)} className="form-input" />
+              <label className="form-label">
+                Username <span style={{ color: "#dc2626" }}>*</span>
+              </label>
+              <input
+                type="text"
+                placeholder="e.g. john.doe"
+                value={formData.username}
+                onChange={(e) => handleChange("username", e.target.value)}
+                className="form-input"
+              />
             </div>
             <div className="form-row">
               <div className="form-group">
-                <label className="form-label">First Name <span style={{ color: "#dc2626" }}>*</span></label>
-                <input type="text" placeholder="John" value={formData.firstName}
-                  onChange={(e) => handleChange("firstName", e.target.value)} className="form-input" />
+                <label className="form-label">
+                  First Name <span style={{ color: "#dc2626" }}>*</span>
+                </label>
+                <input
+                  type="text"
+                  placeholder="John"
+                  value={formData.firstName}
+                  onChange={(e) => handleChange("firstName", e.target.value)}
+                  className="form-input"
+                />
               </div>
               <div className="form-group">
-                <label className="form-label">Last Name <span style={{ color: "#dc2626" }}>*</span></label>
-                <input type="text" placeholder="Doe" value={formData.lastName}
-                  onChange={(e) => handleChange("lastName", e.target.value)} className="form-input" />
+                <label className="form-label">
+                  Last Name <span style={{ color: "#dc2626" }}>*</span>
+                </label>
+                <input
+                  type="text"
+                  placeholder="Doe"
+                  value={formData.lastName}
+                  onChange={(e) => handleChange("lastName", e.target.value)}
+                  className="form-input"
+                />
               </div>
             </div>
             <div className="form-group">
-              <label className="form-label">Email <span style={{ color: "#dc2626" }}>*</span></label>
-              <input type="email" placeholder="john@company.com" value={formData.email}
-                onChange={(e) => handleChange("email", e.target.value)} className="form-input" />
+              <label className="form-label">
+                Email <span style={{ color: "#dc2626" }}>*</span>
+              </label>
+              <input
+                type="email"
+                placeholder="john@company.com"
+                value={formData.email}
+                onChange={(e) => handleChange("email", e.target.value)}
+                className="form-input"
+              />
             </div>
             <div className="form-group">
               <label className="form-label">Phone Number</label>
-              <input type="text" placeholder="+84 xxx xxx xxx" value={formData.phoneNumber}
-                onChange={(e) => handleChange("phoneNumber", e.target.value)} className="form-input" />
+              <input
+                type="text"
+                placeholder="Digits only, 10-15 (e.g. 0912345678)"
+                value={formData.phoneNumber}
+                onChange={(e) => handleChange("phoneNumber", e.target.value)}
+                className="form-input"
+              />
             </div>
             <div className="form-group">
-              <label className="form-label">Password <span style={{ color: "#dc2626" }}>*</span></label>
-              <input type="password" placeholder="Minimum 8 characters" value={formData.password}
-                onChange={(e) => handleChange("password", e.target.value)} className="form-input" />
+              <label className="form-label">
+                Password <span style={{ color: "#dc2626" }}>*</span>
+              </label>
+              <input
+                type="password"
+                placeholder="Min 8 chars with A-Z, a-z, 0-9"
+                value={formData.password}
+                onChange={(e) => handleChange("password", e.target.value)}
+                className="form-input"
+              />
             </div>
             <div className="form-row">
               <div className="form-group">
-                <label className="form-label">Role <span style={{ color: "#dc2626" }}>*</span></label>
-                <select value={formData.role} onChange={(e) => handleChange("role", e.target.value)} className="form-select">
+                <label className="form-label">
+                  Role <span style={{ color: "#dc2626" }}>*</span>
+                </label>
+                <select
+                  value={formData.role}
+                  onChange={(e) => handleChange("role", e.target.value)}
+                  className="form-select"
+                >
                   <option value="ADMIN">Admin</option>
                   <option value="MANAGER">Manager</option>
                   <option value="LINE_LEADER">Line Leader</option>
@@ -261,21 +435,39 @@ const UsersAdmin = () => {
               </div>
               <div className="form-group">
                 <label className="form-label">Employee Code</label>
-                <input type="text" placeholder="Auto-generated if empty" value={formData.employeeCode}
-                  onChange={(e) => handleChange("employeeCode", e.target.value)} className="form-input" />
-                <span className="form-hint">Leave blank for auto-generation</span>
+                <input
+                  type="text"
+                  placeholder="Auto-generated if empty"
+                  value={formData.employeeCode}
+                  onChange={(e) => handleChange("employeeCode", e.target.value)}
+                  className="form-input"
+                />
+                <span className="form-hint">
+                  Leave blank for auto-generation
+                </span>
               </div>
             </div>
           </div>
           <div className="modal-footer">
-            <button className="btn-cancel" onClick={handleCancel} disabled={actionLoading}>Cancel</button>
-            <button className="btn-save" onClick={handleSave} disabled={actionLoading}>
+            <button
+              className="btn-cancel"
+              onClick={handleCancel}
+              disabled={actionLoading}
+            >
+              Cancel
+            </button>
+            <button
+              className="btn-save"
+              onClick={handleSave}
+              disabled={actionLoading}
+            >
               {actionLoading ? "Creating..." : "Create User"}
             </button>
           </div>
         </div>
       </div>
-    );  }
+    );
+  }
   /* ── Main Page ── */
   return (
     <div className="admin-container users-admin-page">
@@ -290,13 +482,29 @@ const UsersAdmin = () => {
               <h1 className="dash-title">User Management</h1>
               <p className="dash-subtitle">
                 Manage accounts, roles and permissions
-                <span className="dash-last-updated"> · {totalElements} users total</span>
+                <span className="dash-last-updated">
+                  {" "}
+                  · {totalElements} users total
+                </span>
               </p>
             </div>
           </div>
           <div className="dash-header-right">
-            <button className="dash-refresh-btn" onClick={fetchUsers} title="Refresh data">
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <button
+              className="dash-refresh-btn"
+              onClick={fetchUsers}
+              title="Refresh data"
+            >
+              <svg
+                width="18"
+                height="18"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              >
                 <polyline points="23 4 23 10 17 10" />
                 <polyline points="1 20 1 14 7 14" />
                 <path d="M3.51 9a9 9 0 0114.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0020.49 15" />
@@ -309,20 +517,24 @@ const UsersAdmin = () => {
         {/* Content Card */}
         <div className="admin-content">
           {feedback.message && (
-            <div className={`users-feedback-banner ${feedback.type === "error" ? "error" : "success"}`}>
+            <div
+              className={`users-feedback-banner ${feedback.type === "error" ? "error" : "success"}`}
+            >
               <span>{feedback.message}</span>
-              <button onClick={() => setFeedback({ type: "", message: "" })}>Dismiss</button>
+              <button onClick={() => setFeedback({ type: "", message: "" })}>
+                Dismiss
+              </button>
             </div>
           )}
-
           {/* Error */}
           {error && (
             <div className="error-banner">
               <span>⚠️ {error}</span>
-              <button className="error-banner-btn" onClick={fetchUsers}>Retry</button>
+              <button className="error-banner-btn" onClick={fetchUsers}>
+                Retry
+              </button>
             </div>
           )}
-
           {/* Stats Bar */}
           <div className="users-stats-bar">
             <div className="stat-chip">
@@ -347,34 +559,58 @@ const UsersAdmin = () => {
               </div>
             </div>
           </div>
-
           {/* Toolbar */}
           <div className="content-header">
             <h2 className="content-title">
               All Users
-              {debouncedSearch && <span style={{ fontWeight: 400, fontSize: 14, color: "#9ca3af" }}> — results for "{debouncedSearch}"</span>}
+              {debouncedSearch && (
+                <span
+                  style={{ fontWeight: 400, fontSize: 14, color: "#9ca3af" }}
+                >
+                  {" "}
+                  — results for "{debouncedSearch}"
+                </span>
+              )}
             </h2>
-            <button className="btn-primary" onClick={() => setShowCreateUser(true)}>
+            <button
+              className="btn-primary"
+              onClick={() => setShowCreateUser(true)}
+            >
               <span>＋</span> Add User
             </button>
-          </div>          {/* Filters */}
+          </div>{" "}
+          {/* Filters */}
           <div className="filters-toolbar">
             <div className="search-group">
-              <svg className="search-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <svg
+                className="search-icon"
+                width="16"
+                height="16"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              >
                 <circle cx="11" cy="11" r="8" />
                 <path d="m21 21-4.35-4.35" />
               </svg>
-              <input 
-                type="text" 
-                placeholder="Search by username or employee code..." 
-                value={searchTerm} 
-                onChange={handleSearchChange} 
-                className="search-input" 
+              <input
+                type="text"
+                placeholder="Search by username or employee code..."
+                value={searchTerm}
+                onChange={handleSearchChange}
+                className="search-input"
               />
               {searchTerm && (
-                <button 
-                  className="clear-btn" 
-                  onClick={() => { setSearchTerm(""); setDebouncedSearch(""); setCurrentPage(0); }}
+                <button
+                  className="clear-btn"
+                  onClick={() => {
+                    setSearchTerm("");
+                    setDebouncedSearch("");
+                    setCurrentPage(0);
+                  }}
                   title="Clear search"
                 >
                   ✕
@@ -384,7 +620,11 @@ const UsersAdmin = () => {
 
             <div className="filter-group">
               <label className="filter-label">Role</label>
-              <select value={roleFilter} onChange={handleRoleFilterChange} className="filter-select">
+              <select
+                value={roleFilter}
+                onChange={handleRoleFilterChange}
+                className="filter-select"
+              >
                 <option value="All roles">All roles</option>
                 <option value="ADMIN">Admin</option>
                 <option value="MANAGER">Manager</option>
@@ -392,17 +632,17 @@ const UsersAdmin = () => {
               </select>
             </div>
           </div>
-
-          {/* Table */}          <div className="table-wrapper" style={{ position: "relative" }}>
-            {loading && !initialLoad && (
-              <PageLoading variant="overlay" />
-            )}
+          {/* Table */}{" "}
+          <div className="table-wrapper" style={{ position: "relative" }}>
+            {loading && !initialLoad && <PageLoading variant="overlay" />}
 
             {users.length === 0 && !loading ? (
               <div className="empty-state">
                 <div className="empty-state-icon">📋</div>
                 <div className="empty-state-text">No users found</div>
-                <div className="empty-state-hint">Try adjusting your search or filters</div>
+                <div className="empty-state-hint">
+                  Try adjusting your search or filters
+                </div>
               </div>
             ) : (
               <table className="users-table">
@@ -412,7 +652,9 @@ const UsersAdmin = () => {
                     <th className="table-header">Role</th>
                     <th className="table-header">Status</th>
                     <th className="table-header">Last Login</th>
-                    <th className="table-header" style={{ textAlign: "right" }}>Actions</th>
+                    <th className="table-header" style={{ textAlign: "right" }}>
+                      Actions
+                    </th>
                   </tr>
                 </thead>
                 <tbody>
@@ -420,36 +662,66 @@ const UsersAdmin = () => {
                     <tr key={user.id} className="table-row">
                       <td className="table-cell">
                         <div className="user-info-cell">
-                          <div className="user-info-avatar">{getInitials(user.username)}</div>
+                          <div className="user-info-avatar">
+                            {getInitials(user.username)}
+                          </div>
                           <div className="user-info-details">
-                            <span className="user-info-name">{user.username}</span>
-                            <span className="user-info-code">{user.employeeCode || "No code"}</span>
+                            <span className="user-info-name">
+                              {user.username}
+                            </span>
+                            <span className="user-info-code">
+                              {user.employeeCode || "No code"}
+                            </span>
                           </div>
                         </div>
                       </td>
                       <td className="table-cell">
-                        <span className={`role-badge ${getRoleBadgeClass(user.role)}`}>
+                        <span
+                          className={`role-badge ${getRoleBadgeClass(user.role)}`}
+                        >
                           {user.role?.replace("_", " ")}
                         </span>
                       </td>
                       <td className="table-cell">
-                        <span className={user.status === "active" ? "status-active" : "status-blocked"}>
+                        <span
+                          className={
+                            user.status === "active"
+                              ? "status-active"
+                              : "status-blocked"
+                          }
+                        >
                           {user.status === "active" ? "Active" : "Locked"}
                         </span>
                       </td>
-                      <td className="table-cell" style={{ color: "#6b7280", fontSize: 12 }}>
+                      <td
+                        className="table-cell"
+                        style={{ color: "#6b7280", fontSize: 12 }}
+                      >
                         {formatDate(user.lastLogin)}
                       </td>
                       <td className="table-cell">
-                        <div className="actions-cell" style={{ justifyContent: "flex-end" }}>
-                          <button className="action-button" onClick={() => handleEditClick(user)}
-                            title="Edit user" disabled={actionLoading}>
+                        <div
+                          className="actions-cell"
+                          style={{ justifyContent: "flex-end" }}
+                        >
+                          <button
+                            className="action-button"
+                            onClick={() => handleEditClick(user)}
+                            title="Edit user"
+                            disabled={actionLoading}
+                          >
                             ✏️
                           </button>
-                          <button className={`action-button ${user.status === "active" ? "delete" : ""}`}
+                          <button
+                            className={`action-button ${user.status === "active" ? "delete" : ""}`}
                             onClick={() => handleToggleLock(user)}
-                            title={user.status === "active" ? "Lock account" : "Unlock account"}
-                            disabled={actionLoading}>
+                            title={
+                              user.status === "active"
+                                ? "Lock account"
+                                : "Unlock account"
+                            }
+                            disabled={actionLoading}
+                          >
                             {user.status === "active" ? "🔒" : "🔓"}
                           </button>
                         </div>
@@ -460,28 +732,40 @@ const UsersAdmin = () => {
               </table>
             )}
           </div>
-
           {/* Pagination */}
           {totalPages > 1 && (
             <div className="pagination">
               <div className="pagination-info">
                 Showing <strong>{currentPage * pageSize + 1}</strong> to{" "}
-                <strong>{Math.min((currentPage + 1) * pageSize, totalElements)}</strong> of{" "}
-                <strong>{totalElements}</strong> users
+                <strong>
+                  {Math.min((currentPage + 1) * pageSize, totalElements)}
+                </strong>{" "}
+                of <strong>{totalElements}</strong> users
               </div>
               <div className="pagination-controls">
-                <button className="pagination-btn" onClick={() => setCurrentPage((p) => Math.max(0, p - 1))}
-                  disabled={currentPage === 0}>
+                <button
+                  className="pagination-btn"
+                  onClick={() => setCurrentPage((p) => Math.max(0, p - 1))}
+                  disabled={currentPage === 0}
+                >
                   ‹ Prev
                 </button>
                 {getPageNumbers().map((page) => (
-                  <button key={page} className={`pagination-btn ${page === currentPage ? "active" : ""}`}
-                    onClick={() => setCurrentPage(page)}>
+                  <button
+                    key={page}
+                    className={`pagination-btn ${page === currentPage ? "active" : ""}`}
+                    onClick={() => setCurrentPage(page)}
+                  >
                     {page + 1}
                   </button>
                 ))}
-                <button className="pagination-btn" onClick={() => setCurrentPage((p) => Math.min(totalPages - 1, p + 1))}
-                  disabled={currentPage >= totalPages - 1}>
+                <button
+                  className="pagination-btn"
+                  onClick={() =>
+                    setCurrentPage((p) => Math.min(totalPages - 1, p + 1))
+                  }
+                  disabled={currentPage >= totalPages - 1}
+                >
                   Next ›
                 </button>
               </div>
@@ -496,41 +780,77 @@ const UsersAdmin = () => {
           <div className="modal">
             <div className="modal-header">
               <h2 className="modal-title">Edit User</h2>
-              <button className="close-button" onClick={handleCancel}>✕</button>
+              <button className="close-button" onClick={handleCancel}>
+                ✕
+              </button>
             </div>
             <div className="modal-body">
               <div className="form-group">
                 <label className="form-label">Username</label>
-                <input type="text" value={formData.username} disabled className="form-input" />
+                <input
+                  type="text"
+                  value={formData.username}
+                  disabled
+                  className="form-input"
+                />
               </div>
               <div className="form-group">
                 <label className="form-label">Employee Code</label>
-                <input type="text" value={selectedUser?.employeeCode || "—"} disabled className="form-input" />
+                <input
+                  type="text"
+                  value={selectedUser?.employeeCode || "—"}
+                  disabled
+                  className="form-input"
+                />
               </div>
               <div className="form-group">
                 <label className="form-label">Role</label>
-                <select value={formData.role} onChange={(e) => handleChange("role", e.target.value)}
-                  className="form-select" disabled={selectedUser?.role === "ADMIN"}>
+                <select
+                  value={formData.role}
+                  onChange={(e) => handleChange("role", e.target.value)}
+                  className="form-select"
+                  disabled={selectedUser?.role === "ADMIN"}
+                >
                   <option value="MANAGER">Manager</option>
                   <option value="LINE_LEADER">Line Leader</option>
                 </select>
                 {selectedUser?.role === "ADMIN" && (
-                  <span className="form-hint">Admin role cannot be changed</span>
+                  <span className="form-hint">
+                    Admin role cannot be changed
+                  </span>
                 )}
               </div>
               <div className="form-group">
                 <label className="form-label">Status</label>
                 <div className="toggle-container">
-                  <button className={`toggle-button ${formData.status ? "active" : ""}`}
-                    onClick={() => handleChange("status", true)}>Active</button>
-                  <button className={`toggle-button ${!formData.status ? "active" : ""}`}
-                    onClick={() => handleChange("status", false)}>Locked</button>
+                  <button
+                    className={`toggle-button ${formData.status ? "active" : ""}`}
+                    onClick={() => handleChange("status", true)}
+                  >
+                    Active
+                  </button>
+                  <button
+                    className={`toggle-button ${!formData.status ? "active" : ""}`}
+                    onClick={() => handleChange("status", false)}
+                  >
+                    Locked
+                  </button>
                 </div>
               </div>
             </div>
             <div className="modal-footer">
-              <button className="btn-cancel" onClick={handleCancel} disabled={actionLoading}>Cancel</button>
-              <button className="btn-save" onClick={handleEditSave} disabled={actionLoading}>
+              <button
+                className="btn-cancel"
+                onClick={handleCancel}
+                disabled={actionLoading}
+              >
+                Cancel
+              </button>
+              <button
+                className="btn-save"
+                onClick={handleEditSave}
+                disabled={actionLoading}
+              >
                 {actionLoading ? "Updating..." : "Save Changes"}
               </button>
             </div>
