@@ -24,15 +24,14 @@ public class WebConfig implements WebMvcConfigurer {
         config.setAllowedOrigins(List.of(
                 "http://localhost:5173"
         ));
-<<<<<<< HEAD
-=======
+
         config.setAllowedOrigins(List.of(
                 "https://ims.mom"
         ));
         config.setAllowedOrigins(List.of(
                 "http://ims.mom"
         ));
->>>>>>> 10eec9bc3114f4e959470a876351d2beed48172f
+
         config.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "OPTIONS"));
         config.setAllowedHeaders(List.of("*"));
         config.setAllowCredentials(true);
