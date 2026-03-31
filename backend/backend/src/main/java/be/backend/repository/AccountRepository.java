@@ -26,7 +26,8 @@ public interface AccountRepository extends JpaRepository<Account, Integer> {
 
     Optional<Account> findByUsername(String username);
 
-    Optional<Account> findByRoleIgnoreCase(String role);
+    // Sửa lại trả về List<Account> thay vì Optional<Account> để tránh lỗi NonUniqueResultException
+    List<Account> findByRoleIgnoreCase(String role);
 
 
     @Query(value = "SELECT a.* FROM accounts a" +
