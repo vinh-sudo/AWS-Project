@@ -22,6 +22,7 @@ import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.ApplicationEventPublisher;
+import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
@@ -30,6 +31,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
 
 @Slf4j
 @Service
@@ -50,6 +52,8 @@ public class OrderService {
 
     private static final Set<String> VALID_PRIORITIES = Set.of("Low", "Medium", "High", "Urgent");
     private static final Set<String> EDITABLE_STATUSES = Set.of(STATUS_DRAFT, STATUS_CONFIRMED);
+
+    private final Set<Integer> lateNotifiedOrderIds = ConcurrentHashMap.newKeySet();
 
     // ==================== CRUD ====================
 
@@ -468,5 +472,20 @@ public class OrderService {
                 .filter(i -> i.getPrice() != null && i.getQuantity() != null)
                 .map(i -> i.getPrice().multiply(BigDecimal.valueOf(i.getQuantity())))
                 .reduce(BigDecimal.ZERO, BigDecimal::add);
+    }
+
+    @Scheduled(fixedDelayString = "${app.notifications.order-late-check-ms:300000}")
+    public void publishLateOrderEvents() {
+        OffsetDateTime now = OffsetDateTime.now();
+        List<Order> lateOrders = orderRepository.findLateOrders(now);
+
+        Set<Integer> currentLateOrderIds = lateOrders.stream().map(Order::getId).collect(java.util.stream.Collectors.toSet());
+        lateNotifiedOrderIds.removeIf(id -> !currentLateOrderIds.contains(id));
+
+        for (Order order : lateOrders) {
+            if (lateNotifiedOrderIds.add(order.getId())) {
+                eventPublisher.publishEvent(new OrderEvent.OrderLateEvent(order));
+            }
+        }
     }
 }
