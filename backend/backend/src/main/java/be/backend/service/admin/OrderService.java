@@ -83,7 +83,7 @@ public class OrderService {
         }
 
         Order saved = orderRepository.save(order);
-        // ✅ AUDIT LOG - CREATE ORDER
+
         auditLogService.builder()
                 .user(admin)
                 .action(ActionType.CREATE_ORDER)
@@ -93,7 +93,7 @@ public class OrderService {
                 .change("productType", null, saved.getProductType())
                 .change("quantity", null, saved.getQuantity())
                 .change("priority", null, saved.getPriority())
-                .logAsync(); // Async - không block
+                .logAsync();
 
         // Publish event
         eventPublisher.publishEvent(new OrderEvent.OrderCreatedEvent(saved));
