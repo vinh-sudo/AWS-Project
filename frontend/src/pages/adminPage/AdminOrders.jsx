@@ -314,8 +314,39 @@ const I = {
 };
 
 /* ===== Helpers ===== */
+const normalizeOrderStatus = (status) => {
+  if (!status) return status;
+
+  const raw = String(status).trim();
+  const upper = raw.toUpperCase().replace(/\s+/g, "_");
+
+  switch (upper) {
+    case "DRAFT":
+      return "Draft";
+    case "CONFIRMED":
+      return "Confirmed";
+    case "PLANNING":
+      return "PLANNING";
+    case "SCHEDULED":
+    case "PARTIALLY_SCHEDULED":
+      return "SCHEDULED";
+    case "IN_PRODUCTION":
+    case "IN_PROGRESS":
+      return "In Production";
+    case "COMPLETED":
+      return "Completed";
+    case "CANCELLED":
+    case "CANCELED":
+      return "Cancelled";
+    case "STOPPED":
+      return "STOPPED";
+    default:
+      return raw;
+  }
+};
+
 const getStatusKey = (status) => {
-  switch (status) {
+  switch (normalizeOrderStatus(status)) {
     case "Draft":
       return "draft";
     case "Confirmed":
@@ -341,10 +372,13 @@ const STATUS_DISPLAY = {
   STOPPED: "Stopped",
   PLANNING: "Planning",
   SCHEDULED: "Scheduled",
+  "In Production": "In Production",
 };
 
 const getStatusDisplay = (status) =>
-  STATUS_DISPLAY[status] || status || "Unknown";
+  STATUS_DISPLAY[normalizeOrderStatus(status)] ||
+  normalizeOrderStatus(status) ||
+  "Unknown";
 
 const getPriorityKey = (priority) => {
   switch (priority?.toUpperCase()) {
@@ -382,8 +416,9 @@ const TIMELINE_STEPS = [
 ];
 
 const getTimelineState = (orderStatus, stepLabel) => {
+  const normalizedStatus = normalizeOrderStatus(orderStatus);
   const statusIdx = TIMELINE_STEPS.indexOf(
-    orderStatus === "STOPPED" ? "In Production" : orderStatus,
+    normalizedStatus === "STOPPED" ? "In Production" : normalizedStatus,
   );
   const stepIdx = TIMELINE_STEPS.indexOf(stepLabel);
   if (stepIdx < 0 || statusIdx < 0) return "";
@@ -438,7 +473,14 @@ const AdminOrders = () => {
       setLoading(true);
       setError(null);
       const data = await adminService.getAllOrders();
-      setOrders(Array.isArray(data) ? data : []);
+      setOrders(
+        Array.isArray(data)
+          ? data.map((order) => ({
+              ...order,
+              status: normalizeOrderStatus(order?.status),
+            }))
+          : [],
+      );
     } catch (err) {
       console.error("Error fetching orders:", err);
       setError(
@@ -675,7 +717,7 @@ const AdminOrders = () => {
   };
 
   const handleEditOrder = (order) => {
-    if (!["Draft", "Confirmed"].includes(order.status)) {
+    if (!["Draft", "Confirmed"].includes(normalizeOrderStatus(order.status))) {
       alert("Only Draft / Confirmed orders can be edited.");
       return;
     }
@@ -732,7 +774,10 @@ const AdminOrders = () => {
   const handleViewDetail = async (id) => {
     try {
       const detail = await adminService.getOrderById(id);
-      setDetailOrder(detail);
+      setDetailOrder({
+        ...detail,
+        status: normalizeOrderStatus(detail?.status),
+      });
       setUploadedFiles([]);
       setShowDetailModal(true);
     } catch (err) {
