@@ -2,6 +2,7 @@ package be.backend.service.manager;
 
 import be.backend.entity.*;
 import be.backend.enums.ActionType;
+import be.backend.event.OrderEvent;
 import be.backend.mapper.ProductionPlanMapper;
 import be.backend.model.request.CreatePlanByItemRequest;
 import be.backend.model.response.OrderPlanItemsViewResponse;
@@ -9,6 +10,7 @@ import be.backend.model.response.ProductionPlanResponse;
 import be.backend.model.response.ScheduleValidationResult;
 import be.backend.repository.*;
 import lombok.RequiredArgsConstructor;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -47,6 +49,7 @@ public class ManagerPlanningService {
     private final OrderItemRepository orderItemRepo;
 
     private final SchedulerService schedulerService;
+    private final ApplicationEventPublisher eventPublisher;
 
     @Transactional
     public List<ProductionPlanResponse> createPlanByItem(
@@ -83,6 +86,7 @@ public class ManagerPlanningService {
 
         ProductionLine smtLine = findRouteLine(allLines, "SMT");
         ProductionLine dipLine = findRouteLine(allLines, "DIP");
+        ProductionLine assemblyLine = findRouteLine(allLines, "ASSEMBLY"); // Add Assembly line
         ProductionLine testLine = findRouteLine(allLines, "TEST");
         ProductionLine packingLine = findRouteLine(allLines, "PACK");
 
@@ -94,7 +98,15 @@ public class ManagerPlanningService {
         }
         List<ProductionPlan> plans = new ArrayList<>();
 
-        for (ProductionLine line : List.of(smtLine, dipLine, testLine, packingLine)) {
+        // Add lines in correct order if present
+        List<ProductionLine> routeLines = new ArrayList<>();
+        if (smtLine != null) routeLines.add(smtLine);
+        if (dipLine != null) routeLines.add(dipLine);
+        if (assemblyLine != null) routeLines.add(assemblyLine);
+        if (testLine != null) routeLines.add(testLine);
+        if (packingLine != null) routeLines.add(packingLine);
+
+        for (ProductionLine line : routeLines) {
             ProductionPlan plan = buildDraftPlan(
                     order,
                     orderItem,
@@ -203,9 +215,14 @@ public class ManagerPlanningService {
         // Lấy danh sách order item (chỉ cần 1 lần)
         List<OrderItem> orderItems = orderItemRepo.findByOrderId(orderId);
 
+        String previousOrderStatus = order.getStatus();
         String nextOrderStatus = computeNextOrderStatus(orderItems, confirmedQtyByItem);
         order.setStatus(nextOrderStatus);
         orderRepo.save(order);
+        if (!ORDER_STATUS_SCHEDULED.equalsIgnoreCase(previousOrderStatus)
+                && ORDER_STATUS_SCHEDULED.equalsIgnoreCase(nextOrderStatus)) {
+            eventPublisher.publishEvent(new OrderEvent.OrderReleasedToProductionEvent(order));
+        }
 
         ScheduleValidationResult result = ScheduleValidationResult.success(
                 "Order item " + orderItemId + " confirmed");

@@ -1,10 +1,14 @@
 package be.backend.service.manager;
 
 import be.backend.entity.*;
+import be.backend.event.ProductionScheduleEvent;
+import be.backend.exception.BusinessException;
+import be.backend.exception.ResourceNotFoundException;
 import be.backend.model.response.ScheduleValidationResult;
 import be.backend.repository.*;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 
 import java.time.OffsetDateTime;
@@ -19,6 +23,14 @@ public class SchedulerService {
     private final MachineRepository machineRepo;
     private final LineLeaderAssignmentRepository leaderRepo;
     private final IncidentLogRepository incidentRepo;
+    private final ApplicationEventPublisher eventPublisher;
+
+    private static final String STATUS_SCHEDULED = "SCHEDULED";
+    private static final String STATUS_RUNNING = "RUNNING";
+    private static final String STATUS_PAUSED = "PAUSED";
+    private static final String INCIDENT_TYPE_PAUSE = "PAUSE";
+    private static final String INCIDENT_TYPE_RESUME = "RESUME";
+    private static final String INCIDENT_SEVERITY_LOW = "LOW";
 
     // ============== VALIDATE ==============
     public ScheduleValidationResult validateCapacity(List<ProductionPlan> plans) {
@@ -138,9 +150,11 @@ public class SchedulerService {
             s.setMachine(allocation.machine());
             s.setStartTime(start);
             s.setEndTime(start.plusHours((long) Math.ceil(allocation.realHours())));
-            s.setStatus("SCHEDULED");
+            s.setStatus(STATUS_SCHEDULED);
 
-            result.add(scheduleRepo.save(s));
+            ProductionSchedule saved = scheduleRepo.save(s);
+            result.add(saved);
+            eventPublisher.publishEvent(new ProductionScheduleEvent.ScheduleAssignedToLineEvent(saved, plan.getLine()));
         }
 
         return ScheduleCreationResult.success(result);
@@ -172,59 +186,48 @@ public class SchedulerService {
 
     @Transactional
     public void pauseSchedule(Integer scheduleId, Account account) {
-
         ProductionSchedule schedule = scheduleRepo.findById(scheduleId)
-                .orElseThrow(() -> new RuntimeException("Schedule not found"));
-
-        if (!schedule.getStatus().equals("RUNNING")) {
-            throw new RuntimeException("Only RUNNING schedule can be paused");
+                .orElseThrow(() -> new ResourceNotFoundException("Schedule", scheduleId.toString()));
+        if (!STATUS_RUNNING.equalsIgnoreCase(schedule.getStatus())) {
+            throw new BusinessException("Only RUNNING schedule can be paused");
         }
-
-        // 1. Pause schedule
-        schedule.setStatus("PAUSED");
-
-        // 2. Pause machine
+        schedule.setStatus(STATUS_PAUSED);
         Machine machine = schedule.getMachine();
-        machine.setRuntimeStatus("PAUSED");
+        machine.setRuntimeStatus(STATUS_PAUSED);
         machineRepo.save(machine);
-
-        // 3. Log
         IncidentLog log = new IncidentLog();
         log.setSchedule(schedule);
-        log.setLine(schedule.getPlan().getLine()); // ← FIX
-        log.setIncidentType("PAUSE");
-        log.setSeverity("LOW"); // ← BONUS
-        log.setDescription("Resumed by " + account.getUser().getLastName());
+        log.setLine(schedule.getPlan().getLine());
+        log.setIncidentType(INCIDENT_TYPE_PAUSE);
+        log.setSeverity(INCIDENT_SEVERITY_LOW);
+        log.setDescription("Paused by " + account.getUser().getLastName());
         log.setTimestamp(OffsetDateTime.now());
         incidentRepo.save(log);
+        // Publish event
+        eventPublisher.publishEvent(new ProductionScheduleEvent.SchedulePausedEvent(schedule));
     }
 
     @Transactional
     public void resumeSchedule(Integer scheduleId, Account account) {
-
         ProductionSchedule schedule = scheduleRepo.findById(scheduleId)
-                .orElseThrow(() -> new RuntimeException("Schedule not found"));
-
-        if (!schedule.getStatus().equals("PAUSED")) {
-            throw new RuntimeException("Only PAUSED schedule can be resumed");
+                .orElseThrow(() -> new ResourceNotFoundException("Schedule", scheduleId.toString()));
+        if (!STATUS_PAUSED.equalsIgnoreCase(schedule.getStatus())) {
+            throw new BusinessException("Only PAUSED schedule can be resumed");
         }
-
-        // 1. Resume schedule
-        schedule.setStatus("RUNNING");
-
-        // 2. Resume machine
+        schedule.setStatus(STATUS_RUNNING);
         Machine machine = schedule.getMachine();
-        machine.setRuntimeStatus("RUNNING");
+        machine.setRuntimeStatus(STATUS_RUNNING);
         machineRepo.save(machine);
-
         IncidentLog log = new IncidentLog();
         log.setSchedule(schedule);
         log.setLine(schedule.getPlan().getLine());
-        log.setIncidentType("RESUME");
-        log.setSeverity("LOW");
+        log.setIncidentType(INCIDENT_TYPE_RESUME);
+        log.setSeverity(INCIDENT_SEVERITY_LOW);
         log.setDescription("Resumed by " + account.getUser().getLastName());
         log.setTimestamp(OffsetDateTime.now());
         incidentRepo.save(log);
+        // Publish event
+        eventPublisher.publishEvent(new ProductionScheduleEvent.ScheduleResumedEvent(schedule));
     }
 
 }

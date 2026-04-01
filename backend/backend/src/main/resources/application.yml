@@ -1,28 +1,27 @@
 spring:
   datasource:
-    url: ${DB_URL:jdbc:postgresql://localhost:5432/postgres}
-    username: ${DB_USERNAME:postgres}
-    password: ${DB_PASSWORD:postgres}
+    url: jdbc:postgresql://ims.cr2qyugw8ci4.ap-southeast-1.rds.amazonaws.com:5432/ims
+    username: ${RDS_USERNAME}
+    password: ${RDS_PASSWORD}
     driver-class-name: org.postgresql.Driver
-
   jpa:
     hibernate:
       ddl-auto: validate
     show-sql: true
-
   flyway:
-    enabled: true
+    enabled: false
     locations: classpath:db/migration
     baseline-on-migrate: true
-
   data:
     redis:
-      host: ${REDIS_HOST:localhost}
-      port: ${REDIS_PORT:6379}
-      username: ${REDIS_USERNAME:default}
-      password: ${REDIS_PASSWORD:}
+      host: ${REDIS_HOST}
+      port: 6379
+      username: default
+      password: ${REDIS_PASSWORD}
       ssl:
-        enabled: ${REDIS_SSL_ENABLED:false}
+        enabled: true
+      repositories:
+        enabled: false
   mail:
     host: email-smtp.<ap-southeast-1>.amazonaws.com
     port: 587
@@ -34,45 +33,49 @@ spring:
           auth: true
           starttls:
             enable: true
+  main:
+    lazy-initialization: true
 
 aws:
-  access-key: ${AWS_ACCESS_KEY_ID:}
-  secret-key: ${AWS_SECRET_ACCESS_KEY:}
-  region: ${AWS_REGION:ap-southeast-1}
-  bucket-name: ${AWS_S3_BUCKET:}
+  region: ap-southeast-1
+  sns-topic-arn: arn:aws:sns:ap-southeast-1:638389534958:ims-sns
+  sqs-queue-url: https://sqs.ap-southeast-1.amazonaws.com/638389534958/ims-queue
+  bucket-name: ims-stores
 
 jwt:
-  secret: ${JWT_SECRET:change-me-in-env}
-  expiration: ${JWT_EXPIRATION_MS:1800000}
-  refresh-expiration: ${JWT_REFRESH_EXPIRATION_MS:14400000}
+  secret: ${JWT_SECRET_KEY}
+  expiration: 1800000
+  refresh-expiration: 14400000
 
 ai:
   provider: openai
-  api:
-    rate-limit:
-      enabled: true
-      limit-per-minute: ${AI_RATE_LIMIT_PER_MINUTE:60}
-      key-prefix: "${AI_RATE_LIMIT_KEY_PREFIX:ai:rate-limit}"
-      window-seconds: ${AI_RATE_LIMIT_WINDOW_SECONDS:60}
-  runtime:
-    context-cache-seconds: 20
   openai:
-    api-key: ${OPENAI_API_KEY:}
+    api-key: ${OPENAI_API_KEY}
     url: https://api.openai.com/v1/chat/completions
     model: gpt-4o-mini
     max-tokens: 500
     temperature: 0.3
-    connect-timeout-ms: 5000
-    read-timeout-ms: 15000
-    retry-count: 2
-    retry-backoff-ms: 300
 
 logging:
   level:
     org.springframework.security: DEBUG
     org.springframework.web: INFO
-    be.backend.configuration.AiAuditLogInterceptor: INFO
 
 app:
   mail:
-    from: no-reply@your-domain.com # Thay bang email da verify tren SES
+    from: no-reply@ims.mom
+
+management:
+  endpoint:
+    health:
+      probes:
+        enabled: true
+  endpoints:
+    web:
+      exposure:
+        include: health
+  health:
+    livenessstate:
+      enabled: true
+    readinessstate:
+      enabled: true

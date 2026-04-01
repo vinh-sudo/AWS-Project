@@ -5,6 +5,7 @@ import be.backend.entity.Order;
 import be.backend.entity.OrderItem;
 import be.backend.entity.User;
 import be.backend.enums.ActionType;
+import be.backend.event.OrderEvent;
 import be.backend.exception.BusinessException;
 import be.backend.exception.ResourceNotFoundException;
 import be.backend.mapper.OrderMapper;
@@ -20,6 +21,8 @@ import be.backend.service.utilities.AuditLogService;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.context.ApplicationEventPublisher;
+import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
@@ -28,6 +31,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
 
 @Slf4j
 @Service
@@ -38,6 +42,7 @@ public class OrderService {
     private final UserRepository userRepository;
     private final OrderMapper orderMapper;
     private final AuditLogService auditLogService;
+    private final ApplicationEventPublisher eventPublisher;
 
     private static final String STATUS_DRAFT = "Draft";
     private static final String STATUS_CONFIRMED = "Confirmed";
@@ -47,6 +52,8 @@ public class OrderService {
 
     private static final Set<String> VALID_PRIORITIES = Set.of("Low", "Medium", "High", "Urgent");
     private static final Set<String> EDITABLE_STATUSES = Set.of(STATUS_DRAFT, STATUS_CONFIRMED);
+
+    private final Set<Integer> lateNotifiedOrderIds = ConcurrentHashMap.newKeySet();
 
     // ==================== CRUD ====================
 
@@ -80,7 +87,7 @@ public class OrderService {
         }
 
         Order saved = orderRepository.save(order);
-        // ✅ AUDIT LOG - CREATE ORDER
+
         auditLogService.builder()
                 .user(admin)
                 .action(ActionType.CREATE_ORDER)
@@ -90,7 +97,10 @@ public class OrderService {
                 .change("productType", null, saved.getProductType())
                 .change("quantity", null, saved.getQuantity())
                 .change("priority", null, saved.getPriority())
-                .logAsync(); // Async - không block
+                .logAsync();
+
+        // Publish event
+        eventPublisher.publishEvent(new OrderEvent.OrderCreatedEvent(saved));
 
         log.info("Order {} created with {} items", saved.getId(), saved.getItems().size());
         return buildResponse(saved);
@@ -156,6 +166,17 @@ public class OrderService {
             }
         }
 
+        // Nếu trạng thái chuyển sang COMPLETED thì publish event
+        if (request.getStatus() != null && request.getStatus().equals(STATUS_COMPLETED) && !order.getStatus().equals(STATUS_COMPLETED)) {
+            order.setStatus(STATUS_COMPLETED);
+            eventPublisher.publishEvent(new OrderEvent.OrderCompletedEvent(order));
+        }
+        // Nếu trạng thái chuyển sang CANCELLED thì publish event
+        if (request.getStatus() != null && request.getStatus().equals(STATUS_CANCELLED) && !order.getStatus().equals(STATUS_CANCELLED)) {
+            order.setStatus(STATUS_CANCELLED);
+            eventPublisher.publishEvent(new OrderEvent.OrderCancelledEvent(order));
+        }
+
         Order saved = orderRepository.save(order);
 
         if (!changes.isEmpty()) {
@@ -180,7 +201,7 @@ public class OrderService {
             throw new BusinessException(
                     "Only Draft or Cancelled orders can be deleted. Current status: " + order.getStatus());
         }
-        // ✅ ADD THIS - before delete
+
         auditLogService.builder()
                 .user(order.getCreatedBy())
                 .action(ActionType.DELETE_ORDER)
@@ -451,5 +472,20 @@ public class OrderService {
                 .filter(i -> i.getPrice() != null && i.getQuantity() != null)
                 .map(i -> i.getPrice().multiply(BigDecimal.valueOf(i.getQuantity())))
                 .reduce(BigDecimal.ZERO, BigDecimal::add);
+    }
+
+    @Scheduled(fixedDelayString = "${app.notifications.order-late-check-ms:300000}")
+    public void publishLateOrderEvents() {
+        OffsetDateTime now = OffsetDateTime.now();
+        List<Order> lateOrders = orderRepository.findLateOrders(now);
+
+        Set<Integer> currentLateOrderIds = lateOrders.stream().map(Order::getId).collect(java.util.stream.Collectors.toSet());
+        lateNotifiedOrderIds.removeIf(id -> !currentLateOrderIds.contains(id));
+
+        for (Order order : lateOrders) {
+            if (lateNotifiedOrderIds.add(order.getId())) {
+                eventPublisher.publishEvent(new OrderEvent.OrderLateEvent(order));
+            }
+        }
     }
 }

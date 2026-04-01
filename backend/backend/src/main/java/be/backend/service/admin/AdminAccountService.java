@@ -3,6 +3,7 @@ package be.backend.service.admin;
 import be.backend.entity.Account;
 import be.backend.enums.ActionType;
 import be.backend.enums.Role;
+import be.backend.event.AccountEvent;
 import be.backend.exception.BusinessException;
 import be.backend.exception.ResourceNotFoundException;
 import be.backend.model.request.UpdateRoleRequest;
@@ -10,6 +11,7 @@ import be.backend.model.response.AccountSummaryResponse;
 import be.backend.repository.AccountRepository;
 import be.backend.service.utilities.AuditLogService;
 import lombok.RequiredArgsConstructor;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
@@ -22,6 +24,7 @@ public class AdminAccountService {
 
     private final AccountRepository accountRepository;
     private final AuditLogService auditLogService;
+    private final ApplicationEventPublisher eventPublisher;
 
     @Transactional(readOnly = true)
     public Page<AccountSummaryResponse> getAccounts(String role, String search, int page, int size) {
@@ -74,6 +77,8 @@ public class AdminAccountService {
             .change("role", oldRole, newRole)
             .log();
         
+        // Publish event
+        eventPublisher.publishEvent(new AccountEvent.RoleChangedEvent(account, oldRole));
         return toSummary(account);
     }
     
@@ -110,6 +115,8 @@ public class AdminAccountService {
             .change("status", oldStatus, "locked")
             .log();
         
+        // Publish event
+        eventPublisher.publishEvent(new AccountEvent.AccountLockedEvent(account));
         return toSummary(account);
     }
     
@@ -136,6 +143,7 @@ public class AdminAccountService {
             .change("status", oldStatus, "active")
             .log();
         
+        // Có thể bổ sung event AccountUnlockedEvent nếu cần
         return toSummary(account);
     }
 

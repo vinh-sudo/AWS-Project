@@ -1,9 +1,11 @@
 package be.backend.service.leader;
 
 import be.backend.entity.*;
+import be.backend.event.ReportEvent;
 import be.backend.exception.BusinessException;
 import be.backend.exception.ForbiddenException;
 import be.backend.exception.ResourceNotFoundException;
+import be.backend.mapper.ProductionFileMapper;
 import be.backend.model.request.SubmitReportRequest;
 import be.backend.model.request.UpdateProgressRequest;
 import be.backend.model.response.ProgressResponse;
@@ -12,9 +14,12 @@ import be.backend.model.response.ScheduleSummaryResponse;
 import be.backend.model.response.ProductionFileResponse;
 import be.backend.repository.*;
 import be.backend.service.ProductionFileService;
-import be.backend.mapper.ProductionFileMapper;
+import be.backend.service.utilities.SNSService;
+import be.backend.service.utilities.SQSService;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
@@ -33,6 +38,10 @@ public class LeaderProgressService {
         private static final String ORDER_STATUS_IN_PROGRESS = "IN_PROGRESS";
         private static final String ORDER_STATUS_COMPLETED = "COMPLETED";
 
+        private static final String SCHEDULE_STATUS_SCHEDULED = "SCHEDULED";
+        private static final String SCHEDULE_STATUS_RUNNING = "RUNNING";
+        private static final String SCHEDULE_STATUS_COMPLETED = "COMPLETED";
+
         private final LineLeaderAssignmentRepository assignmentRepo;
         private final ProductionScheduleRepository scheduleRepo;
         private final ProductionProgressRepository progressRepo;
@@ -41,6 +50,17 @@ public class LeaderProgressService {
         private final OrderItemRepository orderItemRepo;
         private final ProductionFileService productionFileService;
         private final ProductionFileMapper productionFileMapper;
+        private final SNSService snsService;
+        private final SQSService sqsService;
+        private final ApplicationEventPublisher eventPublisher;
+
+        @Value("${aws.sns-topic-arn}")
+        private String snsTopicArn;
+        @Value("${aws.sqs-queue-url}")
+        private String sqsQueueUrl;
+
+        private static final BigDecimal LOW_KPI_THRESHOLD = BigDecimal.valueOf(0.80);
+        private static final BigDecimal HIGH_REJECT_RATE_THRESHOLD = BigDecimal.valueOf(0.10);
 
         /**
          * Cập nhật tiến độ schedule
@@ -78,7 +98,7 @@ public class LeaderProgressService {
                 }
 
                 // 3. Business rule: chỉ schedule RUNNING mới update được
-                if (!"RUNNING".equals(schedule.getStatus())) {
+                if (!SCHEDULE_STATUS_RUNNING.equals(schedule.getStatus())) {
                         throw new BusinessException(
                                         "Can only update progress for RUNNING schedules, current: "
                                                         + schedule.getStatus());
@@ -152,6 +172,9 @@ public class LeaderProgressService {
                 report.setCreatedAt(OffsetDateTime.now());
 
                 reportRepo.save(report);
+                // Publish event for notification
+                eventPublisher.publishEvent(new ReportEvent.DailyReportSubmittedEvent(report));
+                publishReportAlerts(report);
 
                 ProgressResponse latestProgress = refreshProgressFromReports(schedule);
                 autoCompleteScheduleIfNeeded(schedule);
@@ -230,7 +253,7 @@ public class LeaderProgressService {
                 }
 
                 // 3. GUARD: Chỉ SCHEDULED mới start được
-                if (!"SCHEDULED".equals(schedule.getStatus())) {
+                if (!SCHEDULE_STATUS_SCHEDULED.equals(schedule.getStatus())) {
                         throw new BusinessException(
                                         "Only SCHEDULED can be started. Current: " + schedule.getStatus());
                 }
@@ -270,8 +293,16 @@ public class LeaderProgressService {
                 }
 
                 // 5. Start schedule
-                schedule.setStatus("RUNNING");
+                schedule.setStatus(SCHEDULE_STATUS_RUNNING);
                 scheduleRepo.save(schedule);
+
+                // 5.1. Gửi notification qua SNS và SQS
+                String message = String.format("Schedule %d started by leader %s", scheduleId, account.getUsername());
+                snsService.publishToTopic(snsTopicArn, message, "Schedule Started");
+                sqsService.sendMessage(sqsQueueUrl, message);
+
+                // Bổ sung: publish event để gửi notification cho MANAGER
+                eventPublisher.publishEvent(new be.backend.event.ProductionScheduleEvent.ScheduleStartedEvent(schedule));
 
                 // 6. Auto chuyển Order -> IN_PROGRESS khi có schedule chạy
                 Order order = schedule.getOrder();
@@ -302,62 +333,6 @@ public class LeaderProgressService {
                                 .documents(documentResponses)
                                 .build();
         }
-
-        /**
-         * Leader finish a running schedule on their line.
-         * Business rule:
-         *  - schedule must belong to leader's line
-         *  - schedule must be RUNNING
-         *  - when finished, status -> COMPLETED and progress/order completion are re-evaluated
-         */
-        /*
-         * @Transactional public ScheduleSummaryResponse finishSchedule(Account account,
-         * Integer scheduleId) {
-         *
-         * LineLeaderAssignment assignment = resolveAssignment(account); Integer
-         * leaderLineId = assignment.getLine().getId();
-         *
-         * ProductionSchedule schedule = scheduleRepo.findById(scheduleId)
-         * .orElseThrow(() -> new ResourceNotFoundException(
-         * "Schedule", scheduleId.toString()));
-         *
-         * if (!schedule.getPlan().getLine().getId().equals(leaderLineId)) { throw new
-         * ForbiddenException("Schedule does not belong to your line"); }
-         *
-         * if (!"RUNNING".equals(schedule.getStatus())) { throw new BusinessException(
-         * "Only RUNNING schedules can be finished. Current: " + schedule.getStatus()); }
-         *
-         * // Kiểm tra tổng sản lượng đã đủ chưa Integer plannedQty =
-         * schedule.getPlan().getPlannedQuantity(); Long producedQty =
-         * reportRepo.sumProducedQuantityByScheduleId(schedule.getId()); if (producedQty
-         * == null) producedQty = 0L; if (producedQty < plannedQty) { throw new
-         * BusinessException("Cannot finish: Produced quantity (good + reject) " +
-         * producedQty + " < planned quantity " + plannedQty); }
-         *
-         * // Mark schedule as completed and set end time if missing schedule.setStatus(
-         * "COMPLETED"); if (schedule.getEndTime() == null) {
-         * schedule.setEndTime(OffsetDateTime.now()); } scheduleRepo.save(schedule);
-         *
-         * // Recalculate order completion (will auto-complete order if 100%) BigDecimal
-         * orderPercentage = calculateOrderCompletionPercentage(schedule.getOrder());
-         * tryCompleteOrder(schedule.getOrder(), orderPercentage);
-         *
-         * // Build summary similar to startSchedule List<ProductionFile> files =
-         * productionFileService.getFilesForOrder(schedule.getOrder().getId());
-         * List<ProductionFileResponse> documentResponses =
-         * productionFileMapper.toResponseList(files); OrderItem item =
-         * schedule.getPlan().getOrderItem();
-         *
-         * return ScheduleSummaryResponse.builder() .scheduleId(schedule.getId())
-         * .orderInfo(schedule.getOrder().getId() + " - " +
-         * schedule.getOrder().getProductType()) .status(schedule.getStatus())
-         * .startTime(schedule.getStartTime() != null
-         * ? schedule.getStartTime().toLocalDateTime() : null)
-         * .endTime(schedule.getEndTime() != null
-         * ? schedule.getEndTime().toLocalDateTime() : null)
-         * .orderItemId(item != null ? item.getId() : null)
-         * .documents(documentResponses) .build(); }
-         */
 
         private int routeRank(String lineName) {
                 if (lineName == null) {
@@ -500,7 +475,7 @@ public class LeaderProgressService {
                         if (!orderItem.getId().equals(s.getPlan().getOrderItem().getId())) {
                                 continue;
                         }
-                        if (!"COMPLETED".equalsIgnoreCase(s.getStatus())) {
+                        if (!SCHEDULE_STATUS_COMPLETED.equalsIgnoreCase(s.getStatus())) {
                                 continue;
                         }
 
@@ -548,9 +523,13 @@ public class LeaderProgressService {
                 progress.setStatus("IN_PROGRESS");
 
                 if (schedulePercentage.compareTo(BigDecimal.valueOf(100)) >= 0) {
-                        progress.setStatus("COMPLETED");
-                        schedule.setStatus("COMPLETED");
+                        progress.setStatus(SCHEDULE_STATUS_COMPLETED);
+                        boolean wasCompleted = SCHEDULE_STATUS_COMPLETED.equalsIgnoreCase(schedule.getStatus());
+                        schedule.setStatus(SCHEDULE_STATUS_COMPLETED);
                         scheduleRepo.save(schedule);
+                        if (!wasCompleted) {
+                                eventPublisher.publishEvent(new be.backend.event.ProductionScheduleEvent.ScheduleCompletedEvent(schedule));
+                        }
                 }
 
                 progressRepo.save(progress);
@@ -563,7 +542,7 @@ public class LeaderProgressService {
                                 .orderItemCompletionPercentage(orderItemPercentage)
                                 .orderCompletionPercentage(orderPercentage)
                                 .scheduleStatus(schedule.getStatus())
-                                .message("COMPLETED".equals(progress.getStatus())
+                                .message(SCHEDULE_STATUS_COMPLETED.equals(progress.getStatus())
                                                 ? "Schedule completed!"
                                                 : "Progress auto-updated to " + schedulePercentage + "%")
                                 .build();
@@ -590,15 +569,40 @@ public class LeaderProgressService {
                 Integer plannedQty = schedule.getPlan().getPlannedQuantity();
                 Long producedQty = reportRepo.sumProducedQuantityByScheduleId(schedule.getId());
                 if (producedQty == null) producedQty = 0L;
-                if (producedQty >= plannedQty && "RUNNING".equals(schedule.getStatus())) {
-                        schedule.setStatus("COMPLETED");
+                if (producedQty >= plannedQty && SCHEDULE_STATUS_RUNNING.equals(schedule.getStatus())) {
+                        schedule.setStatus(SCHEDULE_STATUS_COMPLETED);
                         if (schedule.getEndTime() == null) {
                                 schedule.setEndTime(OffsetDateTime.now());
                         }
                         scheduleRepo.save(schedule);
+                        // Bổ sung: phát event để gửi notification cho MANAGER
+                        eventPublisher.publishEvent(new be.backend.event.ProductionScheduleEvent.ScheduleCompletedEvent(schedule));
                         // Recalculate order completion (will auto-complete order if 100%)
                         BigDecimal orderPercentage = calculateOrderCompletionPercentage(schedule.getOrder());
                         tryCompleteOrder(schedule.getOrder(), orderPercentage);
+                }
+        }
+
+        private void publishReportAlerts(Report report) {
+                int target = report.getTargetQuantity() != null ? report.getTargetQuantity() : 0;
+                int good = report.getGoodQuantity() != null ? report.getGoodQuantity() : 0;
+                int reject = report.getRejectQuantity() != null ? report.getRejectQuantity() : 0;
+
+                if (target > 0) {
+                        BigDecimal kpiRatio = BigDecimal.valueOf(good)
+                                        .divide(BigDecimal.valueOf(target), 4, RoundingMode.HALF_UP);
+                        if (kpiRatio.compareTo(LOW_KPI_THRESHOLD) < 0) {
+                                eventPublisher.publishEvent(new ReportEvent.LowKpiEvent(report));
+                        }
+                }
+
+                int produced = good + reject;
+                if (produced > 0) {
+                        BigDecimal rejectRate = BigDecimal.valueOf(reject)
+                                        .divide(BigDecimal.valueOf(produced), 4, RoundingMode.HALF_UP);
+                        if (rejectRate.compareTo(HIGH_REJECT_RATE_THRESHOLD) >= 0) {
+                                eventPublisher.publishEvent(new ReportEvent.HighRejectRateEvent(report));
+                        }
                 }
         }
 }

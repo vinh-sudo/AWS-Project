@@ -4,18 +4,30 @@ import be.backend.entity.*;
 import be.backend.event.*;
 import be.backend.repository.AccountRepository;
 import be.backend.service.utilities.NotificationService;
+import be.backend.service.utilities.SNSService;
+import be.backend.service.utilities.SQSService;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.event.EventListener;
 import org.springframework.stereotype.Component;
 
 import java.util.Map;
 
 @Component
+@Slf4j
 @RequiredArgsConstructor
 public class NotificationListener {
 
     private final NotificationService notificationService;
     private final AccountRepository accountRepo;
+    private final SNSService snsService;
+    private final SQSService sqsService;
+
+    @Value("${aws.sns-topic-arn}")
+    private String snsTopicArn;
+    @Value("${aws.sqs-queue-url}")
+    private String sqsQueueUrl;
 
     // ===================== ACCOUNT =====================
 
@@ -132,6 +144,10 @@ public class NotificationListener {
     @EventListener
     public void onScheduleAssigned(ProductionScheduleEvent.ScheduleAssignedToLineEvent e) {
         var line = e.line();
+        if (line.getLineLeaderAssignment() == null || line.getLineLeaderAssignment().getLeader() == null) {
+            log.warn("Skip schedule assigned notification: no active leader assignment for line {}", line.getId());
+            return;
+        }
         var leader = line.getLineLeaderAssignment().getLeader();
         String message = String.format("A new schedule (ID: %d) has been assigned to line %s. Start time: %s.",
                 e.schedule().getId(), line.getLineName(), e.schedule().getStartTime());
@@ -202,13 +218,12 @@ public class NotificationListener {
         var o = e.order();
         String message = String.format("New order #%d created for customer %s, product %s, quantity %d, deadline %s.",
                 o.getId(), o.getCustomerName(), o.getProductType(), o.getQuantity(), o.getDeadline());
-        Map<String, Object> payload = Map.of(
-                "orderId", o.getId(),
-                "customer", o.getCustomerName(),
-                "product", o.getProductType(),
-                "quantity", o.getQuantity(),
-                "deadline", o.getDeadline()
-        );
+        Map<String, Object> payload = new java.util.HashMap<>();
+        payload.put("orderId", o.getId());
+        payload.put("customer", o.getCustomerName());
+        payload.put("product", o.getProductType());
+        payload.put("quantity", o.getQuantity());
+        if (o.getDeadline() != null) payload.put("deadline", o.getDeadline());
         notifyRole(
                 "ADMIN",
                 "New order created",
@@ -226,16 +241,16 @@ public class NotificationListener {
         var o = e.order();
         String message = String.format("Order #%d for customer %s has been released to production. Product: %s, quantity: %d.",
                 o.getId(), o.getCustomerName(), o.getProductType(), o.getQuantity());
+        Map<String, Object> payload = new java.util.HashMap<>();
+        payload.put("orderId", o.getId());
+        payload.put("customer", o.getCustomerName());
+        payload.put("product", o.getProductType());
+        payload.put("quantity", o.getQuantity());
         notifyRole(
                 "ADMIN",
                 "Order released to production",
                 message,
-                Map.of(
-                        "orderId", o.getId(),
-                        "customer", o.getCustomerName(),
-                        "product", o.getProductType(),
-                        "quantity", o.getQuantity()
-                ),
+                payload,
                 "WARN",
                 "ORDER",
                 o.getId(),
@@ -248,15 +263,15 @@ public class NotificationListener {
         var o = e.order();
         String message = String.format("Order #%d for customer %s is late. Deadline: %s.",
                 o.getId(), o.getCustomerName(), o.getDeadline());
+        Map<String, Object> payload = new java.util.HashMap<>();
+        payload.put("orderId", o.getId());
+        payload.put("customer", o.getCustomerName());
+        if (o.getDeadline() != null) payload.put("deadline", o.getDeadline());
         notifyRole(
                 "MANAGER",
                 "Order is late",
                 message,
-                Map.of(
-                        "orderId", o.getId(),
-                        "customer", o.getCustomerName(),
-                        "deadline", o.getDeadline()
-                ),
+                payload,
                 "WARN",
                 "ORDER",
                 o.getId(),
@@ -269,17 +284,47 @@ public class NotificationListener {
         var o = e.order();
         String message = String.format("Order #%d for customer %s, product %s, quantity %d has been completed.",
                 o.getId(), o.getCustomerName(), o.getProductType(), o.getQuantity());
+        Map<String, Object> payload = new java.util.HashMap<>();
+        payload.put("orderId", o.getId());
+        payload.put("customer", o.getCustomerName());
+        payload.put("product", o.getProductType());
+        payload.put("quantity", o.getQuantity());
         notifyRole(
                 "LINE_LEADER",
                 "Order completed",
                 message,
-                Map.of(
-                        "orderId", o.getId(),
-                        "customer", o.getCustomerName(),
-                        "product", o.getProductType(),
-                        "quantity", o.getQuantity()
-                ),
+                payload,
                 "INFO",
+                "ORDER",
+                o.getId(),
+                "/orders/" + o.getId()
+        );
+    }
+
+    @EventListener
+    public void onOrderCancelled(OrderEvent.OrderCancelledEvent e) {
+        var o = e.order();
+        String message = String.format("Order #%d for customer %s has been cancelled.",
+                o.getId(), o.getCustomerName());
+        Map<String, Object> payload = new java.util.HashMap<>();
+        payload.put("orderId", o.getId());
+        payload.put("customer", o.getCustomerName());
+        notifyRole(
+                "MANAGER",
+                "Order cancelled",
+                message,
+                payload,
+                "WARN",
+                "ORDER",
+                o.getId(),
+                "/orders/" + o.getId()
+        );
+        notifyRole(
+                "ADMIN",
+                "Order cancelled",
+                message,
+                payload,
+                "WARN",
                 "ORDER",
                 o.getId(),
                 "/orders/" + o.getId()
@@ -296,12 +341,11 @@ public class NotificationListener {
         String lineName = (s.getPlan() != null && s.getPlan().getLine() != null) ? s.getPlan().getLine().getLineName() : "N/A";
         String message = String.format("Schedule #%d for line %s is delayed. Planned end: %s, actual end: %s.",
                 s.getId(), lineName, plannedEnd, actualEnd);
-        Map<String, Object> payload = Map.of(
-                "scheduleId", s.getId(),
-                "line", lineName,
-                "plannedEnd", plannedEnd,
-                "actualEnd", actualEnd
-        );
+        Map<String, Object> payload = new java.util.HashMap<>();
+        payload.put("scheduleId", s.getId());
+        payload.put("line", lineName);
+        payload.put("plannedEnd", plannedEnd);
+        payload.put("actualEnd", actualEnd);
         notifyRole("LINE_LEADER",
                 "Schedule delayed",
                 message,
@@ -327,11 +371,10 @@ public class NotificationListener {
         var s = e.schedule();
         String message = String.format("Schedule #%d for line %s has been completed. Actual end: %s.",
                 s.getId(), s.getPlan().getLine().getLineName(), s.getEndTime());
-        Map<String, Object> payload = Map.of(
-                "scheduleId", s.getId(),
-                "line", s.getPlan().getLine().getLineName(),
-                "actualEnd", s.getEndTime()
-        );
+        Map<String, Object> payload = new java.util.HashMap<>();
+        payload.put("scheduleId", s.getId());
+        payload.put("line", s.getPlan().getLine().getLineName());
+        payload.put("actualEnd", s.getEndTime());
         notifyRole("MANAGER",
                 "Schedule completed",
                 message,
@@ -348,10 +391,9 @@ public class NotificationListener {
         var s = e.schedule();
         String message = String.format("Schedule #%d for line %s has been paused.",
                 s.getId(), s.getPlan().getLine().getLineName());
-        Map<String, Object> payload = Map.of(
-                "scheduleId", s.getId(),
-                "line", s.getPlan().getLine().getLineName()
-        );
+        Map<String, Object> payload = new java.util.HashMap<>();
+        payload.put("scheduleId", s.getId());
+        payload.put("line", s.getPlan().getLine().getLineName());
         notifyRole("LINE_LEADER",
                 "Schedule paused",
                 message,
@@ -368,10 +410,9 @@ public class NotificationListener {
         var s = e.schedule();
         String message = String.format("Schedule #%d for line %s has been resumed.",
                 s.getId(), s.getPlan().getLine().getLineName());
-        Map<String, Object> payload = Map.of(
-                "scheduleId", s.getId(),
-                "line", s.getPlan().getLine().getLineName()
-        );
+        Map<String, Object> payload = new java.util.HashMap<>();
+        payload.put("scheduleId", s.getId());
+        payload.put("line", s.getPlan().getLine().getLineName());
         notifyRole("LINE_LEADER",
                 "Schedule resumed",
                 message,
@@ -383,36 +424,22 @@ public class NotificationListener {
         );
     }
 
-    // ===================== ORDER EXTENDED =====================
-
     @EventListener
-    public void onOrderCancelled(OrderEvent.OrderCancelledEvent e) {
-        var o = e.order();
-        String message = String.format("Order #%d for customer %s has been cancelled. Product: %s, quantity: %d.",
-                o.getId(), o.getCustomerName(), o.getProductType(), o.getQuantity());
-        Map<String, Object> payload = Map.of(
-                "orderId", o.getId(),
-                "customer", o.getCustomerName(),
-                "product", o.getProductType(),
-                "quantity", o.getQuantity()
-        );
-        notifyRole("ADMIN",
-                "Order cancelled",
-                message,
-                payload,
-                "ERROR",
-                "ORDER",
-                o.getId(),
-                "/orders/" + o.getId()
-        );
+    public void onScheduleStarted(be.backend.event.ProductionScheduleEvent.ScheduleStartedEvent e) {
+        var s = e.schedule();
+        String message = String.format("Schedule #%d for line %s has been started.",
+                s.getId(), s.getPlan().getLine().getLineName());
+        Map<String, Object> payload = new java.util.HashMap<>();
+        payload.put("scheduleId", s.getId());
+        payload.put("line", s.getPlan().getLine().getLineName());
         notifyRole("MANAGER",
-                "Order cancelled",
+                "Schedule started",
                 message,
                 payload,
-                "ERROR",
-                "ORDER",
-                o.getId(),
-                "/orders/" + o.getId()
+                "INFO",
+                "SCHEDULE",
+                s.getId(),
+                "/manager/schedules/" + s.getId()
         );
     }
 
@@ -423,21 +450,11 @@ public class NotificationListener {
         var r = e.report();
         String message = String.format("High reject rate detected for line %s. Reject: %d, Good: %d, Target: %d.",
                 r.getLine().getLineName(), r.getRejectQuantity(), r.getGoodQuantity(), r.getTargetQuantity());
-        Map<String, Object> payload = Map.of(
-                "line", r.getLine().getLineName(),
-                "reject", r.getRejectQuantity(),
-                "good", r.getGoodQuantity(),
-                "target", r.getTargetQuantity()
-        );
-        notifyRole("QA",
-                "High reject rate",
-                message,
-                payload,
-                "ERROR",
-                "QUALITY",
-                r.getId(),
-                "/dashboard/quality"
-        );
+        Map<String, Object> payload = new java.util.HashMap<>();
+        payload.put("line", r.getLine().getLineName());
+        payload.put("reject", r.getRejectQuantity());
+        payload.put("good", r.getGoodQuantity());
+        payload.put("target", r.getTargetQuantity());
         notifyRole("MANAGER",
                 "High reject rate",
                 message,
@@ -449,7 +466,38 @@ public class NotificationListener {
         );
     }
 
+    // ===================== MACHINE =====================
+    @EventListener
+    public void onMachineDown(MachineEvent.MachineDownEvent e) {
+        var m = e.machine();
+        String message = String.format("Machine %s (ID: %d) is DOWN! Immediate attention required.", m.getMachineCode(), m.getId());
+        Map<String, Object> payload = Map.of(
+                "machineId", m.getId(),
+                "machineCode", m.getMachineCode(),
+                "status", m.getRuntimeStatus()
+        );
+        notifyRole(
+                "MANAGER",
+                "Machine Down",
+                message,
+                payload,
+                "ERROR",
+                "MACHINE",
+                m.getId(),
+                "/machines/" + m.getId()
+        );
+    }
+
     // ===================== CORE =====================
+
+    // Helper xác định loại notification nào cần gửi SNS/SQS
+    private boolean isImportantNotification(String level, String sourceType) {
+        // Các loại quan trọng: sự cố, máy móc, schedule, order, chất lượng, KPI
+        if ("ERROR".equalsIgnoreCase(level)) return true;
+        if ("WARN".equalsIgnoreCase(level) && ("SCHEDULE".equalsIgnoreCase(sourceType) || "ORDER".equalsIgnoreCase(sourceType) || "KPI".equalsIgnoreCase(sourceType) || "QUALITY".equalsIgnoreCase(sourceType))) return true;
+        if ("INFO".equalsIgnoreCase(level) && ("SCHEDULE".equalsIgnoreCase(sourceType) || "ORDER".equalsIgnoreCase(sourceType))) return true;
+        return false;
+    }
 
     private void notifyUser(User user,
                             String title,
@@ -463,6 +511,32 @@ public class NotificationListener {
         notificationService.notifyStructured(
                 user, title, message, payload, level, sourceType, sourceId, url
         );
+        // Chỉ gửi notification lên SNS và SQS nếu là loại quan trọng
+        if (isImportantNotification(level, sourceType)) {
+            String notifyMsg = String.format("[User:%s] %s | %s | Level: %s | Type: %s | Id: %s | Url: %s",
+                    user.getId(), title, message, level, sourceType, sourceId, url);
+            publishToAws(title, notifyMsg, user.getId(), level, sourceType, sourceId);
+        }
+    }
+
+    private void publishToAws(String title,
+                              String notifyMsg,
+                              Integer userId,
+                              String level,
+                              String sourceType,
+                              Integer sourceId) {
+        try {
+            snsService.publishToTopic(snsTopicArn, notifyMsg, title);
+        } catch (Exception ex) {
+            log.error("SNS publish failed for user={}, level={}, sourceType={}, sourceId={}",
+                    userId, level, sourceType, sourceId, ex);
+        }
+        try {
+            sqsService.sendMessage(sqsQueueUrl, notifyMsg);
+        } catch (Exception ex) {
+            log.error("SQS publish failed for user={}, level={}, sourceType={}, sourceId={}",
+                    userId, level, sourceType, sourceId, ex);
+        }
     }
 
     private void notifyRole(String role,
@@ -478,9 +552,7 @@ public class NotificationListener {
                 .stream()
                 .map(Account::getUser)
                 .forEach(u ->
-                        notificationService.notifyStructured(
-                                u, title, message, payload, level, sourceType, sourceId, url
-                        )
+                        notifyUser(u, title, message, payload, level, sourceType, sourceId, url)
                 );
     }
 }
