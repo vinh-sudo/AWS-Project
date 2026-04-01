@@ -12,7 +12,6 @@ import adminService from "../../services/adminService";
 import PageLoading from "../../components/PageLoading/PageLoading";
 import "./AdminOrders.css";
 
-
 /* ===== SVG Icon Components ===== */
 const I = {
   search: (
@@ -905,7 +904,8 @@ const AdminOrders = () => {
       {formData.items.length > 0 && (
         <div className="ao-items-totals">
           <span className="ao-items-total-item">
-            Total Quantity: <strong>{itemTotals.quantity.toLocaleString()}</strong>
+            Total Quantity:{" "}
+            <strong>{itemTotals.quantity.toLocaleString()}</strong>
           </span>
           <span className="ao-items-total-item">
             Total Price: <strong>{formatCurrency(itemTotals.price)}</strong>
@@ -983,7 +983,7 @@ const AdminOrders = () => {
 
   /* ==============================
      LOADING SCREEN
-     ============================== */  if (initialLoad && loading) {
+     ============================== */ if (initialLoad && loading) {
     return (
       <div className="admin-container">
         <AdminSidebar />
@@ -1084,28 +1084,6 @@ const AdminOrders = () => {
                     stats.inProduction}
                 </div>
                 <div className="ao-summary-label">Active</div>
-                <div className="ao-summary-breakdown">
-                  <span className="ao-summary-tag">
-                    <span className="ao-summary-tag-dot draft" />
-                    {stats.draft} Draft
-                  </span>
-                  <span className="ao-summary-tag">
-                    <span className="ao-summary-tag-dot confirmed" />
-                    {stats.confirmed} Confirmed
-                  </span>
-                  <span className="ao-summary-tag">
-                    <span className="ao-summary-tag-dot planning" />
-                    {stats.planning} Planning
-                  </span>
-                  <span className="ao-summary-tag">
-                    <span className="ao-summary-tag-dot scheduled" />
-                    {stats.scheduled} Scheduled
-                  </span>
-                  <span className="ao-summary-tag">
-                    <span className="ao-summary-tag-dot production" />
-                    {stats.inProduction} Production
-                  </span>
-                </div>
               </div>
             </div>
 
@@ -1126,16 +1104,6 @@ const AdminOrders = () => {
                   {stats.stopped + stats.cancelled}
                 </div>
                 <div className="ao-summary-label">Issues</div>
-                <div className="ao-summary-breakdown">
-                  <span className="ao-summary-tag">
-                    <span className="ao-summary-tag-dot stopped" />
-                    {stats.stopped} Stopped
-                  </span>
-                  <span className="ao-summary-tag">
-                    <span className="ao-summary-tag-dot cancelled" />
-                    {stats.cancelled} Cancelled
-                  </span>
-                </div>
               </div>
             </div>
           </div>
@@ -1211,20 +1179,6 @@ const AdminOrders = () => {
                     <span className="ao-order-customer">
                       {order.customerName}
                     </span>
-                    <span className="ao-order-product">
-                      {order.productType}
-                    </span>
-                    <div className="ao-order-meta-inline">
-                      <span>{order.createdByName || "—"}</span>
-                      <span className="ao-order-meta-sep" />
-                      <span>{formatDate(order.createdAt)}</span>
-                      {order.totalPrice != null && (
-                        <>
-                          <span className="ao-order-meta-sep" />
-                          <span>{formatCurrency(order.totalPrice)}</span>
-                        </>
-                      )}
-                    </div>
                   </div>
 
                   <span className="ao-order-qty">
