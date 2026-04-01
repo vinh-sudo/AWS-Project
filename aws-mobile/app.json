@@ -11,6 +11,7 @@
       "supportsTablet": true
     },
     "android": {
+      "package": "com.leo3724.internalmanagersystem",
       "adaptiveIcon": {
         "backgroundColor": "#E6F4FE",
         "foregroundImage": "./assets/images/ims.jpg",
@@ -41,6 +42,13 @@
     ],
     "experiments": {
       "typedRoutes": true
-    }
+    },
+    "extra": {
+      "router": {},
+      "eas": {
+        "projectId": "54a2b790-3651-48d9-9663-d9f66e2e6e78"
+      }
+    },
+    "owner": "leo3724"
   }
 }

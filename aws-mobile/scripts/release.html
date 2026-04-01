@@ -1,0 +1,128 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Internal Manager System - Release</title>
+  <style>
+    :root {
+      --bg: #f4f7fb;
+      --card: #ffffff;
+      --text: #0f172a;
+      --muted: #475569;
+      --primary: #0f766e;
+      --primary-dark: #115e59;
+      --secondary: #1d4ed8;
+      --border: #dbe4ee;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+      background: radial-gradient(circle at top right, #dbeafe 0%, var(--bg) 35%);
+      color: var(--text);
+      min-height: 100vh;
+      display: grid;
+      place-items: center;
+      padding: 24px;
+    }
+    .card {
+      width: 100%;
+      max-width: 760px;
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 24px;
+      box-shadow: 0 14px 30px rgba(15, 23, 42, 0.08);
+    }
+    h1 {
+      margin: 0;
+      font-size: 30px;
+      line-height: 1.15;
+    }
+    .subtitle {
+      margin-top: 8px;
+      color: var(--muted);
+      font-size: 15px;
+    }
+    .grid {
+      margin-top: 20px;
+      display: grid;
+      gap: 14px;
+      grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+    }
+    .pane {
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 14px;
+      background: #f8fafc;
+    }
+    .pane h2 {
+      margin: 0 0 10px;
+      font-size: 18px;
+    }
+    .muted {
+      color: var(--muted);
+      font-size: 14px;
+    }
+    .btn {
+      display: inline-block;
+      margin-top: 12px;
+      text-decoration: none;
+      border-radius: 10px;
+      padding: 10px 14px;
+      color: #fff;
+      font-weight: 700;
+      transition: transform 0.12s ease, opacity 0.12s ease;
+    }
+    .btn:hover {
+      transform: translateY(-1px);
+      opacity: 0.95;
+    }
+    .btn-android { background: var(--primary); }
+    .btn-android:hover { background: var(--primary-dark); }
+    .btn-ios { background: var(--secondary); }
+    .kv {
+      margin-top: 18px;
+      padding-top: 14px;
+      border-top: 1px dashed var(--border);
+      font-size: 13px;
+      color: var(--muted);
+      display: grid;
+      gap: 4px;
+    }
+    code {
+      background: #e2e8f0;
+      padding: 2px 6px;
+      border-radius: 6px;
+      color: #0f172a;
+    }
+  </style>
+</head>
+<body>
+  <main class="card">
+    <h1>Internal Manager System</h1>
+    <p class="subtitle">Internal distribution page for Android APK and iOS TestFlight.</p>
+
+    <section class="grid">
+      <article class="pane">
+        <h2>Android</h2>
+        <p class="muted">Install the latest APK build for internal testing.</p>
+        <a class="btn btn-android" href="https://ims-internal-manager-system.s3.ap-southeast-1.amazonaws.com/releases/ims-android-1.0.0-20260401-230411.apk?X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=AKIAZJIX3IDXPSHJWQ3B%2F20260401%2Fap-southeast-1%2Fs3%2Faws4_request&X-Amz-Date=20260401T170517Z&X-Amz-Expires=604800&X-Amz-SignedHeaders=host&X-Amz-Signature=f2d871c1cfc0aee38806b7b207ec12259dd66b6d35315313146b911883e26a8d">Download Android APK</a>
+      </article>
+
+      <article class="pane">
+        <h2>iOS</h2>
+        <p class="muted">Join TestFlight and install the latest iOS build.</p>
+        <a class="btn btn-ios" href="#">Open TestFlight Invite</a>
+      </article>
+    </section>
+
+    <section class="kv">
+      <div>Version: <code>1.0.0</code></div>
+      <div>Updated at: <code>2026-04-01 17:05 UTC</code></div>
+      <div>Notes: Android link expires after 7 days and needs regeneration.</div>
+    </section>
+  </main>
+</body>
+</html>
