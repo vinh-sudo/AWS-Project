@@ -7,58 +7,47 @@ import PageLoading from "../../components/PageLoading/PageLoading";
 import "./adminUser.css";
 import "./AuditLog.css";
 
-const FILTER_MODES = {
-  ALL: "ALL",
-  CRITICAL: "CRITICAL",
-  ACTION: "ACTION",
-  USER: "USER",
-  ENTITY: "ENTITY",
+const MAX_ACTION_FETCH_SIZE = 200;
+
+const ACTION_GROUPS = {
+  ACCOUNT: [
+    "CREATE_ACCOUNT",
+    "UPDATE_ACCOUNT",
+    "DELETE_ACCOUNT",
+    "CHANGE_ROLE",
+    "LOCK_ACCOUNT",
+    "UNLOCK_ACCOUNT",
+  ],
+  ORDER: [
+    "CREATE_ORDER",
+    "UPDATE_ORDER",
+    "DELETE_ORDER",
+    "CONFIRM_ORDER",
+    "CANCEL_ORDER",
+  ],
+  PLAN: [
+    "CREATE_PLAN",
+    "UPDATE_PLAN",
+    "DELETE_PLAN",
+    "CONFIRM_PLAN",
+    "CANCEL_PLAN",
+  ],
+  SCHEDULE: [
+    "CREATE_SCHEDULE",
+    "START_SCHEDULE",
+    "PAUSE_SCHEDULE",
+    "RESUME_SCHEDULE",
+    "COMPLETE_SCHEDULE",
+  ],
+  REPORT: ["REPORT_PROGRESS", "CREATE_REPORT", "UPDATE_REPORT"],
 };
 
-const ENTITY_PATTERN = /^[A-Z_]{2,50}$/;
-
-const ACTION_OPTIONS = [
-  "LOGIN",
-  "LOGOUT",
-  "LOGIN_FAILED",
-  "CREATE_ACCOUNT",
-  "UPDATE_ACCOUNT",
-  "DELETE_ACCOUNT",
-  "CHANGE_ROLE",
-  "LOCK_ACCOUNT",
-  "UNLOCK_ACCOUNT",
-  "CREATE_ORDER",
-  "UPDATE_ORDER",
-  "DELETE_ORDER",
-  "CONFIRM_ORDER",
-  "CANCEL_ORDER",
-  "CREATE_PLAN",
-  "UPDATE_PLAN",
-  "DELETE_PLAN",
-  "CONFIRM_PLAN",
-  "CANCEL_PLAN",
-  "CREATE_SCHEDULE",
-  "START_SCHEDULE",
-  "PAUSE_SCHEDULE",
-  "RESUME_SCHEDULE",
-  "COMPLETE_SCHEDULE",
-  "REPORT_PROGRESS",
-  "CREATE_REPORT",
-  "UPDATE_REPORT",
-  "ASSIGN_LEADER",
-  "UNASSIGN_LEADER",
-  "SYSTEM_ACTION",
-  "UNKNOWN",
-];
-
-const ENTITY_SUGGESTIONS = [
-  "ORDER",
-  "ACCOUNT",
-  "PLAN",
-  "SCHEDULE",
-  "REPORT",
-  "ORDERITEM",
-  "SYSTEM",
+const ACTION_GROUP_OPTIONS = [
+  { value: "ACCOUNT", label: "Account" },
+  { value: "ORDER", label: "Order" },
+  { value: "SCHEDULE", label: "Schedule" },
+  { value: "PLAN", label: "Plan" },
+  { value: "REPORT", label: "Report" },
 ];
 
 const CRITICAL_ACTIONS = new Set([
@@ -70,8 +59,6 @@ const CRITICAL_ACTIONS = new Set([
   "START_SCHEDULE",
   "COMPLETE_SCHEDULE",
 ]);
-
-const DIGITS_ONLY = /^\d+$/;
 
 const formatDateTime = (value) => {
   if (!value) return "-";
@@ -92,31 +79,6 @@ const formatDateTime = (value) => {
   );
 };
 
-const toInputDateTime = (value) => {
-  const date = value ? new Date(value) : new Date();
-  if (Number.isNaN(date.getTime())) return "";
-  const year = date.getFullYear();
-  const month = String(date.getMonth() + 1).padStart(2, "0");
-  const day = String(date.getDate()).padStart(2, "0");
-  const hours = String(date.getHours()).padStart(2, "0");
-  const minutes = String(date.getMinutes()).padStart(2, "0");
-  return `${year}-${month}-${day}T${hours}:${minutes}`;
-};
-
-const toIsoStringOrNull = (value) => {
-  if (!value) return null;
-  const parsed = new Date(value);
-  if (Number.isNaN(parsed.getTime())) return null;
-  return parsed.toISOString();
-};
-
-const normalizeEntityInput = (value) =>
-  (value || "")
-    .trim()
-    .toUpperCase()
-    .replace(/\s+/g, "_")
-    .replace(/[^A-Z_]/g, "");
-
 const formatActionLabel = (value) => value?.replaceAll("_", " ") || "-";
 
 const AuditLog = () => {
@@ -124,20 +86,8 @@ const AuditLog = () => {
   const [logs, setLogs] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
-  const [mode, setMode] = useState(FILTER_MODES.CRITICAL);
 
-  const [actionType, setActionType] = useState("CREATE_ORDER");
-  const [userId, setUserId] = useState("");
-  const [entity, setEntity] = useState("ORDER");
-  const [entityId, setEntityId] = useState("");
-
-  const [sinceDate, setSinceDate] = useState(
-    toInputDateTime(new Date(Date.now() - 7 * 24 * 60 * 60 * 1000)),
-  );
-  const [startDate, setStartDate] = useState(
-    toInputDateTime(new Date(Date.now() - 30 * 24 * 60 * 60 * 1000)),
-  );
-  const [endDate, setEndDate] = useState(toInputDateTime(new Date()));
+  const [actionGroup, setActionGroup] = useState("ORDER");
 
   const [currentPage, setCurrentPage] = useState(0);
   const [pageSize, setPageSize] = useState(20);
@@ -160,81 +110,48 @@ const AuditLog = () => {
     return pages;
   }, [currentPage, totalPages]);
 
-  const resolveRequest = useCallback(async () => {
-    const commonParams = { page: currentPage, size: pageSize };
-
-    switch (mode) {
-      case FILTER_MODES.CRITICAL:
-        if (!toIsoStringOrNull(sinceDate)) {
-          throw new Error("Please provide a valid Since date");
-        }
-        return adminService.getCriticalAuditLogs({
-          ...commonParams,
-          since: toIsoStringOrNull(sinceDate),
-        });
-      case FILTER_MODES.ACTION:
-        if (!toIsoStringOrNull(sinceDate)) {
-          throw new Error("Please provide a valid Since date");
-        }
-        return adminService.getAuditLogsByAction(actionType, {
-          ...commonParams,
-          since: toIsoStringOrNull(sinceDate),
-        });
-      case FILTER_MODES.USER:
-        if (!userId.trim()) {
-          throw new Error("Please enter User ID");
-        }
-        if (!DIGITS_ONLY.test(userId.trim())) {
-          throw new Error("User ID must be numeric");
-        }
-        if (!toIsoStringOrNull(startDate) || !toIsoStringOrNull(endDate)) {
-          throw new Error("Please provide valid Start Date and End Date");
-        }
-        if (new Date(startDate) > new Date(endDate)) {
-          throw new Error("Start Date must be before or equal to End Date");
-        }
-        return adminService.getAuditLogsByUser(userId.trim(), {
-          ...commonParams,
-          startDate: toIsoStringOrNull(startDate),
-          endDate: toIsoStringOrNull(endDate),
-        });
-      case FILTER_MODES.ENTITY:
-        if (!entity.trim()) {
-          throw new Error("Please enter Entity");
-        }
-        if (!entityId.trim()) {
-          throw new Error("Please enter Entity ID");
-        }
-        if (!DIGITS_ONLY.test(entityId.trim())) {
-          throw new Error("Entity ID must be numeric");
-        }
-        const normalizedEntity = normalizeEntityInput(entity);
-        if (!ENTITY_PATTERN.test(normalizedEntity)) {
-          throw new Error(
-            "Entity must contain 2-50 uppercase letters/underscores (A-Z, _)",
-          );
-        }
-        return adminService.getAuditLogsByEntity(
-          normalizedEntity,
-          entityId.trim(),
-          commonParams,
-        );
-      case FILTER_MODES.ALL:
-      default:
-        return adminService.getAuditLogs(commonParams);
+  const fetchLogsByActionGroup = useCallback(async (group) => {
+    const actions = ACTION_GROUPS[group] || [];
+    if (!actions.length) {
+      return [];
     }
-  }, [
-    actionType,
-    currentPage,
-    endDate,
-    entity,
-    entityId,
-    mode,
-    pageSize,
-    sinceDate,
-    startDate,
-    userId,
-  ]);
+
+    const responses = await Promise.all(
+      actions.map((action) =>
+        adminService.getAuditLogsByAction(action, {
+          page: 0,
+          size: MAX_ACTION_FETCH_SIZE,
+        }),
+      ),
+    );
+
+    const mergedById = new Map();
+    responses.forEach((response) => {
+      (response?.content || []).forEach((log) => {
+        if (log?.id == null) return;
+        if (!mergedById.has(log.id)) {
+          mergedById.set(log.id, log);
+        }
+      });
+    });
+
+    return Array.from(mergedById.values()).sort((a, b) => {
+      const aTime = new Date(a.timestamp || 0).getTime();
+      const bTime = new Date(b.timestamp || 0).getTime();
+      return bTime - aTime;
+    });
+  }, []);
+
+  const resolveRequest = useCallback(async () => {
+    const groupedLogs = await fetchLogsByActionGroup(actionGroup);
+    const startIndex = currentPage * pageSize;
+    const endIndex = startIndex + pageSize;
+    return {
+      content: groupedLogs.slice(startIndex, endIndex),
+      totalElements: groupedLogs.length,
+      totalPages: Math.ceil(groupedLogs.length / pageSize),
+    };
+  }, [actionGroup, currentPage, fetchLogsByActionGroup, pageSize]);
 
   const fetchAuditLogs = useCallback(async () => {
     try {
@@ -269,10 +186,6 @@ const AuditLog = () => {
   );
 
   const handleApplyFilters = () => {
-    if (mode === FILTER_MODES.ENTITY) {
-      setEntity((prev) => normalizeEntityInput(prev));
-    }
-
     if (currentPage === 0) {
       fetchAuditLogs();
       return;
@@ -281,18 +194,7 @@ const AuditLog = () => {
   };
 
   const handleResetFilters = () => {
-    setMode(FILTER_MODES.CRITICAL);
-    setActionType("CREATE_ORDER");
-    setUserId("");
-    setEntity("ORDER");
-    setEntityId("");
-    setSinceDate(
-      toInputDateTime(new Date(Date.now() - 7 * 24 * 60 * 60 * 1000)),
-    );
-    setStartDate(
-      toInputDateTime(new Date(Date.now() - 30 * 24 * 60 * 60 * 1000)),
-    );
-    setEndDate(toInputDateTime(new Date()));
+    setActionGroup("ORDER");
     if (currentPage === 0) {
       fetchAuditLogs();
       return;
@@ -379,146 +281,22 @@ const AuditLog = () => {
 
           <div className="auditlog-toolbar">
             <div className="form-group">
-              <label className="form-label" htmlFor="filterMode">
-                Filter Mode
+              <label className="form-label" htmlFor="actionGroup">
+                Type
               </label>
               <select
-                id="filterMode"
+                id="actionGroup"
                 className="form-select"
-                value={mode}
-                onChange={(e) => setMode(e.target.value)}
+                value={actionGroup}
+                onChange={(e) => setActionGroup(e.target.value)}
               >
-                <option value={FILTER_MODES.ALL}>All logs</option>
-                <option value={FILTER_MODES.CRITICAL}>Critical actions</option>
-                <option value={FILTER_MODES.ACTION}>By action type</option>
-                <option value={FILTER_MODES.USER}>By user</option>
-                <option value={FILTER_MODES.ENTITY}>By entity + ID</option>
+                {ACTION_GROUP_OPTIONS.map((group) => (
+                  <option key={group.value} value={group.value}>
+                    {group.label}
+                  </option>
+                ))}
               </select>
             </div>
-
-            {mode === FILTER_MODES.ACTION && (
-              <div className="form-group">
-                <label className="form-label" htmlFor="actionType">
-                  Action Type
-                </label>
-                <select
-                  id="actionType"
-                  className="form-select"
-                  value={actionType}
-                  onChange={(e) => setActionType(e.target.value)}
-                >
-                  {ACTION_OPTIONS.map((action) => (
-                    <option key={action} value={action}>
-                      {formatActionLabel(action)}
-                    </option>
-                  ))}
-                </select>
-              </div>
-            )}
-
-            {(mode === FILTER_MODES.CRITICAL ||
-              mode === FILTER_MODES.ACTION) && (
-              <div className="form-group">
-                <label className="form-label" htmlFor="sinceDate">
-                  Since
-                </label>
-                <input
-                  id="sinceDate"
-                  className="form-input"
-                  type="datetime-local"
-                  value={sinceDate}
-                  onChange={(e) => setSinceDate(e.target.value)}
-                />
-              </div>
-            )}
-
-            {mode === FILTER_MODES.USER && (
-              <>
-                <div className="form-group">
-                  <label className="form-label" htmlFor="userId">
-                    User ID
-                  </label>
-                  <input
-                    id="userId"
-                    className="form-input"
-                    placeholder="e.g. 12"
-                    value={userId}
-                    inputMode="numeric"
-                    pattern="[0-9]*"
-                    onChange={(e) =>
-                      setUserId(e.target.value.replace(/\D/g, ""))
-                    }
-                  />
-                </div>
-                <div className="auditlog-toolbar-row">
-                  <div className="form-group" style={{ flex: 1 }}>
-                    <label className="form-label" htmlFor="startDate">
-                      Start Date
-                    </label>
-                    <input
-                      id="startDate"
-                      className="form-input"
-                      type="datetime-local"
-                      value={startDate}
-                      onChange={(e) => setStartDate(e.target.value)}
-                    />
-                  </div>
-                  <div className="form-group" style={{ flex: 1 }}>
-                    <label className="form-label" htmlFor="endDate">
-                      End Date
-                    </label>
-                    <input
-                      id="endDate"
-                      className="form-input"
-                      type="datetime-local"
-                      value={endDate}
-                      onChange={(e) => setEndDate(e.target.value)}
-                    />
-                  </div>
-                </div>
-              </>
-            )}
-
-            {mode === FILTER_MODES.ENTITY && (
-              <>
-                <div className="form-group">
-                  <label className="form-label" htmlFor="entityType">
-                    Entity
-                  </label>
-                  <input
-                    id="entityType"
-                    className="form-input"
-                    list="audit-entity-options"
-                    placeholder="e.g. ORDER, ACCOUNT"
-                    value={entity}
-                    onChange={(e) =>
-                      setEntity(normalizeEntityInput(e.target.value))
-                    }
-                  />
-                  <datalist id="audit-entity-options">
-                    {ENTITY_SUGGESTIONS.map((option) => (
-                      <option key={option} value={option} />
-                    ))}
-                  </datalist>
-                </div>
-                <div className="form-group">
-                  <label className="form-label" htmlFor="entityId">
-                    Entity ID
-                  </label>
-                  <input
-                    id="entityId"
-                    className="form-input"
-                    placeholder="e.g. 101"
-                    value={entityId}
-                    inputMode="numeric"
-                    pattern="[0-9]*"
-                    onChange={(e) =>
-                      setEntityId(e.target.value.replace(/\D/g, ""))
-                    }
-                  />
-                </div>
-              </>
-            )}
 
             <div className="auditlog-toolbar-actions">
               <div className="auditlog-actions-group">
@@ -652,7 +430,6 @@ const AuditLog = () => {
             </div>
           </div>
         </div>
-
       </div>
     </div>
   );

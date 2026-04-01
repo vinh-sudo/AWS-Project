@@ -85,17 +85,22 @@ const AUTH_ROUTES = new Set([
   "/reset-password",
 ]);
 
+const AI_ALLOWED_ROLES = new Set(["ADMIN", "MANAGER"]);
+
 const CopilotEntry = ({ isCopilotOpen, setIsCopilotOpen }) => {
   const { pathname } = useLocation();
+  const user = useSelector(selectUser);
   const isAuthRoute = AUTH_ROUTES.has(pathname);
+  const role = user?.role?.toUpperCase();
+  const canUseCopilot = AI_ALLOWED_ROLES.has(role);
 
   useEffect(() => {
-    if (isAuthRoute && isCopilotOpen) {
+    if ((isAuthRoute || !canUseCopilot) && isCopilotOpen) {
       setIsCopilotOpen(false);
     }
-  }, [isAuthRoute, isCopilotOpen, setIsCopilotOpen]);
+  }, [isAuthRoute, canUseCopilot, isCopilotOpen, setIsCopilotOpen]);
 
-  if (isAuthRoute) {
+  if (isAuthRoute || !canUseCopilot) {
     return null;
   }
 

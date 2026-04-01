@@ -62,6 +62,10 @@ const UsersAdmin = () => {
   const [showCreateUser, setShowCreateUser] = useState(false);
   const [showEditUser, setShowEditUser] = useState(false);
   const [selectedUser, setSelectedUser] = useState(null);
+  const [createFieldErrors, setCreateFieldErrors] = useState({
+    username: "",
+    email: "",
+  });
   const [formData, setFormData] = useState({
     username: "",
     email: "",
@@ -144,10 +148,14 @@ const UsersAdmin = () => {
     fetchUsers();
   }, [fetchUsers]);
 
-  const handleChange = (field, value) =>
+  const handleChange = (field, value) => {
     setFormData((prev) => ({ ...prev, [field]: value }));
+    if (field === "username" || field === "email") {
+      setCreateFieldErrors((prev) => ({ ...prev, [field]: "" }));
+    }
+  };
 
-  const resetForm = () =>
+  const resetForm = () => {
     setFormData({
       username: "",
       email: "",
@@ -159,9 +167,12 @@ const UsersAdmin = () => {
       employeeCode: "",
       status: true,
     });
+    setCreateFieldErrors({ username: "", email: "" });
+  };
 
   const handleCancel = () => {
     resetForm();
+    setFeedback({ type: "", message: "" });
     setShowCreateUser(false);
     setShowEditUser(false);
     setSelectedUser(null);
@@ -170,6 +181,7 @@ const UsersAdmin = () => {
   /* Create */
   const handleSave = async () => {
     try {
+      setCreateFieldErrors({ username: "", email: "" });
       const payload = {
         username: formData.username?.trim(),
         password: formData.password || "",
@@ -226,6 +238,26 @@ const UsersAdmin = () => {
         err.response?.data ||
         err.message ||
         "Unknown error";
+      const normalizedMsg = String(msg).toLowerCase();
+      const nextFieldErrors = { username: "", email: "" };
+
+      if (
+        normalizedMsg.includes("username") &&
+        normalizedMsg.includes("exist")
+      ) {
+        nextFieldErrors.username =
+          "Username already exists. Please choose another username.";
+      }
+
+      if (normalizedMsg.includes("email") && normalizedMsg.includes("exist")) {
+        nextFieldErrors.email =
+          "Email already exists. Please use another email.";
+      }
+
+      if (nextFieldErrors.username || nextFieldErrors.email) {
+        setCreateFieldErrors(nextFieldErrors);
+      }
+
       showFeedback("error", `Failed to create user: ${msg}`);
     } finally {
       setActionLoading(false);
@@ -345,6 +377,16 @@ const UsersAdmin = () => {
               ✕
             </button>
           </div>
+          {feedback.message && (
+            <div
+              className={`users-feedback-banner modal-feedback ${feedback.type === "error" ? "error" : "success"}`}
+            >
+              <span>{feedback.message}</span>
+              <button onClick={() => setFeedback({ type: "", message: "" })}>
+                Dismiss
+              </button>
+            </div>
+          )}
           <div className="modal-body">
             <div className="form-group">
               <label className="form-label">
@@ -355,8 +397,13 @@ const UsersAdmin = () => {
                 placeholder="e.g. john.doe"
                 value={formData.username}
                 onChange={(e) => handleChange("username", e.target.value)}
-                className="form-input"
+                className={`form-input ${createFieldErrors.username ? "form-input-error" : ""}`}
               />
+              {createFieldErrors.username && (
+                <span className="form-field-error">
+                  {createFieldErrors.username}
+                </span>
+              )}
             </div>
             <div className="form-row">
               <div className="form-group">
@@ -393,8 +440,13 @@ const UsersAdmin = () => {
                 placeholder="john@company.com"
                 value={formData.email}
                 onChange={(e) => handleChange("email", e.target.value)}
-                className="form-input"
+                className={`form-input ${createFieldErrors.email ? "form-input-error" : ""}`}
               />
+              {createFieldErrors.email && (
+                <span className="form-field-error">
+                  {createFieldErrors.email}
+                </span>
+              )}
             </div>
             <div className="form-group">
               <label className="form-label">Phone Number</label>
