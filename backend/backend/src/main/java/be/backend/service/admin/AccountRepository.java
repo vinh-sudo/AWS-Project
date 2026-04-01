@@ -1,4 +1,4 @@
-package be.backend.repository;
+package be.backend.service.admin;
 
 import be.backend.entity.Account;
 import org.springframework.data.jpa.repository.JpaRepository;

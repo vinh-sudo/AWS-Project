@@ -9,7 +9,6 @@ public class ProductionScheduleEvent {
 
     public record ScheduleStartedEvent(ProductionSchedule schedule) {}
     public record ScheduleDelayedEvent(ProductionSchedule schedule) {}
-    public record ScheduleRescheduledEvent(ProductionSchedule schedule) {}
     public record ScheduleCompletedEvent(ProductionSchedule schedule) {}
     public record SchedulePausedEvent(ProductionSchedule schedule) {}
     public record ScheduleResumedEvent(ProductionSchedule schedule) {}

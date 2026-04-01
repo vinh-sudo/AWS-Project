@@ -21,94 +21,87 @@ import java.util.Set;
 @RequiredArgsConstructor
 public class AdminStatisticsService {
 
-        private final OrderRepository orderRepo;
-        private final AccountRepository accountRepo;
-        private final EmployeeRepository employeeRepo;
-        private final ProductionLineRepository lineRepo;
-        private final MachineRepository machineRepo;
+    private final OrderRepository orderRepo;
+    private final UserRepository userRepo;
+    private final EmployeeRepository employeeRepo;
+    private final ProductionLineRepository lineRepo;
+    private final MachineRepository machineRepo;
 
-        private static final Set<String> VALID_GROUP_BY = Set.of("day", "week", "month");
+    private static final Set<String> VALID_GROUP_BY = Set.of("day", "week", "month");
 
-        // ==================== ORDER OVERVIEW ====================
+    // ==================== ORDER OVERVIEW ====================
 
-        public OrderOverviewResponse getOrderOverview() {
-                List<OrderStatusCountProjection> data = orderRepo.getOrderStatusCounts();
+    public OrderOverviewResponse getOrderOverview() {
+        List<OrderStatusCountProjection> data = orderRepo.getOrderStatusCounts();
 
-                Map<String, Long> countByStatus = new LinkedHashMap<>();
-                long total = 0;
-                for (OrderStatusCountProjection row : data) {
-                        countByStatus.put(row.getStatus(), row.getCount());
-                        total += row.getCount();
-                }
-
-                return OrderOverviewResponse.builder()
-                                .totalOrders(total)
-                                .countByStatus(countByStatus)
-                                .build();
+        Map<String, Long> countByStatus = new LinkedHashMap<>();
+        long total = 0;
+        for (OrderStatusCountProjection row : data) {
+            countByStatus.put(row.getStatus(), row.getCount());
+            total += row.getCount();
         }
 
-        // ==================== ORDER TREND ====================
+        return OrderOverviewResponse.builder()
+                .totalOrders(total)
+                .countByStatus(countByStatus)
+                .build();
+    }
 
-        public OrderTrendResponse getOrderTrend(DateRange range, String groupBy) {
-                String unit = (groupBy != null) ? groupBy.toLowerCase().trim() : "day";
-                if (!VALID_GROUP_BY.contains(unit)) {
-                        throw new BusinessException(
-                                        "Invalid groupBy: " + groupBy + ". Valid: " + VALID_GROUP_BY);
-                }
+    // ==================== ORDER TREND ====================
 
-                List<OrderTrendProjection> data = orderRepo.getOrderTrend(
-                                range.toStartOffset(), range.toEndOffset(), unit);
-
-                List<OrderTrendResponse.OrderTrendItem> items = data.stream()
-                                .map(row -> OrderTrendResponse.OrderTrendItem.builder()
-                                                .period(row.getPeriod())
-                                                .orderCount(row.getOrderCount())
-                                                .totalQuantity(row.getTotalQuantity())
-                                                .build())
-                                .toList();
-
-                return OrderTrendResponse.builder().items(items).build();
+    public OrderTrendResponse getOrderTrend(DateRange range, String groupBy) {
+        String unit = (groupBy != null) ? groupBy.toLowerCase().trim() : "day";
+        if (!VALID_GROUP_BY.contains(unit)) {
+            throw new BusinessException(
+                    "Invalid groupBy: " + groupBy + ". Valid: " + VALID_GROUP_BY);
         }
 
-        // ==================== REVENUE SUMMARY ====================
+        List<OrderTrendProjection> data = orderRepo.getOrderTrend(
+                range.toStartOffset(), range.toEndOffset(), unit);
 
-        public RevenueSummaryResponse getRevenueSummary(DateRange range) {
-                RevenueProjection data = orderRepo.getRevenueSummary(
-                                range.toStartOffset(), range.toEndOffset());
+        List<OrderTrendResponse.OrderTrendItem> items = data.stream()
+                .map(row -> OrderTrendResponse.OrderTrendItem.builder()
+                        .period(row.getPeriod())
+                        .orderCount(row.getOrderCount())
+                        .totalQuantity(row.getTotalQuantity())
+                        .build())
+                .toList();
 
-                BigDecimal revenue = data.getTotalRevenue() != null
-                                ? data.getTotalRevenue()
-                                : BigDecimal.ZERO;
-                long orders = data.getTotalOrders() != null
-                                ? data.getTotalOrders()
-                                : 0;
-                BigDecimal avg = orders > 0
-                                ? revenue.divide(BigDecimal.valueOf(orders), 2, RoundingMode.HALF_UP)
-                                : BigDecimal.ZERO;
+        return OrderTrendResponse.builder().items(items).build();
+    }
 
-                return RevenueSummaryResponse.builder()
-                                .totalRevenue(revenue)
-                                .totalOrders(orders)
-                                .averageOrderValue(avg)
-                                .build();
-        }
+    // ==================== REVENUE SUMMARY ====================
 
-        // ==================== SYSTEM OVERVIEW ====================
+    public RevenueSummaryResponse getRevenueSummary(DateRange range) {
+        RevenueProjection data = orderRepo.getRevenueSummary(
+                range.toStartOffset(), range.toEndOffset());
 
-        public SystemOverviewResponse getSystemOverview() {
-                long totalAccounts = accountRepo.count();
-                long activeAccounts = accountRepo.countByStatusIgnoreCase("active");
-                long blockedAccounts = accountRepo.countByStatusIgnoreCase("locked");
+        BigDecimal revenue = data.getTotalRevenue() != null
+                ? data.getTotalRevenue() : BigDecimal.ZERO;
+        long orders = data.getTotalOrders() != null
+                ? data.getTotalOrders() : 0;
+        BigDecimal avg = orders > 0
+                ? revenue.divide(BigDecimal.valueOf(orders), 2, RoundingMode.HALF_UP)
+                : BigDecimal.ZERO;
 
-                return SystemOverviewResponse.builder()
-                                .totalUsers(totalAccounts)
-                                .activeUsers(activeAccounts)
-                                .blockedUsers(blockedAccounts)
-                                .totalEmployees(employeeRepo.count())
-                                .totalLines(lineRepo.count())
-                                .activeLines(lineRepo.countByStatus("active"))
-                                .totalMachines(machineRepo.count())
-                                .activeMachines(machineRepo.countByStatus("active"))
-                                .build();
-        }
+        return RevenueSummaryResponse.builder()
+                .totalRevenue(revenue)
+                .totalOrders(orders)
+                .averageOrderValue(avg)
+                .build();
+    }
+
+    // ==================== SYSTEM OVERVIEW ====================
+
+    public SystemOverviewResponse getSystemOverview() {
+        return SystemOverviewResponse.builder()
+                .totalUsers(userRepo.count())
+                .activeUsers(userRepo.countByStatus("active"))
+                .totalEmployees(employeeRepo.count())
+                .totalLines(lineRepo.count())
+                .activeLines(lineRepo.countByStatus("active"))
+                .totalMachines(machineRepo.count())
+                .activeMachines(machineRepo.countByStatus("active"))
+                .build();
+    }
 }
