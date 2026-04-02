@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useCallback, useRef } from "react";
+import { createPortal } from "react-dom";
 import { useNavigate } from "react-router-dom";
 import notificationService from "../../services/notificationService";
 import authService from "../../services/authService";
@@ -76,6 +77,13 @@ const normalizeNotificationUrl = (notif, role) => {
   }
 
   if (
+    pathname === "/admin/accounts" ||
+    pathname.startsWith("/admin/accounts/")
+  ) {
+    return `/admin/users${search}`;
+  }
+
+  if (
     pathname.startsWith("/admin/") ||
     pathname.startsWith("/manager/") ||
     pathname.startsWith("/planner/") ||
@@ -103,10 +111,6 @@ const normalizeNotificationUrl = (notif, role) => {
       return fallback;
     }
     return "/dashboard";
-  }
-
-  if (pathname === "/admin/accounts") {
-    return "/admin/users";
   }
 
   if (pathname.startsWith("/orders/")) {
@@ -377,11 +381,17 @@ const NotificationBell = () => {
       }
     };
 
+    const handleScroll = () => {
+      updateDropdownPosition();
+    };
+
     window.addEventListener("resize", updateDropdownPosition);
+    window.addEventListener("scroll", handleScroll, true);
     window.addEventListener("keydown", handleEscape);
 
     return () => {
       window.removeEventListener("resize", updateDropdownPosition);
+      window.removeEventListener("scroll", handleScroll, true);
       window.removeEventListener("keydown", handleEscape);
     };
   }, [open, updateDropdownPosition]);
@@ -467,136 +477,139 @@ const NotificationBell = () => {
         )}
       </button>
 
-      {open && (
-        <>
-          <div className="notification-bell__overlay" onClick={handleClose} />
-          <div className="notification-bell__dropdown" style={dropdownStyle}>
-            {/* Header */}
-            <div className="notification-bell__header">
-              <h3 className="notification-bell__title">Notifications</h3>
-              <button
-                className="notification-bell__mark-all"
-                onClick={handleMarkAllAsRead}
-                disabled={unreadCount === 0}
-                type="button"
-              >
-                Mark all as read
-              </button>
-            </div>
-
-            {/* Filter tabs */}
-            <div className="notification-bell__filters">
-              {SOURCE_TYPES.map((st) => (
+      {open &&
+        typeof document !== "undefined" &&
+        createPortal(
+          <>
+            <div className="notification-bell__overlay" onClick={handleClose} />
+            <div className="notification-bell__dropdown" style={dropdownStyle}>
+              {/* Header */}
+              <div className="notification-bell__header">
+                <h3 className="notification-bell__title">Notifications</h3>
                 <button
-                  key={st.label}
-                  className={`notification-bell__filter-btn ${
-                    activeFilter === st.value
-                      ? "notification-bell__filter-btn--active"
-                      : ""
-                  }`}
-                  onClick={() => handleFilterChange(st.value)}
+                  className="notification-bell__mark-all"
+                  onClick={handleMarkAllAsRead}
+                  disabled={unreadCount === 0}
                   type="button"
                 >
-                  {st.label}
-                </button>
-              ))}
-            </div>
-
-            {loadError && (
-              <div className="notification-bell__error">
-                <span>{loadError}</span>
-                <button
-                  className="notification-bell__error-retry"
-                  onClick={() => fetchNotifications(0, activeFilter, false)}
-                  disabled={loading}
-                  type="button"
-                >
-                  Retry
+                  Mark all as read
                 </button>
               </div>
-            )}
 
-            {/* Notification list */}
-            <div className="notification-bell__list">
-              {loading && notifications.length === 0 ? (
-                <div className="notification-bell__loading">Loading...</div>
-              ) : notifications.length === 0 ? (
-                <div className="notification-bell__empty">
-                  <span className="notification-bell__empty-icon">🔕</span>
-                  <span className="notification-bell__empty-text">
-                    No notifications
-                  </span>
-                </div>
-              ) : (
-                notifications.map((notif) => (
-                  <div
-                    key={notif.id}
-                    className={`notification-bell__item ${
-                      notif.status === "UNREAD"
-                        ? "notification-bell__item--unread"
+              {/* Filter tabs */}
+              <div className="notification-bell__filters">
+                {SOURCE_TYPES.map((st) => (
+                  <button
+                    key={st.label}
+                    className={`notification-bell__filter-btn ${
+                      activeFilter === st.value
+                        ? "notification-bell__filter-btn--active"
                         : ""
                     }`}
-                    onClick={() => handleItemClick(notif)}
-                    role="button"
-                    tabIndex={0}
-                    onKeyDown={(event) => {
-                      if (event.key === "Enter" || event.key === " ") {
-                        event.preventDefault();
-                        handleItemClick(notif);
-                      }
-                    }}
+                    onClick={() => handleFilterChange(st.value)}
+                    type="button"
                   >
-                    <div
-                      className={`notification-bell__item-icon notification-bell__item-icon--${(notif.level || "INFO").toUpperCase()}`}
-                    >
-                      {SOURCE_ICONS[(notif.sourceType || "").toUpperCase()] ||
-                        LEVEL_ICONS[(notif.level || "INFO").toUpperCase()] ||
-                        "🔔"}
-                    </div>
-                    <div className="notification-bell__item-body">
-                      <p className="notification-bell__item-title">
-                        {notif.title}
-                      </p>
-                      <p className="notification-bell__item-message">
-                        {stripHtml(notif.message)}
-                      </p>
-                      <div className="notification-bell__item-meta">
-                        <span className="notification-bell__item-time">
-                          {timeAgo(notif.createdAt)}
-                        </span>
-                        <span className="notification-bell__item-source">
-                          {SOURCE_LABELS[
-                            (notif.sourceType || "").toUpperCase()
-                          ] ||
-                            notif.sourceType ||
-                            "General"}
-                        </span>
-                      </div>
-                    </div>
-                    {notif.status === "UNREAD" && (
-                      <div className="notification-bell__item-dot" />
-                    )}
+                    {st.label}
+                  </button>
+                ))}
+              </div>
+
+              {loadError && (
+                <div className="notification-bell__error">
+                  <span>{loadError}</span>
+                  <button
+                    className="notification-bell__error-retry"
+                    onClick={() => fetchNotifications(0, activeFilter, false)}
+                    disabled={loading}
+                    type="button"
+                  >
+                    Retry
+                  </button>
+                </div>
+              )}
+
+              {/* Notification list */}
+              <div className="notification-bell__list">
+                {loading && notifications.length === 0 ? (
+                  <div className="notification-bell__loading">Loading...</div>
+                ) : notifications.length === 0 ? (
+                  <div className="notification-bell__empty">
+                    <span className="notification-bell__empty-icon">🔕</span>
+                    <span className="notification-bell__empty-text">
+                      No notifications
+                    </span>
                   </div>
-                ))
+                ) : (
+                  notifications.map((notif) => (
+                    <div
+                      key={notif.id}
+                      className={`notification-bell__item ${
+                        notif.status === "UNREAD"
+                          ? "notification-bell__item--unread"
+                          : ""
+                      }`}
+                      onClick={() => handleItemClick(notif)}
+                      role="button"
+                      tabIndex={0}
+                      onKeyDown={(event) => {
+                        if (event.key === "Enter" || event.key === " ") {
+                          event.preventDefault();
+                          handleItemClick(notif);
+                        }
+                      }}
+                    >
+                      <div
+                        className={`notification-bell__item-icon notification-bell__item-icon--${(notif.level || "INFO").toUpperCase()}`}
+                      >
+                        {SOURCE_ICONS[(notif.sourceType || "").toUpperCase()] ||
+                          LEVEL_ICONS[(notif.level || "INFO").toUpperCase()] ||
+                          "🔔"}
+                      </div>
+                      <div className="notification-bell__item-body">
+                        <p className="notification-bell__item-title">
+                          {notif.title}
+                        </p>
+                        <p className="notification-bell__item-message">
+                          {stripHtml(notif.message)}
+                        </p>
+                        <div className="notification-bell__item-meta">
+                          <span className="notification-bell__item-time">
+                            {timeAgo(notif.createdAt)}
+                          </span>
+                          <span className="notification-bell__item-source">
+                            {SOURCE_LABELS[
+                              (notif.sourceType || "").toUpperCase()
+                            ] ||
+                              notif.sourceType ||
+                              "General"}
+                          </span>
+                        </div>
+                      </div>
+                      {notif.status === "UNREAD" && (
+                        <div className="notification-bell__item-dot" />
+                      )}
+                    </div>
+                  ))
+                )}
+              </div>
+
+              {/* Load more */}
+              {page + 1 < totalPages && (
+                <div className="notification-bell__load-more">
+                  <button
+                    className="notification-bell__load-more-btn"
+                    onClick={handleLoadMore}
+                    disabled={loading}
+                    type="button"
+                  >
+                    {loading ? "Loading..." : "Load more"}
+                  </button>
+                </div>
               )}
             </div>
-
-            {/* Load more */}
-            {page + 1 < totalPages && (
-              <div className="notification-bell__load-more">
-                <button
-                  className="notification-bell__load-more-btn"
-                  onClick={handleLoadMore}
-                  disabled={loading}
-                  type="button"
-                >
-                  {loading ? "Loading..." : "Load more"}
-                </button>
-              </div>
-            )}
-          </div>
-        </>
-      )}
+          </>,
+          document.body,
+        )}
     </div>
   );
 };
