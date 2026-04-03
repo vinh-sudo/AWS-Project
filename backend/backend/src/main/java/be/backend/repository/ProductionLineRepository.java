@@ -49,9 +49,11 @@ public interface ProductionLineRepository extends JpaRepository<ProductionLine, 
 
         LEFT JOIN production_schedule ps
                ON ps.machine_id = m.machine_id
-              AND ps.start_time <= :now
-              AND ps.end_time   >= :now
               AND UPPER(ps.status) IN ('SCHEDULED','RUNNING','PAUSED')
+              AND (
+                    UPPER(ps.status) = 'RUNNING'
+                    OR (ps.start_time <= :now AND ps.end_time >= :now)
+                  )
 
         GROUP BY
             pl.line_id,

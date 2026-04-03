@@ -6,6 +6,8 @@
   <component name="ChangeListManager">
     <list default="true" id="bc337c9a-1c96-43c4-8e03-d2da979bd10b" name="Changes" comment="">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/backend/backend/src/main/java/be/backend/repository/ProductionLineRepository.java" beforeDir="false" afterPath="$PROJECT_DIR$/backend/backend/src/main/java/be/backend/repository/ProductionLineRepository.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/backend/backend/src/main/java/be/backend/service/leader/LeaderProgressService.java" beforeDir="false" afterPath="$PROJECT_DIR$/backend/backend/src/main/java/be/backend/service/leader/LeaderProgressService.java" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/backend/backend/src/main/resources/application.yml" beforeDir="false" afterPath="$PROJECT_DIR$/backend/backend/src/main/resources/application.yml" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
@@ -20,8 +22,8 @@
   </component>
   <component name="CopilotUserSelectedModel">
     <selectedModels>
-      <entry key="chat-panel" value="GPT-5.1" />
-      <entry key="agent-panel" value="GPT-5.1" />
+      <entry key="chat-panel" value="GPT-5.3-Codex" />
+      <entry key="agent-panel" value="GPT-5.3-Codex" />
     </selectedModels>
   </component>
   <component name="Git.Settings">
@@ -54,7 +56,7 @@
     &quot;RunOnceActivity.ShowReadmeOnStart&quot;: &quot;true&quot;,
     &quot;RunOnceActivity.TerminalTabsStorage.copyFrom.TerminalArrangementManager.252&quot;: &quot;true&quot;,
     &quot;RunOnceActivity.git.unshallow&quot;: &quot;true&quot;,
-    &quot;git-widget-placeholder&quot;: &quot;dev&quot;,
+    &quot;git-widget-placeholder&quot;: &quot;fe-HA&quot;,
     &quot;kotlin-language-version-configured&quot;: &quot;true&quot;,
     &quot;last_opened_file_path&quot;: &quot;D:/AWS_PROJECT/AWS-Project&quot;,
     &quot;node.js.detected.package.eslint&quot;: &quot;true&quot;,
@@ -105,6 +107,9 @@
       <workItem from="1773723850004" duration="9000" />
       <workItem from="1774854899397" duration="1341000" />
       <workItem from="1775030951473" duration="27000" />
+      <workItem from="1775051192843" duration="4518000" />
+      <workItem from="1775057560404" duration="701000" />
+      <workItem from="1775204946446" duration="3471000" />
     </task>
     <servers />
   </component>
