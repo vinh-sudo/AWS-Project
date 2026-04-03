@@ -10,11 +10,6 @@ const SOURCE_TYPES = [
   { label: "Order", value: "ORDER" },
   { label: "Schedule", value: "SCHEDULE" },
   { label: "Line", value: "LINE" },
-  { label: "Account", value: "ACCOUNT" },
-  { label: "KPI", value: "KPI" },
-  { label: "Quality", value: "QUALITY" },
-  { label: "Report", value: "REPORT" },
-  { label: "Machine", value: "MACHINE" },
 ];
 
 const PAGE_SIZE = 20;
@@ -63,6 +58,13 @@ const getRoleDefaultPath = (role) => {
 
 const normalizeNotificationUrl = (notif, role) => {
   const fallback = getRoleDefaultPath(role);
+  const normalizedRole = (role || "").toUpperCase();
+  const normalizedSourceType = (notif?.sourceType || "").toUpperCase();
+
+  if (normalizedRole === "MANAGER" && normalizedSourceType === "SCHEDULE") {
+    return "/manager/planning";
+  }
+
   if (!notif?.url) return fallback;
 
   let pathname = "";
@@ -74,6 +76,13 @@ const normalizeNotificationUrl = (notif, role) => {
     search = parsed.search || "";
   } catch {
     return fallback;
+  }
+
+  if (
+    normalizedRole === "MANAGER" &&
+    pathname.startsWith("/manager/schedules/")
+  ) {
+    return "/manager/planning";
   }
 
   if (
@@ -128,10 +137,6 @@ const normalizeNotificationUrl = (notif, role) => {
       return `/manager/planning${search}`;
     }
     return "/admin/orders";
-  }
-
-  if (pathname.startsWith("/manager/schedules/")) {
-    return "/manager/tracking";
   }
 
   if (pathname.startsWith("/machines/")) {

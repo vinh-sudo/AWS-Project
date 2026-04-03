@@ -102,17 +102,24 @@
 
 /* Filter tabs */
 .notification-bell__filters {
-    display: flex;
-    gap: 6px;
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 8px;
     padding: 10px 18px;
-    overflow-x: auto;
     border-bottom: 1px solid #f0f0f0;
 }
 
 .notification-bell__filter-btn {
+    width: 100%;
+    min-width: 0;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
     background: #f5f5f5;
     border: none;
-    padding: 5px 12px;
+    padding: 6px 10px;
+    min-height: 30px;
+    line-height: 1.2;
     border-radius: 20px;
     font-size: 11px;
     font-weight: 600;
@@ -172,6 +179,7 @@
 .notification-bell__list {
     flex: 1;
     overflow-y: auto;
+    scrollbar-gutter: stable;
     padding: 4px 0;
     min-height: 180px;
 }
@@ -352,6 +360,8 @@
     }
 
     .notification-bell__filters {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 6px;
         padding: 8px 14px;
     }
 
