@@ -1,6 +1,6 @@
 import React, { createContext, useCallback, useContext, useEffect, useMemo, useState } from "react";
 import { getRoleDefaultPath, type RoleDefaultPath } from "@/routes/role-based-route";
-import authService from "@/services/authService";
+import authService, { subscribeSessionCleared } from "@/services/authService";
 
 export type AuthUser = {
   employeeCode: string;
@@ -34,6 +34,8 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
+    let mounted = true;
+
     const bootstrapAuth = async () => {
       setIsLoading(true);
       try {
@@ -42,7 +44,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
           authService.isAuthenticated(),
         ]);
 
-        if (savedUser && authed) {
+        if (mounted && savedUser && authed) {
           setUser({
             employeeCode: savedUser.employeeCode,
             role: savedUser.role,
@@ -50,11 +52,31 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
           });
         }
       } finally {
-        setIsLoading(false);
+        if (mounted) {
+          setIsLoading(false);
+        }
       }
     };
 
+    const unsubscribe = subscribeSessionCleared((reason) => {
+      if (!mounted) {
+        return;
+      }
+
+      setUser(null);
+      setIsLoading(false);
+
+      if (reason === "expired" || reason === "unauthorized") {
+        setError("Your session has expired. Please sign in again.");
+      }
+    });
+
     bootstrapAuth();
+
+    return () => {
+      mounted = false;
+      unsubscribe();
+    };
   }, []);
 
   const login = useCallback(async ({ employeeCode, password }: LoginInput) => {

@@ -13,6 +13,19 @@ const API_BASE_URL =
 
 export const RESOLVED_API_BASE_URL = API_BASE_URL;
 
+type SessionClearReason = "logout" | "expired" | "unauthorized";
+type SessionClearedListener = (reason: SessionClearReason) => void;
+
+const sessionClearedListeners = new Set<SessionClearedListener>();
+
+export const subscribeSessionCleared = (listener: SessionClearedListener) => {
+  sessionClearedListeners.add(listener);
+
+  return () => {
+    sessionClearedListeners.delete(listener);
+  };
+};
+
 const normalizeToken = (token?: unknown): string | null => {
   if (typeof token !== "string") return null;
 
@@ -23,12 +36,50 @@ const normalizeToken = (token?: unknown): string | null => {
   return trimmed.replace(/^Bearer\s+/i, "");
 };
 
+const decodeBase64Url = (input: string): string => {
+  const base64 = input.replace(/-/g, "+").replace(/_/g, "/");
+  const padded = base64 + "=".repeat((4 - (base64.length % 4)) % 4);
+
+  return atob(padded);
+};
+
+const isTokenExpired = (token?: string | null): boolean => {
+  if (!token) return true;
+
+  const normalized = normalizeToken(token);
+
+  if (!normalized) return true;
+
+  const parts = normalized.split(".");
+
+  if (parts.length < 2) return false;
+
+  try {
+    const payloadText = decodeBase64Url(parts[1]);
+    const payload = JSON.parse(payloadText) as { exp?: number };
+
+    if (!payload?.exp) return false;
+
+    return payload.exp * 1000 <= Date.now();
+  } catch {
+    return false;
+  }
+};
+
 const safeGetItem = async (key: string) => {
   try {
     return await AsyncStorage.getItem(key);
   } catch {
     return null;
   }
+};
+
+const notifySessionCleared = (reason: SessionClearReason) => {
+  sessionClearedListeners.forEach((listener) => {
+    try {
+      listener(reason);
+    } catch {}
+  });
 };
 
 const safeSetItem = async (key: string, value: string) => {
@@ -57,6 +108,11 @@ api.interceptors.request.use(async (config) => {
   const token = normalizeToken(
     await safeGetItem(ACCESS_TOKEN_KEY)
   );
+
+  if (isTokenExpired(token)) {
+    await clearSession("expired");
+    return Promise.reject(new Error("Session expired"));
+  }
 
   if (token) {
     config.headers = config.headers ?? {};
@@ -93,7 +149,7 @@ api.interceptors.response.use(
 
     if (status === 401) {
       // Token is no longer valid; force re-login to avoid repeated unauthorized calls.
-      await clearSession();
+      await clearSession("unauthorized");
     }
 
     return Promise.reject(error);
@@ -110,13 +166,15 @@ export type UserSession = {
   email?: string;
 };
 
-const clearSession = async () => {
+const clearSession = async (reason: SessionClearReason = "logout") => {
   await Promise.all([
     safeRemoveItem(ACCESS_TOKEN_KEY),
     safeRemoveItem(REFRESH_TOKEN_KEY),
     safeRemoveItem(USER_KEY),
     safeRemoveItem(AUTH_FLAG_KEY),
   ]);
+
+  notifySessionCleared(reason);
 };
 
 export const authService = {
@@ -286,7 +344,7 @@ export const authService = {
 
     } catch {}
 
-    await clearSession();
+    await clearSession("logout");
 
   },
 
@@ -320,7 +378,16 @@ export const authService = {
           ACCESS_TOKEN_KEY
         );
 
-      return Boolean(token);
+      if (!token) {
+        return false;
+      }
+
+      if (isTokenExpired(token)) {
+        await clearSession("expired");
+        return false;
+      }
+
+      return true;
 
     },
 
