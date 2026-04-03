@@ -42,12 +42,16 @@ public class LeaderProgressService {
         private static final String SCHEDULE_STATUS_RUNNING = "RUNNING";
         private static final String SCHEDULE_STATUS_COMPLETED = "COMPLETED";
 
+        private static final String MACHINE_RUNTIME_RUNNING = "RUNNING";
+        private static final String MACHINE_RUNTIME_IDLE = "IDLE";
+
         private final LineLeaderAssignmentRepository assignmentRepo;
         private final ProductionScheduleRepository scheduleRepo;
         private final ProductionProgressRepository progressRepo;
         private final ReportRepository reportRepo;
         private final OrderRepository orderRepo;
         private final OrderItemRepository orderItemRepo;
+        private final MachineRepository machineRepo;
         private final ProductionFileService productionFileService;
         private final ProductionFileMapper productionFileMapper;
         private final SNSService snsService;
@@ -295,6 +299,7 @@ public class LeaderProgressService {
                 // 5. Start schedule
                 schedule.setStatus(SCHEDULE_STATUS_RUNNING);
                 scheduleRepo.save(schedule);
+                updateMachineRuntimeStatus(schedule, MACHINE_RUNTIME_RUNNING);
 
                 // 5.1. Gửi notification qua SNS và SQS
                 String message = String.format("Schedule %d started by leader %s", scheduleId, account.getUsername());
@@ -527,6 +532,7 @@ public class LeaderProgressService {
                         boolean wasCompleted = SCHEDULE_STATUS_COMPLETED.equalsIgnoreCase(schedule.getStatus());
                         schedule.setStatus(SCHEDULE_STATUS_COMPLETED);
                         scheduleRepo.save(schedule);
+                        updateMachineRuntimeStatus(schedule, MACHINE_RUNTIME_IDLE);
                         if (!wasCompleted) {
                                 eventPublisher.publishEvent(new be.backend.event.ProductionScheduleEvent.ScheduleCompletedEvent(schedule));
                         }
@@ -575,12 +581,26 @@ public class LeaderProgressService {
                                 schedule.setEndTime(OffsetDateTime.now());
                         }
                         scheduleRepo.save(schedule);
+                        updateMachineRuntimeStatus(schedule, MACHINE_RUNTIME_IDLE);
                         // Bổ sung: phát event để gửi notification cho MANAGER
                         eventPublisher.publishEvent(new be.backend.event.ProductionScheduleEvent.ScheduleCompletedEvent(schedule));
                         // Recalculate order completion (will auto-complete order if 100%)
                         BigDecimal orderPercentage = calculateOrderCompletionPercentage(schedule.getOrder());
                         tryCompleteOrder(schedule.getOrder(), orderPercentage);
                 }
+        }
+
+        private void updateMachineRuntimeStatus(ProductionSchedule schedule, String runtimeStatus) {
+                Machine machine = schedule.getMachine();
+                if (machine == null) {
+                        return;
+                }
+                String current = machine.getRuntimeStatus();
+                if (current != null && current.equalsIgnoreCase(runtimeStatus)) {
+                        return;
+                }
+                machine.setRuntimeStatus(runtimeStatus);
+                machineRepo.save(machine);
         }
 
         private void publishReportAlerts(Report report) {
