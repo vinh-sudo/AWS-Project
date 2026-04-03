@@ -48,10 +48,20 @@ const AdminDashboard = () => {
       setError(null);
       const [dashboardData, assignmentData] = await Promise.all([
         adminService.getDashboardStats(),
-        adminService.getAssignments().catch(() => []),
+        adminService.getAssignments().catch(() => null),
       ]);
 
       const data = dashboardData || {};
+      const hasAssignmentData = Array.isArray(assignmentData);
+      const normalizedAssignments = hasAssignmentData ? assignmentData : [];
+      const activeLinesFromAssignments = hasAssignmentData
+        ? new Set(
+            normalizedAssignments
+              .map((item) => item?.lineId)
+              .filter((lineId) => lineId != null),
+          ).size
+        : data.activeLines || 0;
+
       setStats({
         totalUsers: data.totalUsers || 0,
         activeUsers: data.activeUsers || 0,
@@ -62,12 +72,11 @@ const AdminDashboard = () => {
         inProgressOrders: data.inProgressOrders || 0,
         cancelledOrders: data.cancelledOrders || 0,
         totalLines: data.totalLines || 0,
-        activeLines: data.activeLines || 0,
+        activeLines: Math.min(data.totalLines || 0, activeLinesFromAssignments),
         totalMachines: data.totalMachines || 0,
         activeMachines: data.activeMachines || 0,
       });
-      setAssignments(Array.isArray(assignmentData) ? assignmentData : []);
-
+      setAssignments(normalizedAssignments);
     } catch (err) {
       console.error("Error fetching dashboard data:", err);
       setError(err.response?.data?.message || "Failed to load dashboard data");
@@ -131,7 +140,9 @@ const AdminDashboard = () => {
       : 0;
 
   const assignmentPreview = assignments.slice(0, 5);
-  const assignedLines = assignments.length;
+  const assignedLines = new Set(
+    assignments.map((item) => item?.lineId).filter((lineId) => lineId != null),
+  ).size;
   const unassignedLines = Math.max(0, stats.totalLines - assignedLines);
 
   const getGreeting = () => {
@@ -714,10 +725,7 @@ const AdminDashboard = () => {
                       strokeWidth={0}
                     >
                       {userManagementData.map((entry, index) => (
-                        <Cell
-                          key={`user-cell-${index}`}
-                          fill={entry.color}
-                        />
+                        <Cell key={`user-cell-${index}`} fill={entry.color} />
                       ))}
                     </Pie>
                     <Tooltip
@@ -787,23 +795,34 @@ const AdminDashboard = () => {
                 <div className="dash-assignment-stats">
                   <div className="dash-assignment-stat">
                     <span className="dash-assignment-stat-label">Assigned</span>
-                    <span className="dash-assignment-stat-value">{assignedLines}</span>
+                    <span className="dash-assignment-stat-value">
+                      {assignedLines}
+                    </span>
                   </div>
                   <div className="dash-assignment-stat">
                     <span className="dash-assignment-stat-label">Vacant</span>
-                    <span className="dash-assignment-stat-value">{unassignedLines}</span>
+                    <span className="dash-assignment-stat-value">
+                      {unassignedLines}
+                    </span>
                   </div>
                 </div>
 
                 {assignmentPreview.length > 0 ? (
                   <div className="dash-assignment-list">
                     {assignmentPreview.map((item) => (
-                      <div key={item.assignmentId} className="dash-assignment-row">
+                      <div
+                        key={item.assignmentId}
+                        className="dash-assignment-row"
+                      >
                         <div className="dash-assignment-line">
                           {item.lineName || `Line ${item.lineId}`}
                         </div>
-                        <div className="dash-assignment-leader">{item.leaderUsername || "—"}</div>
-                        <div className="dash-assignment-code">{item.leaderEmployeeCode || "—"}</div>
+                        <div className="dash-assignment-leader">
+                          {item.leaderUsername || "—"}
+                        </div>
+                        <div className="dash-assignment-code">
+                          {item.leaderEmployeeCode || "—"}
+                        </div>
                       </div>
                     ))}
                   </div>
@@ -815,8 +834,6 @@ const AdminDashboard = () => {
               </div>
             </div>
           </div>
-
-
         </div>
       </div>
     </div>

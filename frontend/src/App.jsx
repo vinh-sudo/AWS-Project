@@ -1,5 +1,11 @@
-import { useState } from "react";
-import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
+import { useEffect, useState } from "react";
+import {
+  BrowserRouter,
+  Routes,
+  Route,
+  Navigate,
+  useLocation,
+} from "react-router-dom";
 import { useSelector } from "react-redux";
 import { selectIsAuthenticated, selectUser } from "./redux";
 import LoginPage from "./pages/loginPage/LoginPage";
@@ -54,20 +60,67 @@ const RedirectIfAuthenticated = ({ children }) => {
  */
 const ReportsRedirect = () => {
   const user = useSelector(selectUser);
-  const role = user?.role?.toUpperCase();
+  const role =
+    user?.role?.toUpperCase() === "PRODUCTION_PLANNER"
+      ? "MANAGER"
+      : user?.role?.toUpperCase();
 
   switch (role) {
     case "MANAGER":
       return <Navigate to="/manager/reports" replace />;
     case "ADMIN":
       return <Navigate to="/admin/dashboard" replace />;
-    case "PRODUCTION_PLANNER":
-      return <Navigate to="/planner/reports" replace />;
     case "LINE_LEADER":
       return <Navigate to="/leader/progress" replace />;
     default:
       return <Navigate to="/login" replace />;
   }
+};
+
+const AUTH_ROUTES = new Set([
+  "/",
+  "/login",
+  "/forgot-password",
+  "/otp-verification",
+  "/reset-password",
+]);
+
+const AI_ALLOWED_ROLES = new Set(["ADMIN", "MANAGER"]);
+
+const CopilotEntry = ({ isCopilotOpen, setIsCopilotOpen }) => {
+  const { pathname } = useLocation();
+  const user = useSelector(selectUser);
+  const isAuthRoute = AUTH_ROUTES.has(pathname);
+  const role = user?.role?.toUpperCase();
+  const canUseCopilot = AI_ALLOWED_ROLES.has(role);
+
+  useEffect(() => {
+    if ((isAuthRoute || !canUseCopilot) && isCopilotOpen) {
+      setIsCopilotOpen(false);
+    }
+  }, [isAuthRoute, canUseCopilot, isCopilotOpen, setIsCopilotOpen]);
+
+  if (isAuthRoute || !canUseCopilot) {
+    return null;
+  }
+
+  return (
+    <>
+      <button
+        className={`copilot-fab ${isCopilotOpen ? "hidden" : ""}`}
+        onClick={() => setIsCopilotOpen(true)}
+        title="AI Production Copilot"
+        type="button"
+      >
+        🤖
+      </button>
+
+      <AICopilot
+        isOpen={isCopilotOpen}
+        onClose={() => setIsCopilotOpen(false)}
+      />
+    </>
+  );
 };
 
 function App() {
@@ -78,229 +131,227 @@ function App() {
       <BrowserRouter>
         <AuthGuard />
         <Routes>
-        <Route element={<DraftLayout />}>
-          {/* Public routes - redirect to dashboard if already authenticated */}
-          <Route
-            path="/"
-            element={
-              <RedirectIfAuthenticated>
-                <LoginPage />
-              </RedirectIfAuthenticated>
-            }
-          />
-          <Route
-            path="/login"
-            element={
-              <RedirectIfAuthenticated>
-                <LoginPage />
-              </RedirectIfAuthenticated>
-            }
-          />
-          <Route path="/forgot-password" element={<ForgotPasswordPage />} />
-          <Route path="/otp-verification" element={<OtpVerificationPage />} />
-          <Route path="/reset-password" element={<ResetPasswordPage />} />
+          <Route element={<DraftLayout />}>
+            {/* Public routes - redirect to dashboard if already authenticated */}
+            <Route
+              path="/"
+              element={
+                <RedirectIfAuthenticated>
+                  <LoginPage />
+                </RedirectIfAuthenticated>
+              }
+            />
+            <Route
+              path="/login"
+              element={
+                <RedirectIfAuthenticated>
+                  <LoginPage />
+                </RedirectIfAuthenticated>
+              }
+            />
+            <Route path="/forgot-password" element={<ForgotPasswordPage />} />
+            <Route path="/otp-verification" element={<OtpVerificationPage />} />
+            <Route path="/reset-password" element={<ResetPasswordPage />} />
 
-          {/* Manager Routes - Production management: planning, progress tracking */}
-          <Route
-            path="/manager"
-            element={
-              <RoleBasedRoute allowedRoles={["MANAGER"]}>
-                <ManagerDashboard />
-              </RoleBasedRoute>
-            }
-          />
-          <Route
-            path="/manager/dashboard"
-            element={
-              <RoleBasedRoute allowedRoles={["MANAGER"]}>
-                <ManagerDashboard />
-              </RoleBasedRoute>
-            }
-          />
-          <Route
-            path="/manager/planning"
-            element={
-              <RoleBasedRoute allowedRoles={["MANAGER"]}>
-                <ManagerPlanning />
-              </RoleBasedRoute>
-            }
-          />
-          <Route
-            path="/manager/tracking"
-            element={
-              <RoleBasedRoute allowedRoles={["MANAGER"]}>
-                <ManagerTracking />
-              </RoleBasedRoute>
-            }
-          />
-          <Route
-            path="/manager/reports"
-            element={
-              <RoleBasedRoute allowedRoles={["MANAGER"]}>
-                <ManagerReports />
-              </RoleBasedRoute>
-            }
-          />
-          <Route
-            path="/manager/orders"
-            element={
-              <RoleBasedRoute allowedRoles={["MANAGER"]}>
-                <ManagerOrders />
-              </RoleBasedRoute>
-            }
-          />
+            {/* Manager Routes - Production management: planning, progress tracking */}
+            <Route
+              path="/manager"
+              element={
+                <RoleBasedRoute allowedRoles={["MANAGER"]}>
+                  <ManagerDashboard />
+                </RoleBasedRoute>
+              }
+            />
+            <Route
+              path="/manager/dashboard"
+              element={
+                <RoleBasedRoute allowedRoles={["MANAGER"]}>
+                  <ManagerDashboard />
+                </RoleBasedRoute>
+              }
+            />
+            <Route
+              path="/manager/planning"
+              element={
+                <RoleBasedRoute allowedRoles={["MANAGER"]}>
+                  <ManagerPlanning />
+                </RoleBasedRoute>
+              }
+            />
+            <Route
+              path="/manager/tracking"
+              element={
+                <RoleBasedRoute allowedRoles={["MANAGER"]}>
+                  <ManagerTracking />
+                </RoleBasedRoute>
+              }
+            />
+            <Route
+              path="/manager/reports"
+              element={
+                <RoleBasedRoute allowedRoles={["MANAGER"]}>
+                  <ManagerReports />
+                </RoleBasedRoute>
+              }
+            />
+            <Route
+              path="/manager/orders"
+              element={
+                <RoleBasedRoute allowedRoles={["MANAGER"]}>
+                  <ManagerOrders />
+                </RoleBasedRoute>
+              }
+            />
 
-          {/* Admin Routes - User management, orders, approvals, audit */}
-          <Route
-            path="/admin"
-            element={
-              <RoleBasedRoute allowedRoles={["ADMIN"]}>
-                <AdminPage />
-              </RoleBasedRoute>
-            }
-          />
-          <Route
-            path="/admin/users"
-            element={
-              <RoleBasedRoute allowedRoles={["ADMIN"]}>
-                <AdminPage />
-              </RoleBasedRoute>
-            }
-          />
-          <Route
-            path="/admin/dashboard"
-            element={
-              <RoleBasedRoute allowedRoles={["ADMIN"]}>
-                <AdminDashboard />
-              </RoleBasedRoute>
-            }
-          />
-          <Route
-            path="/admin/orders"
-            element={
-              <RoleBasedRoute allowedRoles={["ADMIN"]}>
-                <AdminOrders />
-              </RoleBasedRoute>
-            }
-          />
-          <Route
-            path="/admin/audit-log"
-            element={
-              <RoleBasedRoute allowedRoles={["ADMIN"]}>
-                <AuditLog />
-              </RoleBasedRoute>
-            }
-          />
-          <Route
-            path="/admin/assignments"
-            element={
-              <RoleBasedRoute allowedRoles={["ADMIN"]}>
-                <AdminAssignment />
-              </RoleBasedRoute>
-            }
-          />
+            {/* Admin Routes - User management, orders, approvals, audit */}
+            <Route
+              path="/admin"
+              element={
+                <RoleBasedRoute allowedRoles={["ADMIN"]}>
+                  <AdminPage />
+                </RoleBasedRoute>
+              }
+            />
+            <Route
+              path="/admin/users"
+              element={
+                <RoleBasedRoute allowedRoles={["ADMIN"]}>
+                  <AdminPage />
+                </RoleBasedRoute>
+              }
+            />
+            <Route
+              path="/admin/dashboard"
+              element={
+                <RoleBasedRoute allowedRoles={["ADMIN"]}>
+                  <AdminDashboard />
+                </RoleBasedRoute>
+              }
+            />
+            <Route
+              path="/admin/orders"
+              element={
+                <RoleBasedRoute allowedRoles={["ADMIN"]}>
+                  <AdminOrders />
+                </RoleBasedRoute>
+              }
+            />
+            <Route
+              path="/admin/audit-log"
+              element={
+                <RoleBasedRoute allowedRoles={["ADMIN"]}>
+                  <AuditLog />
+                </RoleBasedRoute>
+              }
+            />
+            <Route
+              path="/admin/assignments"
+              element={
+                <RoleBasedRoute allowedRoles={["ADMIN"]}>
+                  <AdminAssignment />
+                </RoleBasedRoute>
+              }
+            />
 
-          {/* Planner Routes */}
-          <Route
-            path="/planner"
-            element={
-              <RoleBasedRoute allowedRoles={["PRODUCTION_PLANNER"]}>
-                <PlannerAssignment />
-              </RoleBasedRoute>
-            }
-          />
-          <Route
-            path="/planner/assignment"
-            element={
-              <RoleBasedRoute allowedRoles={["PRODUCTION_PLANNER"]}>
-                <PlannerAssignment />
-              </RoleBasedRoute>
-            }
-          />
-          <Route
-            path="/planner/scheduling"
-            element={
-              <RoleBasedRoute allowedRoles={["PRODUCTION_PLANNER"]}>
-                <PlannerScheduling />
-              </RoleBasedRoute>
-            }
-          />
-          <Route
-            path="/planner/reports"
-            element={
-              <RoleBasedRoute allowedRoles={["PRODUCTION_PLANNER"]}>
-                <PlannerReports />
-              </RoleBasedRoute>
-            }
-          />
+            {/* Planner Routes */}
+            <Route
+              path="/planner"
+              element={
+                <RoleBasedRoute
+                  allowedRoles={["MANAGER", "PRODUCTION_PLANNER"]}
+                >
+                  <PlannerAssignment />
+                </RoleBasedRoute>
+              }
+            />
+            <Route
+              path="/planner/assignment"
+              element={
+                <RoleBasedRoute
+                  allowedRoles={["MANAGER", "PRODUCTION_PLANNER"]}
+                >
+                  <PlannerAssignment />
+                </RoleBasedRoute>
+              }
+            />
+            <Route
+              path="/planner/scheduling"
+              element={
+                <RoleBasedRoute
+                  allowedRoles={["MANAGER", "PRODUCTION_PLANNER"]}
+                >
+                  <PlannerScheduling />
+                </RoleBasedRoute>
+              }
+            />
+            <Route
+              path="/planner/reports"
+              element={
+                <RoleBasedRoute
+                  allowedRoles={["MANAGER", "PRODUCTION_PLANNER"]}
+                >
+                  <PlannerReports />
+                </RoleBasedRoute>
+              }
+            />
 
-          {/* Leader Routes */}
-          <Route
-            path="/leader"
-            element={
-              <RoleBasedRoute allowedRoles={["LINE_LEADER"]}>
-                <LeaderProgress />
-              </RoleBasedRoute>
-            }
-          />
-          <Route
-            path="/leader/progress"
-            element={
-              <RoleBasedRoute allowedRoles={["LINE_LEADER"]}>
-                <LeaderProgress />
-              </RoleBasedRoute>
-            }
-          />
-          <Route
-            path="/leader/schedules/:scheduleId"
-            element={
-              <RoleBasedRoute allowedRoles={["LINE_LEADER"]}>
-                <LeaderProgress />
-              </RoleBasedRoute>
-            }
-          />
-          <Route
-            path="/leader/task-assignment"
-            element={
-              <RoleBasedRoute allowedRoles={["LINE_LEADER"]}>
-                <LeaderTaskAssignment />
-              </RoleBasedRoute>
-            }
-          />
+            {/* Leader Routes */}
+            <Route
+              path="/leader"
+              element={
+                <RoleBasedRoute allowedRoles={["LINE_LEADER"]}>
+                  <LeaderProgress />
+                </RoleBasedRoute>
+              }
+            />
+            <Route
+              path="/leader/progress"
+              element={
+                <RoleBasedRoute allowedRoles={["LINE_LEADER"]}>
+                  <LeaderProgress />
+                </RoleBasedRoute>
+              }
+            />
+            <Route
+              path="/leader/schedules/:scheduleId"
+              element={
+                <RoleBasedRoute allowedRoles={["LINE_LEADER"]}>
+                  <LeaderProgress />
+                </RoleBasedRoute>
+              }
+            />
+            <Route
+              path="/leader/task-assignment"
+              element={
+                <RoleBasedRoute allowedRoles={["LINE_LEADER"]}>
+                  <LeaderTaskAssignment />
+                </RoleBasedRoute>
+              }
+            />
 
-          {/* Reports & Dashboard Routes - accessible by all authenticated users */}
-          <Route
-            path="/reports"
-            element={
-              <ProtectedRoute>
-                <ReportsRedirect />
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/dashboard"
-            element={
-              <ProtectedRoute>
-                <Dashboard />
-              </ProtectedRoute>
-            }
-          />
-        </Route>
+            {/* Reports & Dashboard Routes - accessible by all authenticated users */}
+            <Route
+              path="/reports"
+              element={
+                <ProtectedRoute>
+                  <ReportsRedirect />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/dashboard"
+              element={
+                <ProtectedRoute>
+                  <Dashboard />
+                </ProtectedRoute>
+              }
+            />
+          </Route>
         </Routes>
 
-        {/* AI Copilot Floating Button */}
-        <button
-          className={`copilot-fab ${isCopilotOpen ? "hidden" : ""}`}
-          onClick={() => setIsCopilotOpen(true)}
-          title="AI Production Copilot"
-        >
-          🤖
-        </button>
-
-        {/* AI Copilot Panel */}
-        <AICopilot
-          isOpen={isCopilotOpen}
-          onClose={() => setIsCopilotOpen(false)}
+        <CopilotEntry
+          isCopilotOpen={isCopilotOpen}
+          setIsCopilotOpen={setIsCopilotOpen}
         />
       </BrowserRouter>
     </ConfirmDialogProvider>

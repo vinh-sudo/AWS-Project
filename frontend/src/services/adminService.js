@@ -3,7 +3,7 @@ import { api } from "./authService";
 // Uses the shared axios instance from authService which:
 // - Automatically injects Authorization header from localStorage
 // - Handles 401/403 responses (clears session & redirects to login)
-// - Uses correct base URL (localhost:8080)
+// - Uses the configured API base URL (VITE_API_URL or same-origin in production)
 
 // ==================== ORDER MANAGEMENT ====================
 

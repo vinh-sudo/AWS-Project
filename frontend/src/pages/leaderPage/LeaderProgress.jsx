@@ -169,8 +169,10 @@ const LeaderProgress = () => {
   const [schedules, setSchedules] = useState([]);
   const [scheduleDocuments, setScheduleDocuments] = useState({});
   const [localProgressBySchedule, setLocalProgressBySchedule] = useState({});
-  const [localOrderItemProgressBySchedule, setLocalOrderItemProgressBySchedule] =
-    useState({});
+  const [
+    localOrderItemProgressBySchedule,
+    setLocalOrderItemProgressBySchedule,
+  ] = useState({});
 
   // Incident types (matching backend incidentType field)
   const incidentTypes = [
@@ -402,7 +404,9 @@ const LeaderProgress = () => {
   const handleSubmitReport = async () => {
     try {
       if (error) {
-        alert("❌ Cannot submit while schedule data failed to load. Please fix access and retry.");
+        alert(
+          "❌ Cannot submit while schedule data failed to load. Please fix access and retry.",
+        );
         return;
       }
 
@@ -411,12 +415,16 @@ const LeaderProgress = () => {
       );
 
       if (!selectedScheduleFromList) {
-        alert("❌ Invalid schedule. Please reload data and choose a schedule again.");
+        alert(
+          "❌ Invalid schedule. Please reload data and choose a schedule again.",
+        );
         return;
       }
 
       if (!["RUNNING", "PAUSED"].includes(selectedScheduleFromList.status)) {
-        alert("❌ Report can only be submitted for RUNNING or PAUSED schedules.");
+        alert(
+          "❌ Report can only be submitted for RUNNING or PAUSED schedules.",
+        );
         return;
       }
 
@@ -649,10 +657,6 @@ const LeaderProgress = () => {
                 Open Incidents
               </div>
             )}
-            <button className="lp-btn-report" onClick={openReportModal}>
-              {IC.clipboard}
-              Log Shift Output
-            </button>
             <NotificationBell />
             <div className="lp-user-info">
               <span className="lp-user-name">{currentLeaderName}</span>
@@ -802,205 +806,207 @@ const LeaderProgress = () => {
 
                 return (
                   <div
-                  id={`schedule-${schedule.scheduleId}`}
-                  key={schedule.scheduleId}
-                  className="lp-schedule-card"
-                >
-                  {/* Card header */}
-                  <div className="lp-sched-header">
-                    <span className="lp-sched-id">
-                      SCH-{schedule.scheduleId}
-                    </span>
-                    <span
-                      className={`lp-status-badge ${getStatusBadgeClass(schedule.status)}`}
-                    >
-                      {getStatusLabel(schedule.status)}
-                    </span>
-                  </div>
-
-                  {/* Title */}
-                  <h3 className="lp-sched-title">
-                    {schedule.orderInfo || "N/A"}
-                  </h3>
-
-                  {/* Details */}
-                  <div className="lp-sched-details">
-                    <div className="lp-sched-detail">
-                      <span className="lp-sched-detail-label">Start</span>
-                      <span className="lp-sched-detail-value">
-                        {schedule.startTime
-                          ? new Date(schedule.startTime).toLocaleString("en-US")
-                          : "—"}
+                    id={`schedule-${schedule.scheduleId}`}
+                    key={schedule.scheduleId}
+                    className="lp-schedule-card"
+                  >
+                    {/* Card header */}
+                    <div className="lp-sched-header">
+                      <span className="lp-sched-id">
+                        SCH-{schedule.scheduleId}
+                      </span>
+                      <span
+                        className={`lp-status-badge ${getStatusBadgeClass(schedule.status)}`}
+                      >
+                        {getStatusLabel(schedule.status)}
                       </span>
                     </div>
-                    <div className="lp-sched-detail">
-                      <span className="lp-sched-detail-label">End</span>
-                      <span className="lp-sched-detail-value">
-                        {schedule.endTime
-                          ? new Date(schedule.endTime).toLocaleString("en-US")
-                          : "—"}
-                      </span>
-                    </div>
-                    {scheduleProgress != null && (
-                      <div className="lp-sched-detail">
-                        <span className="lp-sched-detail-label">Progress</span>
-                        <span className="lp-sched-detail-value">
-                          {scheduleProgress}%
-                        </span>
-                      </div>
-                    )}
-                    {orderProgress != null && (
-                      <div className="lp-sched-detail">
-                        <span className="lp-sched-detail-label">
-                          Order Completion
-                        </span>
-                        <span className="lp-sched-detail-value">
-                          {orderProgress}%
-                        </span>
-                      </div>
-                    )}
-                    {orderItemProgress != null && (
-                      <div className="lp-sched-detail">
-                        <span className="lp-sched-detail-label">
-                          Item Completion
-                        </span>
-                        <span className="lp-sched-detail-value">
-                          {orderItemProgress}%
-                        </span>
-                      </div>
-                    )}
-                    {targetQuantity != null && (
-                      <div className="lp-sched-detail">
-                        <span className="lp-sched-detail-label">Target Quantity</span>
-                        <span className="lp-sched-detail-value">
-                          {targetQuantity.toLocaleString()} units
-                        </span>
-                      </div>
-                    )}
-                    {previousStageGoodQuantity != null && (
-                      <div className="lp-sched-detail">
-                        <span className="lp-sched-detail-label">
-                          Previous Stage Good
-                        </span>
-                        <span className="lp-sched-detail-value">
-                          {previousStageGoodQuantity.toLocaleString()} units
-                        </span>
-                      </div>
-                    )}
-                  </div>
 
-                  {/* Actions — SCHEDULED */}
-                  {schedule.status === "SCHEDULED" && (
-                    <div className="lp-sched-actions">
-                      <button
-                        className="lp-action-btn resume"
-                        onClick={async () => {
-                          try {
-                            const startResult =
-                              await leaderService.startSchedule(
-                                schedule.scheduleId,
+                    {/* Title */}
+                    <h3 className="lp-sched-title">
+                      {schedule.orderInfo || "N/A"}
+                    </h3>
+
+                    {/* Details */}
+                    <div className="lp-sched-details">
+                      <div className="lp-sched-detail">
+                        <span className="lp-sched-detail-label">Start</span>
+                        <span className="lp-sched-detail-value">
+                          {schedule.startTime
+                            ? new Date(schedule.startTime).toLocaleString(
+                                "en-US",
+                              )
+                            : "—"}
+                        </span>
+                      </div>
+                      <div className="lp-sched-detail">
+                        <span className="lp-sched-detail-label">End</span>
+                        <span className="lp-sched-detail-value">
+                          {schedule.endTime
+                            ? new Date(schedule.endTime).toLocaleString("en-US")
+                            : "—"}
+                        </span>
+                      </div>
+                      {scheduleProgress != null && (
+                        <div className="lp-sched-detail">
+                          <span className="lp-sched-detail-label">
+                            Progress
+                          </span>
+                          <span className="lp-sched-detail-value">
+                            {scheduleProgress}%
+                          </span>
+                        </div>
+                      )}
+                      {orderProgress != null && (
+                        <div className="lp-sched-detail">
+                          <span className="lp-sched-detail-label">
+                            Order Completion
+                          </span>
+                          <span className="lp-sched-detail-value">
+                            {orderProgress}%
+                          </span>
+                        </div>
+                      )}
+                      {orderItemProgress != null && (
+                        <div className="lp-sched-detail">
+                          <span className="lp-sched-detail-label">
+                            Item Completion
+                          </span>
+                          <span className="lp-sched-detail-value">
+                            {orderItemProgress}%
+                          </span>
+                        </div>
+                      )}
+                      {targetQuantity != null && (
+                        <div className="lp-sched-detail">
+                          <span className="lp-sched-detail-label">
+                            Target Quantity
+                          </span>
+                          <span className="lp-sched-detail-value">
+                            {targetQuantity.toLocaleString()} units
+                          </span>
+                        </div>
+                      )}
+                      {previousStageGoodQuantity != null && (
+                        <div className="lp-sched-detail">
+                          <span className="lp-sched-detail-label">
+                            Previous Stage Good
+                          </span>
+                          <span className="lp-sched-detail-value">
+                            {previousStageGoodQuantity.toLocaleString()} units
+                          </span>
+                        </div>
+                      )}
+                    </div>
+
+                    {/* Actions — SCHEDULED */}
+                    {schedule.status === "SCHEDULED" && (
+                      <div className="lp-sched-actions">
+                        <button
+                          className="lp-action-btn resume"
+                          onClick={async () => {
+                            try {
+                              const startResult =
+                                await leaderService.startSchedule(
+                                  schedule.scheduleId,
+                                );
+
+                              if (
+                                Array.isArray(startResult?.documents) &&
+                                startResult.documents.length > 0
+                              ) {
+                                setScheduleDocuments((prev) => ({
+                                  ...prev,
+                                  [schedule.scheduleId]: startResult.documents,
+                                }));
+                              }
+
+                              alert("▶️ Production started!");
+                              fetchData();
+                            } catch (err) {
+                              alert(
+                                `❌ Error: ${err.response?.data?.message || "Unable to start"}`,
                               );
-
-                            if (
-                              Array.isArray(startResult?.documents) &&
-                              startResult.documents.length > 0
-                            ) {
-                              setScheduleDocuments((prev) => ({
-                                ...prev,
-                                [schedule.scheduleId]: startResult.documents,
-                              }));
                             }
+                          }}
+                        >
+                          {IC.play} Start Production
+                        </button>
+                      </div>
+                    )}
 
-                            alert("▶️ Production started!");
-                            fetchData();
-                          } catch (err) {
-                            alert(
-                              `❌ Error: ${err.response?.data?.message || "Unable to start"}`,
-                            );
+                    {/* Actions — RUNNING */}
+                    {schedule.status === "RUNNING" && (
+                      <div className="lp-sched-actions">
+                        <button
+                          className="lp-action-btn report"
+                          onClick={() => openReportModal(schedule)}
+                        >
+                          {IC.clipboard} Log Production Output
+                        </button>
+                        {!!(
+                          (schedule.documents &&
+                            schedule.documents.length > 0) ||
+                          (scheduleDocuments[schedule.scheduleId] &&
+                            scheduleDocuments[schedule.scheduleId].length > 0)
+                        ) && (
+                          <button
+                            className="lp-action-btn documents"
+                            onClick={() => openDocumentsModal(schedule)}
+                          >
+                            {IC.clipboard} View Documents
+                          </button>
+                        )}
+                        <button
+                          className="lp-action-btn incident"
+                          onClick={() => openIncidentModal(schedule)}
+                        >
+                          {IC.alertTriangle} Report Incident
+                        </button>
+                      </div>
+                    )}
+
+                    {/* Actions — PAUSED */}
+                    {schedule.status === "PAUSED" && (
+                      <div className="lp-sched-actions">
+                        <button
+                          className="lp-action-btn resume"
+                          onClick={() =>
+                            handleResumeSchedule(schedule.scheduleId)
                           }
-                        }}
-                      >
-                        {IC.play} Start Production
-                      </button>
-                    </div>
-                  )}
-
-                  {/* Actions — RUNNING */}
-                  {schedule.status === "RUNNING" && (
-                    <div className="lp-sched-actions">
-                      <button
-                        className="lp-action-btn report"
-                        onClick={() => openReportModal(schedule)}
-                      >
-                        {IC.clipboard} Log Production Output
-                      </button>
-                      {!!(
-                        (schedule.documents && schedule.documents.length > 0) ||
-                        (scheduleDocuments[schedule.scheduleId] &&
-                          scheduleDocuments[schedule.scheduleId].length > 0)
-                      ) && (
-                        <button
-                          className="lp-action-btn documents"
-                          onClick={() => openDocumentsModal(schedule)}
                         >
-                          {IC.clipboard} View Documents
+                          {IC.play} Resume
                         </button>
-                      )}
-                      <button
-                        className="lp-action-btn incident"
-                        onClick={() => openIncidentModal(schedule)}
-                      >
-                        {IC.alertTriangle} Report Incident
-                      </button>
-                    </div>
-                  )}
-
-                  {/* Actions — PAUSED */}
-                  {schedule.status === "PAUSED" && (
-                    <div className="lp-sched-actions">
-                      <button
-                        className="lp-action-btn resume"
-                        onClick={() =>
-                          handleResumeSchedule(schedule.scheduleId)
-                        }
-                      >
-                        {IC.play} Resume
-                      </button>
-                      {!!(
-                        (schedule.documents && schedule.documents.length > 0) ||
-                        (scheduleDocuments[schedule.scheduleId] &&
-                          scheduleDocuments[schedule.scheduleId].length > 0)
-                      ) && (
+                        {!!(
+                          (schedule.documents &&
+                            schedule.documents.length > 0) ||
+                          (scheduleDocuments[schedule.scheduleId] &&
+                            scheduleDocuments[schedule.scheduleId].length > 0)
+                        ) && (
+                          <button
+                            className="lp-action-btn documents"
+                            onClick={() => openDocumentsModal(schedule)}
+                          >
+                            {IC.clipboard} View Documents
+                          </button>
+                        )}
                         <button
-                          className="lp-action-btn documents"
-                          onClick={() => openDocumentsModal(schedule)}
+                          className="lp-action-btn incident"
+                          onClick={() => openIncidentModal(schedule)}
                         >
-                          {IC.clipboard} View Documents
+                          {IC.alertTriangle} Report Incident
                         </button>
-                      )}
-                      <button
-                        className="lp-action-btn report"
-                        onClick={() => openReportModal(schedule)}
-                      >
-                        {IC.clipboard} Log Shift Output
-                      </button>
-                      <button
-                        className="lp-action-btn incident"
-                        onClick={() => openIncidentModal(schedule)}
-                      >
-                        {IC.alertTriangle} Report Incident
-                      </button>
-                    </div>
-                  )}
+                      </div>
+                    )}
 
-                  {/* Completed badge */}
-                  {schedule.status === "COMPLETED" && (
-                    <div className="lp-sched-actions">
-                      <span className="lp-completed-info">
-                        {IC.check} Completed
-                      </span>
-                    </div>
-                  )}
+                    {/* Completed badge */}
+                    {schedule.status === "COMPLETED" && (
+                      <div className="lp-sched-actions">
+                        <span className="lp-completed-info">
+                          {IC.check} Completed
+                        </span>
+                      </div>
+                    )}
                   </div>
                 );
               })
@@ -1203,7 +1209,8 @@ const LeaderProgress = () => {
                         key={schedule.scheduleId}
                         value={schedule.scheduleId}
                       >
-                        SCH-{schedule.scheduleId} - {schedule.orderInfo || "N/A"}
+                        SCH-{schedule.scheduleId} -{" "}
+                        {schedule.orderInfo || "N/A"}
                         {getScheduleTargetQuantity(schedule) != null
                           ? ` (Target: ${getScheduleTargetQuantity(schedule).toLocaleString()})`
                           : ""}
@@ -1214,7 +1221,9 @@ const LeaderProgress = () => {
                   Progress percentage is computed by backend from cumulative
                   reported output.
                 </p>
-                <p className="lp-inline-help">Draft is auto-saved while you type.</p>
+                <p className="lp-inline-help">
+                  Draft is auto-saved while you type.
+                </p>
               </div>
 
               {selectedSchedule &&
@@ -1222,7 +1231,8 @@ const LeaderProgress = () => {
                   String(shiftReport.scheduleId) && (
                   <div className="lp-modal-info">
                     <p>
-                      <strong>Schedule:</strong> SCH-{selectedSchedule.scheduleId}
+                      <strong>Schedule:</strong> SCH-
+                      {selectedSchedule.scheduleId}
                     </p>
                     <p className="lp-modal-info-title">
                       {selectedSchedule.orderInfo || "N/A"}
@@ -1260,11 +1270,16 @@ const LeaderProgress = () => {
                   className="lp-form-input"
                   placeholder="Enter target quantity..."
                 />
-                {selectedSchedule && getScheduleTargetQuantity(selectedSchedule) != null && (
-                  <p className="lp-inline-help">
-                    Manager target: {getScheduleTargetQuantity(selectedSchedule).toLocaleString()} units
-                  </p>
-                )}
+                {selectedSchedule &&
+                  getScheduleTargetQuantity(selectedSchedule) != null && (
+                    <p className="lp-inline-help">
+                      Manager target:{" "}
+                      {getScheduleTargetQuantity(
+                        selectedSchedule,
+                      ).toLocaleString()}{" "}
+                      units
+                    </p>
+                  )}
               </div>
 
               <div className="lp-form-group">

@@ -15,8 +15,6 @@ import org.springframework.data.repository.query.Param;
 @Repository
 public interface AccountRepository extends JpaRepository<Account, Integer> {
 
-    long countByStatusIgnoreCase(String status);
-
     @Query("SELECT a FROM Account a JOIN FETCH a.employee e WHERE e.employeeCode = :employeeCode")
     Optional<Account> findByEmployeeCode(String employeeCode);
 
@@ -26,11 +24,11 @@ public interface AccountRepository extends JpaRepository<Account, Integer> {
             "FROM Account a JOIN a.employee e WHERE e.employeeCode = :employeeCode")
     boolean existsByEmployeeCode(String employeeCode);
 
-    @Query("SELECT a FROM Account a LEFT JOIN FETCH a.employee WHERE a.username = :username")
-    Optional<Account> findByUsername(@Param("username") String username);
+    Optional<Account> findByUsername(String username);
 
     // Sửa lại trả về List<Account> thay vì Optional<Account> để tránh lỗi NonUniqueResultException
     List<Account> findByRoleIgnoreCase(String role);
+
 
     @Query(value = "SELECT a.* FROM accounts a" +
             " LEFT JOIN employee e ON e.employee_id = a.employee_id" +
@@ -38,12 +36,13 @@ public interface AccountRepository extends JpaRepository<Account, Integer> {
             "   AND (:search IS NULL OR LOWER(a.username::text) LIKE LOWER('%' || :search || '%'))" +
             " ORDER BY a.created_at DESC",
             countQuery = "SELECT COUNT(*) FROM accounts a" +
-                    " WHERE (:role IS NULL OR UPPER(a.role::text) = UPPER(:role))" +
-                    "   AND (:search IS NULL OR LOWER(a.username::text) LIKE LOWER('%' || :search || '%'))",
+            " WHERE (:role IS NULL OR UPPER(a.role::text) = UPPER(:role))" +
+            "   AND (:search IS NULL OR LOWER(a.username::text) LIKE LOWER('%' || :search || '%'))",
             nativeQuery = true)
+
     Page<Account> findAllWithFilters(@Param("role") String role,
-                                     @Param("search") String search,
-                                     Pageable pageable);
+            @Param("search") String search,
+            Pageable pageable);
 
     // Lấy tất cả account LINE_LEADER chưa gắn line nào (status ACTIVE)
     @Query("SELECT a FROM Account a" +

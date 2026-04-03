@@ -62,21 +62,21 @@ public class AuthService {
         } else {
             // Không tìm thấy employeeCode → thử tìm bằng username (admin)
             account = accountRepository.findByUsername(identifier)
-                    .orElseThrow(() -> new BusinessException("Tài khoản không tồn tại"));
+                    .orElseThrow(() -> new BusinessException("Account does not exist"));
 
             // Chỉ admin mới được login bằng username
             if (!Role.ADMIN.name().equals(account.getRole())) {
-                throw new BusinessException("Mã nhân viên không tồn tại");
+                throw new BusinessException("Employee code does not exist");
             }
         }
 
         if (!"active".equals(account.getStatus())) {
-            throw new BusinessException("Tài khoản chưa được kích hoạt");
+            throw new BusinessException("Account is not activated");
         }
 
         if (!passwordEncoder.matches(request.getPassword(), account.getPasswordHash())) {
             log.warn("Failed login attempt for: {}", identifier);
-            throw new BusinessException("Mã nhân viên hoặc mật khẩu không đúng");
+            throw new BusinessException("Invalid employee code or password");
         }
 
         String accessToken = jwtService.generateToken(account);

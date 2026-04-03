@@ -3,6 +3,14 @@
     overflow: hidden;
 }
 
+.auditlog-page .dash-header {
+    z-index: 10;
+}
+
+.auditlog-page .dash-header-right {
+    z-index: 11;
+}
+
 .auditlog-stats {
     display: grid;
     grid-template-columns: repeat(3, minmax(0, 1fr));
@@ -65,11 +73,38 @@
 
 .auditlog-toolbar .form-input,
 .auditlog-toolbar .form-select {
-    height: 40px;
+    min-height: 46px;
+    height: 46px;
+    padding: 10px 14px;
+    line-height: 1.35;
     border-radius: 10px;
     border: 1px solid #d3e1e6;
     background: #ffffff;
+    box-sizing: border-box;
     transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.auditlog-toolbar .form-select {
+    appearance: none;
+    -webkit-appearance: none;
+    -moz-appearance: none;
+    padding-right: 42px;
+    background-color: #ffffff;
+    background-image:
+        linear-gradient(180deg, rgba(211, 225, 230, 0.95), rgba(211, 225, 230, 0.95)),
+        url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 16 16' fill='none'%3E%3Cpath d='M6 4l4 4-4 4' stroke='%230e7490' stroke-width='1.8' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+    background-repeat: no-repeat, no-repeat;
+    background-size: 1px 60%, 16px 16px;
+    background-position: right 38px center, right 16px center;
+    cursor: pointer;
+}
+
+.auditlog-toolbar .form-select:hover {
+    border-color: #a9c0c8;
+}
+
+.auditlog-toolbar .form-select::-ms-expand {
+    display: none;
 }
 
 .auditlog-toolbar .form-input:focus,
@@ -77,6 +112,12 @@
     outline: none;
     border-color: #0e7490;
     box-shadow: 0 0 0 3px rgba(14, 116, 144, 0.12);
+}
+
+.auditlog-toolbar .form-select:focus {
+    background-image:
+        linear-gradient(180deg, rgba(211, 225, 230, 0.95), rgba(211, 225, 230, 0.95)),
+        url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 16 16' fill='none'%3E%3Cpath d='M4 6l4 4 4-4' stroke='%230e7490' stroke-width='1.8' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
 }
 
 .auditlog-toolbar-row {
@@ -99,11 +140,12 @@
 
 .auditlog-btn-secondary,
 .auditlog-toolbar .btn-primary {
-    min-height: 40px;
+    min-height: 46px;
     border-radius: 10px;
     font-size: 13px;
+    line-height: 1.2;
     font-weight: 700;
-    padding: 0 14px;
+    padding: 10px 16px;
 }
 
 .auditlog-btn-secondary {
