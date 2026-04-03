@@ -109,8 +109,17 @@ api.interceptors.request.use(async (config) => {
     await safeGetItem(ACCESS_TOKEN_KEY)
   );
 
+  const requestUrl = String(config.url ?? "").toLowerCase();
+  const isAuthLoginRequest = requestUrl.includes("/api/auth/login");
+
   if (isTokenExpired(token)) {
     await clearSession("expired");
+
+    // Login must stay reachable even when local token is stale.
+    if (isAuthLoginRequest) {
+      return config;
+    }
+
     return Promise.reject(new Error("Session expired"));
   }
 
