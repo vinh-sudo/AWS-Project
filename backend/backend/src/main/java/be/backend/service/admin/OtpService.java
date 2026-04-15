@@ -4,12 +4,14 @@ import be.backend.entity.Employee;
 import be.backend.repository.EmployeeRepository;
 import be.backend.service.utilities.EmailService;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.stereotype.Service;
 
 import java.util.Random;
 import java.util.concurrent.TimeUnit;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class OtpService {
@@ -21,37 +23,47 @@ public class OtpService {
     private static final int EXPIRE_MIN = 5;
 
     public void generateOtpByEmployeeCode(String employeeCode) {
+        String key = "OTP:" + employeeCode;
+        String otp = String.format("%06d", new Random().nextInt(999999));
+        try {
+            if (Boolean.TRUE.equals(redisTemplate.hasKey(key))) {
+                redisTemplate.delete(key);
+            }
+            redisTemplate.opsForValue().set(key, otp, EXPIRE_MIN, TimeUnit.MINUTES);
+        } catch (Exception e) {
+            // Nếu Redis lỗi, vẫn gửi OTP qua email nhưng không lưu vào Redis
+            // => OTP sẽ không kiểm tra được
+            log.warn("[Redis] Failed to store OTP for {}: {}", employeeCode, e.getMessage());
+        }
 
         Employee emp = employeeRepository.findByEmployeeCode(employeeCode)
                 .orElseThrow(() -> new RuntimeException("Employee not found"));
 
         String email = emp.getUser().getEmail();
-        String key = "OTP:" + employeeCode;
-
-        if (Boolean.TRUE.equals(redisTemplate.hasKey(key))) {
-            throw new RuntimeException("OTP already sent. Please wait.");
-        }
-
-        String otp = String.valueOf(new Random().nextInt(899999) + 100000);
-        redisTemplate.opsForValue().set(key, otp, EXPIRE_MIN, TimeUnit.MINUTES);
 
         emailService.sendOtpEmail(email, otp);
     }
 
     public boolean verifyOtp(String employeeCode, String otp) {
         String key = "OTP:" + employeeCode;
-        String value = redisTemplate.opsForValue().get(key);
-
-        if (value != null && value.equals(otp)) {
-            redisTemplate.delete(key);
-            return true;
+        try {
+            String value = redisTemplate.opsForValue().get(key);
+            if (value != null && value.equals(otp)) {
+                redisTemplate.delete(key);
+                return true;
+            }
+        } catch (Exception e) {
+            log.warn("[Redis] Failed to verify OTP for {}: {}", employeeCode, e.getMessage());
         }
         return false;
     }
 
     public void resendOtp(String employeeCode) {
-        redisTemplate.delete("OTP:" + employeeCode);
+        try {
+            redisTemplate.delete("OTP:" + employeeCode);
+        } catch (Exception e) {
+            log.warn("[Redis] Failed to delete OTP for {}: {}", employeeCode, e.getMessage());
+        }
         generateOtpByEmployeeCode(employeeCode);
     }
 }
-

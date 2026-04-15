@@ -4,17 +4,14 @@ spring:
     username: postgres
     password: zAghXDygkxzsfGfItOcVCjqkqKrCCGKu
     driver-class-name: org.postgresql.Driver
-
   jpa:
     hibernate:
       ddl-auto: validate
     show-sql: true
-
   flyway:
-    enabled: true
+    enabled: false
     locations: classpath:db/migration
     baseline-on-migrate: true
-
   data:
     redis:
       host: evolving-muskox-40304.upstash.io
@@ -23,8 +20,10 @@ spring:
       password: AZ1wAAIncDJkNWQ4OGMzODA3ODI0NDQyOGJiZDhjNmY2MzZiNTg4MXAyNDAzMDQ
       ssl:
         enabled: true
+      repositories:
+        enabled: false
   mail:
-    host: email-smtp.<ap-southeast-1>.amazonaws.com
+    host: email-smtp.ap-southeast-1.amazonaws.com
     port: 587
     username: ${SES_SMTP_USERNAME}
     password: ${SES_SMTP_PASSWORD}
@@ -34,6 +33,8 @@ spring:
           auth: true
           starttls:
             enable: true
+  main:
+    lazy-initialization: true
 
 aws:
   access-key: AKIAZJIX3IDXGBVR7NWF
@@ -64,4 +65,23 @@ logging:
 
 app:
   mail:
+<<<<<<< HEAD
     from: no-reply@your-domain.com # Thay bang email da verify tren SES
+=======
+    from: no-reply@ims.mom
+
+management:
+  endpoint:
+    health:
+      probes:
+        enabled: true
+  endpoints:
+    web:
+      exposure:
+        include: health
+  health:
+    livenessstate:
+      enabled: true
+    readinessstate:
+      enabled: true
+>>>>>>> 11eeb41e61d6ab7e66f9f4b9865c48e378288290

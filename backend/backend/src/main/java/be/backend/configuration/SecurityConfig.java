@@ -1,6 +1,5 @@
 package be.backend.configuration;
 
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.authentication.AuthenticationManager;
@@ -17,14 +16,14 @@ import org.springframework.security.web.authentication.UsernamePasswordAuthentic
 @EnableWebSecurity
 @EnableMethodSecurity(prePostEnabled = true)
 public class SecurityConfig {
-    @Autowired
-    private JwtAuthentificationFilter jwtAuthenticationFilter;
+    private final JwtAuthenticationFilter jwtAuthenticationFilter;
+    private final WebConfig webConfig;
 
-    @Autowired
-    private WebConfig webConfig;
-    public SecurityConfig(JwtAuthentificationFilter jwtAuthenticationFilter) {
+    public SecurityConfig(JwtAuthenticationFilter jwtAuthenticationFilter, WebConfig webConfig) {
         this.jwtAuthenticationFilter = jwtAuthenticationFilter;
+        this.webConfig = webConfig;
     }
+
     @Bean
     public PasswordEncoder passwordEncoder() {
         return new BCryptPasswordEncoder();
@@ -39,24 +38,28 @@ public class SecurityConfig {
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         http
                 .csrf(csrf -> csrf.disable())
+<<<<<<< HEAD
                 .cors(cors -> cors.configurationSource(webConfig.corsConfigurationSource())) // Spring resolves the CorsConfigurationSource bean automatically
+=======
+                .cors(cors -> cors.configurationSource(webConfig.corsConfigurationSource()))
+>>>>>>> 11eeb41e61d6ab7e66f9f4b9865c48e378288290
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers(
                                 "/api/auth/login",
                                 "/api/auth/register",
                                 "/api/auth/logout",
-                                "/otp/**"
+                                "/otp/**",
+                                "/actuator/health",
+                                "/actuator/health/**"
                         ).permitAll()
                         .requestMatchers(
                                 "/swagger-ui/**",
                                 "/swagger-ui.html",
                                 "/v3/api-docs/**"
                         ).permitAll()
-
                         .anyRequest().authenticated()
                 )
                 .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
-
         return http.build();
     }
 

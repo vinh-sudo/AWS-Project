@@ -6,7 +6,7 @@ import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
-import org.springframework.beans.factory.annotation.Autowired;
+import lombok.RequiredArgsConstructor;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UserDetails;
@@ -18,15 +18,12 @@ import org.springframework.web.filter.OncePerRequestFilter;
 import java.io.IOException;
 
 @Component
-public class JwtAuthentificationFilter extends OncePerRequestFilter {
-    @Autowired
-    private JwtService jwtService;
+@RequiredArgsConstructor
+public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
-    @Autowired
-    private UserDetailsService userDetailsService;
-
-    @Autowired
-    private TokenBlacklistService tokenBlacklistService;
+    private final JwtService jwtService;
+    private final UserDetailsService userDetailsService;
+    private final TokenBlacklistService tokenBlacklistService;
 
     @Override
     protected void doFilterInternal(HttpServletRequest request,
@@ -35,29 +32,26 @@ public class JwtAuthentificationFilter extends OncePerRequestFilter {
 
         String path = request.getServletPath();
 
-
-        if (path.startsWith("/api/auth/") ||
-                path.startsWith("/otp") ||
-                path.startsWith("/api/vnpay/") ||
-                path.contains("/public")) {
-
+        if (path.startsWith("/api/auth/")
+                || path.startsWith("/otp")
+                || path.startsWith("/api/vnpay/")
+                || path.contains("/public")) {
             filterChain.doFilter(request, response);
             return;
         }
-
 
         final String authHeader = request.getHeader("Authorization");
         if (authHeader != null && authHeader.startsWith("Bearer ")) {
             String jwt = authHeader.substring(7);
 
-             // Check the blacklist before processing
-        if (tokenBlacklistService.isBlacklisted(jwt)) {           
-            response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
-            response.getWriter().write("{\"error\": \"Token has been invalidated\"}");
-            return;  // Stop processing
-        }
-            String username = jwtService.extractUsername(jwt);
 
+            if (tokenBlacklistService.isBlacklisted(jwt)) {
+                response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
+                response.getWriter().write("{\"error\": \"Token has been invalidated\"}");
+                return;
+            }
+
+            String username = jwtService.extractUsername(jwt);
             if (username != null && SecurityContextHolder.getContext().getAuthentication() == null) {
                 UserDetails user = userDetailsService.loadUserByUsername(username);
                 if (jwtService.isTokenValid(jwt, user)) {
@@ -72,3 +66,4 @@ public class JwtAuthentificationFilter extends OncePerRequestFilter {
         filterChain.doFilter(request, response);
     }
 }
+

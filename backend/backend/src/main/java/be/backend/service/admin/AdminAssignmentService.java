@@ -4,6 +4,7 @@ import be.backend.entity.Account;
 import be.backend.entity.Employee;
 import be.backend.entity.LineLeaderAssignment;
 import be.backend.entity.ProductionLine;
+import be.backend.event.EmployeeEvent;
 import be.backend.exception.BusinessException;
 import be.backend.exception.ResourceNotFoundException;
 import be.backend.model.request.AssignLeaderRequest;
@@ -14,6 +15,7 @@ import be.backend.repository.EmployeeRepository;
 import be.backend.repository.LineLeaderAssignmentRepository;
 import be.backend.repository.ProductionLineRepository;
 import lombok.RequiredArgsConstructor;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -28,6 +30,7 @@ public class AdminAssignmentService {
     private final ProductionLineRepository lineRepo;
     private final EmployeeRepository employeeRepo;
     private final AccountRepository accountRepo;
+    private final ApplicationEventPublisher eventPublisher;
 
     // ======================== LIST ========================
 
@@ -91,7 +94,9 @@ public class AdminAssignmentService {
         assignment.setStartDate(OffsetDateTime.now());
         assignment.setCreatedAt(OffsetDateTime.now());
 
-        return toResponse(assignmentRepo.save(assignment));
+        LineLeaderAssignment saved = assignmentRepo.save(assignment);
+        eventPublisher.publishEvent(new EmployeeEvent.EmployeeAssignedToLineEvent(leader, line));
+        return toResponse(saved);
     }
 
     // ======================== UNASSIGN ========================
@@ -109,7 +114,9 @@ public class AdminAssignmentService {
         assignment.setStatus("ENDED");
         assignment.setEndDate(OffsetDateTime.now());
 
-        return toResponse(assignmentRepo.save(assignment));
+        LineLeaderAssignment saved = assignmentRepo.save(assignment);
+        eventPublisher.publishEvent(new EmployeeEvent.EmployeeRemovedFromLineEvent(saved.getLeader(), saved.getLine()));
+        return toResponse(saved);
     }
 
     // ======================== MAPPING ========================

@@ -109,4 +109,7 @@ List<OrderTrendProjection> getOrderTrend(
 RevenueProjection getRevenueSummary(
         @Param("from") OffsetDateTime from,
         @Param("to") OffsetDateTime to);
+
+    @Query("SELECT o FROM Order o WHERE o.deadline IS NOT NULL AND o.deadline < :now AND UPPER(o.status) NOT IN ('COMPLETED', 'CANCELLED')")
+    List<Order> findLateOrders(@Param("now") OffsetDateTime now);
 }

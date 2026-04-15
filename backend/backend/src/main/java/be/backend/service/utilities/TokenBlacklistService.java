@@ -22,10 +22,19 @@ public class TokenBlacklistService {
      */
     public void blacklistToken(String token, Long expirationInSeconds){
         String key = BLACKLIST_PREFIX + token;
+<<<<<<< HEAD
         // Store in Redis with TTL equal to the remaining token lifetime
         // After the token expires, Redis removes it automatically to save memory
         redisTemplate.opsForValue().set(key, "blacklisted", expirationInSeconds, TimeUnit.SECONDS);
         log.info("Token blacklisted, will expire in {} seconds", expirationInSeconds);
+=======
+        try {
+            redisTemplate.opsForValue().set(key, "blacklisted", expirationInSeconds, TimeUnit.SECONDS);
+            log.info("Token blacklisted, will expire in {} seconds", expirationInSeconds);
+        } catch (Exception e) {
+            log.warn("[Redis] Failed to blacklist token, fallback to no blacklist. token={} error={}", token, e.getMessage());
+        }
+>>>>>>> 11eeb41e61d6ab7e66f9f4b9865c48e378288290
     }
 
     /**
@@ -35,13 +44,22 @@ public class TokenBlacklistService {
      */
     public boolean isBlacklisted(String token){
         String key = BLACKLIST_PREFIX + token;
-        boolean exists = redisTemplate.hasKey(key);
-        return Boolean.TRUE.equals(exists);
+        try {
+            boolean exists = redisTemplate.hasKey(key);
+            return Boolean.TRUE.equals(exists);
+        } catch (Exception e) {
+            log.warn("[Redis] Failed to check blacklist, fallback to allow. token={} error={}", token, e.getMessage());
+            return false;
+        }
     }
 
     public void removeFromBlacklist(String token){
         String key = BLACKLIST_PREFIX + token;
-        redisTemplate.delete(key);
-        log.info("Token removed from blacklist");
+        try {
+            redisTemplate.delete(key);
+            log.info("Token removed from blacklist");
+        } catch (Exception e) {
+            log.warn("[Redis] Failed to remove token from blacklist, token={} error={}", token, e.getMessage());
+        }
     }
 }
