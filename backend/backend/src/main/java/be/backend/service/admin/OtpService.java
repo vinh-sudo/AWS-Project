@@ -1,6 +1,7 @@
 package be.backend.service.admin;
 
 import be.backend.entity.Employee;
+import be.backend.exception.ResourceNotFoundException;
 import be.backend.repository.EmployeeRepository;
 import be.backend.service.utilities.EmailService;
 import lombok.RequiredArgsConstructor;
@@ -37,25 +38,37 @@ public class OtpService {
         }
 
         Employee emp = employeeRepository.findByEmployeeCode(employeeCode)
-                .orElseThrow(() -> new RuntimeException("Employee not found"));
+                .orElseThrow(() -> new ResourceNotFoundException("Employee not found"));
 
         String email = emp.getUser().getEmail();
 
         emailService.sendOtpEmail(email, otp);
     }
 
-    public boolean verifyOtp(String employeeCode, String otp) {
+    public boolean checkOtpOnly(String employeeCode, String otp) {
         String key = "OTP:" + employeeCode;
         try {
             String value = redisTemplate.opsForValue().get(key);
-            if (value != null && value.equals(otp)) {
-                redisTemplate.delete(key);
-                return true;
-            }
+            return value != null && value.equals(otp);
         } catch (Exception e) {
-            log.warn("[Redis] Failed to verify OTP for {}: {}", employeeCode, e.getMessage());
+            log.warn("[Redis] Failed to check OTP for {}: {}", employeeCode, e.getMessage());
+            return false;
         }
-        return false;
+    }
+
+    public boolean verifyOtp(String employeeCode, String otp) {
+        boolean valid = checkOtpOnly(employeeCode, otp);
+        if (!valid) {
+            return false;
+        }
+
+        String key = "OTP:" + employeeCode;
+        try {
+            redisTemplate.delete(key);
+        } catch (Exception e) {
+            log.warn("[Redis] Failed to delete OTP for {} after verification: {}", employeeCode, e.getMessage());
+        }
+        return true;
     }
 
     public void resendOtp(String employeeCode) {

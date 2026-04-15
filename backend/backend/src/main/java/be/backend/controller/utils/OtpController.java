@@ -7,6 +7,8 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.Map;
+
 @RestController
 @RequestMapping("/otp")
 @RequiredArgsConstructor
@@ -21,7 +23,19 @@ public class OtpController {
         otpService.generateOtpByEmployeeCode(request.getEmployeeCode());
         return ResponseEntity.ok("OTP sent to employee email");
     }
-    // 2. Enter OTP + new password
+
+    // 2. Enter OTP screen: check OTP only (do not consume)
+    @PostMapping("/forgot/check")
+    public ResponseEntity<?> checkPasswordOtp(@RequestBody PasswordResetRequest request) {
+        boolean valid = otpService.checkOtpOnly(
+                request.getEmployeeCode(),
+                request.getOtp()
+        );
+
+        return ResponseEntity.ok(Map.of("valid", valid));
+    }
+
+    // 3. Final submit: OTP + new password
     @PostMapping("/forgot/verify")
     public ResponseEntity<?> verifyPasswordOtp(@RequestBody PasswordResetRequest request) {
 

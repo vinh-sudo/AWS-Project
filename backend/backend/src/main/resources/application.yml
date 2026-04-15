@@ -65,9 +65,7 @@ logging:
 
 app:
   mail:
-<<<<<<< HEAD
-    from: no-reply@your-domain.com # Thay bang email da verify tren SES
-=======
+
     from: no-reply@ims.mom
 
 management:
@@ -84,4 +82,4 @@ management:
       enabled: true
     readinessstate:
       enabled: true
->>>>>>> 11eeb41e61d6ab7e66f9f4b9865c48e378288290
+
