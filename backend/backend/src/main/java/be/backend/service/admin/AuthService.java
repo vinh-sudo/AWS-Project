@@ -46,37 +46,37 @@ public class AuthService {
     private Long jwtExpiration;
 
     /**
-     * @param request -Chứa employeeCode và password
-     * @return LoginResponse - Chứa token và thông tin user
+     * @param request contains employeeCode and password
+     * @return LoginResponse containing the token and user information
      */
     @Transactional
     public LoginResponse login(LoginRequest request) {
         Account account;
         String identifier = request.getEmployeeCode();
 
-        // Thử tìm bằng employeeCode trước (worker/manager)
+        // Try employeeCode first (worker/manager)
         var byEmployeeCode = accountRepository.findByEmployeeCode(identifier);
 
         if (byEmployeeCode.isPresent()) {
             account = byEmployeeCode.get();
         } else {
-            // Không tìm thấy employeeCode → thử tìm bằng username (admin)
+            // If employeeCode is not found, try username (admin)
             account = accountRepository.findByUsername(identifier)
-                    .orElseThrow(() -> new BusinessException("Tài khoản không tồn tại"));
+                    .orElseThrow(() -> new BusinessException("Account does not exist"));
 
-            // Chỉ admin mới được login bằng username
+            // Only admins can log in with username
             if (!Role.ADMIN.name().equals(account.getRole())) {
-                throw new BusinessException("Mã nhân viên không tồn tại");
+                throw new BusinessException("Employee code does not exist");
             }
         }
 
         if (!"active".equals(account.getStatus())) {
-            throw new BusinessException("Tài khoản chưa được kích hoạt");
+            throw new BusinessException("Account is not active");
         }
 
         if (!passwordEncoder.matches(request.getPassword(), account.getPasswordHash())) {
             log.warn("Failed login attempt for: {}", identifier);
-            throw new BusinessException("Mã nhân viên hoặc mật khẩu không đúng");
+            throw new BusinessException("Employee code or password is incorrect");
         }
 
         String accessToken = jwtService.generateToken(account);
@@ -94,14 +94,14 @@ public class AuthService {
     }
 
     /**
-     * @param request - Thông tin đăng ký
+     * @param request registration details
      * @return RegisterResponse
      */
     @Transactional
     public RegisterResponse register(RegisterRequest request) {
         log.info("Starting registration for username: {}", request.getUsername());
-        // 1. VALIDATION
-        Role role = Role.fromString(request.getRole()); // Validate + parse
+        // 1. Validation
+        Role role = Role.fromString(request.getRole()); // Validate and parse
         validationService.validateEmailNotExists(request.getEmail());
         validationService.validateUsernameNotExists(request.getUsername());
 
@@ -117,11 +117,11 @@ public class AuthService {
         User savedUser = userRepository.save(user);
         log.info("User created with ID: {}", savedUser.getId());
 
-        // 3. TẠO EMPLOYEE
+        // 3. Create employee
         Employee employee = null;
         String employeeCode = request.getEmployeeCode();
 
-        if (role.requiresEmployee()) { // ← Dùng enum method
+        if (role.requiresEmployee()) {
             if (employeeCode == null || employeeCode.isBlank()) {
                 employeeCode = employeeCodeGenerator.generateEmployeeCode();
             } else {
@@ -132,20 +132,20 @@ public class AuthService {
             employee.setUser(savedUser);
             employee.setEmployeeCode(employeeCode);
             employee.setPosition(request.getPosition());
-            employee.setEmployeeType(EmployeeType.fromRole(role).name()); // ← Dùng enum
+            employee.setEmployeeType(EmployeeType.fromRole(role).name());
             employee.setStatus("active");
 
             employee = employeeRepository.save(employee);
             log.info("Employee created with code: {}", employeeCode);
         }
 
-        // 4. TẠO ACCOUNT
+        // 4. Create account
         Account account = new Account();
         account.setUser(savedUser);
         account.setEmployee(employee);
         account.setUsername(request.getUsername());
         account.setPasswordHash(passwordEncoder.encode(request.getPassword()));
-        account.setRole(role.name()); // ← Luôn UPPERCASE
+        account.setRole(role.name());
         account.setStatus("active");
         account.setCreatedAt(OffsetDateTime.now());
         account.setUpdatedAt(OffsetDateTime.now());
@@ -153,7 +153,7 @@ public class AuthService {
         Account savedAccount = accountRepository.save(account);
         log.info("Account created with ID: {}", savedAccount.getId());
 
-        // 5. TẠO RESPONSE
+        // 5. Build response
         return RegisterResponse.builder()
                 .userId(savedUser.getId())
                 .accountId(savedAccount.getId())
@@ -168,11 +168,10 @@ public class AuthService {
                 .build();
     }
 
-    // 2. Thêm method logout
     /**
      * Logout user - Blacklist current token
      * 
-     * @param token - JWT token từ request header
+        * @param token JWT token from request header
      * @return LogoutResponse
      */
     @Transactional

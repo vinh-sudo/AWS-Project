@@ -35,7 +35,7 @@ public class UploadController {
         );
     }
 
-    // Lấy danh sách file (POM/SOP, tài liệu sản xuất) cho một order - cho phép mọi user đã đăng nhập xem
+        // Get the file list (POM/SOP, production documents) for an order - allow any authenticated user to view it
     @PreAuthorize("isAuthenticated()")
     @GetMapping("/admin/order/{orderId}/files")
     public List<ProductionFileResponse> getFilesForOrder(

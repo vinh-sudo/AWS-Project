@@ -7,12 +7,12 @@ public enum Role {
     MANAGER,
     LINE_LEADER;
     
-    // Helper method: check role có cần Employee không
+    // Helper method: check whether the role requires an Employee
     public boolean requiresEmployee() {
         return true;
     }
     
-    // Helper method: convert từ String (an toàn)
+    // Helper method: safely convert from String
     public static Role fromString(String role) {
         if (role == null || role.isBlank()) {
             throw new IllegalArgumentException("Role cannot be null or empty");

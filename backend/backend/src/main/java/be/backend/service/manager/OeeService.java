@@ -24,15 +24,15 @@ public class OeeService {
 
     public List<OeeLineResponse> calculate(LocalDate date) {
 
-        // 1. Load toàn bộ line
+        // 1. Load all lines
         List<ProductionLine> lines = lineRepo.findAll();
 
-        // 2. Lấy id các line
+        // 2. Collect line IDs
         List<Integer> lineIds = lines.stream()
                 .map(ProductionLine::getId)
                 .toList();
 
-        // 3. Load toàn bộ report trong 1 query
+        // 3. Load all reports in one query
         List<Report> allReports =
                 reportRepo.findAllByLineIdsAndDate(lineIds, date);
 
@@ -43,7 +43,7 @@ public class OeeService {
                                 r -> r.getLine().getId()
                         ));
 
-        // 5. Tính OEE
+        // 5. Calculate OEE
         List<OeeLineResponse> result = new ArrayList<>();
 
         for (ProductionLine line : lines) {

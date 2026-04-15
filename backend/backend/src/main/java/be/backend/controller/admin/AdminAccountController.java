@@ -14,7 +14,7 @@ import org.springframework.web.bind.annotation.*;
 
 @RestController
 @RequestMapping("/api/admin/accounts")
-@PreAuthorize("hasRole('ADMIN')")        // ① Class-level: TẤT CẢ endpoint chỉ ADMIN
+@PreAuthorize("hasRole('ADMIN')")        // ① Class-level: all endpoints are admin-only
 @RequiredArgsConstructor
 public class AdminAccountController {
 
@@ -22,10 +22,10 @@ public class AdminAccountController {
 
     /**
      * List + Filter + Search
-     * GET /api/admin/accounts                              → tất cả
+        * GET /api/admin/accounts                              → all accounts
      * GET /api/admin/accounts?role=MANAGER                 → filter
      * GET /api/admin/accounts?search=homin                 → search username
-     * GET /api/admin/accounts?role=LINE_LEADER&search=abc  → kết hợp
+        * GET /api/admin/accounts?role=LINE_LEADER&search=abc  → combined filter
      */
     @GetMapping
     public ResponseEntity<Page<AccountSummaryResponse>> getAccounts(
@@ -38,7 +38,7 @@ public class AdminAccountController {
                 adminAccountService.getAccounts(role, search, page, size));
     }
 
-    /** Edit role — body: {"role": "MANAGER"} */
+    /** Edit role - body: {"role": "MANAGER"} */
     @PutMapping("/{id}/role")
     public ResponseEntity<AccountSummaryResponse> updateRole(
             @PathVariable Integer id,

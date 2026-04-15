@@ -50,7 +50,7 @@ public class JwtAuthentificationFilter extends OncePerRequestFilter {
         if (authHeader != null && authHeader.startsWith("Bearer ")) {
             String jwt = authHeader.substring(7);
 
-             //  Check blacklist TRƯỚC khi xử lý
+             // Check the blacklist before processing
         if (tokenBlacklistService.isBlacklisted(jwt)) {           
             response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
             response.getWriter().write("{\"error\": \"Token has been invalidated\"}");

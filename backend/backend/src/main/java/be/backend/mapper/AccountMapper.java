@@ -15,7 +15,7 @@ public interface AccountMapper {
     @Mapping(target = "email", source = "user.email")
     @Mapping(target = "accessToken", ignore = true)      // Set sau trong Service
     @Mapping(target = "refreshToken", ignore = true)     // Set sau trong Service
-    @Mapping(target = "tokenType", constant = "Bearer")  // Giá trị cố định
+    @Mapping(target = "tokenType", constant = "Bearer")  // Fixed value
     @Mapping(target = "expiresIn", ignore = true)        // Set sau trong Service
     LoginResponse toLoginResponse(Account account);
 //ignore, defaultValue de ko bi null

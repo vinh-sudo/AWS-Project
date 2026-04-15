@@ -1,19 +1,19 @@
 package be.backend.service.utilities;
 
 /**
- * Stateless utility: chứa pure functions tính OEE metrics.
- * Không inject, không state → thread-safe, testable, reusable.
+ * Stateless utility: contains pure functions for calculating OEE metrics.
+ * No injection, no state -> thread-safe, testable, reusable.
  */
 public final class OeeCalculator {
 
     private OeeCalculator() {
-        // Prevent instantiation — chỉ dùng static methods
+        // Prevent instantiation - static methods only
     }
 
     /**
      * Availability = (Planned - Downtime) / Planned
-     * @param plannedMinutes  tổng phút kế hoạch (VD: 8h = 480 min)
-     * @param downtimeMinutes tổng phút dừng máy
+    * @param plannedMinutes total planned minutes (e.g. 8h = 480 min)
+    * @param downtimeMinutes total machine downtime minutes
      */
     public static double availability(double plannedMinutes, double downtimeMinutes) {
         if (plannedMinutes <= 0) return 0.0;
@@ -22,8 +22,8 @@ public final class OeeCalculator {
 
     /**
      * Performance = Actual Output / Target Output
-     * @param goodQuantity  sản phẩm đạt
-     * @param targetQuantity mục tiêu
+    * @param goodQuantity good units
+    * @param targetQuantity target units
      */
     public static double performance(long goodQuantity, long targetQuantity) {
         if (targetQuantity <= 0) return 0.0;
@@ -32,8 +32,8 @@ public final class OeeCalculator {
 
     /**
      * Quality = Good / (Good + Reject)
-     * @param goodQuantity   sản phẩm đạt
-     * @param rejectQuantity sản phẩm lỗi
+    * @param goodQuantity good units
+    * @param rejectQuantity defective units
      */
     public static double quality(long goodQuantity, long rejectQuantity) {
         long total = goodQuantity + rejectQuantity;
@@ -49,7 +49,7 @@ public final class OeeCalculator {
     }
 
     /**
-     * Convenience: tính OEE từ raw data trong 1 call
+    * Convenience: calculate OEE from raw data in one call
      */
     public static double computeOee(
             double shiftHours,

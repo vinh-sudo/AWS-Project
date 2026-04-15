@@ -39,7 +39,7 @@ public class SecurityConfig {
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         http
                 .csrf(csrf -> csrf.disable())
-                .cors(cors -> cors.configurationSource(webConfig.corsConfigurationSource())) // Spring tự lấy bean CorsConfigurationSource
+                .cors(cors -> cors.configurationSource(webConfig.corsConfigurationSource())) // Spring resolves the CorsConfigurationSource bean automatically
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers(
                                 "/api/auth/login",

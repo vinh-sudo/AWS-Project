@@ -93,7 +93,7 @@ public class OrderService {
                 .change("productType", null, saved.getProductType())
                 .change("quantity", null, saved.getQuantity())
                 .change("priority", null, saved.getPriority())
-                .logAsync(); // Async - không block
+                .logAsync(); // Async - do not block
 
         // Publish event
         eventPublisher.publishEvent(new OrderEvent.OrderCreatedEvent(saved));
@@ -162,12 +162,12 @@ public class OrderService {
             }
         }
 
-        // Nếu trạng thái chuyển sang COMPLETED thì publish event
+        // Publish an event if the status changes to COMPLETED
         if (request.getStatus() != null && request.getStatus().equals(STATUS_COMPLETED) && !order.getStatus().equals(STATUS_COMPLETED)) {
             order.setStatus(STATUS_COMPLETED);
             eventPublisher.publishEvent(new OrderEvent.OrderCompletedEvent(order));
         }
-        // Nếu trạng thái chuyển sang CANCELLED thì publish event
+        // Publish an event if the status changes to CANCELLED
         if (request.getStatus() != null && request.getStatus().equals(STATUS_CANCELLED) && !order.getStatus().equals(STATUS_CANCELLED)) {
             order.setStatus(STATUS_CANCELLED);
             eventPublisher.publishEvent(new OrderEvent.OrderCancelledEvent(order));
@@ -205,10 +205,10 @@ public class OrderService {
                 .entityId(orderId)
                 .change("status", order.getStatus(), "DELETED")
                 .log();
-        // Lưu response trước khi xóa
+        // Save the response before deletion
         OrderResponse response = buildResponse(order);
 
-        // Xóa items trước (đảm bảo cascade hoạt động)
+        // Delete items first to ensure cascade behavior works
         order.getItems().clear();
         orderRepository.delete(order);
         orderRepository.flush();
@@ -262,7 +262,7 @@ public class OrderService {
         String oldStatus = order.getStatus();
         order.setStatus(STATUS_CANCELLED);
         order.setUpdatedAt(OffsetDateTime.now());
-        // Note: Nếu muốn lưu reason, cần thêm field cancel_reason vào Order entity
+        // Note: persist the reason by adding a cancel_reason field to the Order entity
 
         Order saved = orderRepository.save(order);
 
@@ -306,7 +306,7 @@ public class OrderService {
 
     // idx_orders_status + idx_orders_priority + customerName
     public List<OrderResponse> searchOrders(String status, String priority, String customerName) {
-        // Validate nếu có giá trị
+        // Validate only when values are present
         if (status != null)
             validateStatus(status);
         if (priority != null)
