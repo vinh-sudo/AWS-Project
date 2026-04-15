@@ -1,0 +1,28 @@
+{
+  "Version":"2012-10-17",
+  "Statement":[
+    {
+      "Sid":"AllowCloudFrontRead",
+      "Effect":"Allow",
+      "Principal":{"Service":"cloudfront.amazonaws.com"},
+      "Action":"s3:GetObject",
+      "Resource":"arn:aws:s3:::ims-mobile-vs2/*",
+      "Condition":{
+        "StringEquals":{
+          "AWS:SourceArn":"arn:aws:cloudfront::753952481086:distribution/EMS37QFIJS0WV"
+        }
+      }
+    },
+    {
+      "Sid":"DenyInsecureTransport",
+      "Effect":"Deny",
+      "Principal":"*",
+      "Action":"s3:*",
+      "Resource":[
+        "arn:aws:s3:::ims-mobile-vs2",
+        "arn:aws:s3:::ims-mobile-vs2/*"
+      ],
+      "Condition":{"Bool":{"aws:SecureTransport":"false"}}
+    }
+  ]
+}

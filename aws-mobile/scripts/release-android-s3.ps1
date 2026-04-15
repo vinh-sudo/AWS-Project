@@ -8,7 +8,10 @@ param(
     [string]$S3Prefix = "releases",
     [string]$Version = "1.0.0",
     [int]$PresignExpiresInSeconds = 604800,
-    [string]$Region = ""
+    [string]$Region = "",
+    [string]$CloudFrontDomain = "",
+    [string]$CloudFrontPathPrefix = "",
+    [string]$AliasKey = ""
 )
 
 $ErrorActionPreference = "Stop"
@@ -91,22 +94,67 @@ if ($LASTEXITCODE -ne 0) {
     throw "S3 upload failed."
 }
 
-Write-Host "[5/5] Generating presigned download link..." -ForegroundColor Cyan
-if ([string]::IsNullOrWhiteSpace($Region)) {
-    $presignedUrl = & $awsExe s3 presign $dest --expires-in $PresignExpiresInSeconds
-}
-else {
-    $presignedUrl = & $awsExe s3 presign $dest --expires-in $PresignExpiresInSeconds --region $Region
-}
-if ($LASTEXITCODE -ne 0) {
-    throw "Could not generate presigned URL."
+$downloadObjectKey = $s3Key
+$aliasDest = ""
+if (-not [string]::IsNullOrWhiteSpace($AliasKey)) {
+    $downloadObjectKey = $AliasKey.Trim().TrimStart('/')
+    $aliasDest = "s3://$BucketName/$downloadObjectKey"
+
+    Write-Host "      Publishing alias object '$downloadObjectKey'..." -ForegroundColor DarkCyan
+    if ([string]::IsNullOrWhiteSpace($Region)) {
+        & $awsExe s3 cp $localApkPath $aliasDest --content-type "application/vnd.android.package-archive"
+    }
+    else {
+        & $awsExe s3 cp $localApkPath $aliasDest --region $Region --content-type "application/vnd.android.package-archive"
+    }
+    if ($LASTEXITCODE -ne 0) {
+        throw "S3 alias upload failed."
+    }
 }
 
-$presignedUrl = $presignedUrl.Trim()
+if ([string]::IsNullOrWhiteSpace($CloudFrontDomain)) {
+    Write-Host "[5/5] Generating presigned download link..." -ForegroundColor Cyan
+    $presignDest = "s3://$BucketName/$downloadObjectKey"
+    if ([string]::IsNullOrWhiteSpace($Region)) {
+        $downloadUrl = & $awsExe s3 presign $presignDest --expires-in $PresignExpiresInSeconds
+    }
+    else {
+        $downloadUrl = & $awsExe s3 presign $presignDest --expires-in $PresignExpiresInSeconds --region $Region
+    }
+    if ($LASTEXITCODE -ne 0) {
+        throw "Could not generate presigned URL."
+    }
+    $downloadUrl = $downloadUrl.Trim()
+    $downloadLabel = "Download link (presigned S3)"
+}
+else {
+    Write-Host "[5/5] Generating CloudFront download link..." -ForegroundColor Cyan
+
+    $normalizedCloudFrontDomain = $CloudFrontDomain.Trim()
+    if ($normalizedCloudFrontDomain.StartsWith("https://", [System.StringComparison]::OrdinalIgnoreCase)) {
+        $normalizedCloudFrontDomain = $normalizedCloudFrontDomain.Substring(8)
+    }
+    elseif ($normalizedCloudFrontDomain.StartsWith("http://", [System.StringComparison]::OrdinalIgnoreCase)) {
+        $normalizedCloudFrontDomain = $normalizedCloudFrontDomain.Substring(7)
+    }
+    $normalizedCloudFrontDomain = $normalizedCloudFrontDomain.TrimEnd('/')
+
+    $normalizedPathPrefix = $CloudFrontPathPrefix.Trim().Trim('/')
+    $objectPath = $downloadObjectKey
+    if (-not [string]::IsNullOrWhiteSpace($normalizedPathPrefix)) {
+        $objectPath = "$normalizedPathPrefix/$downloadObjectKey"
+    }
+
+    $downloadUrl = "https://$normalizedCloudFrontDomain/$objectPath"
+    $downloadLabel = "Download link (CloudFront)"
+}
 
 Write-Host ""
 Write-Host "Android release completed successfully." -ForegroundColor Green
 Write-Host "S3 object: $dest"
+if (-not [string]::IsNullOrWhiteSpace($aliasDest)) {
+    Write-Host "S3 alias object: $aliasDest"
+}
 Write-Host "Local APK: $localApkPath"
-Write-Host "Download link (presigned):"
-Write-Host $presignedUrl -ForegroundColor Yellow
+Write-Host "${downloadLabel}:"
+Write-Host $downloadUrl -ForegroundColor Yellow

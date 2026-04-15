@@ -8,7 +8,8 @@
     "ios": "expo start --ios",
     "web": "expo start --web",
     "lint": "expo lint",
-    "release:android:s3": "powershell -ExecutionPolicy Bypass -File ./scripts/release-android-s3.ps1"
+    "release:android:s3": "powershell -ExecutionPolicy Bypass -File ./scripts/release-android-s3.ps1",
+    "release:android:cloudfront": "powershell -ExecutionPolicy Bypass -File ./scripts/release-android-s3.ps1 -BucketName ims-mobile-vs2 -Region ap-southeast-1 -CloudFrontDomain %CLOUDFRONT_DOMAIN% -AliasKey releases/latest.apk"
   },
   "dependencies": {
     "@expo/vector-icons": "^15.0.3",
