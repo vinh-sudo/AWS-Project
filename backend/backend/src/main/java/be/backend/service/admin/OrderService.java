@@ -97,11 +97,9 @@ public class OrderService {
                 .change("productType", null, saved.getProductType())
                 .change("quantity", null, saved.getQuantity())
                 .change("priority", null, saved.getPriority())
-<<<<<<< HEAD
-                .logAsync(); // Async - do not block
-=======
+
                 .logAsync();
->>>>>>> 11eeb41e61d6ab7e66f9f4b9865c48e378288290
+
 
         // Publish event
         eventPublisher.publishEvent(new OrderEvent.OrderCreatedEvent(saved));

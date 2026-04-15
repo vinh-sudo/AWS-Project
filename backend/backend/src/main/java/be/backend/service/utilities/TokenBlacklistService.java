@@ -22,19 +22,14 @@ public class TokenBlacklistService {
      */
     public void blacklistToken(String token, Long expirationInSeconds){
         String key = BLACKLIST_PREFIX + token;
-<<<<<<< HEAD
-        // Store in Redis with TTL equal to the remaining token lifetime
-        // After the token expires, Redis removes it automatically to save memory
-        redisTemplate.opsForValue().set(key, "blacklisted", expirationInSeconds, TimeUnit.SECONDS);
-        log.info("Token blacklisted, will expire in {} seconds", expirationInSeconds);
-=======
+
         try {
             redisTemplate.opsForValue().set(key, "blacklisted", expirationInSeconds, TimeUnit.SECONDS);
             log.info("Token blacklisted, will expire in {} seconds", expirationInSeconds);
         } catch (Exception e) {
             log.warn("[Redis] Failed to blacklist token, fallback to no blacklist. token={} error={}", token, e.getMessage());
         }
->>>>>>> 11eeb41e61d6ab7e66f9f4b9865c48e378288290
+
     }
 
     /**
