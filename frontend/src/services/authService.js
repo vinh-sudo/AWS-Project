@@ -128,6 +128,7 @@ api.interceptors.response.use(
 
 const OTP_ENDPOINTS = {
   request: ["/otp/forgot/request", "/api/otp/forgot/request"],
+  check: ["/otp/forgot/check", "/api/otp/forgot/check"],
   verify: ["/otp/forgot/verify", "/api/otp/forgot/verify"],
   resend: ["/otp/resend", "/api/otp/resend"],
 };
@@ -325,6 +326,55 @@ export const authService = {
       return response.data;
     } catch (error) {
       throw new Error(extractOtpErrorMessage(error, "Failed to send OTP"));
+    }
+  },
+
+  // Check OTP only before navigating to reset password screen
+  checkOtpOnly: async (employeeCode, otp) => {
+    const normalizedEmployeeCode = normalizeEmployeeCode(employeeCode);
+    const normalizedOtp = typeof otp === "string" ? otp.trim() : "";
+
+    if (!normalizedEmployeeCode) {
+      throw new Error("Employee Code is required");
+    }
+
+    if (!normalizedOtp) {
+      throw new Error("OTP is required");
+    }
+
+    try {
+      const response = await postWithFallbackPaths(OTP_ENDPOINTS.check, {
+        employeeCode: normalizedEmployeeCode,
+        otp: normalizedOtp,
+      });
+
+      const data = response?.data;
+
+      if (typeof data === "boolean") {
+        return data;
+      }
+
+      if (typeof data === "string") {
+        const normalized = data.trim().toLowerCase();
+        if (normalized === "true") {
+          return true;
+        }
+        if (normalized === "false") {
+          return false;
+        }
+      }
+
+      if (typeof data?.valid === "boolean") {
+        return data.valid;
+      }
+
+      if (typeof data?.isValid === "boolean") {
+        return data.isValid;
+      }
+
+      throw new Error("Unexpected OTP check response from server");
+    } catch (error) {
+      throw new Error(extractOtpErrorMessage(error, "OTP check failed"));
     }
   },
 

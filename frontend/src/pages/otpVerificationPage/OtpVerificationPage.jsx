@@ -64,7 +64,7 @@ const OtpVerificationPage = () => {
     setOtp(newOtp);
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
     const otpValue = otp.join("");
 
@@ -73,12 +73,31 @@ const OtpVerificationPage = () => {
       return;
     }
 
-    navigate("/reset-password", {
-      state: {
-        employeeCode: normalizedEmployeeCode,
-        otp: otpValue,
-      },
-    });
+    setIsLoading(true);
+    setError("");
+
+    try {
+      const isOtpValid = await authService.checkOtpOnly(
+        normalizedEmployeeCode,
+        otpValue,
+      );
+
+      if (!isOtpValid) {
+        setError("Invalid or expired OTP");
+        return;
+      }
+
+      navigate("/reset-password", {
+        state: {
+          employeeCode: normalizedEmployeeCode,
+          otp: otpValue,
+        },
+      });
+    } catch (err) {
+      setError(err.message || "Failed to verify OTP");
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   const handleResend = async () => {
@@ -104,8 +123,8 @@ const OtpVerificationPage = () => {
         <div className="otp-heading">Verify OTP</div>
 
         <p className="otp-description">
-          We've sent a 6-digit code to your email. Enter it to continue to the
-          password reset step.
+          We've sent a 6-digit code to your email. Enter it to verify before
+          continuing to reset password.
         </p>
         {error && <div className="error-message">{error}</div>}
         <form className="otp-form" onSubmit={handleSubmit}>
@@ -121,12 +140,13 @@ const OtpVerificationPage = () => {
                 value={digit}
                 onChange={(e) => handleChange(index, e.target.value)}
                 onKeyDown={(e) => handleKeyDown(index, e)}
+                disabled={isLoading}
               />
             ))}
           </div>
 
           <button className="otp-button" type="submit" disabled={isLoading}>
-            {isLoading ? "Processing..." : "Continue to Reset Password"}
+            {isLoading ? "Verifying OTP..." : "Continue to Reset Password"}
           </button>
         </form>
 

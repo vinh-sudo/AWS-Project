@@ -77,8 +77,7 @@ const ResetPasswordPage = () => {
         {!isSuccess ? (
           <>
             <p className="reset-password-description">
-              Create a new password for your account. OTP will be verified when
-              you submit this form.
+              Create a new password for your account.
             </p>
             {error && <div className="error-message">{error}</div>}
             <form
