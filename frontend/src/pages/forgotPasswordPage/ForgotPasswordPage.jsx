@@ -22,7 +22,9 @@ const ForgotPasswordPage = () => {
     },
     validationSchema,
     onSubmit: async (values) => {
-      const normalizedEmployeeCode = values.employeeCode.trim();
+      const normalizedEmployeeCode = values.employeeCode
+        .replace(/\s+/g, "")
+        .toUpperCase();
 
       setIsLoading(true);
       setError("");

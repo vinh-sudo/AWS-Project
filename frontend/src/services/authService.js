@@ -4,6 +4,9 @@ import { isTokenExpired } from "../utils/tokenUtils";
 const normalizeBaseUrl = (url) =>
   typeof url === "string" ? url.replace(/\/$/, "") : "";
 
+const normalizeEmployeeCode = (value) =>
+  typeof value === "string" ? value.replace(/\s+/g, "").toUpperCase() : "";
+
 const resolveApiBaseUrl = () => {
   const envUrl = normalizeBaseUrl(import.meta.env.VITE_API_URL);
 
@@ -200,7 +203,7 @@ const extractOtpErrorMessage = (error, fallbackMessage) => {
 
   if (status >= 500) {
     if (errorMessage === "An unexpected error occurred") {
-      return "Employee Code does not exist or OTP service is temporarily unavailable.";
+      return "Backend returned INTERNAL_ERROR. Employee code may be invalid, or OTP mail service failed on server.";
     }
 
     if (errorMessage) {
@@ -309,8 +312,7 @@ export const authService = {
 
   // Request password reset OTP - calls POST /otp/forgot/request
   requestPasswordReset: async (employeeCode) => {
-    const normalizedEmployeeCode =
-      typeof employeeCode === "string" ? employeeCode.trim() : "";
+    const normalizedEmployeeCode = normalizeEmployeeCode(employeeCode);
 
     if (!normalizedEmployeeCode) {
       throw new Error("Employee Code is required");
@@ -328,8 +330,7 @@ export const authService = {
 
   // Verify OTP and reset password - calls POST /otp/forgot/verify
   verifyOtpAndResetPassword: async (employeeCode, otp, newPassword) => {
-    const normalizedEmployeeCode =
-      typeof employeeCode === "string" ? employeeCode.trim() : "";
+    const normalizedEmployeeCode = normalizeEmployeeCode(employeeCode);
     const normalizedOtp = typeof otp === "string" ? otp.trim() : "";
 
     if (!normalizedEmployeeCode) {
@@ -354,8 +355,7 @@ export const authService = {
 
   // Resend OTP - calls POST /otp/resend
   resendOtp: async (employeeCode) => {
-    const normalizedEmployeeCode =
-      typeof employeeCode === "string" ? employeeCode.trim() : "";
+    const normalizedEmployeeCode = normalizeEmployeeCode(employeeCode);
 
     if (!normalizedEmployeeCode) {
       throw new Error("Employee Code is required");
