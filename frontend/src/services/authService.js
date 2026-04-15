@@ -17,7 +17,10 @@ const resolveApiBaseUrl = () => {
 
     if (typeof window !== "undefined") {
       // Avoid browser mixed-content blocks when frontend is HTTPS.
-      if (window.location.protocol === "https:" && parsed.protocol === "http:") {
+      if (
+        window.location.protocol === "https:" &&
+        parsed.protocol === "http:"
+      ) {
         parsed.protocol = "https:";
       }
     }
@@ -135,7 +138,12 @@ const postWithFallbackPaths = async (paths, payload) => {
     } catch (error) {
       const status = error?.response?.status;
 
-      if (status === 401 || status === 403 || status === 404 || status === 405) {
+      if (
+        status === 401 ||
+        status === 403 ||
+        status === 404 ||
+        status === 405
+      ) {
         lastError = error;
         continue;
       }
