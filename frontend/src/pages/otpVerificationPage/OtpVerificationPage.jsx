@@ -104,7 +104,8 @@ const OtpVerificationPage = () => {
         <div className="otp-heading">Verify OTP</div>
 
         <p className="otp-description">
-          We've sent a 6-digit code to your email. Please enter it below.
+          We've sent a 6-digit code to your email. Enter it to continue to the
+          password reset step.
         </p>
         {error && <div className="error-message">{error}</div>}
         <form className="otp-form" onSubmit={handleSubmit}>
@@ -125,7 +126,7 @@ const OtpVerificationPage = () => {
           </div>
 
           <button className="otp-button" type="submit" disabled={isLoading}>
-            {isLoading ? "Verifying..." : "Continue"}
+            {isLoading ? "Processing..." : "Continue to Reset Password"}
           </button>
         </form>
 
