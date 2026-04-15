@@ -6,6 +6,8 @@ import authService from "../../services/authService";
 
 const OtpVerificationPage = () => {
   const [otp, setOtp] = useState(["", "", "", "", "", ""]);
+  const [password, setPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
   const [error, setError] = useState("");
   const [isVerified, setIsVerified] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
@@ -65,7 +67,18 @@ const OtpVerificationPage = () => {
     setOtp(newOtp);
   };
 
-  const handleSubmit = (e) => {
+  const validatePassword = (value) => {
+    if (value.length < 8) return "Password must be at least 8 characters";
+    if (!/[a-z]/.test(value))
+      return "Password must contain at least one lowercase letter";
+    if (!/[A-Z]/.test(value))
+      return "Password must contain at least one uppercase letter";
+    if (!/[0-9]/.test(value))
+      return "Password must contain at least one number";
+    return "";
+  };
+
+  const handleSubmit = async (e) => {
     e.preventDefault();
     const otpValue = otp.join("");
 
@@ -74,13 +87,37 @@ const OtpVerificationPage = () => {
       return;
     }
 
-    // Navigate to reset password with OTP
-    navigate("/reset-password", {
-      state: {
-        employeeCode: normalizedEmployeeCode,
-        otp: otpValue,
-      },
-    });
+    const passwordError = validatePassword(password);
+    if (passwordError) {
+      setError(passwordError);
+      return;
+    }
+
+    if (password !== confirmPassword) {
+      setError("Passwords must match");
+      return;
+    }
+
+    setIsLoading(true);
+    setError("");
+
+    try {
+      await authService.verifyOtpAndResetPassword(
+        normalizedEmployeeCode,
+        otpValue,
+        password,
+      );
+
+      setIsVerified(true);
+
+      setTimeout(() => {
+        navigate("/login");
+      }, 1600);
+    } catch (err) {
+      setError(err.message || "Invalid or expired OTP");
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   const handleResend = async () => {
@@ -92,6 +129,8 @@ const OtpVerificationPage = () => {
         await authService.resendOtp(normalizedEmployeeCode);
         setResendTimer(60);
         setOtp(["", "", "", "", "", ""]);
+        setPassword("");
+        setConfirmPassword("");
       } catch (err) {
         setError(err.message || "Failed to resend OTP");
       } finally {
@@ -108,7 +147,7 @@ const OtpVerificationPage = () => {
         {!isVerified ? (
           <>
             <p className="otp-description">
-              We've sent a 6-digit code to your email. Please enter it below.
+              Enter your 6-digit OTP and set a new password to complete reset.
             </p>
             {error && <div className="error-message">{error}</div>}
             <form className="otp-form" onSubmit={handleSubmit}>
@@ -128,8 +167,31 @@ const OtpVerificationPage = () => {
                 ))}
               </div>
 
+              <div className="otp-password-group">
+                <input
+                  className="otp-password-input"
+                  type="password"
+                  placeholder="New Password"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  disabled={isLoading}
+                />
+                <input
+                  className="otp-password-input"
+                  type="password"
+                  placeholder="Confirm New Password"
+                  value={confirmPassword}
+                  onChange={(e) => setConfirmPassword(e.target.value)}
+                  disabled={isLoading}
+                />
+                <p className="otp-password-hint">
+                  Password requires at least 8 characters with uppercase,
+                  lowercase, and number.
+                </p>
+              </div>
+
               <button className="otp-button" type="submit" disabled={isLoading}>
-                {isLoading ? "Verifying..." : "Continue"}
+                {isLoading ? "Verifying..." : "Verify OTP & Reset Password"}
               </button>
             </form>
 
@@ -152,8 +214,8 @@ const OtpVerificationPage = () => {
         ) : (
           <div className="success-message">
             <div className="success-icon">✓</div>
-            <p>OTP verified successfully!</p>
-            <p className="redirect-text">Redirecting to reset password...</p>
+            <p>Password reset successfully!</p>
+            <p className="redirect-text">Redirecting to login...</p>
           </div>
         )}
 

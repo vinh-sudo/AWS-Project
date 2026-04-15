@@ -134,7 +134,36 @@ const postWithFallbackPaths = async (paths, payload) => {
 
   for (const path of paths) {
     try {
-      return await api.post(path, payload);
+      const response = await api.post(path, payload);
+      const contentType =
+        typeof response?.headers?.["content-type"] === "string"
+          ? response.headers["content-type"].toLowerCase()
+          : "";
+      const bodyPreview =
+        typeof response?.data === "string"
+          ? response.data.trim().slice(0, 80).toLowerCase()
+          : "";
+
+      // Some CDN/frontend hosts return index.html with 200 for unknown routes.
+      // Treat it as invalid API response instead of a success.
+      const isHtmlFallback =
+        contentType.includes("text/html") ||
+        bodyPreview.startsWith("<!doctype html") ||
+        bodyPreview.startsWith("<html");
+
+      if (isHtmlFallback) {
+        const htmlFallbackError = new Error(
+          "Received HTML instead of API response",
+        );
+        htmlFallbackError.response = {
+          status: 502,
+          data: "API host is likely misconfigured and points to frontend domain.",
+        };
+        lastError = htmlFallbackError;
+        continue;
+      }
+
+      return response;
     } catch (error) {
       const status = error?.response?.status;
 
@@ -161,20 +190,32 @@ const extractOtpErrorMessage = (error, fallbackMessage) => {
   const errorMessage =
     data?.message || data?.error || (typeof data === "string" ? data : "");
 
-  if (errorMessage) {
-    return errorMessage;
-  }
-
   if (!error?.response) {
     return "Cannot reach server. Please check API URL/network and try again.";
   }
 
-  if (status === 404 || status === 405) {
-    return "OTP endpoint is not available on current backend route.";
+  if (status === 502) {
+    return "Frontend is calling a non-API host (received HTML). Please set VITE_API_URL to your backend API domain.";
   }
 
   if (status >= 500) {
+    if (errorMessage === "An unexpected error occurred") {
+      return "Employee Code does not exist or OTP service is temporarily unavailable.";
+    }
+
+    if (errorMessage) {
+      return errorMessage;
+    }
+
     return "Backend OTP service failed internally. Please contact backend support.";
+  }
+
+  if (errorMessage) {
+    return errorMessage;
+  }
+
+  if (status === 404 || status === 405) {
+    return "OTP endpoint is not available on current backend route.";
   }
 
   return fallbackMessage;
