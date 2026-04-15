@@ -12,18 +12,19 @@ const resolveApiBaseUrl = () => {
     return "";
   }
 
-  // If frontend is served over HTTPS and API env URL is HTTP,
-  // upgrade it to HTTPS to avoid browser mixed-content blocks during login.
-  if (typeof window !== "undefined" && window.location.protocol === "https:") {
-    try {
-      const parsed = new URL(envUrl);
-      if (parsed.protocol === "http:") {
+  try {
+    const parsed = new URL(envUrl);
+
+    if (typeof window !== "undefined") {
+      // Avoid browser mixed-content blocks when frontend is HTTPS.
+      if (window.location.protocol === "https:" && parsed.protocol === "http:") {
         parsed.protocol = "https:";
-        return normalizeBaseUrl(parsed.toString());
       }
-    } catch {
-      // Keep original env URL if parsing fails.
     }
+
+    return normalizeBaseUrl(parsed.toString());
+  } catch {
+    // Keep original env URL if parsing fails.
   }
 
   return envUrl;
@@ -119,6 +120,58 @@ api.interceptors.response.use(
   },
 );
 
+const OTP_ENDPOINTS = {
+  request: ["/otp/forgot/request", "/api/otp/forgot/request"],
+  verify: ["/otp/forgot/verify", "/api/otp/forgot/verify"],
+  resend: ["/otp/resend", "/api/otp/resend"],
+};
+
+const postWithFallbackPaths = async (paths, payload) => {
+  let lastError;
+
+  for (const path of paths) {
+    try {
+      return await api.post(path, payload);
+    } catch (error) {
+      const status = error?.response?.status;
+
+      if (status === 401 || status === 403 || status === 404 || status === 405) {
+        lastError = error;
+        continue;
+      }
+
+      throw error;
+    }
+  }
+
+  throw lastError || new Error("OTP endpoint is unavailable");
+};
+
+const extractOtpErrorMessage = (error, fallbackMessage) => {
+  const status = error?.response?.status;
+  const data = error?.response?.data;
+  const errorMessage =
+    data?.message || data?.error || (typeof data === "string" ? data : "");
+
+  if (errorMessage) {
+    return errorMessage;
+  }
+
+  if (!error?.response) {
+    return "Cannot reach server. Please check API URL/network and try again.";
+  }
+
+  if (status === 404 || status === 405) {
+    return "OTP endpoint is not available on current backend route.";
+  }
+
+  if (status >= 500) {
+    return "Backend OTP service failed internally. Please contact backend support.";
+  }
+
+  return fallbackMessage;
+};
+
 // Auth service for handling authentication
 export const authService = {
   // Login function - calls POST /api/auth/login
@@ -207,61 +260,65 @@ export const authService = {
 
   // Request password reset OTP - calls POST /otp/forgot/request
   requestPasswordReset: async (employeeCode) => {
+    const normalizedEmployeeCode =
+      typeof employeeCode === "string" ? employeeCode.trim() : "";
+
+    if (!normalizedEmployeeCode) {
+      throw new Error("Employee Code is required");
+    }
+
     try {
-      const response = await api.post("/otp/forgot/request", {
-        employeeCode,
+      const response = await postWithFallbackPaths(OTP_ENDPOINTS.request, {
+        employeeCode: normalizedEmployeeCode,
       });
       return response.data;
     } catch (error) {
-      const errorMessage =
-        error.response?.data?.message ||
-        error.response?.data ||
-        "Failed to send OTP";
-      throw new Error(
-        typeof errorMessage === "string" ? errorMessage : "Failed to send OTP",
-      );
+      throw new Error(extractOtpErrorMessage(error, "Failed to send OTP"));
     }
   },
 
   // Verify OTP and reset password - calls POST /otp/forgot/verify
   verifyOtpAndResetPassword: async (employeeCode, otp, newPassword) => {
+    const normalizedEmployeeCode =
+      typeof employeeCode === "string" ? employeeCode.trim() : "";
+    const normalizedOtp = typeof otp === "string" ? otp.trim() : "";
+
+    if (!normalizedEmployeeCode) {
+      throw new Error("Employee Code is required");
+    }
+
+    if (!normalizedOtp) {
+      throw new Error("OTP is required");
+    }
+
     try {
-      const response = await api.post("/otp/forgot/verify", {
-        employeeCode,
-        otp,
+      const response = await postWithFallbackPaths(OTP_ENDPOINTS.verify, {
+        employeeCode: normalizedEmployeeCode,
+        otp: normalizedOtp,
         newPassword,
       });
       return response.data;
     } catch (error) {
-      const errorMessage =
-        error.response?.data?.message ||
-        error.response?.data ||
-        "Invalid or expired OTP";
-      throw new Error(
-        typeof errorMessage === "string"
-          ? errorMessage
-          : "OTP verification failed",
-      );
+      throw new Error(extractOtpErrorMessage(error, "OTP verification failed"));
     }
   },
 
   // Resend OTP - calls POST /otp/resend
   resendOtp: async (employeeCode) => {
+    const normalizedEmployeeCode =
+      typeof employeeCode === "string" ? employeeCode.trim() : "";
+
+    if (!normalizedEmployeeCode) {
+      throw new Error("Employee Code is required");
+    }
+
     try {
-      const response = await api.post("/otp/resend", {
-        employeeCode,
+      const response = await postWithFallbackPaths(OTP_ENDPOINTS.resend, {
+        employeeCode: normalizedEmployeeCode,
       });
       return response.data;
     } catch (error) {
-      const errorMessage =
-        error.response?.data?.message ||
-        error.response?.data ||
-        "Failed to resend OTP";
-      throw new Error(
-        typeof errorMessage === "string"
-          ? errorMessage
-          : "Failed to resend OTP",
-      );
+      throw new Error(extractOtpErrorMessage(error, "Failed to resend OTP"));
     }
   },
 

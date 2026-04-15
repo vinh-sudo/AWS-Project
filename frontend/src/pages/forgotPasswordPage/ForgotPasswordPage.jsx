@@ -13,7 +13,7 @@ const ForgotPasswordPage = () => {
   const navigate = useNavigate();
 
   const validationSchema = Yup.object({
-    employeeCode: Yup.string().required("Employee Code is required"),
+    employeeCode: Yup.string().trim().required("Employee Code is required"),
   });
 
   const formik = useFormik({
@@ -22,17 +22,19 @@ const ForgotPasswordPage = () => {
     },
     validationSchema,
     onSubmit: async (values) => {
+      const normalizedEmployeeCode = values.employeeCode.trim();
+
       setIsLoading(true);
       setError("");
 
       try {
-        await authService.requestPasswordReset(values.employeeCode);
+        await authService.requestPasswordReset(normalizedEmployeeCode);
         setIsSubmitted(true);
 
         // Navigate to OTP verification after 1 second
         setTimeout(() => {
           navigate("/otp-verification", {
-            state: { employeeCode: values.employeeCode },
+            state: { employeeCode: normalizedEmployeeCode },
           });
         }, 1500);
       } catch (err) {

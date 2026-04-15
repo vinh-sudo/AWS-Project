@@ -16,13 +16,15 @@ const OtpVerificationPage = () => {
 
   // Get employeeCode from navigation state
   const employeeCode = location.state?.employeeCode;
+  const normalizedEmployeeCode =
+    typeof employeeCode === "string" ? employeeCode.trim() : "";
 
   // Redirect if no employeeCode
   useEffect(() => {
-    if (!employeeCode) {
+    if (!normalizedEmployeeCode) {
       navigate("/forgot-password");
     }
-  }, [employeeCode, navigate]);
+  }, [normalizedEmployeeCode, navigate]);
 
   useEffect(() => {
     if (resendTimer > 0) {
@@ -75,19 +77,19 @@ const OtpVerificationPage = () => {
     // Navigate to reset password with OTP
     navigate("/reset-password", {
       state: {
-        employeeCode,
+        employeeCode: normalizedEmployeeCode,
         otp: otpValue,
       },
     });
   };
 
   const handleResend = async () => {
-    if (resendTimer === 0 && employeeCode) {
+    if (resendTimer === 0 && normalizedEmployeeCode) {
       setIsLoading(true);
       setError("");
 
       try {
-        await authService.resendOtp(employeeCode);
+        await authService.resendOtp(normalizedEmployeeCode);
         setResendTimer(60);
         setOtp(["", "", "", "", "", ""]);
       } catch (err) {

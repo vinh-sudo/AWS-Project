@@ -16,13 +16,16 @@ const ResetPasswordPage = () => {
   // Get employeeCode and OTP from navigation state
   const employeeCode = location.state?.employeeCode;
   const otp = location.state?.otp;
+  const normalizedEmployeeCode =
+    typeof employeeCode === "string" ? employeeCode.trim() : "";
+  const normalizedOtp = typeof otp === "string" ? otp.trim() : "";
 
   // Redirect if no employeeCode or OTP
   useEffect(() => {
-    if (!employeeCode || !otp) {
+    if (!normalizedEmployeeCode || !normalizedOtp) {
       navigate("/forgot-password");
     }
-  }, [employeeCode, otp, navigate]);
+  }, [normalizedEmployeeCode, normalizedOtp, navigate]);
 
   const validationSchema = Yup.object({
     password: Yup.string()
@@ -48,8 +51,8 @@ const ResetPasswordPage = () => {
 
       try {
         await authService.verifyOtpAndResetPassword(
-          employeeCode,
-          otp,
+          normalizedEmployeeCode,
+          normalizedOtp,
           values.password,
         );
         setIsSuccess(true);
