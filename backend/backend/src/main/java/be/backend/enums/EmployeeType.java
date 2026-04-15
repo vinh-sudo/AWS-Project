@@ -6,7 +6,7 @@ public enum EmployeeType {
     LINE_LEADER,
     WORKER;
        
-    // Map từ Role sang EmployeeType
+    // Map from Role to EmployeeType
     public static EmployeeType fromRole(Role role) {
         return switch (role) {
             case ADMIN -> ADMIN;     

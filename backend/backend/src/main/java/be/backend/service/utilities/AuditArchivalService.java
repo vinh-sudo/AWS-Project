@@ -17,11 +17,11 @@ import java.util.List;
 /**
  * AuditArchivalService - Auto archive old logs
  * 
- * Nguyên lý:
- * - Scheduled Job: Chạy định kỳ (monthly)
- * - Hot/Cold Storage: Keep 3 months hot, archive older
- * - Batch Processing: Move từng batch → Không lock DB lâu
- * - Retention Policy: Auto cleanup theo category
+ * Principles:
+ * - Scheduled Job: runs periodically (monthly)
+ * - Hot/Cold Storage: keep 3 months hot, archive older logs
+ * - Batch Processing: move records in batches -> avoid long DB locks
+ * - Retention Policy: auto cleanup by category
  */
 @Slf4j
 @Service
@@ -32,7 +32,7 @@ public class AuditArchivalService {
     private final AuditLogArchiveRepository auditLogArchiveRepository;
     
     /**
-     * Chạy mỗi tháng vào 1st day, 2AM
+    * Runs monthly on the 1st day at 2AM
      * Cron: "0 0 2 1 * ?" = Second Minute Hour Day Month DayOfWeek
      */
     @Scheduled(cron = "0 0 2 1 * ?")
@@ -75,7 +75,7 @@ public class AuditArchivalService {
             totalProcessed += batch.size();
             log.info("Archived {} logs (total: {})", batch.size(), totalProcessed);
             
-            // Sleep để không overwhelm DB
+            // Sleep to avoid overwhelming the DB
             try {
                 Thread.sleep(1000);  // 1 second between batches
             } catch (InterruptedException e) {

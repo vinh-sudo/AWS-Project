@@ -16,24 +16,26 @@ public class TokenBlacklistService {
     private static final String BLACKLIST_PREFIX = "blacklist:";
 
     /**
-     * Thêm token vào blacklist
-     * @param token - JWT token cần blacklist
-     * @param expirationInSeconds - Thời gian token còn valid (để auto-remove khỏi Redis)
+    * Add a token to the blacklist
+    * @param token JWT token to blacklist
+    * @param expirationInSeconds Remaining token validity in seconds (for auto-removal from Redis)
      */
     public void blacklistToken(String token, Long expirationInSeconds){
         String key = BLACKLIST_PREFIX + token;
+
         try {
             redisTemplate.opsForValue().set(key, "blacklisted", expirationInSeconds, TimeUnit.SECONDS);
             log.info("Token blacklisted, will expire in {} seconds", expirationInSeconds);
         } catch (Exception e) {
             log.warn("[Redis] Failed to blacklist token, fallback to no blacklist. token={} error={}", token, e.getMessage());
         }
+
     }
 
     /**
-     * Kiểm tra token có bị blacklist không
-     * @param token - JWT token cần check
-     * @return true nếu token bị blacklist
+    * Check whether a token is blacklisted
+    * @param token JWT token to check
+    * @return true if the token is blacklisted
      */
     public boolean isBlacklisted(String token){
         String key = BLACKLIST_PREFIX + token;

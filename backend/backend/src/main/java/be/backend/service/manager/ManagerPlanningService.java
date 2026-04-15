@@ -89,7 +89,7 @@ public class ManagerPlanningService {
         ProductionLine testLine = findRouteLine(allLines, "TEST");
         ProductionLine packingLine = findRouteLine(allLines, "PACK");
 
-        // Sửa logic ngày bắt đầu: nếu ngày truyền vào nhỏ hơn thời điểm hiện tại thì lấy OffsetDateTime.now()
+        // Adjust start-date logic: if the provided date is earlier than now, use OffsetDateTime.now()
         OffsetDateTime now = OffsetDateTime.now();
         OffsetDateTime stageStart = request.getStartDate().atStartOfDay().atOffset(now.getOffset());
         if (stageStart.isBefore(now)) {
@@ -147,7 +147,7 @@ public class ManagerPlanningService {
             return ScheduleValidationResult.fail("No draft plan for order item " + orderItemId);
         }
 
-        // Lấy toàn bộ plan của order (dùng fetch join để giảm số lần truy vấn)
+        // Load all plans for the order (use fetch join to reduce query count)
         List<ProductionPlan> allPlans = planRepo.findByOrderIdForManager(orderId);
         // Group theo orderItemId
         Map<Integer, List<ProductionPlan>> plansByItem = new LinkedHashMap<>();
@@ -155,7 +155,7 @@ public class ManagerPlanningService {
             if (plan.getOrderItem() == null) continue;
             plansByItem.computeIfAbsent(plan.getOrderItem().getId(), ignored -> new ArrayList<>()).add(plan);
         }
-        // Lấy các plan đã confirm của order item này
+        // Load confirmed plans for this order item
         List<ProductionPlan> itemConfirmedPlans = plansByItem.getOrDefault(orderItemId, List.of()).stream()
                 .filter(p -> DECISION_CONFIRMED.equals(p.getDecision()))
                 .toList();
@@ -187,14 +187,14 @@ public class ManagerPlanningService {
             plan.setDecision(DECISION_CONFIRMED);
         }
 
-        // Lấy lại toàn bộ plan sau khi xác nhận (để cập nhật trạng thái order chính xác)
+        // Reload all plans after confirmation to update the order status accurately
         List<ProductionPlan> allPlansAfter = planRepo.findByOrderIdForManager(orderId);
         Map<Integer, List<ProductionPlan>> plansByItemAfter = new LinkedHashMap<>();
         for (ProductionPlan plan : allPlansAfter) {
             if (plan.getOrderItem() == null) continue;
             plansByItemAfter.computeIfAbsent(plan.getOrderItem().getId(), ignored -> new ArrayList<>()).add(plan);
         }
-        // Tính tổng confirmed quantity cho từng order item
+        // Calculate the total confirmed quantity for each order item
         Map<Integer, Integer> confirmedQtyByItem = new HashMap<>();
         for (Map.Entry<Integer, List<ProductionPlan>> entry : plansByItemAfter.entrySet()) {
             int confirmedQty = extractItemQtyFromPlans(entry.getValue().stream()
@@ -203,7 +203,7 @@ public class ManagerPlanningService {
             confirmedQtyByItem.put(entry.getKey(), confirmedQty);
         }
 
-        // Lấy danh sách order item (chỉ cần 1 lần)
+        // Load the order item list once
         List<OrderItem> orderItems = orderItemRepo.findByOrderId(orderId);
 
         String previousOrderStatus = order.getStatus();

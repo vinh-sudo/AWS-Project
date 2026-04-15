@@ -43,7 +43,7 @@ public class S3Service {
             throw new RuntimeException("Upload to S3 failed: " + e.awsErrorDetails().errorMessage(), e);
 
         } catch (IOException e) {
-            throw new RuntimeException("Lỗi đọc file: " + e.getMessage(), e);
+            throw new RuntimeException("Error reading file: " + e.getMessage(), e);
         }
     }
 }

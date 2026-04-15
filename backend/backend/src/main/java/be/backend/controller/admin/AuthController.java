@@ -28,7 +28,7 @@ public class AuthController {
 
     @PostMapping("/login")
     public ResponseEntity<LoginResponse> login(@Valid @RequestBody LoginRequest request) {
-        // @RequestBody: Parse JSON từ request body thành LoginRequest object
+        // @RequestBody: parse JSON from the request body into a LoginRequest object
         LoginResponse response = authService.login(request);
         return ResponseEntity.ok(response);
     }

@@ -18,5 +18,7 @@ public class SQSService {
                 .build();
         SendMessageResponse response = sqsClient.sendMessage(request);
 
+        // You can log response.messageId() if needed
+
     }
 }

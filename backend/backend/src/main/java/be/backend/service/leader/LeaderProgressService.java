@@ -307,6 +307,7 @@ public class LeaderProgressService {
                 updateMachineRuntimeStatus(schedule, MACHINE_RUNTIME_RUNNING);
 
 
+
                 // 5.1. Gửi notification qua SNS và SQS
                 String message = String.format("Schedule %d started by leader %s", scheduleId, account.getUsername());
                 snsService.publishToTopic(snsTopicArn, message, "Schedule Started");

@@ -25,7 +25,7 @@ public class ProductionAnalysisService {
     private final OeeService oeeService;
     private final ManagerStatisticsService statisticsService;
 
-    // 📊 "Tình trạng sản xuất hôm nay" - Simplified health summary
+    // 📊 "Production status today" - Simplified health summary
     public AIProductionSummaryResponse getProductionHealthSummary() {
         try {
             var delayData = delayService.getTodayDelay();

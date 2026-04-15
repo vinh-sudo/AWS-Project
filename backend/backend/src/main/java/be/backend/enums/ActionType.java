@@ -13,7 +13,7 @@ public enum ActionType {
     // ========== AUTHENTICATION (Security - 1 year) ==========
     LOGIN,
     LOGOUT,
-    LOGIN_FAILED,       // Sau 5 lần fail → audit
+    LOGIN_FAILED,       // Audit after 5 failed attempts
     
     // ========== ACCOUNT (Security + Data - 6-12 months) ==========
     CREATE_ACCOUNT,
@@ -61,7 +61,7 @@ public enum ActionType {
     
     /**
      * Check critical actions
-     * Nguyên lý: Critical actions cần retention lâu hơn
+    * Principle: critical actions need longer retention
      */
     public boolean isCritical() {
         return this == CHANGE_ROLE 
@@ -86,7 +86,7 @@ public enum ActionType {
     
     /**
      * Get retention days theo category
-     * Nguyên lý: Different retention per importance
+    * Principle: different retention per importance
      * - Security: 365 days
      * - Critical: 180 days
      * - Normal: 90 days

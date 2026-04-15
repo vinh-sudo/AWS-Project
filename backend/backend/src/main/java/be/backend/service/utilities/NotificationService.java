@@ -22,7 +22,7 @@ public class NotificationService {
     public void notifyStructured(
             User user,
             String title,
-            String message, // thêm tham số message
+            String message, // add message parameter
             Map<String, Object> payload,
             String level,
             String sourceType,
@@ -32,7 +32,7 @@ public class NotificationService {
         Notification n = new Notification();
         n.setUser(user);
         n.setTitle(title);
-        // Nếu message null thì fallback về title
+        // If message is null, fall back to the title
         n.setMessage(message != null ? message : title);
         n.setLevel(level);
         n.setSourceType(sourceType);

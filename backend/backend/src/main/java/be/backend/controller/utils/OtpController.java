@@ -15,13 +15,13 @@ public class OtpController {
     private final OtpService otpService;
     private final UserService userService;
 
-    // 1. Nhập employeeCode → gửi OTP về email
+    // 1. Enter employeeCode -> send OTP to email
     @PostMapping("/forgot/request")
     public ResponseEntity<?> requestPasswordOtp(@RequestBody PasswordResetRequest request) {
         otpService.generateOtpByEmployeeCode(request.getEmployeeCode());
         return ResponseEntity.ok("OTP sent to employee email");
     }
-    // 2. Nhập OTP + mật khẩu mới
+    // 2. Enter OTP + new password
     @PostMapping("/forgot/verify")
     public ResponseEntity<?> verifyPasswordOtp(@RequestBody PasswordResetRequest request) {
 

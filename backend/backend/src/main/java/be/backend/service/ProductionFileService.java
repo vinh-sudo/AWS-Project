@@ -41,7 +41,7 @@ public class ProductionFileService {
         return fileRepo.save(f);
     }
 
-    // Lấy danh sách file (POM/SOP, tài liệu sản xuất) theo order
+    // Get the file list (POM/SOP, production documents) for an order
     public List<ProductionFile> getFilesForOrder(Integer orderId) {
         return fileRepo.findByOrderId(orderId);
     }

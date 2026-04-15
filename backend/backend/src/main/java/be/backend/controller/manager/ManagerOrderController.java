@@ -10,13 +10,13 @@ import org.springframework.web.bind.annotation.*;
 import java.util.List;
 
 /**
- * Controller dành riêng cho Manager
- * Nghiệp vụ: Xem orders đã được admin tạo, lên plan, giao việc cho line leader
+ * Controller dedicated to managers
+ * Business: view orders created by admins, plan them, and assign work to line leaders
  * 
- * Nguyên lý:
- * - SRP: Tách biệt nghiệp vụ manager khỏi admin
- * - RESTful: Path rõ ràng /api/manager/orders
- * - Security: @PreAuthorize đảm bảo chỉ manager truy cập
+ * Principles:
+ * - SRP: separate manager responsibilities from admin responsibilities
+ * - RESTful: clear path /api/manager/orders
+ * - Security: @PreAuthorize ensures manager-only access
  */
 @RestController
 @RequestMapping("/api/manager/orders")
@@ -27,8 +27,8 @@ public class ManagerOrderController {
     private final OrderService orderService;
 
     /**
-     * Xem tất cả orders (chỉ manager)
-     * Manager cần xem orders để lên plan
+    * View all orders (manager only)
+    * Managers need to review orders before planning
      */
     @GetMapping
     public ResponseEntity<List<OrderResponse>> viewAllOrders() {
@@ -36,7 +36,7 @@ public class ManagerOrderController {
     }
 
     /**
-     * Xem chi tiết 1 order
+    * View order details
      */
     @GetMapping("/{id}")
     public ResponseEntity<OrderResponse> viewOrderDetail(@PathVariable Integer id) {
@@ -44,8 +44,8 @@ public class ManagerOrderController {
     }
 
     /**
-     * Tìm kiếm orders theo các tiêu chí
-     * Manager dùng để filter orders cần lên plan
+    * Search orders by criteria
+    * Managers use this to filter orders that need planning
      */
     @GetMapping("/search")
     public ResponseEntity<List<OrderResponse>> searchOrders(
@@ -56,8 +56,8 @@ public class ManagerOrderController {
     }
 
     /**
-     * Xem orders theo status
-     * Ví dụ: Manager chỉ muốn xem orders CONFIRMED để lên plan
+    * View orders by status
+    * Example: a manager only wants to see CONFIRMED orders for planning
      */
     @GetMapping("/status/{status}")
     public ResponseEntity<List<OrderResponse>> viewOrdersByStatus(@PathVariable String status) {
@@ -65,10 +65,10 @@ public class ManagerOrderController {
     }
 
     /**
-     * Note: Các chức năng planning đã có ở ManagerPlanningController:
-     * - POST /api/manager/plans/create-by-item - Tạo plan theo order item (auto route)
-     * - POST /api/manager/plans/order/{orderId}/confirm-item/{orderItemId} - Confirm plan theo order item
-     * - POST /api/manager/plans/order/{orderId}/cancel - Cancel draft plan
-     * - GET /api/manager/plans/view - Xem plans
+    * Note: planning functions already exist in ManagerPlanningController:
+    * - POST /api/manager/plans/create-by-item - Create a plan from an order item (auto route)
+    * - POST /api/manager/plans/order/{orderId}/confirm-item/{orderItemId} - Confirm a plan for an order item
+    * - POST /api/manager/plans/order/{orderId}/cancel - Cancel a draft plan
+    * - GET /api/manager/plans/view - View plans
      */
 }

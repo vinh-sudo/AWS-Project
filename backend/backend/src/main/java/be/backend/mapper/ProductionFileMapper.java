@@ -21,6 +21,6 @@ public interface ProductionFileMapper {
     )
     ProductionFileResponse toResponse(ProductionFile file);
 
-    // Map nhiều ProductionFile sang danh sách response
+        // Map multiple ProductionFile entities to a response list
     List<ProductionFileResponse> toResponseList(List<ProductionFile> files);
 }

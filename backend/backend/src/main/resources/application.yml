@@ -24,7 +24,7 @@ spring:
       ssl:
         enabled: true
   mail:
-    host: email-smtp.<ap-southeast-1>.amazonaws.com
+    host: email-smtp.ap-southeast-1.amazonaws.com
     port: 587
     username: ${SES_SMTP_USERNAME}
     password: ${SES_SMTP_PASSWORD}
@@ -64,4 +64,21 @@ logging:
 
 app:
   mail:
-    from: no-reply@your-domain.com # Thay bang email da verify tren SES
+
+    from: no-reply@ims.mom
+
+management:
+  endpoint:
+    health:
+      probes:
+        enabled: true
+  endpoints:
+    web:
+      exposure:
+        include: health
+  health:
+    livenessstate:
+      enabled: true
+    readinessstate:
+      enabled: true
+

@@ -63,11 +63,11 @@ public class AdminAssignmentService {
 
     @Transactional
     public AssignmentResponse assignLeader(AssignLeaderRequest request) {
-        // ① Kiểm tra line tồn tại
+        // ① Check that the line exists
         ProductionLine line = lineRepo.findById(Long.valueOf(request.getLineId()))
                 .orElseThrow(() -> new ResourceNotFoundException("ProductionLine", request.getLineId().toString()));
 
-        // ② Kiểm tra employee tồn tại + là LINE_LEADER
+        // ② Check that the employee exists and is a LINE_LEADER
         Employee leader = employeeRepo.findById(request.getLeaderId())
                 .orElseThrow(() -> new ResourceNotFoundException("Employee", request.getLeaderId().toString()));
 
@@ -76,17 +76,17 @@ public class AdminAssignmentService {
             throw new BusinessException("Employee " + leader.getEmployeeCode() + " is not a LINE_LEADER");
         }
 
-        // ③ GUARD: Line đã có leader ACTIVE → phải unassign trước
+        // ③ Guard: if the line already has an active leader, unassign first
         if (assignmentRepo.existsActiveByLineId(request.getLineId())) {
             throw new BusinessException("Line already has an active leader. Unassign first.");
         }
 
-        // ④ GUARD: Leader đã gắn line khác → 1 leader chỉ 1 line
+        // ④ Guard: if the leader is already assigned to another line, one leader can only manage one line
         if (assignmentRepo.existsActiveByLeaderId(request.getLeaderId())) {
             throw new BusinessException("Leader is already assigned to another line");
         }
 
-        // ⑤ Tạo assignment
+        // ⑤ Create assignment
         LineLeaderAssignment assignment = new LineLeaderAssignment();
         assignment.setLine(line);
         assignment.setLeader(leader);
@@ -110,7 +110,7 @@ public class AdminAssignmentService {
             throw new BusinessException("Assignment is already ended");
         }
 
-        // ⑥ Soft-end: set endDate + đổi status, KHÔNG xóa record
+        // ⑥ Soft-end: set endDate and update status without deleting the record
         assignment.setStatus("ENDED");
         assignment.setEndDate(OffsetDateTime.now());
 

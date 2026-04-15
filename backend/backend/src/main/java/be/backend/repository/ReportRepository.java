@@ -72,16 +72,16 @@ public interface ReportRepository extends JpaRepository<Report, Integer> {
             @Param("to") LocalDate to);
 
     /**
-     * Check trùng report (leader + line + ngày + ca)
-     * Tránh submit trùng
+        * Check duplicate report (leader + line + day + shift)
+        * Prevent duplicate submissions
      */
     boolean existsByEmployeeIdAndLineIdAndWorkDateAndShift(
             Integer employeeId, Integer lineId,
             LocalDate workDate, String shift);
 
     /**
-     * Check trùng report (leader + line + order + ngày + ca)
-     * Tránh submit trùng
+        * Check duplicate report (leader + line + order + day + shift)
+        * Prevent duplicate submissions
      */
     boolean existsByEmployeeIdAndLineIdAndScheduleIdAndWorkDateAndShift(
             Integer employeeId, Integer lineId, Integer scheduleId,
@@ -102,8 +102,8 @@ public interface ReportRepository extends JpaRepository<Report, Integer> {
     Long sumGoodQuantityByOrderId(@Param("orderId") Integer orderId);
 
     /**
-     * Tổng sản lượng hôm nay của 1 line
-     * Dùng cho dashboard
+        * Total production for one line today
+        * Used for the dashboard
      */
     @Query(value = """
                 SELECT COALESCE(SUM(r.good_quantity), 0) AS totalGood,

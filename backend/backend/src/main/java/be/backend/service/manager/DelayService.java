@@ -28,10 +28,10 @@ public class DelayService {
 
     public List<DelayResponse> detect() {
 
-        // 1. Load toàn bộ schedule đang RUNNING
+        // 1. Load all schedules that are currently RUNNING
         var schedules = scheduleRepo.findRunning();
 
-        // 2. Tính delay theo từng schedule (không gom theo line)
+        // 2. Calculate delay per schedule (do not group by line)
         List<DelayResponse> result = new ArrayList<>();
 
         for (var s : schedules) {

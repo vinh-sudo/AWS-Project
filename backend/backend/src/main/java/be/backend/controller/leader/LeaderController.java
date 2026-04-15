@@ -30,17 +30,17 @@ public class LeaderController {
     private final LeaderIncidentService incidentService;
 
     /**
-     * Dashboard tổng quan cho leader
+     * Overview dashboard for leaders
      * 
      * WHY @AuthenticationPrincipal Account?
-     * → Spring Security tự inject Account từ SecurityContext
-     * → Không cần gọi SecurityContextHolder.getContext() thủ công
-     * → Account đã được JwtAuthenticationFilter set vào context
+     * -> Spring Security injects the Account from the SecurityContext automatically
+     * -> No need to call SecurityContextHolder.getContext() manually
+     * -> The Account is already set in the context by JwtAuthenticationFilter
      * 
-     * WHY ResponseEntity thay vì return trực tiếp?
-     * → Kiểm soát HTTP status code rõ ràng
-     * → Consistency với các controller khác
-     * → Có thể thêm custom header khi cần
+     * WHY ResponseEntity instead of returning directly?
+     * -> Clear control over HTTP status codes
+     * -> Consistency with other controllers
+     * -> Custom headers can be added when needed
      */
     @GetMapping("/dashboard")
     public ResponseEntity<LeaderDashboardResponse> dashboard(
@@ -49,7 +49,7 @@ public class LeaderController {
     }
 
     /**
-     * Danh sách schedule đang active trên line
+     * List active schedules on the line
      */
     @GetMapping("/schedules")
     public ResponseEntity<List<ScheduleSummaryResponse>> mySchedules(
@@ -59,11 +59,11 @@ public class LeaderController {
 
 
     /**
-     * Submit báo cáo cuối ca
+     * Submit end-of-shift report
      * 
      * WHY HttpStatus.CREATED?
-     * → POST tạo resource mới (Report) → HTTP 201 Created là chuẩn RESTful
-     * → GET/PUT trả 200 OK, POST trả 201 Created
+     * -> POST creates a new resource (Report) -> HTTP 201 Created is RESTful
+     * -> GET/PUT return 200 OK, POST returns 201 Created
      */
     @PostMapping("/report")
     public ResponseEntity<ReportResponse> submitReport(
@@ -74,12 +74,12 @@ public class LeaderController {
     }
 
     /**
-     * Báo cáo sự cố
+     * Incident report
      * 
      * WHY void return + 201?
-     * → Incident report không cần return data phức tạp
-     * → Client chỉ cần biết thành công hay không
-     * → Nếu sau cần return incident detail → thay đổi return type
+     * -> Incident reports do not need to return complex data
+     * -> The client only needs to know whether it succeeded
+     * -> If incident details are needed later, change the return type
      */
     @PostMapping("/incident")
     public ResponseEntity<Void> reportIncident(
@@ -89,7 +89,7 @@ public class LeaderController {
         return ResponseEntity.status(HttpStatus.CREATED).build();
     }
 
-    /** Leader start sản xuất trên 1 schedule */
+    /** Leader starts production for one schedule */
     @PostMapping("/schedules/{id}/start")
     public ResponseEntity<ScheduleSummaryResponse> startSchedule(
             @AuthenticationPrincipal Account account,

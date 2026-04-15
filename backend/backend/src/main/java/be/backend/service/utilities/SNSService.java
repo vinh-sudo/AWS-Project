@@ -18,7 +18,7 @@ public class SNSService {
                 .subject(subject)
                 .build();
         PublishResponse response = snsClient.publish(request);
-        // Có thể log response.messageId() nếu cần
+        // You can log response.messageId() if needed
     }
 }
 

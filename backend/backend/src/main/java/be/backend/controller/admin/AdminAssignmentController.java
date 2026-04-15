@@ -21,19 +21,19 @@ public class AdminAssignmentController {
 
     private final AdminAssignmentService assignmentService;
 
-    /** Xem tất cả assignment đang ACTIVE */
+    /** View all active assignments */
     @GetMapping
     public ResponseEntity<List<AssignmentResponse>> getActiveAssignments() {
         return ResponseEntity.ok(assignmentService.getActiveAssignments());
     }
 
-    /** Danh sách leader chưa gắn line (cho dropdown select) */
+    /** List leaders not yet assigned to a line (for dropdown selection) */
     @GetMapping("/available-leaders")
     public ResponseEntity<List<AccountSummaryResponse>> getAvailableLeaders() {
         return ResponseEntity.ok(assignmentService.getAvailableLeaders());
     }
 
-    /** Gắn leader vào line */
+    /** Assign a leader to a line */
     @PostMapping
     public ResponseEntity<AssignmentResponse> assignLeader(
             @Valid @RequestBody AssignLeaderRequest request) {
@@ -41,7 +41,7 @@ public class AdminAssignmentController {
                 .body(assignmentService.assignLeader(request));
     }
 
-    /** Gỡ leader khỏi line */
+    /** Unassign a leader from a line */
     @PutMapping("/{id}/unassign")
     public ResponseEntity<AssignmentResponse> unassignLeader(@PathVariable Long id) {
         return ResponseEntity.ok(assignmentService.unassignLeader(id));

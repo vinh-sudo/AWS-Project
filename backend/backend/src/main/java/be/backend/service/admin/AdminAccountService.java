@@ -41,7 +41,7 @@ public class AdminAccountService {
                 .map(this::toSummary);
     }
 
-    // ======================== 2. EDIT ROLE ========================
+    // ======================== 2. Edit role ========================
     
     @Transactional
     public AccountSummaryResponse updateRole(Integer accountId, UpdateRoleRequest request, 
@@ -49,22 +49,22 @@ public class AdminAccountService {
         Account account = accountRepository.findById(accountId)
             .orElseThrow(() -> new ResourceNotFoundException("Account not found"));
         
-        // Guard: Không sửa admin (String comparison)
+        // Guard: do not modify admin accounts (string comparison)
         if ("ADMIN".equalsIgnoreCase(account.getRole())) {
             throw new BusinessException("Cannot change admin role");
         }
         
-        // Capture old value TRƯỚC KHI thay đổi
+        // Capture the old value before changing it
         String oldRole = account.getRole();
         
-        // Validate new role (throws exception if invalid)
+        // Validate the new role (throws exception if invalid)
         Role newRoleEnum = Role.fromString(request.getRole());
         if (newRoleEnum == Role.ADMIN) {
             throw new BusinessException("Cannot assign ADMIN role");
         }
         String newRole = newRoleEnum.name();
         
-        // Update
+        // Update role
         account.setRole(newRole);
         accountRepository.save(account);
         
@@ -82,31 +82,31 @@ public class AdminAccountService {
         return toSummary(account);
     }
     
-    // ======================== 3. LOCK ========================
+    // ======================== 3. Lock ========================
     
     @Transactional
     public AccountSummaryResponse lockAccount(Integer accountId, Account currentUser) {
         Account account = accountRepository.findById(accountId)
             .orElseThrow(() -> new ResourceNotFoundException("Account not found"));
         
-        // Guard: Không lock chính mình
+        // Guard: cannot lock the current user
         if (account.getId().equals(currentUser.getId())) {
             throw new BusinessException("Cannot lock your own account");
         }
         
-        // Guard: Admin không thể bị lock
+        // Guard: admin accounts cannot be locked
         if ("ADMIN".equalsIgnoreCase(account.getRole())) {
             throw new BusinessException("Cannot lock admin account");
         }
         
-        // Capture old status (for audit)
+        // Capture the old status for audit
         String oldStatus = account.getStatus();
         
-        // Update status thành "locked"
+        // Update status to "locked"
         account.setStatus("locked");
         account = accountRepository.save(account);
         
-        // Audit logging với details
+        // Audit logging with details
         auditLogService.builder()
             .user(currentUser.getUser())
             .action(ActionType.LOCK_ACCOUNT)
@@ -120,17 +120,17 @@ public class AdminAccountService {
         return toSummary(account);
     }
     
-    // ======================== 4. UNLOCK ========================
+    // ======================== 4. Unlock ========================
 
     @Transactional
     public AccountSummaryResponse unlockAccount(Integer accountId, Account currentUser) {
         Account account = accountRepository.findById(accountId)
             .orElseThrow(() -> new ResourceNotFoundException("Account not found"));
         
-        // Capture old status
+        // Capture the old status
         String oldStatus = account.getStatus();
 
-        // Update status thành "active"
+        // Update status to "active"
         account.setStatus("active");
         account = accountRepository.save(account);
         
@@ -143,18 +143,18 @@ public class AdminAccountService {
             .change("status", oldStatus, "active")
             .log();
         
-        // Có thể bổ sung event AccountUnlockedEvent nếu cần
+        // AccountUnlockedEvent can be added later if needed
         return toSummary(account);
     }
 
-    // ======================== PRIVATE HELPERS ========================
+    // ======================== Private helpers ========================
 
     private AccountSummaryResponse toSummary(Account a) {
         return AccountSummaryResponse.builder()
                 .id(a.getId())
                 .username(a.getUsername())
                 .employeeCode(a.getEmployee() != null ? a.getEmployee().getEmployeeCode() : null)
-                .role(a.getRole())  // String → String (no conversion)
+                .role(a.getRole())
                 .status(a.getStatus())
                 .lastLogin(a.getLastLogin())
                 .build();
