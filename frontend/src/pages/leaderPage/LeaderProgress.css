@@ -24,11 +24,11 @@
   --lp-radius-sm: 8px;
   --lp-radius-xs: 6px;
   --lp-radius-full: 9999px;
-  --lp-shadow-xs: 0 1px 2px rgba(0,0,0,0.04);
-  --lp-shadow-sm: 0 1px 3px rgba(0,0,0,0.06), 0 1px 2px rgba(0,0,0,0.04);
-  --lp-shadow-md: 0 4px 12px rgba(0,0,0,0.06), 0 1px 3px rgba(0,0,0,0.04);
-  --lp-shadow-lg: 0 12px 40px rgba(0,0,0,0.08), 0 4px 12px rgba(0,0,0,0.04);
-  --lp-shadow-overlay: 0 24px 80px rgba(0,0,0,0.12), 0 0 0 1px rgba(0,0,0,0.04);
+  --lp-shadow-xs: 0 1px 2px rgba(0, 0, 0, 0.04);
+  --lp-shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.06), 0 1px 2px rgba(0, 0, 0, 0.04);
+  --lp-shadow-md: 0 4px 12px rgba(0, 0, 0, 0.06), 0 1px 3px rgba(0, 0, 0, 0.04);
+  --lp-shadow-lg: 0 12px 40px rgba(0, 0, 0, 0.08), 0 4px 12px rgba(0, 0, 0, 0.04);
+  --lp-shadow-overlay: 0 24px 80px rgba(0, 0, 0, 0.12), 0 0 0 1px rgba(0, 0, 0, 0.04);
   --lp-transition: 0.2s cubic-bezier(0.25, 0.1, 0.25, 1);
   --lp-transition-spring: 0.4s cubic-bezier(0.16, 1, 0.3, 1);
 }
@@ -168,83 +168,6 @@
 }
 
 /* ============================================
-   STEPPER
-   ============================================ */
-.lp-stepper {
-  display: flex;
-  align-items: center;
-  gap: 0;
-  margin-bottom: 28px;
-  padding: 18px 24px;
-  background: var(--lp-surface);
-  border: 1px solid var(--lp-border-light);
-  border-radius: var(--lp-radius);
-  box-shadow: var(--lp-shadow-xs);
-}
-
-.lp-step {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  flex: 1;
-}
-
-.lp-step-icon {
-  width: 32px;
-  height: 32px;
-  border-radius: 50%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 12px;
-  font-weight: 700;
-  color: var(--lp-text-muted);
-  border: 2px solid var(--lp-border);
-  background: var(--lp-surface);
-  flex-shrink: 0;
-  transition: all var(--lp-transition);
-}
-
-.lp-step-icon.done {
-  background: var(--lp-accent);
-  color: #fff;
-  border-color: var(--lp-accent);
-}
-
-.lp-step-icon.active {
-  background: var(--lp-accent-soft);
-  color: var(--lp-accent);
-  border-color: var(--lp-accent);
-  box-shadow: 0 0 0 4px rgba(99, 102, 241, 0.12);
-}
-
-.lp-step-label {
-  font-size: 12px;
-  font-weight: 500;
-  color: var(--lp-text-muted);
-  white-space: nowrap;
-}
-
-.lp-step-icon.done + .lp-step-label,
-.lp-step-icon.active + .lp-step-label {
-  color: var(--lp-text-primary);
-  font-weight: 600;
-}
-
-.lp-step-arrow {
-  flex: 1;
-  height: 2px;
-  background: var(--lp-border);
-  margin: 0 12px;
-  border-radius: 2px;
-  min-width: 20px;
-}
-
-.lp-step-arrow.done {
-  background: var(--lp-accent);
-}
-
-/* ============================================
    SUMMARY STRIP (4 cards)
    ============================================ */
 .lp-summary-strip {
@@ -288,10 +211,21 @@
 }
 
 /* Card accent variants */
-.lp-summary-card.accent-cyan .lp-summary-value { color: #6366f1; }
-.lp-summary-card.accent-blue .lp-summary-value { color: #2563eb; }
-.lp-summary-card.accent-amber .lp-summary-value { color: #d97706; }
-.lp-summary-card.accent-emerald .lp-summary-value { color: #059669; }
+.lp-summary-card.accent-cyan .lp-summary-value {
+  color: #6366f1;
+}
+
+.lp-summary-card.accent-blue .lp-summary-value {
+  color: #2563eb;
+}
+
+.lp-summary-card.accent-amber .lp-summary-value {
+  color: #d97706;
+}
+
+.lp-summary-card.accent-emerald .lp-summary-value {
+  color: #059669;
+}
 
 /* ============================================
    FILTER CHIPS
@@ -350,12 +284,12 @@
   font-weight: 700;
   padding: 1px 7px;
   border-radius: var(--lp-radius-full);
-  background: rgba(0,0,0,0.06);
+  background: rgba(0, 0, 0, 0.06);
   color: inherit;
 }
 
 .lp-chip.active .lp-chip-count {
-  background: rgba(255,255,255,0.25);
+  background: rgba(255, 255, 255, 0.25);
 }
 
 .lp-toolbar-right {
@@ -656,9 +590,17 @@
   box-shadow: var(--lp-shadow-sm);
 }
 
-.lp-incident-card.severity-low { border-left-color: #22c55e; }
-.lp-incident-card.severity-medium { border-left-color: #f59e0b; }
-.lp-incident-card.severity-high { border-left-color: #ef4444; }
+.lp-incident-card.severity-low {
+  border-left-color: #22c55e;
+}
+
+.lp-incident-card.severity-medium {
+  border-left-color: #f59e0b;
+}
+
+.lp-incident-card.severity-high {
+  border-left-color: #ef4444;
+}
 
 .lp-incident-header {
   display: flex;
@@ -859,8 +801,13 @@
 }
 
 @keyframes lpFadeIn {
-  from { opacity: 0; }
-  to { opacity: 1; }
+  from {
+    opacity: 0;
+  }
+
+  to {
+    opacity: 1;
+  }
 }
 
 .lp-modal {
@@ -878,8 +825,15 @@
 }
 
 @keyframes lpSlideUp {
-  from { opacity: 0; transform: translateY(20px) scale(0.98); }
-  to { opacity: 1; transform: translateY(0) scale(1); }
+  from {
+    opacity: 0;
+    transform: translateY(20px) scale(0.98);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
 }
 
 .lp-modal-header {
@@ -1125,16 +1079,6 @@
 
   .lp-summary-value {
     font-size: 22px;
-  }
-
-  .lp-stepper {
-    overflow-x: auto;
-    gap: 0;
-    padding: 14px 16px;
-  }
-
-  .lp-step-label {
-    display: none;
   }
 
   .lp-toolbar {

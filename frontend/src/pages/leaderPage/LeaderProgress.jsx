@@ -667,29 +667,6 @@ const LeaderProgress = () => {
           </div>
         </header>
 
-        {/* ── Stepper ───────────────────────────────── */}
-        <div className="lp-stepper">
-          <div className="lp-step">
-            <span className="lp-step-icon done">{IC.check}</span>
-            <span className="lp-step-label">Order Confirmed</span>
-          </div>
-          <span className="lp-step-arrow done" />
-          <div className="lp-step">
-            <span className="lp-step-icon done">{IC.check}</span>
-            <span className="lp-step-label">Production Schedule</span>
-          </div>
-          <span className="lp-step-arrow done" />
-          <div className="lp-step">
-            <span className="lp-step-icon active">3</span>
-            <span className="lp-step-label">Leader Production</span>
-          </div>
-          <span className="lp-step-arrow" />
-          <div className="lp-step">
-            <span className="lp-step-icon">4</span>
-            <span className="lp-step-label">Completed</span>
-          </div>
-        </div>
-
         {/* ── Summary Strip ─────────────────────────── */}
         {dashboard && (
           <div className="lp-summary-strip">
