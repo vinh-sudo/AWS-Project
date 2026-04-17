@@ -1,0 +1,413 @@
+/* ===== Report Tabs ===== */
+.report-tabs {
+    display: flex;
+    gap: 4px;
+    padding: 0 24px;
+    margin-bottom: 20px;
+    flex-wrap: wrap;
+}
+
+.report-tabs .tab-btn {
+    padding: 10px 18px;
+    border: none;
+    background: #f1f5f9;
+    color: #64748b;
+    border-radius: 8px;
+    cursor: pointer;
+    font-size: 13px;
+    font-weight: 500;
+    transition: all 0.2s;
+    white-space: nowrap;
+}
+
+.report-tabs .tab-btn:hover {
+    background: #e2e8f0;
+    color: #334155;
+}
+
+.report-tabs .tab-btn.active {
+    background: #4a6cf7;
+    color: white;
+}
+
+/* ===== Report Content ===== */
+.report-content {
+    padding: 0 24px 24px;
+    position: relative;
+}
+
+.loading-overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(255, 255, 255, 0.8);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 10;
+    border-radius: 12px;
+}
+
+/* ===== Report Section ===== */
+.report-section {
+    background: white;
+    border-radius: 12px;
+    padding: 24px;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+}
+
+.section-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 24px;
+    flex-wrap: wrap;
+    gap: 12px;
+}
+
+.section-header h2 {
+    font-size: 18px;
+    font-weight: 700;
+    color: #1a1a2e;
+    margin: 0;
+}
+
+/* ===== Range Toggle ===== */
+.range-toggle {
+    display: flex;
+    gap: 4px;
+    background: #f1f5f9;
+    border-radius: 8px;
+    padding: 3px;
+}
+
+.toggle-btn {
+    padding: 8px 16px;
+    border: none;
+    background: transparent;
+    color: #64748b;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 13px;
+    font-weight: 500;
+    transition: all 0.2s;
+}
+
+.toggle-btn:hover {
+    color: #334155;
+}
+
+.toggle-btn.active {
+    background: white;
+    color: #4a6cf7;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+/* ===== Date Range Picker ===== */
+.date-range-picker {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 13px;
+    color: #64748b;
+}
+
+.date-range-picker label {
+    font-weight: 500;
+}
+
+/* ===== Overview Grid ===== */
+.overview-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 16px;
+}
+
+.overview-card {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    padding: 20px;
+    border-radius: 12px;
+    background: #f8fafc;
+    border: 1px solid #e2e8f0;
+    transition: transform 0.2s, box-shadow 0.2s;
+}
+
+.overview-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+}
+
+.overview-icon {
+    font-size: 28px;
+    width: 48px;
+    height: 48px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 12px;
+    background: white;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+}
+
+.overview-info {
+    display: flex;
+    flex-direction: column;
+}
+
+.overview-value {
+    font-size: 24px;
+    font-weight: 800;
+    color: #1a1a2e;
+}
+
+.overview-label {
+    font-size: 12px;
+    color: #64748b;
+    font-weight: 500;
+    margin-top: 2px;
+}
+
+.overview-card.good {
+    border-left: 4px solid #36b58a;
+}
+
+.overview-card.reject {
+    border-left: 4px solid #e74c3c;
+}
+
+.overview-card.target {
+    border-left: 4px solid #4a6cf7;
+}
+
+.overview-card.achievement {
+    border-left: 4px solid #9b59f0;
+}
+
+.overview-card.downtime {
+    border-left: 4px solid #f7a94a;
+}
+
+.overview-card.reject-rate {
+    border-left: 4px solid #e67e22;
+}
+
+/* ===== Chart Wrapper ===== */
+.chart-wrapper {
+    margin-top: 16px;
+    padding: 16px;
+    background: #fafbfc;
+    border-radius: 12px;
+}
+
+/* ===== Comparison Table ===== */
+.comparison-table-wrapper,
+.incident-table-wrapper {
+    margin-top: 24px;
+    overflow-x: auto;
+}
+
+.report-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 14px;
+}
+
+.report-table thead th {
+    background: #f8fafc;
+    padding: 12px 16px;
+    text-align: left;
+    font-weight: 600;
+    color: #475569;
+    border-bottom: 2px solid #e2e8f0;
+    white-space: nowrap;
+}
+
+.report-table tbody td {
+    padding: 12px 16px;
+    border-bottom: 1px solid #f1f5f9;
+    color: #334155;
+}
+
+.report-table tbody tr:hover {
+    background: #f8fafc;
+}
+
+.text-success {
+    color: #36b58a;
+    font-weight: 600;
+}
+
+.text-danger {
+    color: #e74c3c;
+    font-weight: 600;
+}
+
+.oee-badge {
+    display: inline-block;
+    padding: 4px 10px;
+    border-radius: 20px;
+    font-size: 12px;
+    font-weight: 600;
+}
+
+.oee-badge.excellent {
+    background: #dcfce7;
+    color: #166534;
+}
+
+.oee-badge.good {
+    background: #fef3c7;
+    color: #92400e;
+}
+
+.oee-badge.poor {
+    background: #fef2f2;
+    color: #991b1b;
+}
+
+/* ===== Adherence Grid ===== */
+.adherence-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+    gap: 16px;
+}
+
+.adherence-card {
+    text-align: center;
+    padding: 24px 16px;
+    border-radius: 12px;
+    background: #f8fafc;
+    border: 1px solid #e2e8f0;
+}
+
+.adherence-value {
+    display: block;
+    font-size: 32px;
+    font-weight: 800;
+    color: #1a1a2e;
+    margin-bottom: 4px;
+}
+
+.adherence-label {
+    font-size: 13px;
+    color: #64748b;
+    font-weight: 500;
+}
+
+.adherence-card.total {
+    border-top: 4px solid #4a6cf7;
+}
+
+.adherence-card.completed {
+    border-top: 4px solid #36b58a;
+}
+
+.adherence-card.running {
+    border-top: 4px solid #f7a94a;
+}
+
+.adherence-card.paused {
+    border-top: 4px solid #e74c3c;
+}
+
+.adherence-card.rate {
+    border-top: 4px solid #9b59f0;
+}
+
+/* ===== Incident Summary ===== */
+.incident-total {
+    text-align: center;
+    padding: 24px;
+    background: #fef2f2;
+    border-radius: 12px;
+    margin-bottom: 20px;
+}
+
+.incident-total-value {
+    display: block;
+    font-size: 42px;
+    font-weight: 800;
+    color: #991b1b;
+}
+
+.incident-total-label {
+    font-size: 14px;
+    color: #b91c1c;
+    font-weight: 500;
+}
+
+.severity-badge {
+    display: inline-block;
+    padding: 4px 10px;
+    border-radius: 20px;
+    font-size: 11px;
+    font-weight: 600;
+    text-transform: uppercase;
+}
+
+.severity-badge.severity-high,
+.severity-badge.severity-critical {
+    background: #fef2f2;
+    color: #991b1b;
+}
+
+.severity-badge.severity-medium {
+    background: #fef3c7;
+    color: #92400e;
+}
+
+.severity-badge.severity-low {
+    background: #dcfce7;
+    color: #166534;
+}
+
+/* ===== No Data ===== */
+.report-section .no-data {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 8px;
+    padding: 48px 20px;
+    color: #94a3b8;
+    font-size: 14px;
+}
+
+.report-section .no-data-icon {
+    font-size: 36px;
+}
+
+/* ===== Responsive ===== */
+@media (max-width: 768px) {
+    .report-tabs {
+        padding: 0 16px;
+    }
+
+    .report-content {
+        padding: 0 16px 16px;
+    }
+
+    .report-section {
+        padding: 16px;
+    }
+
+    .overview-grid {
+        grid-template-columns: repeat(2, 1fr);
+    }
+
+    .adherence-grid {
+        grid-template-columns: repeat(2, 1fr);
+    }
+
+    .date-range-picker {
+        flex-wrap: wrap;
+    }
+
+    .section-header {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+}

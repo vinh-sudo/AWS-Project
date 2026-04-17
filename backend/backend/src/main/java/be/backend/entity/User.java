@@ -8,6 +8,8 @@ import lombok.Setter;
 import org.hibernate.annotations.ColumnDefault;
 
 import java.time.OffsetDateTime;
+import java.util.LinkedHashSet;
+import java.util.Set;
 
 @Getter
 @Setter
@@ -38,6 +40,11 @@ public class User {
     @Column(name = "phone_number", length = 15)
     private String phoneNumber;
 
+    @Size(max = 20)
+    @ColumnDefault("'active'")
+    @Column(name = "status", length = 20)
+    private String status;
+
     @ColumnDefault("CURRENT_TIMESTAMP")
     @Column(name = "created_at")
     private OffsetDateTime createdAt;
@@ -46,9 +53,24 @@ public class User {
     @Column(name = "updated_at")
     private OffsetDateTime updatedAt;
 
-    @Size(max = 20)
-    @ColumnDefault("'active'")
-    @Column(name = "status", length = 20)
-    private String status;
+    @OneToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "user_id")
+    private Account account;
+
+    @OneToMany
+    @JoinColumn(name = "user_id")
+    private Set<AuditLog> auditLogs = new LinkedHashSet<>();
+
+    @OneToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "user_id")
+    private Employee employee;
+
+    @OneToMany
+    @JoinColumn(name = "user_id")
+    private Set<Notification> notifications = new LinkedHashSet<>();
+
+    @OneToMany
+    @JoinColumn(name = "created_by")
+    private Set<Order> orders = new LinkedHashSet<>();
 
 }

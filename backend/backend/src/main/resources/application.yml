@@ -1,32 +1,85 @@
-#spring:
-#  datasource:
-#    url: jdbc:postgresql://postgres:5432/production_manager
-#    username: postgres
-#    password: 12345
-
-
 spring:
   datasource:
-    url: jdbc:postgresql://caboose.proxy.rlwy.net:16949/railway
+    url: jdbc:postgresql://yamanote.proxy.rlwy.net:57879/railway
     username: postgres
-    password: yuNprLoYqGAMNGDqpVNuMKDIOjSLTCKc
+    password: zAghXDygkxzsfGfItOcVCjqkqKrCCGKu
     driver-class-name: org.postgresql.Driver
-
   jpa:
     hibernate:
-      ddl-auto: update
+      ddl-auto: validate
     show-sql: true
-
   flyway:
-    enabled: true
+    enabled: false
     locations: classpath:db/migration
     baseline-on-migrate: true
+  data:
+    redis:
+      host: evolving-muskox-40304.upstash.io
+      port: 6379
+      username: default
+      password: AZ1wAAIncDJkNWQ4OGMzODA3ODI0NDQyOGJiZDhjNmY2MzZiNTg4MXAyNDAzMDQ
+      ssl:
+        enabled: true
+      repositories:
+        enabled: false
+  mail:
+    host: email-smtp.ap-southeast-1.amazonaws.com
+    port: 587
+    username: ${SES_SMTP_USERNAME}
+    password: ${SES_SMTP_PASSWORD}
+    properties:
+      mail:
+        smtp:
+          auth: true
+          starttls:
+            enable: true
+  main:
+    lazy-initialization: true
+
+aws:
+  access-key: AKIAZJIX3IDXGBVR7NWF
+  secret-key: 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
+  region: ap-southeast-1
+  sns-topic-arn: arn:aws:sns:ap-southeast-1:638389534958:production-notification
+  sqs-queue-url: https://sqs.ap-southeast-1.amazonaws.com/638389534958/production-queue
+  bucket-name: ims-stores
+
 jwt:
   secret: myVeryVeryVeryVeryVeryVerySecretKey1234567890
-  expiration: 900000
-  refresh-expiration: 900000
+  expiration: 1800000
+  refresh-expiration: 14400000
+
+ai:
+  provider: openai
+  openai:
+    api-key: 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
+    url: https://api.openai.com/v1/chat/completions
+    model: gpt-4o-mini
+    max-tokens: 500
+    temperature: 0.3
 
 logging:
   level:
     org.springframework.security: DEBUG
     org.springframework.web: INFO
+
+app:
+  mail:
+
+    from: no-reply@ims.mom
+
+management:
+  endpoint:
+    health:
+      probes:
+        enabled: true
+  endpoints:
+    web:
+      exposure:
+        include: health
+  health:
+    livenessstate:
+      enabled: true
+    readinessstate:
+      enabled: true
+

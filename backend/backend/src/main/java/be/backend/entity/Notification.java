@@ -21,9 +21,10 @@ public class Notification {
     @Column(name = "notification_id", nullable = false)
     private Integer id;
 
-    @ManyToOne(fetch = FetchType.LAZY)
+    @NotNull
+    @ManyToOne(fetch = FetchType.LAZY, optional = false)
     @OnDelete(action = OnDeleteAction.CASCADE)
-    @JoinColumn(name = "user_id")
+    @JoinColumn(name = "user_id", nullable = false)
     private User user;
 
     @NotNull
@@ -31,12 +32,32 @@ public class Notification {
     private String message;
 
     @Size(max = 20)
-    @ColumnDefault("'unread'")
+    @ColumnDefault("'UNREAD'")
     @Column(name = "status", length = 20)
     private String status;
 
     @ColumnDefault("CURRENT_TIMESTAMP")
-    @Column(name = "\"timestamp\"")
-    private OffsetDateTime timestamp;
+    @Column(name = "created_at")
+    private OffsetDateTime createdAt;
 
+    @Size(max = 200)
+    @NotNull
+    @Column(name = "title", nullable = false, length = 200)
+    private String title;
+
+    @Size(max = 20)
+    @NotNull
+    @Column(name = "level", nullable = false, length = 20)
+    private String level;
+
+    @Size(max = 30)
+    @NotNull
+    @Column(name = "source_type", nullable = false, length = 30)
+    private String sourceType;
+
+    @Column(name = "source_id")
+    private Integer sourceId;
+
+    @Column(name = "url", length = Integer.MAX_VALUE)
+    private String url;
 }

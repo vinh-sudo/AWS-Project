@@ -1,85 +1,262 @@
+/* ===== Admin Sidebar — Same style as Manager Sidebar ===== */
 
-.admin-sidebar {
-  width: 260px;
-  min-height: 100vh;
-  background: linear-gradient(180deg, #ffffff 0%, #f8f9fa 100%);
-  border-right: 1px solid #e0e0e0;
-  display: flex;
-  flex-direction: column;
+/* --- Sidebar Container --- */
+.as-sidebar {
+  width: 256px;
+  min-width: 256px;
+  height: 100vh;
   position: sticky;
   top: 0;
-}
-
-.sidebar-header {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  padding: 20px;
-  border-bottom: 1px solid #e0e0e0;
-}
-
-.sidebar-logo {
-  width: 45px;
-  height: 45px;
-  border-radius: 12px;
-  object-fit: cover;
-}
-
-.sidebar-title {
-  font-size: 20px;
-  font-weight: 600;
-  color: #5ec8c4;
-}
-
-.sidebar-nav {
-  flex: 1;
-  padding: 15px 10px;
+  background: #fff;
+  border-right: 1px solid #ededf0;
   display: flex;
   flex-direction: column;
-  gap: 5px;
+  overflow: hidden;
+  z-index: 30;
+  font-family: 'Inter', 'Segoe UI', -apple-system, sans-serif;
 }
 
-.nav-item {
+/* --- Brand Header --- */
+.as-brand {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 24px 20px 20px;
+  gap: 10px;
+}
+
+.as-brand-left {
   display: flex;
   align-items: center;
   gap: 12px;
-  padding: 14px 18px;
+  min-width: 0;
+  overflow: hidden;
+}
+
+.as-avatar {
+  width: 40px;
+  height: 40px;
+  min-width: 40px;
   border-radius: 12px;
-  cursor: pointer;
-  transition: all 0.3s ease;
-  color: #666;
-  font-size: 15px;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: #fff;
+  font-size: 14px;
+  font-weight: 700;
+  letter-spacing: 0.5px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 3px 10px rgba(102, 126, 234, 0.3);
+  flex-shrink: 0;
+}
+
+.as-brand-info {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+  overflow: hidden;
+}
+
+.as-brand-name {
+  font-size: 14px;
+  font-weight: 700;
+  color: #1a1a2e;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  line-height: 1.3;
+}
+
+.as-brand-role {
+  font-size: 11px;
+  color: #9298b0;
   font-weight: 500;
+  white-space: nowrap;
 }
 
-.nav-item:hover {
-  background: rgba(94, 200, 196, 0.1);
-  color: #5ec8c4;
+/* --- Navigation --- */
+.as-nav {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  padding: 8px 18px 0;
+  gap: 6px;
+  overflow-y: auto;
+  overflow-x: hidden;
 }
 
-.nav-item.active {
-  background: linear-gradient(135deg, rgba(241, 149, 179, 0.15) 0%, rgba(94, 200, 196, 0.15) 100%);
-  color: #5ec8c4;
-  font-weight: 600;
+.as-nav-item {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 13px 16px;
+  color: #5a607f;
+  text-decoration: none;
+  border-radius: 12px;
+  transition: all 0.18s ease;
+  cursor: pointer;
+  border: none;
+  background: transparent;
+  width: 100%;
+  font-family: inherit;
+  font-size: 14px;
+  position: relative;
+  box-sizing: border-box;
+  -webkit-tap-highlight-color: transparent;
 }
 
-.nav-icon {
-  font-size: 20px;
-  width: 24px;
-  text-align: center;
+.as-nav-item:hover {
+  background: #f2f4fb;
+  color: #667eea;
 }
 
-.sidebar-footer {
-  padding: 15px 10px;
-  border-top: 1px solid #e0e0e0;
-  margin-top: auto;
+.as-nav-item:hover .as-nav-icon svg {
+  stroke: #667eea;
 }
 
-.nav-item.logout {
-  color: #f195b3;
+/* Active State */
+.as-nav-item.as-active {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: #fff;
+  box-shadow: 0 4px 14px rgba(102, 126, 234, 0.35);
 }
 
-.nav-item.logout:hover {
-  background: rgba(241, 149, 179, 0.15);
-  color: #e57399;
+.as-nav-item.as-active .as-nav-icon svg {
+  stroke: #fff;
+}
+
+.as-nav-item.as-active:hover {
+  opacity: 0.93;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: #fff;
+}
+
+/* Icon */
+.as-nav-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 22px;
+  height: 22px;
+  min-width: 22px;
+}
+
+.as-nav-icon svg {
+  width: 22px;
+  height: 22px;
+  transition: stroke 0.18s ease;
+}
+
+/* Label */
+.as-nav-label {
+  font-size: 14px;
+  font-weight: 500;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  line-height: 1.3;
+}
+
+/* --- Bottom Section --- */
+.as-bottom {
+  padding: 8px 18px 24px;
+}
+
+.as-divider {
+  height: 1px;
+  background: #ededf0;
+  margin-bottom: 10px;
+}
+
+/* Logout */
+.as-logout {
+  color: #ef5350 !important;
+}
+
+.as-logout .as-nav-icon svg {
+  stroke: #ef5350;
+}
+
+.as-logout:hover {
+  background: #fef2f2 !important;
+  color: #d32f2f !important;
+}
+
+.as-logout:hover .as-nav-icon svg {
+  stroke: #d32f2f;
+}
+
+/* --- Scrollbar --- */
+.as-nav::-webkit-scrollbar {
+  width: 4px;
+}
+
+.as-nav::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.as-nav::-webkit-scrollbar-thumb {
+  background: #e0e0e0;
+  border-radius: 10px;
+}
+
+/* --- Responsive --- */
+@media (max-width: 768px) {
+  .as-sidebar {
+    width: 72px;
+    min-width: 72px;
+  }
+
+  .as-brand-info {
+    display: none;
+  }
+
+  .as-brand {
+    justify-content: center;
+    flex-direction: column;
+    padding: 18px 10px 14px;
+    gap: 10px;
+  }
+
+  .as-brand-left {
+    justify-content: center;
+  }
+
+  .as-nav {
+    padding: 8px 12px 0;
+    align-items: center;
+    gap: 6px;
+  }
+
+  .as-nav-item {
+    width: 46px;
+    height: 46px;
+    padding: 0;
+    justify-content: center;
+    border-radius: 12px;
+  }
+
+  .as-nav-label {
+    display: none;
+  }
+
+  .as-bottom {
+    padding: 0 12px 18px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+  }
+
+  .as-divider {
+    width: 46px;
+  }
+
+  .as-logout {
+    width: 46px;
+    height: 46px;
+    padding: 0;
+    justify-content: center;
+    border-radius: 12px;
+  }
 }

@@ -1,5 +1,7 @@
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { useDispatch } from "react-redux";
+import { logout } from "../../redux";
 import authService from "../../services/authService";
 import imsLogo from "../../assets/ims2.jpg";
 import "./PlannerScheduling.css";
@@ -162,8 +164,10 @@ const PlannerScheduling = () => {
     endTime: "17:00",
   });
 
-  const handleLogout = () => {
-    authService.logout();
+  const dispatch = useDispatch();
+
+  const handleLogout = async () => {
+    await dispatch(logout());
     navigate("/login");
   };
 
@@ -283,6 +287,27 @@ const PlannerScheduling = () => {
             </div>
           </div>
         </header>
+
+        {/* Demo Mode Banner */}
+        <div
+          style={{
+            background: "#fff3cd",
+            color: "#856404",
+            padding: "10px 16px",
+            borderRadius: "8px",
+            marginBottom: "16px",
+            fontSize: "13px",
+            display: "flex",
+            alignItems: "center",
+            gap: "8px",
+          }}
+        >
+          <span>⚠️</span>
+          <span>
+            Demo Mode — Backend API chưa hỗ trợ Planner. Dữ liệu hiển thị là dữ
+            liệu mẫu.
+          </span>
+        </div>
 
         {/* Alerts Section */}
         {conflicts.length > 0 && (

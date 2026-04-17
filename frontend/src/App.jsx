@@ -1,97 +1,289 @@
 import { useState } from "react";
-import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
+import { useSelector } from "react-redux";
+import { selectIsAuthenticated, selectUser } from "./redux";
 import LoginPage from "./pages/loginPage/LoginPage";
 import ForgotPasswordPage from "./pages/forgotPasswordPage/ForgotPasswordPage";
 import OtpVerificationPage from "./pages/otpVerificationPage/OtpVerificationPage";
 import ResetPasswordPage from "./pages/resetPasswordPage/ResetPasswordPage";
 import DraftLayout from "./layouts/DraftLayout";
+// Route guards
+import ProtectedRoute from "./routes/ProtectedRoute";
+import RoleBasedRoute, { getRoleDefaultPath } from "./routes/RoleBasedRoute";
 // Admin imports
 import AdminPage from "./pages/adminPage/adminUser";
 import AdminDashboard from "./pages/adminPage/AdminDashboard";
-import AdminApproval from "./pages/adminPage/AdminApproval";
 import AdminOrders from "./pages/adminPage/AdminOrders";
+import AdminAssignment from "./pages/adminPage/AdminAssignment";
 import AuditLog from "./pages/adminPage/AuditLog";
-// Director imports
-import DirectorDashboard from "./pages/directorPage/DirectorDashboard";
-// Manager imports - Gộp chung tất cả chức năng planner, leader, line vào manager
+// Manager imports
 import ManagerDashboard from "./pages/managerPage/ManagerDashboard";
+import ManagerPlanning from "./pages/managerPage/ManagerPlanning";
+import ManagerTracking from "./pages/managerPage/ManagerTracking";
+import ManagerLines from "./pages/managerPage/ManagerLines";
+import ManagerReports from "./pages/managerPage/ManagerReports";
 import ManagerOrders from "./pages/managerPage/ManagerOrders";
-import ManagerScheduling from "./pages/managerPage/ManagerScheduling";
-import ManagerTasks from "./pages/managerPage/ManagerTasks";
-import ManagerProgress from "./pages/managerPage/ManagerProgress";
-import LineManagement from "./pages/managerPage/LineManagement";
+// Planner imports
 import PlannerAssignment from "./pages/plannerPage/PlannerAssignment";
 import PlannerScheduling from "./pages/plannerPage/PlannerScheduling";
 import PlannerReports from "./pages/plannerPage/PlannerReports";
 import LeaderProgress from "./pages/leaderPage/LeaderProgress";
 import LeaderTaskAssignment from "./pages/leaderPage/LeaderTaskAssignment";
-
-// Shared imports
-import Reports from "./pages/managerPage/Reports";
 import Dashboard from "./pages/dashboardPage/Dashboard";
 import AICopilot from "./components/AICopilot/AICopilot";
+import AuthGuard from "./components/AuthGuard/AuthGuard";
 import "./App.css";
+
+/**
+ * RedirectIfAuthenticated - Redirects already logged-in users
+ * away from public auth pages to their role-based dashboard.
+ */
+const RedirectIfAuthenticated = ({ children }) => {
+  const isAuthenticated = useSelector(selectIsAuthenticated);
+  const user = useSelector(selectUser);
+
+  if (isAuthenticated && user) {
+    return <Navigate to={getRoleDefaultPath(user.role)} replace />;
+  }
+
+  return children;
+};
+
+/**
+ * ReportsRedirect - Redirects to role-specific reports page.
+ */
+const ReportsRedirect = () => {
+  const user = useSelector(selectUser);
+  const role = user?.role?.toUpperCase();
+
+  switch (role) {
+    case "MANAGER":
+      return <Navigate to="/manager/reports" replace />;
+    case "ADMIN":
+      return <Navigate to="/admin/dashboard" replace />;
+    case "PRODUCTION_PLANNER":
+      return <Navigate to="/planner/reports" replace />;
+    case "LINE_LEADER":
+      return <Navigate to="/leader/progress" replace />;
+    default:
+      return <Navigate to="/login" replace />;
+  }
+};
 
 function App() {
   const [isCopilotOpen, setIsCopilotOpen] = useState(false);
 
   return (
     <BrowserRouter>
+      <AuthGuard />
       <Routes>
         <Route element={<DraftLayout />}>
-          <Route path="/" element={<LoginPage />} />
-          <Route path="/login" element={<LoginPage />} />
+          {/* Public routes - redirect to dashboard if already authenticated */}
+          <Route
+            path="/"
+            element={
+              <RedirectIfAuthenticated>
+                <LoginPage />
+              </RedirectIfAuthenticated>
+            }
+          />
+          <Route
+            path="/login"
+            element={
+              <RedirectIfAuthenticated>
+                <LoginPage />
+              </RedirectIfAuthenticated>
+            }
+          />
           <Route path="/forgot-password" element={<ForgotPasswordPage />} />
           <Route path="/otp-verification" element={<OtpVerificationPage />} />
           <Route path="/reset-password" element={<ResetPasswordPage />} />
 
-          {/* Director Routes - Cấp cao nhất: ra chỉ đạo, xem tổng quan */}
-          <Route path="/director" element={<DirectorDashboard />} />
-          <Route path="/director/dashboard" element={<DirectorDashboard />} />
+          {/* Manager Routes - Quản lý sản xuất: lập kế hoạch, theo dõi tiến độ */}
+          <Route
+            path="/manager"
+            element={
+              <RoleBasedRoute allowedRoles={["MANAGER"]}>
+                <ManagerDashboard />
+              </RoleBasedRoute>
+            }
+          />
+          <Route
+            path="/manager/dashboard"
+            element={
+              <RoleBasedRoute allowedRoles={["MANAGER"]}>
+                <ManagerDashboard />
+              </RoleBasedRoute>
+            }
+          />
+          <Route
+            path="/manager/planning"
+            element={
+              <RoleBasedRoute allowedRoles={["MANAGER"]}>
+                <ManagerPlanning />
+              </RoleBasedRoute>
+            }
+          />
+          <Route
+            path="/manager/tracking"
+            element={
+              <RoleBasedRoute allowedRoles={["MANAGER"]}>
+                <ManagerTracking />
+              </RoleBasedRoute>
+            }
+          />
+          <Route
+            path="/manager/lines"
+            element={
+              <RoleBasedRoute allowedRoles={["MANAGER"]}>
+                <ManagerLines />
+              </RoleBasedRoute>
+            }
+          />
+          <Route
+            path="/manager/reports"
+            element={
+              <RoleBasedRoute allowedRoles={["MANAGER"]}>
+                <ManagerReports />
+              </RoleBasedRoute>
+            }
+          />
+          <Route
+            path="/manager/orders"
+            element={
+              <RoleBasedRoute allowedRoles={["MANAGER"]}>
+                <ManagerOrders />
+              </RoleBasedRoute>
+            }
+          />
 
           {/* Admin Routes - Quản lý user, đơn hàng, duyệt, audit */}
-          <Route path="/admin" element={<AdminPage />} />
-          <Route path="/admin/dashboard" element={<AdminDashboard />} />
-          <Route path="/admin/approval" element={<AdminApproval />} />
-          <Route path="/admin/orders" element={<AdminOrders />} />
-          <Route path="/admin/audit-log" element={<AuditLog />} />
-
-          {/* Manager Routes - Gộp chung tất cả chức năng quản lý */}
-          <Route path="/manager" element={<ManagerDashboard />} />
-          <Route path="/manager/dashboard" element={<ManagerDashboard />} />
-          <Route path="/manager/tasks" element={<ManagerTasks />} />
-          <Route path="/manager/orders" element={<ManagerOrders />} />
-          <Route path="/manager/scheduling" element={<ManagerScheduling />} />
           <Route
-            path="/manager/production-lines"
-            element={<LineManagement />}
+            path="/admin"
+            element={
+              <RoleBasedRoute allowedRoles={["ADMIN"]}>
+                <AdminPage />
+              </RoleBasedRoute>
+            }
           />
-          <Route path="/manager/progress" element={<ManagerProgress />} />
-          <Route path="/manager/task-assignment" element={<ManagerTasks />} />
           <Route
-            path="/manager/planner-scheduling"
-            element={<PlannerScheduling />}
+            path="/admin/users"
+            element={
+              <RoleBasedRoute allowedRoles={["ADMIN"]}>
+                <AdminPage />
+              </RoleBasedRoute>
+            }
           />
-          <Route path="/manager/assignment" element={<PlannerAssignment />} />
-          <Route path="/manager/reports" element={<Reports />} />
+          <Route
+            path="/admin/dashboard"
+            element={
+              <RoleBasedRoute allowedRoles={["ADMIN"]}>
+                <AdminDashboard />
+              </RoleBasedRoute>
+            }
+          />
+          <Route
+            path="/admin/orders"
+            element={
+              <RoleBasedRoute allowedRoles={["ADMIN"]}>
+                <AdminOrders />
+              </RoleBasedRoute>
+            }
+          />
+          <Route
+            path="/admin/audit-log"
+            element={
+              <RoleBasedRoute allowedRoles={["ADMIN"]}>
+                <AuditLog />
+              </RoleBasedRoute>
+            }
+          />
+          <Route
+            path="/admin/assignments"
+            element={
+              <RoleBasedRoute allowedRoles={["ADMIN"]}>
+                <AdminAssignment />
+              </RoleBasedRoute>
+            }
+          />
 
           {/* Planner Routes */}
-          <Route path="/planner" element={<PlannerAssignment />} />
-          <Route path="/planner/assignment" element={<PlannerAssignment />} />
-          <Route path="/planner/scheduling" element={<PlannerScheduling />} />
-          <Route path="/planner/reports" element={<PlannerReports />} />
-
-          {/* Leader Routes */}
-          <Route path="/leader" element={<LeaderProgress />} />
-          <Route path="/leader/progress" element={<LeaderProgress />} />
           <Route
-            path="/leader/task-assignment"
-            element={<LeaderTaskAssignment />}
+            path="/planner"
+            element={
+              <RoleBasedRoute allowedRoles={["PRODUCTION_PLANNER"]}>
+                <PlannerAssignment />
+              </RoleBasedRoute>
+            }
+          />
+          <Route
+            path="/planner/assignment"
+            element={
+              <RoleBasedRoute allowedRoles={["PRODUCTION_PLANNER"]}>
+                <PlannerAssignment />
+              </RoleBasedRoute>
+            }
+          />
+          <Route
+            path="/planner/scheduling"
+            element={
+              <RoleBasedRoute allowedRoles={["PRODUCTION_PLANNER"]}>
+                <PlannerScheduling />
+              </RoleBasedRoute>
+            }
+          />
+          <Route
+            path="/planner/reports"
+            element={
+              <RoleBasedRoute allowedRoles={["PRODUCTION_PLANNER"]}>
+                <PlannerReports />
+              </RoleBasedRoute>
+            }
           />
 
-          {/* Reports & Dashboard Routes */}
-          <Route path="/reports" element={<Reports />} />
-          <Route path="/dashboard" element={<Dashboard />} />
+          {/* Leader Routes */}
+          <Route
+            path="/leader"
+            element={
+              <RoleBasedRoute allowedRoles={["LINE_LEADER"]}>
+                <LeaderProgress />
+              </RoleBasedRoute>
+            }
+          />
+          <Route
+            path="/leader/progress"
+            element={
+              <RoleBasedRoute allowedRoles={["LINE_LEADER"]}>
+                <LeaderProgress />
+              </RoleBasedRoute>
+            }
+          />
+          <Route
+            path="/leader/task-assignment"
+            element={
+              <RoleBasedRoute allowedRoles={["LINE_LEADER"]}>
+                <LeaderTaskAssignment />
+              </RoleBasedRoute>
+            }
+          />
+
+          {/* Reports & Dashboard Routes - accessible by all authenticated users */}
+          <Route
+            path="/reports"
+            element={
+              <ProtectedRoute>
+                <ReportsRedirect />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/dashboard"
+            element={
+              <ProtectedRoute>
+                <Dashboard />
+              </ProtectedRoute>
+            }
+          />
         </Route>
       </Routes>
 

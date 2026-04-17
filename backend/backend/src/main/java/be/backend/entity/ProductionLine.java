@@ -8,6 +8,8 @@ import lombok.Setter;
 import org.hibernate.annotations.ColumnDefault;
 
 import java.math.BigDecimal;
+import java.util.LinkedHashSet;
+import java.util.Set;
 
 @Getter
 @Setter
@@ -37,5 +39,29 @@ public class ProductionLine {
     @ColumnDefault("'active'")
     @Column(name = "status", length = 20)
     private String status;
+
+    @OneToMany
+    @JoinColumn(name = "line_id")
+    private Set<IncidentLog> incidentLogs = new LinkedHashSet<>();
+
+    @OneToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "line_id")
+    private LineLeaderAssignment lineLeaderAssignment;
+
+    @OneToMany
+    @JoinColumn(name = "line_id")
+    private Set<Machine> machines = new LinkedHashSet<>();
+
+    @OneToMany
+    @JoinColumn(name = "line_id")
+    private Set<ProductionPlan> productionPlans = new LinkedHashSet<>();
+
+    @OneToMany
+    @JoinColumn(name = "line_id")
+    private Set<Report> reports = new LinkedHashSet<>();
+
+    @OneToMany
+    @JoinColumn(name = "line_id")
+    private Set<Statistic> statistics = new LinkedHashSet<>();
 
 }

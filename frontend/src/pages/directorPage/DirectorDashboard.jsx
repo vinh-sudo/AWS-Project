@@ -1,5 +1,13 @@
+// ============================================================================
+// NOTE: Backend chưa có DirectorController hoặc role DIRECTOR.
+// Trang này sử dụng 100% dữ liệu mock (hardcoded priorityOrders, kpiSummary, etc).
+// Backend chỉ có 4 role: ADMIN, MANAGER, LINE_LEADER, PRODUCTION_PLANNER.
+// Director không có trong hệ thống backend hiện tại.
+// ============================================================================
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { useDispatch } from "react-redux";
+import { logout } from "../../redux";
 import authService from "../../services/authService";
 import imsLogo from "../../assets/ims2.jpg";
 import "./DirectorDashboard.css";
@@ -93,8 +101,10 @@ const DirectorDashboard = () => {
   const [directive, setDirective] = useState("");
   const [newPriority, setNewPriority] = useState("");
 
-  const handleLogout = () => {
-    authService.logout();
+  const dispatch = useDispatch();
+
+  const handleLogout = async () => {
+    await dispatch(logout());
     navigate("/login");
   };
 
@@ -110,8 +120,8 @@ const DirectorDashboard = () => {
       priorityOrders.map((order) =>
         order.id === selectedOrder.id
           ? { ...order, directorNote: directive, priority: newPriority }
-          : order
-      )
+          : order,
+      ),
     );
     setShowDirectiveModal(false);
     setSelectedOrder(null);
@@ -339,7 +349,9 @@ const DirectorDashboard = () => {
                 <div key={index} className="line-card">
                   <div className="line-header">
                     <span className="line-name">{line.name}</span>
-                    <span className={`line-status ${getStatusClass(line.status)}`}>
+                    <span
+                      className={`line-status ${getStatusClass(line.status)}`}
+                    >
                       {line.status}
                     </span>
                   </div>

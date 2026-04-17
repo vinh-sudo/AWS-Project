@@ -13,24 +13,15 @@ const initialState = {
     },
     {
       id: 2,
-      username: "manager.user",
-      email: "manager@ims.com",
-      role: "Manager",
-      status: "Active",
-      fullName: "Manager User",
-      createdAt: "2025-01-15",
-    },
-    {
-      id: 3,
       username: "leader.user",
       email: "leader@ims.com",
-      role: "Leader",
+      role: "LINE_LEADER",
       status: "Active",
       fullName: "Team Leader",
       createdAt: "2025-01-18",
     },
     {
-      id: 4,
+      id: 3,
       username: "worker.user",
       email: "worker@ims.com",
       role: "Worker",
@@ -88,7 +79,7 @@ const userSlice = createSlice({
     // Update employee
     updateEmployee: (state, action) => {
       const index = state.employees.findIndex(
-        (e) => e.id === action.payload.id
+        (e) => e.id === action.payload.id,
       );
       if (index !== -1) {
         state.employees[index] = {
@@ -100,7 +91,7 @@ const userSlice = createSlice({
     // Delete employee
     deleteEmployee: (state, action) => {
       state.employees = state.employees.filter(
-        (emp) => emp.id !== action.payload
+        (emp) => emp.id !== action.payload,
       );
     },
   },

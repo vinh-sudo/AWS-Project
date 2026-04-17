@@ -22,15 +22,27 @@ public class Report {
     @Column(name = "report_id", nullable = false)
     private Integer id;
 
-    @ManyToOne(fetch = FetchType.LAZY)
+    @NotNull
+    @ManyToOne(fetch = FetchType.LAZY, optional = false)
     @OnDelete(action = OnDeleteAction.CASCADE)
-    @JoinColumn(name = "employee_id")
+    @JoinColumn(name = "employee_id", nullable = false)
     private Employee employee;
+
+    @NotNull
+    @ManyToOne(fetch = FetchType.LAZY, optional = false)
+    @OnDelete(action = OnDeleteAction.CASCADE)
+    @JoinColumn(name = "line_id", nullable = false)
+    private ProductionLine line;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @OnDelete(action = OnDeleteAction.CASCADE)
-    @JoinColumn(name = "line_id")
-    private ProductionLine line;
+    @JoinColumn(name = "schedule_id")
+    private ProductionSchedule schedule;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @OnDelete(action = OnDeleteAction.CASCADE)
+    @JoinColumn(name = "order_id")
+    private Order order;
 
     @NotNull
     @Column(name = "work_date", nullable = false)
@@ -39,9 +51,6 @@ public class Report {
     @Size(max = 20)
     @Column(name = "shift", length = 20)
     private String shift;
-
-    @Column(name = "produced_quantity")
-    private Integer producedQuantity;
 
     @Column(name = "downtime_minutes")
     private Integer downtimeMinutes;
@@ -52,5 +61,20 @@ public class Report {
     @ColumnDefault("CURRENT_TIMESTAMP")
     @Column(name = "created_at")
     private OffsetDateTime createdAt;
+
+    @NotNull
+    @ColumnDefault("0")
+    @Column(name = "target_quantity", nullable = false)
+    private Integer targetQuantity;
+
+    @NotNull
+    @ColumnDefault("0")
+    @Column(name = "good_quantity", nullable = false)
+    private Integer goodQuantity;
+
+    @NotNull
+    @ColumnDefault("0")
+    @Column(name = "reject_quantity", nullable = false)
+    private Integer rejectQuantity;
 
 }

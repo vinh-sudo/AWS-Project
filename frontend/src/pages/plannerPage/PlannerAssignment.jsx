@@ -1,5 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
+import { useDispatch } from "react-redux";
+import { logout } from "../../redux";
 import imsLogo from "../../assets/ims2.jpg";
 import "./PlannerAssignment.css";
 
@@ -52,7 +54,10 @@ const PlannerAssignment = () => {
     setTasks(updatedTasks);
   };
 
-  const handleLogout = () => {
+  const dispatch = useDispatch();
+
+  const handleLogout = async () => {
+    await dispatch(logout());
     navigate("/login");
   };
 
@@ -227,11 +232,32 @@ const PlannerAssignment = () => {
           </div>
         </header>
 
+        {/* Demo Mode Banner */}
+        <div
+          style={{
+            background: "#fff3cd",
+            color: "#856404",
+            padding: "10px 16px",
+            borderRadius: "8px",
+            marginBottom: "16px",
+            fontSize: "13px",
+            display: "flex",
+            alignItems: "center",
+            gap: "8px",
+          }}
+        >
+          <span>⚠️</span>
+          <span>
+            Demo Mode — Backend API chưa hỗ trợ Planner. Dữ liệu hiển thị là dữ
+            liệu mẫu.
+          </span>
+        </div>
+
         {/* Workflow Info */}
         <div className="workflow-info">
           <div className="workflow-step">
             <span className="step-icon done">1</span>
-            <span className="step-label">Manager Creates</span>
+            <span className="step-label">Planner Creates</span>
           </div>
           <span className="workflow-arrow">→</span>
           <div className="workflow-step">

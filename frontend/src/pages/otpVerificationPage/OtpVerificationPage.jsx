@@ -1,15 +1,28 @@
 import React, { useState, useRef, useEffect } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { Link, useNavigate, useLocation } from "react-router-dom";
 import "./OtpVerificationPage.css";
 import imsLogo from "../../assets/ims2.jpg";
+import authService from "../../services/authService";
 
 const OtpVerificationPage = () => {
   const [otp, setOtp] = useState(["", "", "", "", "", ""]);
   const [error, setError] = useState("");
   const [isVerified, setIsVerified] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
   const [resendTimer, setResendTimer] = useState(60);
   const inputRefs = useRef([]);
   const navigate = useNavigate();
+  const location = useLocation();
+
+  // Get employeeCode from navigation state
+  const employeeCode = location.state?.employeeCode;
+
+  // Redirect if no employeeCode
+  useEffect(() => {
+    if (!employeeCode) {
+      navigate("/forgot-password");
+    }
+  }, [employeeCode, navigate]);
 
   useEffect(() => {
     if (resendTimer > 0) {
@@ -59,23 +72,29 @@ const OtpVerificationPage = () => {
       return;
     }
 
-    // TODO: Replace with real OTP verification logic
-    console.log("OTP submitted:", otpValue);
-    setIsVerified(true);
-
-    // Navigate to reset password after success
-    setTimeout(() => {
-      navigate("/reset-password");
-    }, 1500);
+    // Navigate to reset password with OTP
+    navigate("/reset-password", {
+      state: {
+        employeeCode,
+        otp: otpValue,
+      },
+    });
   };
 
-  const handleResend = () => {
-    if (resendTimer === 0) {
-      // TODO: Replace with real resend logic
-      console.log("Resending OTP...");
-      setResendTimer(60);
-      setOtp(["", "", "", "", "", ""]);
+  const handleResend = async () => {
+    if (resendTimer === 0 && employeeCode) {
+      setIsLoading(true);
       setError("");
+
+      try {
+        await authService.resendOtp(employeeCode);
+        setResendTimer(60);
+        setOtp(["", "", "", "", "", ""]);
+      } catch (err) {
+        setError(err.message || "Failed to resend OTP");
+      } finally {
+        setIsLoading(false);
+      }
     }
   };
 
@@ -89,6 +108,7 @@ const OtpVerificationPage = () => {
             <p className="otp-description">
               We've sent a 6-digit code to your email. Please enter it below.
             </p>
+            {error && <div className="error-message">{error}</div>}
             <form className="otp-form" onSubmit={handleSubmit}>
               <div className="otp-inputs" onPaste={handlePaste}>
                 {otp.map((digit, index) => (
@@ -105,9 +125,10 @@ const OtpVerificationPage = () => {
                   />
                 ))}
               </div>
-              {error && <div className="input-error-text">{error}</div>}
 
-              <input className="otp-button" type="submit" value="Verify OTP" />
+              <button className="otp-button" type="submit" disabled={isLoading}>
+                {isLoading ? "Verifying..." : "Continue"}
+              </button>
             </form>
 
             <div className="resend-section">
@@ -116,7 +137,11 @@ const OtpVerificationPage = () => {
                   Resend code in {resendTimer}s
                 </span>
               ) : (
-                <button className="resend-button" onClick={handleResend}>
+                <button
+                  className="resend-button"
+                  onClick={handleResend}
+                  disabled={isLoading}
+                >
                   Resend OTP
                 </button>
               )}

@@ -22,9 +22,10 @@ public class Employee {
     @Column(name = "employee_id", nullable = false)
     private Integer id;
 
-    @ManyToOne(fetch = FetchType.LAZY)
+    @NotNull
+    @OneToOne(fetch = FetchType.LAZY, optional = false)
     @OnDelete(action = OnDeleteAction.CASCADE)
-    @JoinColumn(name = "user_id")
+    @JoinColumn(name = "user_id", nullable = false)
     private User user;
 
     @Size(max = 20)
@@ -36,28 +37,27 @@ public class Employee {
     @Column(name = "\"position\"", length = 50)
     private String position;
 
+    @Size(max = 30)
+    @NotNull
+    @ColumnDefault("'WORKER'")
+    @Column(name = "employee_type", nullable = false, length = 30)
+    private String employeeType;
+
     @Size(max = 20)
     @ColumnDefault("'active'")
     @Column(name = "status", length = 20)
     private String status;
 
-    @Size(max = 50)
-    @Column(name = "department", length = 50)
-    private String department;
-
-    @Column(name = "skill_level")
-    private Integer skillLevel;
+    @OneToOne(mappedBy = "employee", fetch = FetchType.LAZY)
+    private Account account;
 
     @OneToMany
-    @JoinColumn(name = "employee_id")
-    private Set<Account> accounts = new LinkedHashSet<>();
+    @JoinColumn(name = "reported_by")
+    private Set<IncidentLog> incidentLogs = new LinkedHashSet<>();
+
 
     @OneToMany
     @JoinColumn(name = "employee_id")
     private Set<Report> reports = new LinkedHashSet<>();
-
-    @OneToMany
-    @JoinColumn(name = "employee_id")
-    private Set<Task> tasks = new LinkedHashSet<>();
 
 }
