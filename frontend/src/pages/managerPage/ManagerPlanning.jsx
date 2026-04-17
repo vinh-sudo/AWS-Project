@@ -3,6 +3,7 @@ import ManagerSidebar from "../../components/ManagerSidebar/ManagerSidebar";
 import ManagerTopBar from "./ManagerTopBar";
 import managerService from "../../services/managerService";
 import PageLoading from "../../components/PageLoading/PageLoading";
+import useConfirmDialog from "../../components/ConfirmDialog/useConfirmDialog";
 import "./ManagerPlanning.css";
 
 const getRouteRank = (lineName) => {
@@ -12,6 +13,19 @@ const getRouteRank = (lineName) => {
   if (normalized.includes("TEST")) return 2;
   if (normalized.includes("PACK")) return 3;
   return 99;
+};
+
+const formatDateTimeCell = (value) => {
+  if (!value) return "-";
+  const parsed = new Date(value);
+  if (Number.isNaN(parsed.getTime())) return String(value);
+  return parsed.toLocaleString("vi-VN", {
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+    hour: "2-digit",
+    minute: "2-digit",
+  });
 };
 
 const extractAnchorPlans = (orderPlans) => {
@@ -52,6 +66,7 @@ const ManagerPlanning = () => {
     note: "",
     items: [],
   });
+  const confirmAction = useConfirmDialog();
 
   const getBackendErrorMessage = (err, fallback) => {
     const payload = err?.response?.data;
@@ -348,7 +363,14 @@ const ManagerPlanning = () => {
   };
 
   const handleConfirmOrderItem = async (orderId, orderItemId) => {
-    if (!window.confirm(`Confirm plan for item #${orderItemId}?`)) {
+    const accepted = await confirmAction({
+      title: "Confirm Planning Item",
+      message: `Confirm plan for item #${orderItemId}?`,
+      confirmText: "Confirm",
+      cancelText: "Cancel",
+    });
+
+    if (!accepted) {
       return;
     }
 
@@ -378,7 +400,15 @@ const ManagerPlanning = () => {
   };
 
   const handleCancelOrderItem = async (orderId, orderItemId) => {
-    if (!window.confirm(`Cancel draft plan for item #${orderItemId}?`)) {
+    const accepted = await confirmAction({
+      title: "Cancel Draft Plan",
+      message: `Cancel draft plan for item #${orderItemId}?`,
+      confirmText: "Cancel Draft",
+      cancelText: "Back",
+      tone: "danger",
+    });
+
+    if (!accepted) {
       return;
     }
 
@@ -399,21 +429,9 @@ const ManagerPlanning = () => {
         return;
       }
 
-      const draftItemIds = items
-        .filter((item) => (Number(item.draftQuantity) || 0) > 0)
-        .map((item) => Number(item.orderItemId));
-
-      // Backend currently exposes only order-level cancel endpoint.
-      if (draftItemIds.length === 1 && draftItemIds[0] === Number(orderItemId)) {
-        await managerService.cancelPlan(orderId);
-        alert(`Cancelled draft plan for item #${orderItemId}.`);
-        fetchData();
-        return;
-      }
-
-      alert(
-        "Backend currently supports cancel by order, not by individual item when multiple items are draft. Please confirm with BE team to add cancel-item API.",
-      );
+      await managerService.cancelPlanItem(orderId, orderItemId);
+      alert(`Cancelled draft plan for item #${orderItemId}.`);
+      fetchData();
     } catch (err) {
       console.error("Error cancelling order item:", err);
       alert(getBackendErrorMessage(err, "Failed to cancel order item."));
@@ -1060,8 +1078,8 @@ const ManagerPlanning = () => {
                                           <td className="pp-cell-num">
                                             {(plan.plannedQuantity || 0).toLocaleString()}
                                           </td>
-                                          <td className="pp-cell-muted">{plan.startDate}</td>
-                                          <td className="pp-cell-muted">{plan.endDate}</td>
+                                          <td className="pp-cell-muted">{formatDateTimeCell(plan.startDate)}</td>
+                                          <td className="pp-cell-muted">{formatDateTimeCell(plan.endDate)}</td>
                                           <td className="pp-cell-muted">
                                             {(plan.estimatedHours || 0).toFixed(1)}h
                                           </td>

@@ -71,12 +71,15 @@ public class AuthService {
         }
 
         if (!"active".equals(account.getStatus())) {
+
             throw new BusinessException("Account is not active");
         }
 
         if (!passwordEncoder.matches(request.getPassword(), account.getPasswordHash())) {
             log.warn("Failed login attempt for: {}", identifier);
+
             throw new BusinessException("Employee code or password is incorrect");
+
         }
 
         String accessToken = jwtService.generateToken(account);

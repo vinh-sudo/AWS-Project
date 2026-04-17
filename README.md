@@ -67,8 +67,15 @@ OPENAI_API_KEY=your_openai_api_key
 Frontend:
 
 ```bash
+# local development (optional)
 VITE_API_URL=http://localhost:8080
+
+# production build for S3/CloudFront
+VITE_API_URL=https://api.ims.mom
 ```
+
+For production builds, the frontend repo includes `frontend/.env.production`.
+So the deployer only needs to pull latest code and run build, no manual API URL edits.
 
 ## API Docs
 
@@ -78,3 +85,4 @@ VITE_API_URL=http://localhost:8080
 
 - Root `buildspec.yml` builds backend, builds/pushes Docker image to ECR, and generates `imagedefinitions.json` for ECS deployment.
 - Production flow: Route 53 -> CloudFront/ALB -> ECS -> RDS/S3, email via SES, event notifications via SNS/SQS.
+- Frontend handoff flow (S3): pull latest branch -> `cd frontend` -> `npm ci` -> `npm run build` -> upload contents of `frontend/dist` to S3.

@@ -1,5 +1,20 @@
 # React + Vite
 
+## Build For S3 Deployment
+
+This frontend uses `VITE_API_URL` at build time.
+
+- Production API URL is committed in `frontend/.env.production`.
+- Deployer flow: pull latest code -> install deps -> run build -> upload `dist/` to S3.
+
+```powershell
+cd frontend
+npm ci
+npm run build
+```
+
+Upload all files inside `frontend/dist` to the S3 bucket used by your static hosting.
+
 This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
 
 Currently, two official plugins are available:

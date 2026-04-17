@@ -48,15 +48,15 @@
 /* AI Copilot Floating Button */
 .copilot-fab {
   position: fixed;
-  bottom: 20px;
-  right: 20px;
-  width: 60px;
-  height: 60px;
+  bottom: clamp(10px, 2vw, 20px);
+  right: clamp(10px, 2vw, 20px);
+  width: clamp(48px, 6vw, 60px);
+  height: clamp(48px, 6vw, 60px);
   background: linear-gradient(135deg, #5ec8c4 0%, #f195b3 100%);
   border: none;
   border-radius: 50%;
   color: white;
-  font-size: 1.8rem;
+  font-size: clamp(1.35rem, 2.1vw, 1.8rem);
   cursor: pointer;
   box-shadow: 0 5px 20px rgba(94, 200, 196, 0.4);
   z-index: 9998;

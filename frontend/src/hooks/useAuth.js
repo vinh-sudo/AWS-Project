@@ -9,7 +9,7 @@ import {
   logout as logoutAction,
   clearError,
 } from "../redux";
-import { getRoleDefaultPath } from "../routes/RoleBasedRoute";
+import { getRoleDefaultPath } from "../utils/roleUtils";
 
 /**
  * useAuth - Custom hook providing convenient access to authentication state and actions.

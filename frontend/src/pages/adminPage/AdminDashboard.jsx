@@ -12,11 +12,11 @@ import {
   YAxis,
   CartesianGrid,
   Tooltip,
-  Legend,
   ResponsiveContainer,
 } from "recharts";
 import authService from "../../services/authService";
 import adminService from "../../services/adminService";
+import PageLoading from "../../components/PageLoading/PageLoading";
 import "./AdminDashboard.css";
 
 const AdminDashboard = () => {
@@ -24,7 +24,7 @@ const AdminDashboard = () => {
   const currentUser = authService.getCurrentUser();
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  const [lastUpdated, setLastUpdated] = useState(null);
+  const [assignments, setAssignments] = useState([]);
 
   const [stats, setStats] = useState({
     totalUsers: 0,
@@ -35,20 +35,33 @@ const AdminDashboard = () => {
     completedOrders: 0,
     inProgressOrders: 0,
     cancelledOrders: 0,
+    orderStatusDistribution: [],
     totalLines: 0,
     activeLines: 0,
     totalMachines: 0,
     activeMachines: 0,
   });
 
-  const [recentOrders, setRecentOrders] = useState([]);
-  const [upcomingDeadlines, setUpcomingDeadlines] = useState([]);
-
   const fetchDashboardData = useCallback(async () => {
     try {
       setLoading(true);
       setError(null);
-      const data = await adminService.getDashboardStats();
+      const [dashboardData, assignmentData] = await Promise.all([
+        adminService.getDashboardStats(),
+        adminService.getAssignments().catch(() => null),
+      ]);
+
+      const data = dashboardData || {};
+      const hasAssignmentData = Array.isArray(assignmentData);
+      const normalizedAssignments = hasAssignmentData ? assignmentData : [];
+      const activeLinesFromAssignments = hasAssignmentData
+        ? new Set(
+            normalizedAssignments
+              .map((item) => item?.lineId)
+              .filter((lineId) => lineId != null),
+          ).size
+        : data.activeLines || 0;
+
       setStats({
         totalUsers: data.totalUsers || 0,
         activeUsers: data.activeUsers || 0,
@@ -58,34 +71,13 @@ const AdminDashboard = () => {
         completedOrders: data.completedOrders || 0,
         inProgressOrders: data.inProgressOrders || 0,
         cancelledOrders: data.cancelledOrders || 0,
+        orderStatusDistribution: data.orderStatusDistribution || [],
         totalLines: data.totalLines || 0,
-        activeLines: data.activeLines || 0,
+        activeLines: Math.min(data.totalLines || 0, activeLinesFromAssignments),
         totalMachines: data.totalMachines || 0,
         activeMachines: data.activeMachines || 0,
       });
-
-      try {
-        const allOrders = await adminService.getAllOrders();
-        const sorted = Array.isArray(allOrders)
-          ? [...allOrders]
-              .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt))
-              .slice(0, 5)
-          : [];
-        setRecentOrders(sorted);
-      } catch {
-        setRecentOrders([]);
-      }
-
-      try {
-        const deadlines = await adminService.getUpcomingDeadlineOrders(7);
-        setUpcomingDeadlines(
-          Array.isArray(deadlines) ? deadlines.slice(0, 6) : [],
-        );
-      } catch {
-        setUpcomingDeadlines([]);
-      }
-
-      setLastUpdated(new Date());
+      setAssignments(normalizedAssignments);
     } catch (err) {
       console.error("Error fetching dashboard data:", err);
       setError(err.response?.data?.message || "Failed to load dashboard data");
@@ -96,8 +88,6 @@ const AdminDashboard = () => {
 
   useEffect(() => {
     fetchDashboardData();
-    const interval = setInterval(fetchDashboardData, 60000);
-    return () => clearInterval(interval);
   }, [fetchDashboardData]);
 
   // Computed metrics
@@ -111,56 +101,37 @@ const AdminDashboard = () => {
       ? ((stats.activeLines / stats.totalLines) * 100).toFixed(1)
       : 0;
 
-  const machineUtilization =
-    stats.totalMachines > 0
-      ? ((stats.activeMachines / stats.totalMachines) * 100).toFixed(1)
+  // Chart data
+  const orderStatusData = stats.orderStatusDistribution || [];
+
+  const barData = orderStatusData.map((item) => ({
+    status: item.name,
+    statusKey: item.key,
+    count: item.value,
+    fill: item.color,
+  }));
+
+  const userManagementData = [
+    { name: "Active", value: stats.activeUsers, color: "#10b981" },
+    { name: "Blocked", value: stats.blockedUsers, color: "#f59e0b" },
+  ];
+
+  const userActiveRate =
+    stats.totalUsers > 0
+      ? ((stats.activeUsers / stats.totalUsers) * 100).toFixed(1)
       : 0;
 
-  // Chart data
-  const orderStatusData = [
-    { name: "Pending", value: stats.pendingOrders, color: "#f59e0b" },
-    { name: "In Progress", value: stats.inProgressOrders, color: "#3b82f6" },
-    { name: "Completed", value: stats.completedOrders, color: "#10b981" },
-    { name: "Cancelled", value: stats.cancelledOrders, color: "#ef4444" },
-  ];
-
-  const productionData = [
-    { name: "Lines Active", value: stats.activeLines, color: "#10b981" },
-    {
-      name: "Lines Inactive",
-      value: Math.max(0, stats.totalLines - stats.activeLines),
-      color: "#e2e8f0",
-    },
-  ];
-
-  const barData = [
-    { status: "Pending", count: stats.pendingOrders, fill: "#f59e0b" },
-    { status: "In Progress", count: stats.inProgressOrders, fill: "#3b82f6" },
-    { status: "Completed", count: stats.completedOrders, fill: "#10b981" },
-    { status: "Cancelled", count: stats.cancelledOrders, fill: "#ef4444" },
-  ];
+  const assignmentPreview = assignments.slice(0, 5);
+  const assignedLines = new Set(
+    assignments.map((item) => item?.lineId).filter((lineId) => lineId != null),
+  ).size;
+  const unassignedLines = Math.max(0, stats.totalLines - assignedLines);
 
   const getGreeting = () => {
     const hour = new Date().getHours();
     if (hour < 12) return "Good Morning";
     if (hour < 18) return "Good Afternoon";
     return "Good Evening";
-  };
-
-  const getStatusBadgeClass = (status) => {
-    switch (status?.toLowerCase()) {
-      case "pending":
-        return "badge-pending";
-      case "in_progress":
-      case "in progress":
-        return "badge-progress";
-      case "completed":
-        return "badge-completed";
-      case "cancelled":
-        return "badge-cancelled";
-      default:
-        return "badge-default";
-    }
   };
 
   const getUserInitial = () => {
@@ -173,12 +144,7 @@ const AdminDashboard = () => {
       <div className="admin-container">
         <AdminSidebar />
         <div className="admin-main">
-          <div className="dash-loading">
-            <div className="dash-loading-card">
-              <div className="dash-spinner"></div>
-              <p className="dash-loading-text">Loading dashboard...</p>
-            </div>
-          </div>
+          <PageLoading variant="fullpage" text="Loading dashboard..." />
         </div>
       </div>
     );
@@ -200,40 +166,10 @@ const AdminDashboard = () => {
               </h1>
               <p className="dash-subtitle">
                 Here's what's happening with your production system
-                {lastUpdated && (
-                  <span className="dash-last-updated">
-                    {" "}
-                    · Updated{" "}
-                    {lastUpdated.toLocaleTimeString([], {
-                      hour: "2-digit",
-                      minute: "2-digit",
-                    })}
-                  </span>
-                )}
               </p>
             </div>
           </div>
           <div className="dash-header-right">
-            <button
-              className="dash-refresh-btn"
-              onClick={fetchDashboardData}
-              title="Refresh data"
-            >
-              <svg
-                width="18"
-                height="18"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="2"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-              >
-                <polyline points="23 4 23 10 17 10" />
-                <polyline points="1 20 1 14 7 14" />
-                <path d="M3.51 9a9 9 0 0114.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0020.49 15" />
-              </svg>
-            </button>
             <NotificationBell />
           </div>
         </header>
@@ -455,6 +391,27 @@ const AdminDashboard = () => {
             </button>
             <button
               className="dash-quick-btn"
+              onClick={() => navigate("/admin/assignments")}
+            >
+              <svg
+                width="16"
+                height="16"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
+              >
+                <path d="M4 6h16" />
+                <path d="M4 12h16" />
+                <path d="M4 18h16" />
+                <circle cx="7" cy="6" r="1" />
+                <circle cx="12" cy="12" r="1" />
+                <circle cx="17" cy="18" r="1" />
+              </svg>
+              Leader Assignment
+            </button>
+            <button
+              className="dash-quick-btn"
               onClick={() => navigate("/admin/audit-log")}
             >
               <svg
@@ -477,7 +434,7 @@ const AdminDashboard = () => {
           {/* ===== Charts Row ===== */}
           <div className="dash-charts">
             {/* Order Status Bar Chart */}
-            <div className="dash-card">
+            <div className="dash-card dash-card-full">
               <div className="dash-card-header">
                 <h3 className="dash-card-title">
                   <span className="dash-card-title-icon icon-chart">
@@ -506,64 +463,6 @@ const AdminDashboard = () => {
               <div className="dash-card-body">
                 <ResponsiveContainer width="100%" height={280}>
                   <BarChart data={barData} barCategoryGap="25%">
-                    <defs>
-                      <linearGradient
-                        id="barPending"
-                        x1="0"
-                        y1="0"
-                        x2="0"
-                        y2="1"
-                      >
-                        <stop offset="0%" stopColor="#f59e0b" stopOpacity={1} />
-                        <stop
-                          offset="100%"
-                          stopColor="#fbbf24"
-                          stopOpacity={0.8}
-                        />
-                      </linearGradient>
-                      <linearGradient
-                        id="barProgress"
-                        x1="0"
-                        y1="0"
-                        x2="0"
-                        y2="1"
-                      >
-                        <stop offset="0%" stopColor="#3b82f6" stopOpacity={1} />
-                        <stop
-                          offset="100%"
-                          stopColor="#60a5fa"
-                          stopOpacity={0.8}
-                        />
-                      </linearGradient>
-                      <linearGradient
-                        id="barCompleted"
-                        x1="0"
-                        y1="0"
-                        x2="0"
-                        y2="1"
-                      >
-                        <stop offset="0%" stopColor="#10b981" stopOpacity={1} />
-                        <stop
-                          offset="100%"
-                          stopColor="#34d399"
-                          stopOpacity={0.8}
-                        />
-                      </linearGradient>
-                      <linearGradient
-                        id="barCancelled"
-                        x1="0"
-                        y1="0"
-                        x2="0"
-                        y2="1"
-                      >
-                        <stop offset="0%" stopColor="#ef4444" stopOpacity={1} />
-                        <stop
-                          offset="100%"
-                          stopColor="#f87171"
-                          stopOpacity={0.8}
-                        />
-                      </linearGradient>
-                    </defs>
                     <CartesianGrid
                       strokeDasharray="3 3"
                       stroke="#f1f5f9"
@@ -591,17 +490,12 @@ const AdminDashboard = () => {
                       cursor={{ fill: "rgba(99, 102, 241, 0.04)" }}
                     />
                     <Bar dataKey="count" radius={[10, 10, 0, 0]} name="Orders">
-                      {barData.map((entry, index) => {
-                        const gradients = [
-                          "url(#barPending)",
-                          "url(#barProgress)",
-                          "url(#barCompleted)",
-                          "url(#barCancelled)",
-                        ];
-                        return (
-                          <Cell key={`cell-${index}`} fill={gradients[index]} />
-                        );
-                      })}
+                      {barData.map((entry, index) => (
+                        <Cell
+                          key={`cell-${entry.statusKey || index}`}
+                          fill={entry.fill}
+                        />
+                      ))}
                     </Bar>
                   </BarChart>
                 </ResponsiveContainer>
@@ -618,12 +512,14 @@ const AdminDashboard = () => {
                 </div>
               </div>
             </div>
+          </div>
 
-            {/* Production Lines Pie Chart */}
+          {/* ===== User + Leader Assignment ===== */}
+          <div className="dash-secondary-grid">
             <div className="dash-card">
               <div className="dash-card-header">
                 <h3 className="dash-card-title">
-                  <span className="dash-card-title-icon icon-pie">
+                  <span className="dash-card-title-icon icon-users-overview">
                     <svg
                       width="14"
                       height="14"
@@ -632,43 +528,36 @@ const AdminDashboard = () => {
                       stroke="currentColor"
                       strokeWidth="2.5"
                     >
-                      <path d="M21.21 15.89A10 10 0 118 2.83" />
-                      <path d="M22 12A10 10 0 0012 2v10z" />
+                      <path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2" />
+                      <circle cx="9" cy="7" r="4" />
+                      <path d="M23 21v-2a4 4 0 00-3-3.87" />
+                      <path d="M16 3.13a4 4 0 010 7.75" />
                     </svg>
                   </span>
-                  Production Overview
+                  User Management Overview
                 </h3>
+                <button
+                  className="dash-card-action"
+                  onClick={() => navigate("/admin/users")}
+                >
+                  Open Users →
+                </button>
               </div>
-              <div className="dash-card-body">
+              <div className="dash-card-body dash-user-overview-body">
                 <ResponsiveContainer width="100%" height={220}>
                   <PieChart>
-                    <defs>
-                      <linearGradient
-                        id="pieActive"
-                        x1="0"
-                        y1="0"
-                        x2="1"
-                        y2="1"
-                      >
-                        <stop offset="0%" stopColor="#10b981" />
-                        <stop offset="100%" stopColor="#34d399" />
-                      </linearGradient>
-                    </defs>
                     <Pie
-                      data={productionData}
+                      data={userManagementData}
                       cx="50%"
                       cy="50%"
                       innerRadius={58}
                       outerRadius={88}
-                      paddingAngle={4}
+                      paddingAngle={3}
                       dataKey="value"
                       strokeWidth={0}
                     >
-                      {productionData.map((entry, index) => (
-                        <Cell
-                          key={`cell-${index}`}
-                          fill={index === 0 ? "url(#pieActive)" : entry.color}
-                        />
+                      {userManagementData.map((entry, index) => (
+                        <Cell key={`user-cell-${index}`} fill={entry.color} />
                       ))}
                     </Pie>
                     <Tooltip
@@ -682,130 +571,32 @@ const AdminDashboard = () => {
                     />
                   </PieChart>
                 </ResponsiveContainer>
-                {/* Center label */}
-                <div className="dash-pie-center">
-                  <span className="dash-pie-value">{lineUtilization}%</span>
-                  <span className="dash-pie-label">Utilization</span>
-                </div>
-                {/* Machine stats */}
-                <div className="dash-machine-stats">
-                  <div className="dash-machine-item">
-                    <span className="dash-dot dash-dot-green"></span>
-                    <span>
-                      Machines: {stats.activeMachines}/{stats.totalMachines} (
-                      {machineUtilization}%)
-                    </span>
-                  </div>
-                  <div className="dash-machine-item">
-                    <span className="dash-dot dash-dot-gray"></span>
-                    <span>
-                      Idle: {stats.totalMachines - stats.activeMachines}
-                    </span>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
 
-          {/* ===== Bottom Row: Recent Orders + Activities ===== */}
-          <div className="dash-bottom-row">
-            {/* Recent Orders */}
-            <div className="dash-card">
-              <div className="dash-card-header">
-                <h3 className="dash-card-title">
-                  <span className="dash-card-title-icon icon-orders">
-                    <svg
-                      width="14"
-                      height="14"
-                      viewBox="0 0 24 24"
-                      fill="none"
-                      stroke="currentColor"
-                      strokeWidth="2.5"
-                    >
-                      <path d="M6 2L3 6v14a2 2 0 002 2h14a2 2 0 002-2V6l-3-4z" />
-                      <line x1="3" y1="6" x2="21" y2="6" />
-                    </svg>
-                  </span>
-                  Recent Orders
-                </h3>
-                <button
-                  className="dash-card-action"
-                  onClick={() => navigate("/admin/orders")}
-                >
-                  View All →
-                </button>
-              </div>
-              <div className="dash-card-body">
-                {recentOrders.length > 0 ? (
-                  <table className="dash-table">
-                    <thead>
-                      <tr>
-                        <th>Order ID</th>
-                        <th>Product</th>
-                        <th>Status</th>
-                        <th>Quantity</th>
-                        <th>Date</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {recentOrders.map((order, idx) => (
-                        <tr key={order.id || idx}>
-                          <td className="dash-table-id">
-                            #{order.id || idx + 1}
-                          </td>
-                          <td>{order.productName || order.product || "-"}</td>
-                          <td>
-                            <span
-                              className={`dash-badge ${getStatusBadgeClass(
-                                order.status,
-                              )}`}
-                            >
-                              {order.status || "-"}
-                            </span>
-                          </td>
-                          <td>{order.quantity || "-"}</td>
-                          <td className="dash-table-date">
-                            {order.createdAt
-                              ? new Date(order.createdAt).toLocaleDateString()
-                              : "-"}
-                          </td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                ) : (
-                  <div className="dash-empty">
-                    <div className="dash-empty-icon">
-                      <svg
-                        width="28"
-                        height="28"
-                        viewBox="0 0 24 24"
-                        fill="none"
-                        stroke="#94a3b8"
-                        strokeWidth="1.5"
-                      >
-                        <path d="M6 2L3 6v14a2 2 0 002 2h14a2 2 0 002-2V6l-3-4z" />
-                        <line x1="3" y1="6" x2="21" y2="6" />
-                        <path d="M16 10a4 4 0 01-8 0" />
-                      </svg>
+                <div className="dash-pie-center dash-pie-center-users">
+                  <span className="dash-pie-value">{userActiveRate}%</span>
+                  <span className="dash-pie-label">Active Users</span>
+                </div>
+
+                <div className="dash-user-summary">
+                  {userManagementData.map((item) => (
+                    <div key={item.name} className="dash-user-summary-item">
+                      <span
+                        className="dash-legend-dot"
+                        style={{ background: item.color }}
+                      ></span>
+                      <span>
+                        {item.name}: <strong>{item.value}</strong>
+                      </span>
                     </div>
-                    <p>No recent orders to display</p>
-                    <button
-                      className="dash-empty-btn"
-                      onClick={() => navigate("/admin/orders")}
-                    >
-                      Go to Orders
-                    </button>
-                  </div>
-                )}
+                  ))}
+                </div>
               </div>
             </div>
 
-            {/* Upcoming Deadlines */}
             <div className="dash-card">
               <div className="dash-card-header">
                 <h3 className="dash-card-title">
-                  <span className="dash-card-title-icon icon-activity">
+                  <span className="dash-card-title-icon icon-assignment-overview">
                     <svg
                       width="14"
                       height="14"
@@ -814,104 +605,62 @@ const AdminDashboard = () => {
                       stroke="currentColor"
                       strokeWidth="2.5"
                     >
-                      <circle cx="12" cy="12" r="10" />
-                      <polyline points="12 6 12 12 16 14" />
+                      <path d="M8 6h13" />
+                      <path d="M8 12h13" />
+                      <path d="M8 18h13" />
+                      <path d="M3 6h.01" />
+                      <path d="M3 12h.01" />
+                      <path d="M3 18h.01" />
                     </svg>
                   </span>
-                  Upcoming Deadlines (7 days)
+                  Leader Assignment Snapshot
                 </h3>
                 <button
                   className="dash-card-action"
-                  onClick={() => navigate("/admin/orders")}
+                  onClick={() => navigate("/admin/assignments")}
                 >
-                  View All →
+                  View Details →
                 </button>
               </div>
+
               <div className="dash-card-body">
-                {upcomingDeadlines.length > 0 ? (
-                  <div className="dash-activity-list">
-                    {upcomingDeadlines.map((order, idx) => {
-                      const deadline = order.deadline || order.dueDate;
-                      const daysLeft = deadline
-                        ? Math.ceil(
-                            (new Date(deadline) - new Date()) /
-                              (1000 * 60 * 60 * 24),
-                          )
-                        : null;
-                      return (
-                        <div
-                          key={order.id || idx}
-                          className="dash-activity-item"
-                        >
-                          <div
-                            className="dash-activity-dot"
-                            style={{
-                              background:
-                                daysLeft !== null && daysLeft <= 2
-                                  ? "#ef4444"
-                                  : daysLeft <= 4
-                                    ? "#f59e0b"
-                                    : "#3b82f6",
-                            }}
-                          ></div>
-                          <div className="dash-activity-content">
-                            <p className="dash-activity-text">
-                              <strong>#{order.id}</strong>{" "}
-                              {order.productName ||
-                                order.customerName ||
-                                "Order"}
-                              {daysLeft !== null && (
-                                <span
-                                  style={{
-                                    marginLeft: 8,
-                                    fontSize: "0.75rem",
-                                    color:
-                                      daysLeft <= 2 ? "#ef4444" : "#f59e0b",
-                                    fontWeight: 600,
-                                  }}
-                                >
-                                  {daysLeft <= 0
-                                    ? "Overdue!"
-                                    : `${daysLeft}d left`}
-                                </span>
-                              )}
-                            </p>
-                            <span className="dash-activity-time">
-                              {deadline
-                                ? new Date(deadline).toLocaleDateString([], {
-                                    month: "short",
-                                    day: "numeric",
-                                    year: "numeric",
-                                  })
-                                : "-"}
-                            </span>
-                          </div>
+                <div className="dash-assignment-stats">
+                  <div className="dash-assignment-stat">
+                    <span className="dash-assignment-stat-label">Assigned</span>
+                    <span className="dash-assignment-stat-value">
+                      {assignedLines}
+                    </span>
+                  </div>
+                  <div className="dash-assignment-stat">
+                    <span className="dash-assignment-stat-label">Vacant</span>
+                    <span className="dash-assignment-stat-value">
+                      {unassignedLines}
+                    </span>
+                  </div>
+                </div>
+
+                {assignmentPreview.length > 0 ? (
+                  <div className="dash-assignment-list">
+                    {assignmentPreview.map((item) => (
+                      <div
+                        key={item.assignmentId}
+                        className="dash-assignment-row"
+                      >
+                        <div className="dash-assignment-line">
+                          {item.lineName || `Line ${item.lineId}`}
                         </div>
-                      );
-                    })}
+                        <div className="dash-assignment-leader">
+                          {item.leaderUsername || "—"}
+                        </div>
+                        <div className="dash-assignment-code">
+                          {item.leaderEmployeeCode || "—"}
+                        </div>
+                      </div>
+                    ))}
                   </div>
                 ) : (
-                  <div className="dash-empty">
-                    <div className="dash-empty-icon">
-                      <svg
-                        width="28"
-                        height="28"
-                        viewBox="0 0 24 24"
-                        fill="none"
-                        stroke="#94a3b8"
-                        strokeWidth="1.5"
-                      >
-                        <circle cx="12" cy="12" r="10" />
-                        <polyline points="12 6 12 12 16 14" />
-                      </svg>
-                    </div>
-                    <p>No upcoming deadlines</p>
-                    <button
-                      className="dash-empty-btn"
-                      onClick={() => navigate("/admin/orders")}
-                    >
-                      View Orders
-                    </button>
+                  <div className="dash-empty-assignment">
+                    No leader assignments found.
                   </div>
                 )}
               </div>

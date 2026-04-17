@@ -16,10 +16,23 @@ const managerService = {
     }
   },
 
-  // ===================== PLANNING =====================
-  createPlan: async (planRequest) => {
+  getLineOccupancy: async () => {
     try {
-      const response = await api.post("/api/manager/plans/create", planRequest);
+      const response = await api.get("/api/manager/lines/occupancy");
+      return response.data;
+    } catch (error) {
+      console.error("Error fetching line occupancy:", error);
+      throw error;
+    }
+  },
+
+  // ===================== PLANNING =====================
+  createPlanByItem: async (planRequest) => {
+    try {
+      const response = await api.post(
+        "/api/manager/plans/create-by-item",
+        planRequest,
+      );
       return response.data;
     } catch (error) {
       console.error("Error creating plan:", error);
@@ -27,10 +40,15 @@ const managerService = {
     }
   },
 
-  confirmPlan: async (orderId) => {
+  // Backward-compatible alias for older call-sites.
+  createPlan: async (planRequest) => {
+    return managerService.createPlanByItem(planRequest);
+  },
+
+  confirmPlanItem: async (orderId, orderItemId) => {
     try {
       const response = await api.post(
-        `/api/manager/plans/order/${orderId}/confirm`,
+        `/api/manager/plans/order/${orderId}/confirm-item/${orderItemId}`,
         {},
       );
       return response.data;
@@ -38,6 +56,11 @@ const managerService = {
       console.error("Error confirming plan:", error);
       throw error;
     }
+  },
+
+  // Backward-compatible alias for older call-sites.
+  confirmPlan: async (orderId, orderItemId) => {
+    return managerService.confirmPlanItem(orderId, orderItemId);
   },
 
   cancelPlan: async (orderId) => {
@@ -53,6 +76,19 @@ const managerService = {
     }
   },
 
+  cancelPlanItem: async (orderId, orderItemId) => {
+    try {
+      const response = await api.post(
+        `/api/manager/plans/order/${orderId}/cancel-item/${orderItemId}`,
+        {},
+      );
+      return response.data;
+    } catch (error) {
+      console.error("Error cancelling order item plan:", error);
+      throw error;
+    }
+  },
+
   getAllPlans: async (status = null) => {
     try {
       const params = status ? { status } : {};
@@ -60,6 +96,16 @@ const managerService = {
       return response.data;
     } catch (error) {
       console.error("Error fetching plans:", error);
+      throw error;
+    }
+  },
+
+  getOrderItemPlansView: async (orderId) => {
+    try {
+      const response = await api.get(`/api/manager/plans/order/${orderId}/items`);
+      return response.data;
+    } catch (error) {
+      console.error("Error fetching order item plan view:", error);
       throw error;
     }
   },
@@ -95,6 +141,18 @@ const managerService = {
       return response.data;
     } catch (error) {
       console.error("Error fetching delays:", error);
+      throw error;
+    }
+  },
+
+  getOrderProgress: async (orderId) => {
+    try {
+      const response = await api.get(
+        `/api/manager/tracking/orders/${orderId}/progress`,
+      );
+      return response.data;
+    } catch (error) {
+      console.error("Error fetching order progress:", error);
       throw error;
     }
   },
@@ -212,7 +270,27 @@ const managerService = {
 
   // ===================== ORDERS =====================
   getAllOrders: async () => {
-    const response = await api.get("/api/admin/orders");
+    const response = await api.get("/api/manager/orders");
+    return response.data;
+  },
+
+  getOrderById: async (id) => {
+    const response = await api.get(`/api/manager/orders/${id}`);
+    return response.data;
+  },
+
+  searchOrders: async (params) => {
+    const response = await api.get("/api/manager/orders/search", { params });
+    return response.data;
+  },
+
+  getOrdersByStatus: async (status) => {
+    const response = await api.get(`/api/manager/orders/status/${status}`);
+    return response.data;
+  },
+
+  getOrderFiles: async (orderId) => {
+    const response = await api.get(`/api/upload/admin/order/${orderId}/files`);
     return response.data;
   },
 };

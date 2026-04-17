@@ -86,7 +86,6 @@ public class ManagerPlanningService {
 
         ProductionLine smtLine = findRouteLine(allLines, "SMT");
         ProductionLine dipLine = findRouteLine(allLines, "DIP");
-        ProductionLine assemblyLine = findRouteLine(allLines, "ASSEMBLY"); // Add Assembly line
         ProductionLine testLine = findRouteLine(allLines, "TEST");
         ProductionLine packingLine = findRouteLine(allLines, "PACK");
 
@@ -98,15 +97,7 @@ public class ManagerPlanningService {
         }
         List<ProductionPlan> plans = new ArrayList<>();
 
-        // Add lines in correct order if present
-        List<ProductionLine> routeLines = new ArrayList<>();
-        if (smtLine != null) routeLines.add(smtLine);
-        if (dipLine != null) routeLines.add(dipLine);
-        if (assemblyLine != null) routeLines.add(assemblyLine);
-        if (testLine != null) routeLines.add(testLine);
-        if (packingLine != null) routeLines.add(packingLine);
-
-        for (ProductionLine line : routeLines) {
+        for (ProductionLine line : List.of(smtLine, dipLine, testLine, packingLine)) {
             ProductionPlan plan = buildDraftPlan(
                     order,
                     orderItem,

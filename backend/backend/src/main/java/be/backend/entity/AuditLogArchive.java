@@ -1,10 +1,10 @@
 package be.backend.entity;
 
+import be.backend.converter.ActionTypeConverter;
 import be.backend.enums.ActionType;
 import jakarta.persistence.Column;
+import jakarta.persistence.Convert;
 import jakarta.persistence.Entity;
-import jakarta.persistence.EnumType;
-import jakarta.persistence.Enumerated;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
@@ -38,7 +38,7 @@ public class AuditLogArchive {
     private Integer userId;
 
     @NotNull
-    @Enumerated(EnumType.STRING)
+    @Convert(converter = ActionTypeConverter.class)
     @Column(name = "action_type", nullable = false, length = 30)
     private ActionType actionType;
 

@@ -1,0 +1,374 @@
+.auditlog-page .admin-content {
+    position: relative;
+    overflow: hidden;
+}
+
+.auditlog-page .dash-header {
+    z-index: 10;
+}
+
+.auditlog-page .dash-header-right {
+    z-index: 11;
+}
+
+.auditlog-stats {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 14px;
+    padding: 18px 24px;
+    background: linear-gradient(180deg, #ffffff 0%, #f8fbfc 100%);
+    border-bottom: 1px solid #e6eef0;
+}
+
+.auditlog-chip {
+    background: #ffffff;
+    border: 1px solid #e4ebee;
+    border-radius: 14px;
+    padding: 12px 14px;
+    box-shadow: 0 6px 16px rgba(7, 39, 52, 0.06);
+}
+
+.auditlog-chip-label {
+    display: block;
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+    color: #6b7a86;
+}
+
+.auditlog-chip-value {
+    display: block;
+    margin-top: 8px;
+    font-size: 24px;
+    line-height: 1;
+    font-weight: 800;
+    color: #0f172a;
+}
+
+.auditlog-chip-value.critical {
+    color: #be123c;
+}
+
+.auditlog-toolbar {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 12px;
+    padding: 16px 24px;
+    background: #f7fbfc;
+    border-bottom: 1px solid #e6eef0;
+}
+
+.auditlog-toolbar .form-group {
+    margin: 0;
+}
+
+.auditlog-toolbar .form-label {
+    margin-bottom: 6px;
+    color: #5a6c78;
+    font-size: 12px;
+    font-weight: 700;
+    letter-spacing: 0.01em;
+}
+
+.auditlog-toolbar .form-input,
+.auditlog-toolbar .form-select {
+    min-height: 46px;
+    height: 46px;
+    padding: 10px 14px;
+    line-height: 1.35;
+    border-radius: 10px;
+    border: 1px solid #d3e1e6;
+    background: #ffffff;
+    box-sizing: border-box;
+    transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.auditlog-toolbar .form-select {
+    appearance: none;
+    -webkit-appearance: none;
+    -moz-appearance: none;
+    padding-right: 42px;
+    background-color: #ffffff;
+    background-image:
+        linear-gradient(180deg, rgba(211, 225, 230, 0.95), rgba(211, 225, 230, 0.95)),
+        url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 16 16' fill='none'%3E%3Cpath d='M6 4l4 4-4 4' stroke='%230e7490' stroke-width='1.8' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+    background-repeat: no-repeat, no-repeat;
+    background-size: 1px 60%, 16px 16px;
+    background-position: right 38px center, right 16px center;
+    cursor: pointer;
+}
+
+.auditlog-toolbar .form-select:hover {
+    border-color: #a9c0c8;
+}
+
+.auditlog-toolbar .form-select::-ms-expand {
+    display: none;
+}
+
+.auditlog-toolbar .form-input:focus,
+.auditlog-toolbar .form-select:focus {
+    outline: none;
+    border-color: #0e7490;
+    box-shadow: 0 0 0 3px rgba(14, 116, 144, 0.12);
+}
+
+.auditlog-toolbar .form-select:focus {
+    background-image:
+        linear-gradient(180deg, rgba(211, 225, 230, 0.95), rgba(211, 225, 230, 0.95)),
+        url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 16 16' fill='none'%3E%3Cpath d='M4 6l4 4 4-4' stroke='%230e7490' stroke-width='1.8' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+}
+
+.auditlog-toolbar-row {
+    display: flex;
+    gap: 10px;
+}
+
+.auditlog-toolbar-actions {
+    display: flex;
+    align-items: flex-end;
+    justify-content: space-between;
+    gap: 10px;
+    grid-column: span 2;
+}
+
+.auditlog-actions-group {
+    display: flex;
+    gap: 8px;
+}
+
+.auditlog-btn-secondary,
+.auditlog-toolbar .btn-primary {
+    min-height: 46px;
+    border-radius: 10px;
+    font-size: 13px;
+    line-height: 1.2;
+    font-weight: 700;
+    padding: 10px 16px;
+}
+
+.auditlog-btn-secondary {
+    border: 1px solid #d5e2e6;
+    background: #ffffff;
+    color: #314350;
+    cursor: pointer;
+}
+
+.auditlog-btn-secondary:hover {
+    border-color: #88a8b3;
+    background: #f0f8fa;
+}
+
+.table-wrapper {
+    overflow: auto;
+    max-height: 58vh;
+}
+
+.auditlog-table {
+    width: 100%;
+    border-collapse: separate;
+    border-spacing: 0;
+    min-width: 960px;
+}
+
+.auditlog-table thead .table-header {
+    position: sticky;
+    top: 0;
+    z-index: 2;
+    background: #eef5f7;
+    color: #2f4551;
+    font-size: 12px;
+    font-weight: 800;
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+    border-bottom: 1px solid #d7e4e8;
+}
+
+.auditlog-table .table-row {
+    transition: background-color 0.2s ease;
+}
+
+.auditlog-table .table-row:hover {
+    background: #f8fcfd;
+}
+
+.auditlog-table .table-cell {
+    white-space: normal;
+    vertical-align: top;
+    border-bottom: 1px solid #edf3f5;
+}
+
+.auditlog-cell-meta {
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+}
+
+.auditlog-cell-main {
+    font-size: 13px;
+    color: #0f172a;
+    font-weight: 700;
+}
+
+.auditlog-cell-sub {
+    font-size: 11px;
+    color: #697a86;
+}
+
+.auditlog-cell-action {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 24px;
+    padding: 0 10px;
+    border-radius: 999px;
+    font-size: 11px;
+    font-weight: 800;
+    letter-spacing: 0.03em;
+}
+
+.auditlog-cell-action.default {
+    color: #0b6478;
+    background: #dff4f8;
+}
+
+.auditlog-cell-action.critical {
+    color: #9f1239;
+    background: #ffe4ec;
+}
+
+.auditlog-details {
+    max-width: 340px;
+    font-size: 12px;
+    color: #425561;
+    line-height: 1.45;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    line-clamp: 2;
+    -webkit-box-orient: vertical;
+}
+
+.auditlog-empty {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 180px;
+    padding: 20px;
+    color: #60727f;
+    font-size: 14px;
+    font-weight: 600;
+}
+
+.auditlog-pagination {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 12px;
+    padding: 14px 24px;
+    border-top: 1px solid #e4ecef;
+    background: #f9fcfd;
+}
+
+.pagination-info {
+    color: #4a5d69;
+    font-size: 13px;
+}
+
+.auditlog-pagination-right {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.auditlog-pagination-right .pagination-btn {
+    min-width: 38px;
+    min-height: 36px;
+    border-radius: 9px;
+    border: 1px solid #d4e2e7;
+    background: #ffffff;
+    color: #30424f;
+    font-weight: 700;
+}
+
+.auditlog-pagination-right .pagination-btn:hover:not(:disabled) {
+    background: #ecf7fa;
+    border-color: #8fb0bc;
+}
+
+.auditlog-pagination-right .pagination-btn.active {
+    background: linear-gradient(135deg, #0f766e, #0e7490);
+    color: #ffffff;
+    border-color: transparent;
+}
+
+.auditlog-modal-details {
+    border: 1px solid #dce8ec;
+    border-radius: 12px;
+    background: #f4fafc;
+    color: #1f3340;
+    padding: 12px;
+    font-size: 12px;
+    line-height: 1.5;
+    white-space: pre-wrap;
+    word-break: break-word;
+    max-height: 300px;
+    overflow: auto;
+}
+
+@media (max-width: 1320px) {
+    .auditlog-toolbar {
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+    }
+
+    .auditlog-toolbar-actions {
+        grid-column: span 3;
+    }
+}
+
+@media (max-width: 980px) {
+    .auditlog-stats {
+        grid-template-columns: 1fr;
+    }
+
+    .auditlog-toolbar {
+        grid-template-columns: 1fr 1fr;
+        padding: 14px 16px;
+    }
+
+    .auditlog-toolbar-actions {
+        grid-column: span 2;
+    }
+
+    .auditlog-pagination {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+}
+
+@media (max-width: 700px) {
+    .auditlog-toolbar {
+        grid-template-columns: 1fr;
+    }
+
+    .auditlog-toolbar-actions {
+        grid-column: auto;
+        flex-direction: column;
+        align-items: stretch;
+    }
+
+    .auditlog-actions-group {
+        width: 100%;
+    }
+
+    .auditlog-actions-group .btn-primary,
+    .auditlog-actions-group .auditlog-btn-secondary {
+        flex: 1;
+    }
+
+    .auditlog-toolbar-row {
+        flex-direction: column;
+    }
+}

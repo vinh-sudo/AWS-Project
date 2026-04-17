@@ -369,36 +369,36 @@
 
 /* ===== KPI Cards ===== */
 .kpi-section {
-    margin-bottom: 28px;
+    margin-bottom: 20px;
 }
 
 .kpi-grid {
     display: grid;
     grid-template-columns: repeat(4, 1fr);
-    gap: 20px;
+    gap: 14px;
 }
 
 .kpi-card {
     border-radius: 16px;
-    padding: 24px;
+    padding: 16px 18px;
     display: flex;
     flex-direction: column;
-    gap: 8px;
+    gap: 6px;
     position: relative;
     overflow: hidden;
     transition: transform 0.25s ease, box-shadow 0.25s ease;
     border: none;
-    min-height: 130px;
+    min-height: 104px;
     justify-content: center;
 }
 
 .kpi-card::before {
     content: '';
     position: absolute;
-    top: -20px;
-    right: -20px;
-    width: 100px;
-    height: 100px;
+    top: -16px;
+    right: -16px;
+    width: 84px;
+    height: 84px;
     border-radius: 50%;
     background: rgba(255, 255, 255, 0.15);
 }
@@ -406,10 +406,10 @@
 .kpi-card::after {
     content: '';
     position: absolute;
-    bottom: -30px;
-    right: 20px;
-    width: 70px;
-    height: 70px;
+    bottom: -24px;
+    right: 16px;
+    width: 56px;
+    height: 56px;
     border-radius: 50%;
     background: rgba(255, 255, 255, 0.1);
 }
@@ -451,26 +451,26 @@
 }
 
 .kpi-label {
-    font-size: 14px;
-    font-weight: 500;
+    font-size: 12px;
+    font-weight: 600;
     opacity: 0.9;
 }
 
 .kpi-icon {
-    width: 44px;
-    height: 44px;
-    border-radius: 12px;
+    width: 34px;
+    height: 34px;
+    border-radius: 10px;
     background: rgba(255, 255, 255, 0.22);
     display: flex;
     align-items: center;
     justify-content: center;
-    font-size: 22px;
+    font-size: 17px;
     position: relative;
     z-index: 1;
 }
 
 .kpi-value {
-    font-size: 32px;
+    font-size: 22px;
     font-weight: 800;
     line-height: 1.1;
     position: relative;
@@ -478,17 +478,17 @@
 }
 
 .kpi-subtitle {
-    font-size: 12px;
+    font-size: 11px;
     opacity: 0.75;
     font-weight: 500;
 }
 
 .kpi-mini-bar {
     width: 100%;
-    height: 4px;
+    height: 3px;
     background: #e8ecf1;
     border-radius: 4px;
-    margin-top: 10px;
+    margin-top: 6px;
     overflow: hidden;
 }
 
@@ -720,10 +720,6 @@
     height: 8px;
     border-radius: 50%;
     display: inline-block;
-}
-
-.loading-spinner.small {
-    padding: 30px;
 }
 
 /* ===== Card Header ===== */
@@ -1134,32 +1130,7 @@
     font-weight: 700;
 }
 
-/* ===== Loading & No Data ===== */
-.loading-spinner {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    padding: 50px;
-    color: #8a92a6;
-    gap: 12px;
-}
-
-.spinner {
-    width: 36px;
-    height: 36px;
-    border: 3px solid #e8ecf1;
-    border-top-color: #667eea;
-    border-radius: 50%;
-    animation: spin 0.8s linear infinite;
-}
-
-@keyframes spin {
-    to {
-        transform: rotate(360deg);
-    }
-}
-
+/* ===== No Data ===== */
 .no-data {
     display: flex;
     flex-direction: column;
@@ -1224,6 +1195,16 @@
 
     .kpi-grid {
         grid-template-columns: 1fr;
+        gap: 10px;
+    }
+
+    .kpi-card {
+        min-height: 90px;
+        padding: 14px 16px;
+    }
+
+    .kpi-value {
+        font-size: 20px;
     }
 
     .page-title-row {

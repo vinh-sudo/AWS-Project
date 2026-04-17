@@ -14,12 +14,14 @@ import be.backend.model.response.ScheduleSummaryResponse;
 import be.backend.model.response.ProductionFileResponse;
 import be.backend.repository.*;
 import be.backend.service.ProductionFileService;
+
 import be.backend.service.utilities.SNSService;
 import be.backend.service.utilities.SQSService;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.ApplicationEventPublisher;
+
 import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
@@ -54,6 +56,7 @@ public class LeaderProgressService {
         private final MachineRepository machineRepo;
         private final ProductionFileService productionFileService;
         private final ProductionFileMapper productionFileMapper;
+
         private final SNSService snsService;
         private final SQSService sqsService;
         private final ApplicationEventPublisher eventPublisher;
@@ -63,8 +66,10 @@ public class LeaderProgressService {
         @Value("${aws.sqs-queue-url}")
         private String sqsQueueUrl;
 
+
         private static final BigDecimal LOW_KPI_THRESHOLD = BigDecimal.valueOf(0.80);
         private static final BigDecimal HIGH_REJECT_RATE_THRESHOLD = BigDecimal.valueOf(0.10);
+
 
         /**
          * Cập nhật tiến độ schedule
@@ -300,6 +305,8 @@ public class LeaderProgressService {
                 schedule.setStatus(SCHEDULE_STATUS_RUNNING);
                 scheduleRepo.save(schedule);
                 updateMachineRuntimeStatus(schedule, MACHINE_RUNTIME_RUNNING);
+
+
 
                 // 5.1. Gửi notification qua SNS và SQS
                 String message = String.format("Schedule %d started by leader %s", scheduleId, account.getUsername());

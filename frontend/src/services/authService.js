@@ -1,7 +1,44 @@
 import axios from "axios";
 import { isTokenExpired } from "../utils/tokenUtils";
 
-const API_BASE_URL = import.meta.env.VITE_API_URL || "http://localhost:8080";
+const normalizeBaseUrl = (url) =>
+  typeof url === "string" ? url.replace(/\/$/, "") : "";
+
+const normalizeEmployeeCode = (value) =>
+  typeof value === "string" ? value.replace(/\s+/g, "").toUpperCase() : "";
+
+const resolveApiBaseUrl = () => {
+  const envUrl = normalizeBaseUrl(import.meta.env.VITE_API_URL);
+
+  // Default to same-origin if env is not configured.
+  if (!envUrl) {
+    return "";
+  }
+
+  try {
+    const parsed = new URL(envUrl);
+
+    if (typeof window !== "undefined") {
+      // Avoid browser mixed-content blocks when frontend is HTTPS.
+      if (
+        window.location.protocol === "https:" &&
+        parsed.protocol === "http:"
+      ) {
+        parsed.protocol = "https:";
+      }
+    }
+
+    return normalizeBaseUrl(parsed.toString());
+  } catch {
+    // Keep original env URL if parsing fails.
+  }
+
+  return envUrl;
+};
+
+// If VITE_API_URL is missing, use same-origin relative URLs (""),
+// which work when frontend and backend are served behind one domain/reverse proxy.
+const API_BASE_URL = resolveApiBaseUrl();
 
 // Create axios instance with default config
 const api = axios.create({
@@ -32,9 +69,9 @@ api.interceptors.response.use(
     const originalRequest = error.config;
     const status = error.response?.status;
 
-    // CHỈ logout khi 401 (Unauthorized = token hết hạn/invalid)
-    // KHÔNG logout khi 403 (Forbidden = user đã login nhưng không có quyền endpoint đó)
-    // 403 chỉ có nghĩa là role không đủ quyền, KHÔNG phải token sai
+    // ONLY logout on 401 (Unauthorized = token expired/invalid)
+    // DO NOT logout on 403 (Forbidden = user is logged in but lacks permission for that endpoint)
+    // 403 only means the role lacks permission, NOT that the token is invalid
     if (
       status === 401 &&
       !originalRequest._retry &&
@@ -89,6 +126,105 @@ api.interceptors.response.use(
   },
 );
 
+const OTP_ENDPOINTS = {
+  request: ["/otp/forgot/request", "/api/otp/forgot/request"],
+  check: ["/otp/forgot/check", "/api/otp/forgot/check"],
+  verify: ["/otp/forgot/verify", "/api/otp/forgot/verify"],
+  resend: ["/otp/resend", "/api/otp/resend"],
+};
+
+const postWithFallbackPaths = async (paths, payload) => {
+  let lastError;
+
+  for (const path of paths) {
+    try {
+      const response = await api.post(path, payload);
+      const contentType =
+        typeof response?.headers?.["content-type"] === "string"
+          ? response.headers["content-type"].toLowerCase()
+          : "";
+      const bodyPreview =
+        typeof response?.data === "string"
+          ? response.data.trim().slice(0, 80).toLowerCase()
+          : "";
+
+      // Some CDN/frontend hosts return index.html with 200 for unknown routes.
+      // Treat it as invalid API response instead of a success.
+      const isHtmlFallback =
+        contentType.includes("text/html") ||
+        bodyPreview.startsWith("<!doctype html") ||
+        bodyPreview.startsWith("<html");
+
+      if (isHtmlFallback) {
+        const htmlFallbackError = new Error(
+          "Received HTML instead of API response",
+        );
+        htmlFallbackError.response = {
+          status: 502,
+          data: "API host is likely misconfigured and points to frontend domain.",
+        };
+        lastError = htmlFallbackError;
+        continue;
+      }
+
+      return response;
+    } catch (error) {
+      const status = error?.response?.status;
+
+      if (
+        status === 401 ||
+        status === 403 ||
+        status === 404 ||
+        status === 405
+      ) {
+        lastError = error;
+        continue;
+      }
+
+      throw error;
+    }
+  }
+
+  throw lastError || new Error("OTP endpoint is unavailable");
+};
+
+const extractOtpErrorMessage = (error, fallbackMessage) => {
+  const status = error?.response?.status;
+  const data = error?.response?.data;
+  const errorMessage =
+    data?.message || data?.error || (typeof data === "string" ? data : "");
+
+  if (!error?.response) {
+    return "Cannot reach server. Please check API URL/network and try again.";
+  }
+
+  if (status === 502) {
+    return "Frontend is calling a non-API host (received HTML). Please set VITE_API_URL to your backend API domain.";
+  }
+
+  if (status >= 500) {
+    if (errorMessage === "An unexpected error occurred") {
+      return "Backend returned INTERNAL_ERROR. Employee code may be invalid, or OTP mail service failed on server.";
+    }
+
+    if (errorMessage) {
+      return errorMessage;
+    }
+
+    return "Backend OTP service failed internally. Please contact backend support.";
+  }
+
+  if (errorMessage) {
+    return errorMessage;
+  }
+
+  if (status === 404 || status === 405) {
+    return "OTP endpoint is not available on current backend route.";
+  }
+
+  return fallbackMessage;
+};
+
 // Auth service for handling authentication
 export const authService = {
   // Login function - calls POST /api/auth/login
@@ -116,6 +252,7 @@ export const authService = {
       // Store user info
       const userSession = {
         id: data.id,
+        userId: data.userId ?? data.id,
         employeeCode: data.employeeCode,
         username: data.username,
         fullName: data.fullName,
@@ -176,61 +313,111 @@ export const authService = {
 
   // Request password reset OTP - calls POST /otp/forgot/request
   requestPasswordReset: async (employeeCode) => {
+    const normalizedEmployeeCode = normalizeEmployeeCode(employeeCode);
+
+    if (!normalizedEmployeeCode) {
+      throw new Error("Employee Code is required");
+    }
+
     try {
-      const response = await api.post("/otp/forgot/request", {
-        employeeCode,
+      const response = await postWithFallbackPaths(OTP_ENDPOINTS.request, {
+        employeeCode: normalizedEmployeeCode,
       });
       return response.data;
     } catch (error) {
-      const errorMessage =
-        error.response?.data?.message ||
-        error.response?.data ||
-        "Failed to send OTP";
-      throw new Error(
-        typeof errorMessage === "string" ? errorMessage : "Failed to send OTP",
-      );
+      throw new Error(extractOtpErrorMessage(error, "Failed to send OTP"));
+    }
+  },
+
+  // Check OTP only before navigating to reset password screen
+  checkOtpOnly: async (employeeCode, otp) => {
+    const normalizedEmployeeCode = normalizeEmployeeCode(employeeCode);
+    const normalizedOtp = typeof otp === "string" ? otp.trim() : "";
+
+    if (!normalizedEmployeeCode) {
+      throw new Error("Employee Code is required");
+    }
+
+    if (!normalizedOtp) {
+      throw new Error("OTP is required");
+    }
+
+    try {
+      const response = await postWithFallbackPaths(OTP_ENDPOINTS.check, {
+        employeeCode: normalizedEmployeeCode,
+        otp: normalizedOtp,
+      });
+
+      const data = response?.data;
+
+      if (typeof data === "boolean") {
+        return data;
+      }
+
+      if (typeof data === "string") {
+        const normalized = data.trim().toLowerCase();
+        if (normalized === "true") {
+          return true;
+        }
+        if (normalized === "false") {
+          return false;
+        }
+      }
+
+      if (typeof data?.valid === "boolean") {
+        return data.valid;
+      }
+
+      if (typeof data?.isValid === "boolean") {
+        return data.isValid;
+      }
+
+      throw new Error("Unexpected OTP check response from server");
+    } catch (error) {
+      throw new Error(extractOtpErrorMessage(error, "OTP check failed"));
     }
   },
 
   // Verify OTP and reset password - calls POST /otp/forgot/verify
   verifyOtpAndResetPassword: async (employeeCode, otp, newPassword) => {
+    const normalizedEmployeeCode = normalizeEmployeeCode(employeeCode);
+    const normalizedOtp = typeof otp === "string" ? otp.trim() : "";
+
+    if (!normalizedEmployeeCode) {
+      throw new Error("Employee Code is required");
+    }
+
+    if (!normalizedOtp) {
+      throw new Error("OTP is required");
+    }
+
     try {
-      const response = await api.post("/otp/forgot/verify", {
-        employeeCode,
-        otp,
+      const response = await postWithFallbackPaths(OTP_ENDPOINTS.verify, {
+        employeeCode: normalizedEmployeeCode,
+        otp: normalizedOtp,
         newPassword,
       });
       return response.data;
     } catch (error) {
-      const errorMessage =
-        error.response?.data?.message ||
-        error.response?.data ||
-        "Invalid or expired OTP";
-      throw new Error(
-        typeof errorMessage === "string"
-          ? errorMessage
-          : "OTP verification failed",
-      );
+      throw new Error(extractOtpErrorMessage(error, "OTP verification failed"));
     }
   },
 
   // Resend OTP - calls POST /otp/resend
   resendOtp: async (employeeCode) => {
+    const normalizedEmployeeCode = normalizeEmployeeCode(employeeCode);
+
+    if (!normalizedEmployeeCode) {
+      throw new Error("Employee Code is required");
+    }
+
     try {
-      const response = await api.post("/otp/resend", {
-        employeeCode,
+      const response = await postWithFallbackPaths(OTP_ENDPOINTS.resend, {
+        employeeCode: normalizedEmployeeCode,
       });
       return response.data;
     } catch (error) {
-      const errorMessage =
-        error.response?.data?.message ||
-        error.response?.data ||
-        "Failed to resend OTP";
-      throw new Error(
-        typeof errorMessage === "string"
-          ? errorMessage
-          : "Failed to resend OTP",
-      );
+      throw new Error(extractOtpErrorMessage(error, "Failed to resend OTP"));
     }
   },
 
@@ -272,11 +459,6 @@ export const authService = {
   // Check if user is line leader
   isLineLeader: () => {
     return authService.hasRole("LINE_LEADER");
-  },
-
-  // Check if user is production planner
-  isProductionPlanner: () => {
-    return authService.hasRole("PRODUCTION_PLANNER");
   },
 };
 

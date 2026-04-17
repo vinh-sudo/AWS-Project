@@ -7,7 +7,7 @@ function AICopilot({ isOpen, onClose }) {
     {
       id: 1,
       type: "bot",
-      text: "Xin chào! Tôi là AI Production Copilot. Tôi có thể giúp bạn phân tích sản xuất, kiểm tra tình trạng dây chuyền, hoặc trả lời các câu hỏi về hoạt động sản xuất.",
+      text: "Hello! I'm the AI Production Copilot. I can help you analyze production, check line status, or answer questions about manufacturing operations.",
       time: new Date().toLocaleTimeString([], {
         hour: "2-digit",
         minute: "2-digit",
@@ -64,116 +64,13 @@ function AICopilot({ isOpen, onClose }) {
     try {
       const data = await aiService.chat(userText, sessionId);
       addBotMessage(
-        data.response || "Không có phản hồi từ AI.",
+        data.response || "No response from AI.",
         data.suggestedQuestions || [],
       );
     } catch {
       addBotMessage(
-        "Xin lỗi, hiện tại không thể kết nối đến AI. Vui lòng thử lại sau.",
+        "Sorry, unable to connect to AI at the moment. Please try again later.",
       );
-    } finally {
-      setIsTyping(false);
-    }
-  };
-
-  const handleQuickStatus = async () => {
-    if (isTyping) return;
-    setMessages((prev) => [
-      ...prev,
-      {
-        id: Date.now(),
-        type: "user",
-        text: "📊 Tình trạng sản xuất nhanh",
-        time: new Date().toLocaleTimeString([], {
-          hour: "2-digit",
-          minute: "2-digit",
-        }),
-      },
-    ]);
-    setIsTyping(true);
-
-    try {
-      const data = await aiService.getQuickStatus();
-      addBotMessage(
-        data.response || "Không có dữ liệu.",
-        data.suggestedQuestions || [],
-      );
-    } catch {
-      addBotMessage("Không thể lấy tình trạng sản xuất. Vui lòng thử lại.");
-    } finally {
-      setIsTyping(false);
-    }
-  };
-
-  const handleProductionHealth = async () => {
-    if (isTyping) return;
-    setMessages((prev) => [
-      ...prev,
-      {
-        id: Date.now(),
-        type: "user",
-        text: "🏭 Kiểm tra sức khỏe sản xuất",
-        time: new Date().toLocaleTimeString([], {
-          hour: "2-digit",
-          minute: "2-digit",
-        }),
-      },
-    ]);
-    setIsTyping(true);
-
-    try {
-      const data = await aiService.getProductionHealth();
-      const statusEmoji =
-        data.overallStatus === "STABLE"
-          ? "✅"
-          : data.overallStatus === "WARNING"
-            ? "⚠️"
-            : "🔴";
-      let text = `${statusEmoji} **Trạng thái:** ${data.overallStatus}\n`;
-      if (data.mainIssue) text += `\n📌 **Vấn đề chính:** ${data.mainIssue}`;
-      if (data.criticalLines?.length > 0)
-        text += `\n\n🚨 **Dây chuyền cần chú ý:**\n${data.criticalLines.map((l) => `• ${l}`).join("\n")}`;
-      if (data.recommendations?.length > 0)
-        text += `\n\n💡 **Khuyến nghị:**\n${data.recommendations.map((r) => `• ${r}`).join("\n")}`;
-      addBotMessage(text);
-    } catch {
-      addBotMessage("Không thể lấy dữ liệu sức khỏe sản xuất.");
-    } finally {
-      setIsTyping(false);
-    }
-  };
-
-  const handleRootCause = async () => {
-    if (isTyping) return;
-    setMessages((prev) => [
-      ...prev,
-      {
-        id: Date.now(),
-        type: "user",
-        text: "🔍 Phân tích nguyên nhân gốc",
-        time: new Date().toLocaleTimeString([], {
-          hour: "2-digit",
-          minute: "2-digit",
-        }),
-      },
-    ]);
-    setIsTyping(true);
-
-    try {
-      const data = await aiService.getRootCauseAnalysis();
-      let text = `🔍 **Nguyên nhân chính:** ${data.primaryRootCause}\n`;
-      text += `📊 **Độ tin cậy:** ${data.confidence}`;
-      if (data.contributingFactors?.length > 0)
-        text += `\n\n📋 **Yếu tố liên quan:**\n${data.contributingFactors.map((f) => `• ${f}`).join("\n")}`;
-      if (data.evidencePoints?.length > 0)
-        text += `\n\n📄 **Bằng chứng:**\n${data.evidencePoints.map((e) => `• ${e}`).join("\n")}`;
-      if (data.immediateActions?.length > 0)
-        text += `\n\n⚡ **Hành động ngay:**\n${data.immediateActions.map((a) => `• ${a}`).join("\n")}`;
-      if (data.preventiveActions?.length > 0)
-        text += `\n\n🛡️ **Phòng ngừa:**\n${data.preventiveActions.map((a) => `• ${a}`).join("\n")}`;
-      addBotMessage(text);
-    } catch {
-      addBotMessage("Không thể thực hiện phân tích nguyên nhân gốc.");
     } finally {
       setIsTyping(false);
     }
@@ -189,70 +86,6 @@ function AICopilot({ isOpen, onClose }) {
   const handleSuggestionClick = (question) => {
     setInputValue(question);
   };
-
-  const handleAiHealthSummary = async () => {
-    if (isTyping) return;
-    setMessages((prev) => [
-      ...prev,
-      {
-        id: Date.now(),
-        type: "user",
-        text: "📝 Tóm tắt AI sức khỏe sản xuất",
-        time: new Date().toLocaleTimeString([], {
-          hour: "2-digit",
-          minute: "2-digit",
-        }),
-      },
-    ]);
-    setIsTyping(true);
-
-    try {
-      const data = await aiService.getProductionHealthSummary();
-      addBotMessage(data || "Không có dữ liệu tóm tắt.");
-    } catch {
-      addBotMessage("Không thể lấy tóm tắt AI sức khỏe sản xuất.");
-    } finally {
-      setIsTyping(false);
-    }
-  };
-
-  const handleAiRootCauseSummary = async () => {
-    if (isTyping) return;
-    setMessages((prev) => [
-      ...prev,
-      {
-        id: Date.now(),
-        type: "user",
-        text: "📋 Tóm tắt AI nguyên nhân gốc",
-        time: new Date().toLocaleTimeString([], {
-          hour: "2-digit",
-          minute: "2-digit",
-        }),
-      },
-    ]);
-    setIsTyping(true);
-
-    try {
-      const data = await aiService.getRootCauseSummary();
-      addBotMessage(data || "Không có dữ liệu tóm tắt nguyên nhân.");
-    } catch {
-      addBotMessage("Không thể lấy tóm tắt AI nguyên nhân gốc.");
-    } finally {
-      setIsTyping(false);
-    }
-  };
-
-  const quickActions = [
-    { icon: "📊", label: "Trạng thái nhanh", action: handleQuickStatus },
-    { icon: "🏭", label: "Sức khỏe SX", action: handleProductionHealth },
-    { icon: "🔍", label: "Phân tích nguyên nhân", action: handleRootCause },
-    { icon: "📝", label: "Tóm tắt AI SX", action: handleAiHealthSummary },
-    {
-      icon: "📋",
-      label: "Tóm tắt nguyên nhân",
-      action: handleAiRootCauseSummary,
-    },
-  ];
 
   const formatMessage = (text) => {
     if (!text) return text;
@@ -285,21 +118,6 @@ function AICopilot({ isOpen, onClose }) {
           <button className="copilot-close" onClick={onClose}>
             ×
           </button>
-        </div>
-
-        {/* Quick Actions */}
-        <div className="copilot-quick-actions">
-          {quickActions.map((action, index) => (
-            <button
-              key={index}
-              className="quick-action-btn"
-              onClick={action.action}
-              disabled={isTyping}
-            >
-              <span>{action.icon}</span>
-              <span>{action.label}</span>
-            </button>
-          ))}
         </div>
 
         {/* Messages Area */}
@@ -358,7 +176,7 @@ function AICopilot({ isOpen, onClose }) {
           <input
             className="copilot-input"
             type="text"
-            placeholder="Hỏi về sản xuất..."
+            placeholder="Ask about production..."
             value={inputValue}
             onChange={(e) => setInputValue(e.target.value)}
             onKeyDown={handleKeyPress}

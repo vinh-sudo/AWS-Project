@@ -1,7 +1,7 @@
 import { useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import authService from "../../services/authService";
-import { getRoleDefaultPath } from "../../routes/RoleBasedRoute";
+import { getRoleDefaultPath } from "../../utils/roleUtils";
 
 const Dashboard = () => {
   const navigate = useNavigate();
@@ -15,7 +15,7 @@ const Dashboard = () => {
     }
   }, [currentUser, navigate]);
 
-  // Fallback nếu không xác định được role - redirect về login
+  // Fallback if role cannot be determined - redirect to login
   useEffect(() => {
     if (!currentUser) {
       navigate("/login", { replace: true });

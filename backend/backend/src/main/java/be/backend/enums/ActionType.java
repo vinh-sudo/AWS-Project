@@ -54,7 +54,10 @@ public enum ActionType {
     UNASSIGN_LEADER,
     
     // ========== SYSTEM (Low Priority - 1 month) ==========
-    SYSTEM_ACTION;      // Auto-complete order, scheduled jobs
+    SYSTEM_ACTION,      // Auto-complete order, scheduled jobs
+
+    // Fallback cho legacy/invalid DB values để tránh crash khi đọc audit cũ
+    UNKNOWN;
     
     /**
      * Check critical actions
@@ -105,6 +108,21 @@ public enum ActionType {
             return ActionType.valueOf(action.toUpperCase().trim());
         } catch (IllegalArgumentException e) {
             throw new BusinessException("Invalid action: " + action);
+        }
+    }
+
+    /**
+     * Parse for persistence hydration.
+     * Return UNKNOWN for legacy or malformed values instead of throwing.
+     */
+    public static ActionType safeValueOf(String action) {
+        if (action == null || action.isBlank()) {
+            return UNKNOWN;
+        }
+        try {
+            return ActionType.valueOf(action.toUpperCase().trim());
+        } catch (IllegalArgumentException e) {
+            return UNKNOWN;
         }
     }
 }
