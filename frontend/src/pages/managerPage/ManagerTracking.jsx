@@ -12,9 +12,7 @@ const ManagerTracking = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [searchTerm, setSearchTerm] = useState("");
-  const [selectedDate] = useState(
-    new Date().toISOString().split("T")[0],
-  );
+  const [selectedDate] = useState(new Date().toISOString().split("T")[0]);
   const [activeTab, setActiveTab] = useState("gantt");
 
   const fetchTrackingData = useCallback(async () => {

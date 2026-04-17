@@ -403,12 +403,18 @@ const buildOrderStatusDistribution = (countByStatus = {}) => {
 const ACCOUNT_STATUS_PAGE_SIZE = 200;
 
 const getAccountStatusSummary = async () => {
-  const firstPage = await getAccounts({ page: 0, size: ACCOUNT_STATUS_PAGE_SIZE });
+  const firstPage = await getAccounts({
+    page: 0,
+    size: ACCOUNT_STATUS_PAGE_SIZE,
+  });
   const totalPages = Math.max(1, Number(firstPage?.totalPages || 1));
   const pages = [firstPage];
 
   for (let page = 1; page < totalPages; page += 1) {
-    const pageData = await getAccounts({ page, size: ACCOUNT_STATUS_PAGE_SIZE });
+    const pageData = await getAccounts({
+      page,
+      size: ACCOUNT_STATUS_PAGE_SIZE,
+    });
     pages.push(pageData);
   }
 
@@ -441,15 +447,16 @@ const getAccountStatusSummary = async () => {
  */
 const getDashboardStats = async () => {
   try {
-    const [orderOverview, systemOverview, accountStatusSummary] = await Promise.all([
-      api
-        .get("/api/admin/statistics/order-overview")
-        .catch(() => ({ data: null })),
-      api
-        .get("/api/admin/statistics/system-overview")
-        .catch(() => ({ data: null })),
-      getAccountStatusSummary().catch(() => null),
-    ]);
+    const [orderOverview, systemOverview, accountStatusSummary] =
+      await Promise.all([
+        api
+          .get("/api/admin/statistics/order-overview")
+          .catch(() => ({ data: null })),
+        api
+          .get("/api/admin/statistics/system-overview")
+          .catch(() => ({ data: null })),
+        getAccountStatusSummary().catch(() => null),
+      ]);
 
     const orderData = orderOverview.data;
     const sysData = systemOverview.data;
@@ -466,7 +473,8 @@ const getDashboardStats = async () => {
       0,
     );
 
-    const totalOrders = Number(orderData?.totalOrders ?? totalOrdersFromDistribution) || 0;
+    const totalOrders =
+      Number(orderData?.totalOrders ?? totalOrdersFromDistribution) || 0;
     const resolvedTotalUsers =
       accountStatusSummary?.totalUsers ?? Number(sysData?.totalUsers || 0);
     const resolvedActiveUsers =
@@ -487,7 +495,8 @@ const getDashboardStats = async () => {
         (totalsByStatusKey.scheduled || 0),
       completedOrders: totalsByStatusKey.completed || 0,
       inProgressOrders:
-        (totalsByStatusKey.inProduction || 0) + (totalsByStatusKey.stopped || 0),
+        (totalsByStatusKey.inProduction || 0) +
+        (totalsByStatusKey.stopped || 0),
       cancelledOrders: totalsByStatusKey.cancelled || 0,
       orderStatusDistribution,
       // System info

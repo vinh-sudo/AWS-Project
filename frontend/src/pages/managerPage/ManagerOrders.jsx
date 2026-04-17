@@ -337,17 +337,7 @@ const ManagerOrders = () => {
         />
 
         <div className="page-content">
-          
-          
-
-         
-
           {/* Filters */}
-          
-             
-          
-           
-         
 
           {/* Active Filter Chips */}
           {activeFilterChips.length > 0 && (
@@ -356,17 +346,19 @@ const ManagerOrders = () => {
                 {activeFilterChips.map((chip, idx) => (
                   <span key={idx} className="mo-filter-chip">
                     {chip}
-                    <button 
-                      className="mo-filter-chip-close" 
+                    <button
+                      className="mo-filter-chip-close"
                       onClick={() => {
-                        setActiveFilterChips(activeFilterChips.filter((_, i) => i !== idx));
+                        setActiveFilterChips(
+                          activeFilterChips.filter((_, i) => i !== idx),
+                        );
                       }}
                     >
                       ✕
                     </button>
                   </span>
                 ))}
-                <button 
+                <button
                   className="mo-filter-chip-clear-all"
                   onClick={() => setActiveFilterChips([])}
                 >
@@ -521,36 +513,38 @@ const ManagerOrders = () => {
                 <Icon name="x" className="mo-icon mo-icon-sm" />
               </button>
             </div>
-            
+
             {/* Modal Tabs */}
             <div className="mo-modal-tabs">
-              <button 
-                className={`mo-tab-btn ${activeTab === 'details' ? 'mo-tab-active' : ''}`}
-                onClick={() => setActiveTab('details')}
+              <button
+                className={`mo-tab-btn ${activeTab === "details" ? "mo-tab-active" : ""}`}
+                onClick={() => setActiveTab("details")}
               >
                 Details
               </button>
-              <button 
-                className={`mo-tab-btn ${activeTab === 'items' ? 'mo-tab-active' : ''}`}
-                onClick={() => setActiveTab('items')}
+              <button
+                className={`mo-tab-btn ${activeTab === "items" ? "mo-tab-active" : ""}`}
+                onClick={() => setActiveTab("items")}
               >
                 Items
               </button>
-              <button 
-                className={`mo-tab-btn ${activeTab === 'files' ? 'mo-tab-active' : ''}`}
-                onClick={() => setActiveTab('files')}
+              <button
+                className={`mo-tab-btn ${activeTab === "files" ? "mo-tab-active" : ""}`}
+                onClick={() => setActiveTab("files")}
               >
                 Files
               </button>
             </div>
-            
+
             <div className="mo-modal-body">
               {detailLoading ? (
                 <PageLoading variant="inline" text="Loading order detail..." />
               ) : (
                 <>
                   {/* Details Tab */}
-                  <div className={`mo-tab-content ${activeTab === 'details' ? 'mo-tab-content-active' : ''}`}>
+                  <div
+                    className={`mo-tab-content ${activeTab === "details" ? "mo-tab-content-active" : ""}`}
+                  >
                     <div className="mo-detail-grid">
                       <div className="mo-detail-item">
                         <span className="mo-detail-label">Customer</span>
@@ -634,7 +628,9 @@ const ManagerOrders = () => {
                   </div>
 
                   {/* Items Tab */}
-                  <div className={`mo-tab-content ${activeTab === 'items' ? 'mo-tab-content-active' : ''}`}>
+                  <div
+                    className={`mo-tab-content ${activeTab === "items" ? "mo-tab-content-active" : ""}`}
+                  >
                     {detailOrder.items && detailOrder.items.length > 0 ? (
                       <div className="mo-detail-items">
                         <h3>
@@ -676,7 +672,9 @@ const ManagerOrders = () => {
                   </div>
 
                   {/* Files Tab */}
-                  <div className={`mo-tab-content ${activeTab === 'files' ? 'mo-tab-content-active' : ''}`}>
+                  <div
+                    className={`mo-tab-content ${activeTab === "files" ? "mo-tab-content-active" : ""}`}
+                  >
                     <div className="mo-detail-items">
                       <h3>
                         <Icon name="paperclip" className="mo-icon mo-icon-sm" />
