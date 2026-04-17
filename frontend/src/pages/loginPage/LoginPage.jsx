@@ -6,7 +6,7 @@ import * as Yup from "yup";
 import "./LoginPage.css";
 import imsLogo from "../../assets/ims2.jpg";
 import { login, clearError, selectIsLoading, selectError } from "../../redux";
-import { getRoleDefaultPath } from "../../routes/RoleBasedRoute";
+import { getRoleDefaultPath } from "../../utils/roleUtils";
 
 const LoginPage = () => {
   const navigate = useNavigate();

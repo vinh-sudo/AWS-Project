@@ -12,7 +12,6 @@ import {
   YAxis,
   CartesianGrid,
   Tooltip,
-  Legend,
   ResponsiveContainer,
 } from "recharts";
 import authService from "../../services/authService";
@@ -36,6 +35,7 @@ const AdminDashboard = () => {
     completedOrders: 0,
     inProgressOrders: 0,
     cancelledOrders: 0,
+    orderStatusDistribution: [],
     totalLines: 0,
     activeLines: 0,
     totalMachines: 0,
@@ -71,6 +71,7 @@ const AdminDashboard = () => {
         completedOrders: data.completedOrders || 0,
         inProgressOrders: data.inProgressOrders || 0,
         cancelledOrders: data.cancelledOrders || 0,
+        orderStatusDistribution: data.orderStatusDistribution || [],
         totalLines: data.totalLines || 0,
         activeLines: Math.min(data.totalLines || 0, activeLinesFromAssignments),
         totalMachines: data.totalMachines || 0,
@@ -100,34 +101,15 @@ const AdminDashboard = () => {
       ? ((stats.activeLines / stats.totalLines) * 100).toFixed(1)
       : 0;
 
-  const machineUtilization =
-    stats.totalMachines > 0
-      ? ((stats.activeMachines / stats.totalMachines) * 100).toFixed(1)
-      : 0;
-
   // Chart data
-  const orderStatusData = [
-    { name: "Pending", value: stats.pendingOrders, color: "#f59e0b" },
-    { name: "In Progress", value: stats.inProgressOrders, color: "#3b82f6" },
-    { name: "Completed", value: stats.completedOrders, color: "#10b981" },
-    { name: "Cancelled", value: stats.cancelledOrders, color: "#ef4444" },
-  ];
+  const orderStatusData = stats.orderStatusDistribution || [];
 
-  const productionData = [
-    { name: "Lines Active", value: stats.activeLines, color: "#10b981" },
-    {
-      name: "Lines Inactive",
-      value: Math.max(0, stats.totalLines - stats.activeLines),
-      color: "#e2e8f0",
-    },
-  ];
-
-  const barData = [
-    { status: "Pending", count: stats.pendingOrders, fill: "#f59e0b" },
-    { status: "In Progress", count: stats.inProgressOrders, fill: "#3b82f6" },
-    { status: "Completed", count: stats.completedOrders, fill: "#10b981" },
-    { status: "Cancelled", count: stats.cancelledOrders, fill: "#ef4444" },
-  ];
+  const barData = orderStatusData.map((item) => ({
+    status: item.name,
+    statusKey: item.key,
+    count: item.value,
+    fill: item.color,
+  }));
 
   const userManagementData = [
     { name: "Active", value: stats.activeUsers, color: "#10b981" },
@@ -452,7 +434,7 @@ const AdminDashboard = () => {
           {/* ===== Charts Row ===== */}
           <div className="dash-charts">
             {/* Order Status Bar Chart */}
-            <div className="dash-card">
+            <div className="dash-card dash-card-full">
               <div className="dash-card-header">
                 <h3 className="dash-card-title">
                   <span className="dash-card-title-icon icon-chart">
@@ -481,64 +463,6 @@ const AdminDashboard = () => {
               <div className="dash-card-body">
                 <ResponsiveContainer width="100%" height={280}>
                   <BarChart data={barData} barCategoryGap="25%">
-                    <defs>
-                      <linearGradient
-                        id="barPending"
-                        x1="0"
-                        y1="0"
-                        x2="0"
-                        y2="1"
-                      >
-                        <stop offset="0%" stopColor="#f59e0b" stopOpacity={1} />
-                        <stop
-                          offset="100%"
-                          stopColor="#fbbf24"
-                          stopOpacity={0.8}
-                        />
-                      </linearGradient>
-                      <linearGradient
-                        id="barProgress"
-                        x1="0"
-                        y1="0"
-                        x2="0"
-                        y2="1"
-                      >
-                        <stop offset="0%" stopColor="#3b82f6" stopOpacity={1} />
-                        <stop
-                          offset="100%"
-                          stopColor="#60a5fa"
-                          stopOpacity={0.8}
-                        />
-                      </linearGradient>
-                      <linearGradient
-                        id="barCompleted"
-                        x1="0"
-                        y1="0"
-                        x2="0"
-                        y2="1"
-                      >
-                        <stop offset="0%" stopColor="#10b981" stopOpacity={1} />
-                        <stop
-                          offset="100%"
-                          stopColor="#34d399"
-                          stopOpacity={0.8}
-                        />
-                      </linearGradient>
-                      <linearGradient
-                        id="barCancelled"
-                        x1="0"
-                        y1="0"
-                        x2="0"
-                        y2="1"
-                      >
-                        <stop offset="0%" stopColor="#ef4444" stopOpacity={1} />
-                        <stop
-                          offset="100%"
-                          stopColor="#f87171"
-                          stopOpacity={0.8}
-                        />
-                      </linearGradient>
-                    </defs>
                     <CartesianGrid
                       strokeDasharray="3 3"
                       stroke="#f1f5f9"
@@ -566,17 +490,12 @@ const AdminDashboard = () => {
                       cursor={{ fill: "rgba(99, 102, 241, 0.04)" }}
                     />
                     <Bar dataKey="count" radius={[10, 10, 0, 0]} name="Orders">
-                      {barData.map((entry, index) => {
-                        const gradients = [
-                          "url(#barPending)",
-                          "url(#barProgress)",
-                          "url(#barCompleted)",
-                          "url(#barCancelled)",
-                        ];
-                        return (
-                          <Cell key={`cell-${index}`} fill={gradients[index]} />
-                        );
-                      })}
+                      {barData.map((entry, index) => (
+                        <Cell
+                          key={`cell-${entry.statusKey || index}`}
+                          fill={entry.fill}
+                        />
+                      ))}
                     </Bar>
                   </BarChart>
                 </ResponsiveContainer>
@@ -590,93 +509,6 @@ const AdminDashboard = () => {
                       {item.name}: {item.value}
                     </div>
                   ))}
-                </div>
-              </div>
-            </div>
-
-            {/* Production Lines Pie Chart */}
-            <div className="dash-card">
-              <div className="dash-card-header">
-                <h3 className="dash-card-title">
-                  <span className="dash-card-title-icon icon-pie">
-                    <svg
-                      width="14"
-                      height="14"
-                      viewBox="0 0 24 24"
-                      fill="none"
-                      stroke="currentColor"
-                      strokeWidth="2.5"
-                    >
-                      <path d="M21.21 15.89A10 10 0 118 2.83" />
-                      <path d="M22 12A10 10 0 0012 2v10z" />
-                    </svg>
-                  </span>
-                  Production Overview
-                </h3>
-              </div>
-              <div className="dash-card-body">
-                <ResponsiveContainer width="100%" height={220}>
-                  <PieChart>
-                    <defs>
-                      <linearGradient
-                        id="pieActive"
-                        x1="0"
-                        y1="0"
-                        x2="1"
-                        y2="1"
-                      >
-                        <stop offset="0%" stopColor="#10b981" />
-                        <stop offset="100%" stopColor="#34d399" />
-                      </linearGradient>
-                    </defs>
-                    <Pie
-                      data={productionData}
-                      cx="50%"
-                      cy="50%"
-                      innerRadius={58}
-                      outerRadius={88}
-                      paddingAngle={4}
-                      dataKey="value"
-                      strokeWidth={0}
-                    >
-                      {productionData.map((entry, index) => (
-                        <Cell
-                          key={`cell-${index}`}
-                          fill={index === 0 ? "url(#pieActive)" : entry.color}
-                        />
-                      ))}
-                    </Pie>
-                    <Tooltip
-                      contentStyle={{
-                        background: "#fff",
-                        border: "none",
-                        borderRadius: "12px",
-                        boxShadow: "0 8px 30px rgba(0,0,0,0.12)",
-                        padding: "10px 14px",
-                      }}
-                    />
-                  </PieChart>
-                </ResponsiveContainer>
-                {/* Center label */}
-                <div className="dash-pie-center">
-                  <span className="dash-pie-value">{lineUtilization}%</span>
-                  <span className="dash-pie-label">Utilization</span>
-                </div>
-                {/* Machine stats */}
-                <div className="dash-machine-stats">
-                  <div className="dash-machine-item">
-                    <span className="dash-dot dash-dot-green"></span>
-                    <span>
-                      Machines: {stats.activeMachines}/{stats.totalMachines} (
-                      {machineUtilization}%)
-                    </span>
-                  </div>
-                  <div className="dash-machine-item">
-                    <span className="dash-dot dash-dot-gray"></span>
-                    <span>
-                      Idle: {stats.totalMachines - stats.activeMachines}
-                    </span>
-                  </div>
                 </div>
               </div>
             </div>

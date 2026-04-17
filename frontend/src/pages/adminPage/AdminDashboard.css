@@ -468,6 +468,10 @@
   transition: all var(--dash-transition);
 }
 
+.dash-card-full {
+  grid-column: 1 / -1;
+}
+
 .dash-card:hover {
   box-shadow: var(--dash-shadow-lg);
   border-color: var(--dash-border);

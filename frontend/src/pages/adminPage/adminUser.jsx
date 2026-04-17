@@ -74,7 +74,6 @@ const UsersAdmin = () => {
     lastName: "",
     phoneNumber: "",
     role: "MANAGER",
-    employeeCode: "",
     status: true,
   });
 
@@ -164,7 +163,6 @@ const UsersAdmin = () => {
       lastName: "",
       phoneNumber: "",
       role: "MANAGER",
-      employeeCode: "",
       status: true,
     });
     setCreateFieldErrors({ username: "", email: "" });
@@ -192,7 +190,6 @@ const UsersAdmin = () => {
           ? formData.phoneNumber.replace(/\D/g, "")
           : undefined,
         role: formData.role,
-        employeeCode: formData.employeeCode?.trim() || undefined,
       };
 
       if (!payload.username || payload.username.length < 4) {
@@ -470,34 +467,22 @@ const UsersAdmin = () => {
                 className="form-input"
               />
             </div>
-            <div className="form-row">
-              <div className="form-group">
-                <label className="form-label">
-                  Role <span style={{ color: "#dc2626" }}>*</span>
-                </label>
-                <select
-                  value={formData.role}
-                  onChange={(e) => handleChange("role", e.target.value)}
-                  className="form-select"
-                >
-                  <option value="ADMIN">Admin</option>
-                  <option value="MANAGER">Manager</option>
-                  <option value="LINE_LEADER">Line Leader</option>
-                </select>
-              </div>
-              <div className="form-group">
-                <label className="form-label">Employee Code</label>
-                <input
-                  type="text"
-                  placeholder="Auto-generated if empty"
-                  value={formData.employeeCode}
-                  onChange={(e) => handleChange("employeeCode", e.target.value)}
-                  className="form-input"
-                />
-                <span className="form-hint">
-                  Leave blank for auto-generation
-                </span>
-              </div>
+            <div className="form-group">
+              <label className="form-label">
+                Role <span style={{ color: "#dc2626" }}>*</span>
+              </label>
+              <select
+                value={formData.role}
+                onChange={(e) => handleChange("role", e.target.value)}
+                className="form-select"
+              >
+                <option value="ADMIN">Admin</option>
+                <option value="MANAGER">Manager</option>
+                <option value="LINE_LEADER">Line Leader</option>
+              </select>
+              <span className="form-hint">
+                Employee code will be generated automatically.
+              </span>
             </div>
           </div>
           <div className="modal-footer">

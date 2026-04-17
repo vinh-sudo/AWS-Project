@@ -15,7 +15,8 @@ import ResetPasswordPage from "./pages/resetPasswordPage/ResetPasswordPage";
 import DraftLayout from "./layouts/DraftLayout";
 // Route guards
 import ProtectedRoute from "./routes/ProtectedRoute";
-import RoleBasedRoute, { getRoleDefaultPath } from "./routes/RoleBasedRoute";
+import RoleBasedRoute from "./routes/RoleBasedRoute";
+import { getRoleDefaultPath } from "./utils/roleUtils";
 // Admin imports
 import AdminPage from "./pages/adminPage/adminUser";
 import AdminDashboard from "./pages/adminPage/AdminDashboard";
@@ -28,10 +29,6 @@ import ManagerPlanning from "./pages/managerPage/ManagerPlanning";
 import ManagerTracking from "./pages/managerPage/ManagerTracking";
 import ManagerReports from "./pages/managerPage/ManagerReports";
 import ManagerOrders from "./pages/managerPage/ManagerOrders";
-// Planner imports
-import PlannerAssignment from "./pages/plannerPage/PlannerAssignment";
-import PlannerScheduling from "./pages/plannerPage/PlannerScheduling";
-import PlannerReports from "./pages/plannerPage/PlannerReports";
 import LeaderProgress from "./pages/leaderPage/LeaderProgress";
 import LeaderTaskAssignment from "./pages/leaderPage/LeaderTaskAssignment";
 import Dashboard from "./pages/dashboardPage/Dashboard";
@@ -60,10 +57,7 @@ const RedirectIfAuthenticated = ({ children }) => {
  */
 const ReportsRedirect = () => {
   const user = useSelector(selectUser);
-  const role =
-    user?.role?.toUpperCase() === "PRODUCTION_PLANNER"
-      ? "MANAGER"
-      : user?.role?.toUpperCase();
+  const role = user?.role?.toUpperCase();
 
   switch (role) {
     case "MANAGER":
@@ -249,48 +243,6 @@ function App() {
               element={
                 <RoleBasedRoute allowedRoles={["ADMIN"]}>
                   <AdminAssignment />
-                </RoleBasedRoute>
-              }
-            />
-
-            {/* Planner Routes */}
-            <Route
-              path="/planner"
-              element={
-                <RoleBasedRoute
-                  allowedRoles={["MANAGER", "PRODUCTION_PLANNER"]}
-                >
-                  <PlannerAssignment />
-                </RoleBasedRoute>
-              }
-            />
-            <Route
-              path="/planner/assignment"
-              element={
-                <RoleBasedRoute
-                  allowedRoles={["MANAGER", "PRODUCTION_PLANNER"]}
-                >
-                  <PlannerAssignment />
-                </RoleBasedRoute>
-              }
-            />
-            <Route
-              path="/planner/scheduling"
-              element={
-                <RoleBasedRoute
-                  allowedRoles={["MANAGER", "PRODUCTION_PLANNER"]}
-                >
-                  <PlannerScheduling />
-                </RoleBasedRoute>
-              }
-            />
-            <Route
-              path="/planner/reports"
-              element={
-                <RoleBasedRoute
-                  allowedRoles={["MANAGER", "PRODUCTION_PLANNER"]}
-                >
-                  <PlannerReports />
                 </RoleBasedRoute>
               }
             />

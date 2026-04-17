@@ -118,8 +118,8 @@ const ManagerOrders = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [searchTerm, setSearchTerm] = useState("");
-  const [statusFilter, setStatusFilter] = useState("ALL");
-  const [priorityFilter, setPriorityFilter] = useState("All");
+  const [statusFilter] = useState("ALL");
+  const [priorityFilter] = useState("All");
   const [showDetailModal, setShowDetailModal] = useState(false);
   const [detailOrder, setDetailOrder] = useState(null);
   const [detailProgress, setDetailProgress] = useState(null);
@@ -130,7 +130,6 @@ const ManagerOrders = () => {
     direction: "desc",
   });
   const [activeTab, setActiveTab] = useState("details");
-  const [showAdvancedFilters, setShowAdvancedFilters] = useState(false);
   const [activeFilterChips, setActiveFilterChips] = useState([]);
 
   useEffect(() => {
@@ -294,25 +293,6 @@ const ManagerOrders = () => {
       if (aVal > bVal) return direction === "asc" ? 1 : -1;
       return 0;
     });
-
-  const stats = {
-    total: orders.length,
-    pending: orders.filter((o) =>
-      ["DRAFT", "CONFIRMED", "NEW"].includes(normalizeOrderStatus(o.status)),
-    ).length,
-    planningScheduled: orders.filter((o) =>
-      ["PLANNING", "SCHEDULED"].includes(normalizeOrderStatus(o.status)),
-    ).length,
-    inProduction: orders.filter(
-      (o) => normalizeOrderStatus(o.status) === "IN_PRODUCTION",
-    ).length,
-    completed: orders.filter(
-      (o) => normalizeOrderStatus(o.status) === "COMPLETED",
-    ).length,
-    blocked: orders.filter((o) =>
-      ["STOPPED", "CANCELLED"].includes(normalizeOrderStatus(o.status)),
-    ).length,
-  };
 
   const handleViewDetail = async (orderId) => {
     try {

@@ -113,41 +113,6 @@
     transform: rotate(90deg);
 }
 
-/* Quick Actions */
-.copilot-quick-actions {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 8px;
-    padding: 12px 15px;
-    background: #f8f9fa;
-    border-bottom: 1px solid #eee;
-}
-
-.quick-action-btn {
-    padding: 6px 12px;
-    background: white;
-    border: 1px solid #e0e0e0;
-    border-radius: 20px;
-    font-size: 0.75rem;
-    cursor: pointer;
-    transition: all 0.3s;
-    white-space: nowrap;
-    display: flex;
-    align-items: center;
-    gap: 4px;
-}
-
-.quick-action-btn:hover:not(:disabled) {
-    background: linear-gradient(135deg, rgba(94, 200, 196, 0.1) 0%, rgba(241, 149, 179, 0.1) 100%);
-    border-color: #5ec8c4;
-    color: #5ec8c4;
-}
-
-.quick-action-btn:disabled {
-    opacity: 0.5;
-    cursor: not-allowed;
-}
-
 /* Messages Area */
 .copilot-messages {
     flex: 1;

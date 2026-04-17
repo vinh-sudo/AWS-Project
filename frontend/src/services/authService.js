@@ -460,13 +460,6 @@ export const authService = {
   isLineLeader: () => {
     return authService.hasRole("LINE_LEADER");
   },
-
-  // Check if user is production planner
-  isProductionPlanner: () => {
-    const user = authService.getCurrentUser();
-    const role = user?.role?.toUpperCase();
-    return role === "PRODUCTION_PLANNER" || role === "MANAGER";
-  },
 };
 
 // Export the shared axios instance so other services can use the same

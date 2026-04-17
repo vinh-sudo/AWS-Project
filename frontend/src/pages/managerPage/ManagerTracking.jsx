@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import ManagerSidebar from "../../components/ManagerSidebar/ManagerSidebar";
 import ManagerTopBar from "./ManagerTopBar";
 import managerService from "../../services/managerService";
@@ -12,16 +12,12 @@ const ManagerTracking = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [searchTerm, setSearchTerm] = useState("");
-  const [selectedDate, setSelectedDate] = useState(
+  const [selectedDate] = useState(
     new Date().toISOString().split("T")[0],
   );
   const [activeTab, setActiveTab] = useState("gantt");
 
-  useEffect(() => {
-    fetchTrackingData();
-  }, [selectedDate]);
-
-  const fetchTrackingData = async () => {
+  const fetchTrackingData = useCallback(async () => {
     setLoading(true);
     setError(null);
     try {
@@ -52,7 +48,11 @@ const ManagerTracking = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [selectedDate]);
+
+  useEffect(() => {
+    fetchTrackingData();
+  }, [fetchTrackingData]);
 
   const getStatusClass = (status) => {
     switch (status?.toUpperCase()) {

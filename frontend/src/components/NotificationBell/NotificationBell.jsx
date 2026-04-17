@@ -39,10 +39,7 @@ const SOURCE_LABELS = SOURCE_TYPES.reduce((acc, item) => {
 }, {});
 
 const getRoleDefaultPath = (role) => {
-  const normalizedRole =
-    (role || "").toUpperCase() === "PRODUCTION_PLANNER"
-      ? "MANAGER"
-      : (role || "").toUpperCase();
+  const normalizedRole = (role || "").toUpperCase();
 
   switch (normalizedRole) {
     case "ADMIN":
@@ -95,15 +92,8 @@ const normalizeNotificationUrl = (notif, role) => {
   if (
     pathname.startsWith("/admin/") ||
     pathname.startsWith("/manager/") ||
-    pathname.startsWith("/planner/") ||
     pathname.startsWith("/leader/")
   ) {
-    if (
-      pathname.startsWith("/planner/") &&
-      (role || "").toUpperCase() !== "PRODUCTION_PLANNER"
-    ) {
-      return "/manager/dashboard";
-    }
     return `${pathname}${search}`;
   }
 

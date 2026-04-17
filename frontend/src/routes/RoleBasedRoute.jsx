@@ -2,14 +2,7 @@ import React from "react";
 import { Navigate } from "react-router-dom";
 import { useSelector } from "react-redux";
 import { selectUser, selectIsAuthenticated } from "../redux";
-
-const normalizeRole = (role) => {
-  const normalized = role?.toUpperCase();
-  if (normalized === "PRODUCTION_PLANNER") {
-    return "MANAGER";
-  }
-  return normalized;
-};
+import { normalizeRole, getRoleDefaultPath } from "../utils/roleUtils";
 
 /**
  * RoleBasedRoute - Restricts access to specific roles.
@@ -40,22 +33,6 @@ const RoleBasedRoute = ({ allowedRoles, children }) => {
   }
 
   return children;
-};
-
-/**
- * Returns the default path for a given role.
- */
-export const getRoleDefaultPath = (role) => {
-  switch (normalizeRole(role)) {
-    case "ADMIN":
-      return "/admin/dashboard";
-    case "MANAGER":
-      return "/manager/dashboard";
-    case "LINE_LEADER":
-      return "/leader/progress";
-    default:
-      return "/dashboard";
-  }
 };
 
 export default RoleBasedRoute;

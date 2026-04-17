@@ -293,41 +293,203 @@ const getSystemOverview = async () => {
 
 // ==================== DASHBOARD STATS ====================
 
+const ORDER_STATUS_CONFIG = [
+  { key: "draft", label: "Draft", color: "#f59e0b", aliases: ["DRAFT"] },
+  {
+    key: "confirmed",
+    label: "Confirmed",
+    color: "#3b82f6",
+    aliases: ["CONFIRMED"],
+  },
+  {
+    key: "planning",
+    label: "Planning",
+    color: "#a855f7",
+    aliases: ["PLANNING"],
+  },
+  {
+    key: "scheduled",
+    label: "Scheduled",
+    color: "#0ea5e9",
+    aliases: ["SCHEDULED", "PARTIALLY_SCHEDULED"],
+  },
+  {
+    key: "inProduction",
+    label: "In Production",
+    color: "#06b6d4",
+    aliases: ["IN_PRODUCTION", "IN_PROGRESS"],
+  },
+  {
+    key: "stopped",
+    label: "Stopped",
+    color: "#ef4444",
+    aliases: ["STOPPED"],
+  },
+  {
+    key: "completed",
+    label: "Completed",
+    color: "#10b981",
+    aliases: ["COMPLETED"],
+  },
+  {
+    key: "cancelled",
+    label: "Cancelled",
+    color: "#9ca3af",
+    aliases: ["CANCELLED", "CANCELED"],
+  },
+];
+
+const ORDER_STATUS_LOOKUP = ORDER_STATUS_CONFIG.reduce((lookup, status) => {
+  status.aliases.forEach((alias) => {
+    lookup[alias] = status.key;
+  });
+  return lookup;
+}, {});
+
+const prettifyUnknownStatus = (status) =>
+  status
+    .replace(/_/g, " ")
+    .toLowerCase()
+    .replace(/\b\w/g, (char) => char.toUpperCase());
+
+const normalizeOrderStatus = (status) =>
+  String(status || "")
+    .trim()
+    .toUpperCase()
+    .replace(/\s+/g, "_");
+
+const buildOrderStatusDistribution = (countByStatus = {}) => {
+  const totalsByKey = ORDER_STATUS_CONFIG.reduce((acc, status) => {
+    acc[status.key] = 0;
+    return acc;
+  }, {});
+
+  const extrasByNormalizedStatus = {};
+
+  Object.entries(countByStatus).forEach(([rawStatus, rawCount]) => {
+    const count = Number(rawCount) || 0;
+    if (count <= 0) return;
+
+    const normalized = normalizeOrderStatus(rawStatus);
+    const knownKey = ORDER_STATUS_LOOKUP[normalized];
+
+    if (knownKey) {
+      totalsByKey[knownKey] += count;
+      return;
+    }
+
+    if (!extrasByNormalizedStatus[normalized]) {
+      extrasByNormalizedStatus[normalized] = {
+        key: `other:${normalized}`,
+        name: prettifyUnknownStatus(normalized),
+        value: 0,
+        color: "#64748b",
+      };
+    }
+
+    extrasByNormalizedStatus[normalized].value += count;
+  });
+
+  const knownStatuses = ORDER_STATUS_CONFIG.map((status) => ({
+    key: status.key,
+    name: status.label,
+    value: totalsByKey[status.key],
+    color: status.color,
+  }));
+
+  return [...knownStatuses, ...Object.values(extrasByNormalizedStatus)];
+};
+
+const ACCOUNT_STATUS_PAGE_SIZE = 200;
+
+const getAccountStatusSummary = async () => {
+  const firstPage = await getAccounts({ page: 0, size: ACCOUNT_STATUS_PAGE_SIZE });
+  const totalPages = Math.max(1, Number(firstPage?.totalPages || 1));
+  const pages = [firstPage];
+
+  for (let page = 1; page < totalPages; page += 1) {
+    const pageData = await getAccounts({ page, size: ACCOUNT_STATUS_PAGE_SIZE });
+    pages.push(pageData);
+  }
+
+  const totalUsersFromApi = Number(firstPage?.totalElements);
+  let activeUsers = 0;
+  let listedUsers = 0;
+
+  pages.forEach((pageData) => {
+    const accounts = Array.isArray(pageData?.content) ? pageData.content : [];
+    listedUsers += accounts.length;
+    activeUsers += accounts.reduce((count, account) => {
+      const isActive = String(account?.status || "").toLowerCase() === "active";
+      return count + (isActive ? 1 : 0);
+    }, 0);
+  });
+
+  const totalUsers = Number.isFinite(totalUsersFromApi)
+    ? totalUsersFromApi
+    : listedUsers;
+
+  return {
+    totalUsers,
+    activeUsers,
+    blockedUsers: Math.max(0, totalUsers - activeUsers),
+  };
+};
+
 /**
  * Get dashboard statistics (aggregated from real statistics endpoints)
  */
 const getDashboardStats = async () => {
   try {
-    const [orderOverview, systemOverview] = await Promise.all([
+    const [orderOverview, systemOverview, accountStatusSummary] = await Promise.all([
       api
         .get("/api/admin/statistics/order-overview")
         .catch(() => ({ data: null })),
       api
         .get("/api/admin/statistics/system-overview")
         .catch(() => ({ data: null })),
+      getAccountStatusSummary().catch(() => null),
     ]);
 
     const orderData = orderOverview.data;
     const sysData = systemOverview.data;
 
     const countByStatus = orderData?.countByStatus || {};
+    const orderStatusDistribution = buildOrderStatusDistribution(countByStatus);
+    const totalsByStatusKey = orderStatusDistribution.reduce((acc, item) => {
+      acc[item.key] = item.value;
+      return acc;
+    }, {});
+
+    const totalOrdersFromDistribution = orderStatusDistribution.reduce(
+      (sum, item) => sum + item.value,
+      0,
+    );
+
+    const totalOrders = Number(orderData?.totalOrders ?? totalOrdersFromDistribution) || 0;
+    const resolvedTotalUsers =
+      accountStatusSummary?.totalUsers ?? Number(sysData?.totalUsers || 0);
+    const resolvedActiveUsers =
+      accountStatusSummary?.activeUsers ?? Number(sysData?.activeUsers || 0);
+    const resolvedBlockedUsers =
+      accountStatusSummary?.blockedUsers ??
+      Math.max(0, resolvedTotalUsers - resolvedActiveUsers);
 
     return {
-      totalUsers: sysData?.totalUsers || 0,
-      activeUsers: sysData?.activeUsers || 0,
-      blockedUsers:
-        sysData?.blockedUsers != null
-          ? sysData.blockedUsers
-          : Math.max(
-              0,
-              (sysData?.totalUsers || 0) - (sysData?.activeUsers || 0),
-            ),
-      totalOrders: orderData?.totalOrders || 0,
+      totalUsers: resolvedTotalUsers,
+      activeUsers: resolvedActiveUsers,
+      blockedUsers: resolvedBlockedUsers,
+      totalOrders,
       pendingOrders:
-        (countByStatus["Draft"] || 0) + (countByStatus["Confirmed"] || 0),
-      completedOrders: countByStatus["Completed"] || 0,
-      inProgressOrders: countByStatus["In Production"] || 0,
-      cancelledOrders: countByStatus["Cancelled"] || 0,
+        (totalsByStatusKey.draft || 0) +
+        (totalsByStatusKey.confirmed || 0) +
+        (totalsByStatusKey.planning || 0) +
+        (totalsByStatusKey.scheduled || 0),
+      completedOrders: totalsByStatusKey.completed || 0,
+      inProgressOrders:
+        (totalsByStatusKey.inProduction || 0) + (totalsByStatusKey.stopped || 0),
+      cancelledOrders: totalsByStatusKey.cancelled || 0,
+      orderStatusDistribution,
       // System info
       totalLines: sysData?.totalLines || 0,
       activeLines: sysData?.activeLines || 0,
